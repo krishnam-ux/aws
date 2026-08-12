@@ -26,8 +26,15 @@ function FooterLogo({ src, fallbackText, height, width }: { src: string; fallbac
   );
 }
 
+import { usePathname } from 'next/navigation';
+
 export default function Footer() {
+  const pathname = usePathname();
   const currentYear = new Date().getFullYear();
+
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
   return (
     <footer className="bg-brand-navy text-slate-350 border-t border-navy-dark py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">

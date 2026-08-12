@@ -1,0 +1,47 @@
+[
+  {
+    "id": "team-krishnam",
+    "name": "Krishnam",
+    "role": "Technical Lead, Cloud & Infrastructure",
+    "bio": "Manages core cloud repositories, VPC infrastructures, server deployment environments, and local builder laboratories.",
+    "initials": "K",
+    "displayOrder": 1,
+    "status": "Published"
+  },
+  {
+    "id": "team-ayush",
+    "name": "Ayush Pandey",
+    "role": "Events & Operations Lead",
+    "bio": "Coordinates event registration clearances, technical workshop layouts, logistics schedules, and local project mock reviews.",
+    "initials": "AP",
+    "displayOrder": 2,
+    "status": "Published"
+  },
+  {
+    "id": "team-priyanshu",
+    "name": "Priyanshu Kumar",
+    "role": "Marketing & Community Outreach Lead",
+    "bio": "Manages outreach communications, educational platform partners, panel liaison schedules, and student enrollment pipelines.",
+    "initials": "PK",
+    "displayOrder": 3,
+    "status": "Published"
+  },
+  {
+    "id": "team-aakarshan",
+    "name": "Aakarshan Agnihotri",
+    "role": "Content & Documentation Lead",
+    "bio": "Drafts learning resource listings, event slide repositories, documentation templates, and official community logs.",
+    "initials": "AA",
+    "displayOrder": 4,
+    "status": "Published"
+  },
+  {
+    "id": "team-ananya",
+    "name": "Ananya Shukla",
+    "role": "Design & Creative Lead",
+    "bio": "Reviews website interface styles, community visuals, event presentation layouts, and branding design systems.",
+    "initials": "AS",
+    "displayOrder": 5,
+    "status": "Published"
+  }
+]

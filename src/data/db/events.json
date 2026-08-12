@@ -1,0 +1,140 @@
+[
+  {
+    "id": "event-01",
+    "number": "Event 01",
+    "month": "August",
+    "title": "AWS Student Builder Group Inauguration & Cloud Kickstart",
+    "focus": "Community Launch, Cloud Computing, AWS Fundamentals, Live Demo",
+    "outcome": "Students understand cloud fundamentals, join the community, and create an AWS Skill Builder account.",
+    "overview": "The official launch event introducing students to the AWS Student Builder Group community and exploring the path to cloud learning.",
+    "format": "Community Inaugural & Keynote Kickstart",
+    "whatYouWillLearn": [
+      "AWS Student Builder Group vision and local roadmap",
+      "Introduction to the global AWS Cloud ecosystem",
+      "Getting started with AWS Skill Builder learning resources",
+      "Setting up your cloud learning dashboard"
+    ],
+    "status": "Planned",
+    "date": "August 2026",
+    "time": "TBA",
+    "venue": "TBA",
+    "speaker": "TBA",
+    "registrationLink": "",
+    "image": ""
+  },
+  {
+    "id": "event-02",
+    "number": "Event 02",
+    "month": "September",
+    "title": "AWS Core Services Workshop",
+    "focus": "IAM, EC2, S3, AWS Console, Static Website Hosting",
+    "outcome": "Students deploy their first static website on AWS and understand core AWS services.",
+    "overview": "A hands-on technical workshop focused on the core AWS infrastructure components and console administration.",
+    "format": "Hands-on Technical Workshop",
+    "whatYouWillLearn": [
+      "Designing virtual compute instances with Amazon EC2",
+      "Setting up secure storage containers using Amazon S3",
+      "Deploying a static web application to public endpoints",
+      "Implementing Identity Access Management (IAM) permissions"
+    ],
+    "status": "Planned",
+    "date": "September 2026",
+    "time": "TBA",
+    "venue": "TBA",
+    "speaker": "TBA",
+    "registrationLink": "",
+    "image": ""
+  },
+  {
+    "id": "event-03",
+    "number": "Event 03",
+    "month": "November",
+    "title": "Build with AI on AWS",
+    "focus": "Generative AI, Amazon Bedrock, Amazon Q, Prompt Engineering",
+    "outcome": "Students build a simple AI-powered application and understand AI services on AWS.",
+    "overview": "An introductory session on deploying artificial intelligence workloads using Amazon Bedrock and AWS AI tools.",
+    "format": "Guided Lab & Technical Session",
+    "whatYouWillLearn": [
+      "Foundations of Generative AI on AWS architecture",
+      "Exploring model endpoint scaling with Amazon Bedrock",
+      "Automating developer workflows using Amazon Q assistants",
+      "Designing efficient prompt workflows for foundation models"
+    ],
+    "status": "Planned",
+    "date": "November 2026",
+    "time": "TBA",
+    "venue": "TBA",
+    "speaker": "TBA",
+    "registrationLink": "",
+    "image": ""
+  },
+  {
+    "id": "event-04",
+    "number": "Event 04",
+    "month": "January",
+    "title": "Build Modern Applications with AWS (Serverless)",
+    "focus": "AWS Lambda, API Gateway, S3 Events, Event-Driven Architecture",
+    "outcome": "Students create their first serverless application and learn modern cloud architecture.",
+    "overview": "Deploying event-driven serverless architectures to handle dynamic web APIs without server management.",
+    "format": "Developer Build Session",
+    "whatYouWillLearn": [
+      "Writing serverless microservices inside AWS Lambda",
+      "Designing API routes using Amazon API Gateway endpoints",
+      "Triggering functions from Amazon S3 storage events",
+      "Scaling database connections under event-driven architectures"
+    ],
+    "status": "Planned",
+    "date": "January 2027",
+    "time": "TBA",
+    "venue": "TBA",
+    "speaker": "TBA",
+    "registrationLink": "",
+    "image": ""
+  },
+  {
+    "id": "event-05",
+    "number": "Event 05",
+    "month": "February",
+    "title": "AWS Cloud Practitioner Certification Workshop & Mock Exam",
+    "focus": "Certification Strategy, AWS Service Revision, Mock Test, Career Guidance",
+    "outcome": "Students assess their certification readiness and create a structured learning plan.",
+    "overview": "A guided exam readiness cohort covering AWS security, core services, support tiers, and pricing models.",
+    "format": "Certification Preparation & Mock Review",
+    "whatYouWillLearn": [
+      "Detailed breakdown of the AWS Certified Cloud Practitioner domains",
+      "Revising VPC structures, security groups, and billing models",
+      "Attempting mock questions and reviewing incorrect answers",
+      "Career guidance and certification discount strategies"
+    ],
+    "status": "Planned",
+    "date": "February 2027",
+    "time": "TBA",
+    "venue": "TBA",
+    "speaker": "TBA",
+    "registrationLink": "",
+    "image": ""
+  },
+  {
+    "id": "event-06",
+    "number": "Event 06",
+    "month": "April",
+    "title": "AWS Buildathon",
+    "focus": "Team-Based Innovation, AWS Services, AI, Cloud Solutions, Project Presentation",
+    "outcome": "Students build and present a real-world cloud solution using AWS services.",
+    "overview": "A team hackathon where students collaborate to design, develop, and present cloud-based prototypes.",
+    "format": "Team Innovation Hackathon",
+    "whatYouWillLearn": [
+      "Architecting cloud-native solutions in response to real-world prompts",
+      "Integrating AWS databases, AI, and backend services under time constraints",
+      "Working in cross-functional student engineering teams",
+      "Presenting architectural diagrams to peer panels"
+    ],
+    "status": "Planned",
+    "date": "April 2027",
+    "time": "TBA",
+    "venue": "TBA",
+    "speaker": "TBA",
+    "registrationLink": "",
+    "image": ""
+  }
+]

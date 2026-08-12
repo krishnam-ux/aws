@@ -1,0 +1,22 @@
+[
+  {
+    "id": "res-01",
+    "title": "AWS Ramp-Up Guide: Cloud Practitioner",
+    "description": "Comprehensive pathway to preparing for your first AWS foundational certification.",
+    "category": "AWS Cloud",
+    "difficulty": "Beginner",
+    "officialSource": "AWS Training",
+    "url": "https://aws.amazon.com/training/ramp-up-guides/",
+    "status": "Published"
+  },
+  {
+    "id": "res-02",
+    "title": "Amazon Bedrock Foundations",
+    "description": "A developer guide to orchestrating generative AI pipelines and security models.",
+    "category": "Generative AI",
+    "difficulty": "Intermediate",
+    "officialSource": "AWS Builders",
+    "url": "https://aws.amazon.com/bedrock/",
+    "status": "Published"
+  }
+]
