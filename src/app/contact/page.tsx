@@ -14,13 +14,45 @@ export default function Contact() {
   const [submitted, setSubmitted] = useState(false);
   const [consent, setConsent] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!consent) {
       alert('Please read and accept the data privacy notice before submitting.');
       return;
     }
-    setSubmitted(true);
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          organization: 'Student / Visitor',
+          type: formData.subject,
+          message: formData.message
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setSubmitted(true);
+      } else {
+        setError(data.error || 'Failed to send message. Please try again.');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('A network error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -87,35 +119,35 @@ export default function Contact() {
         {/* Contact Form (RHS) */}
         <div className="lg:col-span-7">
           {submitted ? (
-            <div className="tech-card rounded-lg p-8 sm:p-10 text-center space-y-6 bg-white border border-slate-200">
+            <div className="tech-card rounded-lg p-8 sm:p-10 text-center space-y-6 bg-white border border-slate-200 shadow-sm">
               <div className="mx-auto h-12 w-12 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center">
                 <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l8-4a2 2 0 011.78 0l8 4A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
                 </svg>
               </div>
-              <h3 className="font-display font-bold text-slate-900 text-lg">Message Processed</h3>
-              <p className="text-xs text-slate-600 font-sans leading-relaxed">
-                Thank you, <strong className="text-slate-800">{formData.name}</strong>. Your message details have been validated.
+              <h3 className="font-display font-bold text-slate-900 text-lg">Message Sent</h3>
+              <p className="text-xs text-slate-650 font-sans leading-relaxed">
+                Thank you, <strong className="text-slate-800">{formData.name}</strong>. Your inquiry has been successfully delivered to our community team.
               </p>
 
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-5 text-left text-xs text-amber-800 font-sans space-y-2">
-                <p className="font-bold">⚠️ Backend Routing Unconfigured</p>
-                <p>
-                  This staging site does not currently process contact submissions on a database, as no API endpoint backend is active. 
-                </p>
-                <p>
-                  Please submit your inquiry directly to our community coordinator via email at: <br />
-                  <a href={siteConfig.safeEmailLink} className="underline text-brand-navy font-semibold font-mono block mt-1 hover:text-aws-orange">
-                    {siteConfig.email}
-                  </a>
-                </p>
-              </div>
+              <p className="text-xs text-slate-500 font-sans leading-relaxed">
+                Our student coordinators will review your submission and reply to you at <strong className="text-slate-800">{formData.email}</strong> as soon as possible.
+              </p>
 
               <button
-                onClick={() => setSubmitted(false)}
+                onClick={() => {
+                  setSubmitted(false);
+                  setFormData({
+                    name: '',
+                    email: '',
+                    subject: '',
+                    message: '',
+                  });
+                  setConsent(false);
+                }}
                 className="btn-secondary py-2 text-xs"
               >
-                Go Back / Write Again
+                Send Another Message
               </button>
             </div>
           ) : (
@@ -200,11 +232,30 @@ export default function Contact() {
                 </label>
               </div>
 
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded text-red-650 text-xs font-sans">
+                  {error}
+                </div>
+              )}
+
               <button
                 type="submit"
-                className="w-full btn-primary py-3"
+                disabled={loading}
+                className={`w-full btn-primary py-3 flex items-center justify-center space-x-2 ${
+                  loading ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
               >
-                Send Message
+                {loading ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-brand-navy" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Sending...</span>
+                  </>
+                ) : (
+                  'Send Message'
+                )}
               </button>
             </form>
           )}

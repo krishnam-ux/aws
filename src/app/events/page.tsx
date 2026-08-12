@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { siteConfig } from '@/data/siteConfig';
 
 interface CommunityEvent {
@@ -12,13 +12,21 @@ interface CommunityEvent {
   overview: string;
   format: string;
   whatYouWillLearn: string[];
+  status?: string;
+  date?: string;
+  time?: string;
+  venue?: string;
+  speaker?: string;
+  registrationLink?: string;
+  image?: string;
 }
 
 export default function Events() {
   const [activeTab, setActiveTab] = useState<'Upcoming' | 'Ongoing' | 'Completed'>('Upcoming');
   const [selectedEvent, setSelectedEvent] = useState<CommunityEvent | null>(null);
+  const [eventsList, setEventsList] = useState<CommunityEvent[]>([]);
 
-  const upcomingEvents: CommunityEvent[] = [
+  const staticEvents: CommunityEvent[] = [
     {
       number: 'Event 01',
       month: 'August',
@@ -32,7 +40,8 @@ export default function Events() {
         'Introduction to the global AWS Cloud ecosystem',
         'Getting started with AWS Skill Builder learning resources',
         'Setting up your cloud learning dashboard'
-      ]
+      ],
+      status: 'Planned'
     },
     {
       number: 'Event 02',
@@ -47,7 +56,8 @@ export default function Events() {
         'Setting up secure storage containers using Amazon S3',
         'Deploying a static web application to public endpoints',
         'Implementing Identity Access Management (IAM) permissions'
-      ]
+      ],
+      status: 'Planned'
     },
     {
       number: 'Event 03',
@@ -62,7 +72,8 @@ export default function Events() {
         'Exploring model endpoint scaling with Amazon Bedrock',
         'Automating developer workflows using Amazon Q assistants',
         'Designing efficient prompt workflows for foundation models'
-      ]
+      ],
+      status: 'Planned'
     },
     {
       number: 'Event 04',
@@ -77,7 +88,8 @@ export default function Events() {
         'Designing API routes using Amazon API Gateway endpoints',
         'Triggering functions from Amazon S3 storage events',
         'Scaling database connections under event-driven architectures'
-      ]
+      ],
+      status: 'Planned'
     },
     {
       number: 'Event 05',
@@ -92,7 +104,8 @@ export default function Events() {
         'Revising VPC structures, security groups, and billing models',
         'Attempting mock questions and reviewing incorrect answers',
         'Career guidance and certification discount strategies'
-      ]
+      ],
+      status: 'Planned'
     },
     {
       number: 'Event 06',
@@ -107,9 +120,33 @@ export default function Events() {
         'Integrating AWS databases, AI, and backend services under time constraints',
         'Working in cross-functional student engineering teams',
         'Presenting architectural diagrams to peer panels'
-      ]
+      ],
+      status: 'Planned'
     }
   ];
+
+  useEffect(() => {
+    async function loadEvents() {
+      try {
+        const response = await fetch('/api/events');
+        if (response.ok) {
+          const data = await response.json();
+          if (data && Array.isArray(data) && data.length > 0) {
+            setEventsList(data);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load events dynamically', err);
+      }
+      setEventsList(staticEvents);
+    }
+    loadEvents();
+  }, []);
+
+  const upcomingFiltered = eventsList.filter(e => e.status === 'Planned' || e.status === 'Upcoming');
+  const ongoingFiltered = eventsList.filter(e => e.status === 'Ongoing');
+  const completedFiltered = eventsList.filter(e => e.status === 'Completed' || e.status === 'Cancelled');
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 space-y-16">
@@ -138,7 +175,7 @@ export default function Events() {
                   className={`py-4 px-1 border-b-2 font-display font-bold text-xs uppercase tracking-wider cursor-pointer transition-colors ${
                     isActive
                       ? 'border-aws-orange text-aws-orange'
-                      : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                      : 'border-transparent text-slate-505 hover:text-slate-700 hover:border-slate-300'
                   }`}
                 >
                   {tab}
@@ -151,64 +188,168 @@ export default function Events() {
         {/* Tab Contents */}
         <div className="py-6">
           {activeTab === 'Upcoming' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {upcomingEvents.map((event, idx) => (
-                <div
-                  key={idx}
-                  className="group relative rounded-lg p-6 bg-white border border-slate-200 shadow-sm flex flex-col justify-between h-full hover:border-aws-orange transition-all duration-200"
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="inline-flex px-2 py-0.5 rounded text-[8px] font-bold font-sans uppercase tracking-wider bg-orange-50 border border-orange-200 text-aws-orange">
-                        PLANNED / UPCOMING
-                      </span>
-                      <span className="text-[10px] font-mono text-slate-400 font-bold">{event.number}</span>
+            upcomingFiltered.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {upcomingFiltered.map((event, idx) => (
+                  <div
+                    key={idx}
+                    className="group relative rounded-lg p-6 bg-white border border-slate-200 shadow-sm flex flex-col justify-between h-full hover:border-aws-orange transition-all duration-200"
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="inline-flex px-2 py-0.5 rounded text-[8px] font-bold font-sans uppercase tracking-wider bg-orange-50 border border-orange-200 text-aws-orange">
+                          PLANNED / UPCOMING
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-400 font-bold">{event.number}</span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block font-display">
+                          {event.month}
+                        </span>
+                        <h3 className="font-display font-bold text-base text-slate-900 leading-snug group-hover:text-brand-navy transition-colors">
+                          {event.title}
+                        </h3>
+                      </div>
+
+                      <div className="h-[1px] w-full bg-slate-100"></div>
+
+                      <div className="space-y-2 text-xs font-sans">
+                        <p className="text-slate-700">
+                          <strong className="text-slate-900 font-medium">Key Focus:</strong> {event.focus}
+                        </p>
+                        <p className="text-slate-500 italic leading-relaxed">
+                          <strong className="text-slate-900 font-medium not-italic">Learning Outcome:</strong> {event.outcome}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block font-display">
-                        {event.month}
-                      </span>
-                      <h3 className="font-display font-bold text-base text-slate-900 leading-snug group-hover:text-brand-navy transition-colors">
-                        {event.title}
-                      </h3>
-                    </div>
-
-                    <div className="h-[1px] w-full bg-slate-100"></div>
-
-                    <div className="space-y-2 text-xs font-sans">
-                      <p className="text-slate-700">
-                        <strong className="text-slate-900 font-medium">Key Focus:</strong> {event.focus}
-                      </p>
-                      <p className="text-slate-505 italic leading-relaxed">
-                        <strong className="text-slate-900 font-medium not-italic">Learning Outcome:</strong> {event.outcome}
-                      </p>
+                    <div className="mt-6 pt-4 border-t border-slate-50">
+                      <button
+                        onClick={() => setSelectedEvent(event)}
+                        className="w-full text-center py-2 text-xs font-semibold rounded border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
+                      >
+                        View Details
+                      </button>
                     </div>
                   </div>
-
-                  <div className="mt-6 pt-4 border-t border-slate-50">
-                    <button
-                      onClick={() => setSelectedEvent(event)}
-                      className="w-full text-center py-2 text-xs font-semibold rounded border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
-                    >
-                      View Details
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg p-8 text-center bg-slate-50 border border-slate-200 max-w-md mx-auto">
+                <p className="text-xs text-slate-500 font-sans">No upcoming community sessions are currently scheduled.</p>
+              </div>
+            )
           )}
 
           {activeTab === 'Ongoing' && (
-            <div className="rounded-lg p-8 text-center bg-slate-50 border border-slate-200 max-w-md mx-auto">
-              <p className="text-xs text-slate-500 font-sans">No live or ongoing sessions are currently active.</p>
-            </div>
+            ongoingFiltered.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {ongoingFiltered.map((event, idx) => (
+                  <div
+                    key={idx}
+                    className="group relative rounded-lg p-6 bg-white border border-slate-200 shadow-sm flex flex-col justify-between h-full hover:border-aws-orange transition-all duration-200"
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="inline-flex px-2 py-0.5 rounded text-[8px] font-bold font-sans uppercase tracking-wider bg-orange-50 border border-orange-200 text-aws-orange">
+                          LIVE / ONGOING
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-400 font-bold">{event.number}</span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block font-display">
+                          {event.month}
+                        </span>
+                        <h3 className="font-display font-bold text-base text-slate-900 leading-snug group-hover:text-brand-navy transition-colors">
+                          {event.title}
+                        </h3>
+                      </div>
+
+                      <div className="h-[1px] w-full bg-slate-100"></div>
+
+                      <div className="space-y-2 text-xs font-sans">
+                        <p className="text-slate-700">
+                          <strong className="text-slate-900 font-medium">Key Focus:</strong> {event.focus}
+                        </p>
+                        <p className="text-slate-500 italic leading-relaxed">
+                          <strong className="text-slate-900 font-medium not-italic">Learning Outcome:</strong> {event.outcome}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 pt-4 border-t border-slate-50">
+                      <button
+                        onClick={() => setSelectedEvent(event)}
+                        className="w-full text-center py-2 text-xs font-semibold rounded border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg p-8 text-center bg-slate-50 border border-slate-200 max-w-md mx-auto">
+                <p className="text-xs text-slate-500 font-sans">No live or ongoing sessions are currently active.</p>
+              </div>
+            )
           )}
 
           {activeTab === 'Completed' && (
-            <div className="rounded-lg p-8 text-center bg-slate-50 border border-slate-200 max-w-md mx-auto">
-              <p className="text-xs text-slate-500 font-sans">Completed session logs will populate our community archive post-launch.</p>
-            </div>
+            completedFiltered.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {completedFiltered.map((event, idx) => (
+                  <div
+                    key={idx}
+                    className="group relative rounded-lg p-6 bg-white border border-slate-200 shadow-sm flex flex-col justify-between h-full hover:border-aws-orange transition-all duration-200"
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="inline-flex px-2 py-0.5 rounded text-[8px] font-bold font-sans uppercase tracking-wider bg-slate-100 border border-slate-200 text-slate-500">
+                          {event.status === 'Cancelled' ? 'CANCELLED' : 'COMPLETED'}
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-400 font-bold">{event.number}</span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-slate-505 uppercase tracking-widest block font-display">
+                          {event.month}
+                        </span>
+                        <h3 className="font-display font-bold text-base text-slate-900 leading-snug group-hover:text-brand-navy transition-colors">
+                          {event.title}
+                        </h3>
+                      </div>
+
+                      <div className="h-[1px] w-full bg-slate-100"></div>
+
+                      <div className="space-y-2 text-xs font-sans">
+                        <p className="text-slate-700">
+                          <strong className="text-slate-900 font-medium">Key Focus:</strong> {event.focus}
+                        </p>
+                        <p className="text-slate-500 italic leading-relaxed">
+                          <strong className="text-slate-900 font-medium not-italic">Learning Outcome:</strong> {event.outcome}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 pt-4 border-t border-slate-50">
+                      <button
+                        onClick={() => setSelectedEvent(event)}
+                        className="w-full text-center py-2 text-xs font-semibold rounded border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg p-8 text-center bg-slate-50 border border-slate-200 max-w-md mx-auto">
+                <p className="text-xs text-slate-500 font-sans">Completed session logs will populate our community archive post-launch.</p>
+              </div>
+            )
           )}
         </div>
       </section>
@@ -222,7 +363,7 @@ export default function Events() {
               <div className="space-y-1.5">
                 <div className="flex items-center space-x-2">
                   <span className="inline-flex px-2 py-0.5 rounded text-[8px] font-bold font-sans uppercase tracking-wider bg-orange-50 border border-orange-200 text-aws-orange">
-                    Planned / Upcoming
+                    {selectedEvent.status || 'Planned / Upcoming'}
                   </span>
                   <span className="text-[10px] font-mono text-slate-400 font-bold">{selectedEvent.number}</span>
                 </div>
@@ -250,36 +391,46 @@ export default function Events() {
             <div className="space-y-4 text-xs font-sans">
               <div className="space-y-1">
                 <h4 className="font-semibold text-slate-900">Event Overview</h4>
-                <p className="text-slate-650 leading-relaxed">{selectedEvent.overview}</p>
+                <p className="text-slate-600 leading-relaxed">{selectedEvent.overview || 'Details will be announced soon.'}</p>
               </div>
 
               <div className="space-y-1">
                 <h4 className="font-semibold text-slate-900">Key Focus Topics</h4>
-                <p className="text-slate-650 leading-relaxed">{selectedEvent.focus}</p>
+                <p className="text-slate-600 leading-relaxed">{selectedEvent.focus}</p>
               </div>
 
               <div className="space-y-1">
                 <h4 className="font-semibold text-slate-900">Learning Outcome</h4>
-                <p className="text-slate-650 italic leading-relaxed">{selectedEvent.outcome}</p>
+                <p className="text-slate-600 italic leading-relaxed">{selectedEvent.outcome}</p>
               </div>
 
-              <div className="space-y-1.5">
-                <h4 className="font-semibold text-slate-900">What You Will Learn</h4>
-                <ul className="list-disc pl-4 space-y-1 text-slate-600">
-                  {selectedEvent.whatYouWillLearn.map((item, idx) => (
-                    <li key={idx}>{item}</li>
-                  ))}
-                </ul>
-              </div>
+              {selectedEvent.whatYouWillLearn && selectedEvent.whatYouWillLearn.length > 0 && (
+                <div className="space-y-1.5">
+                  <h4 className="font-semibold text-slate-900">What You Will Learn</h4>
+                  <ul className="list-disc pl-4 space-y-1 text-slate-600">
+                    {selectedEvent.whatYouWillLearn.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
                 <div className="space-y-1">
                   <h4 className="font-semibold text-slate-900">Event Format</h4>
-                  <p className="text-slate-700 font-semibold">{selectedEvent.format}</p>
+                  <p className="text-slate-700 font-semibold">{selectedEvent.format || 'Details will be announced soon.'}</p>
                 </div>
                 <div className="space-y-1">
                   <h4 className="font-semibold text-slate-900">Registration Status</h4>
-                  <p className="text-aws-orange font-bold">Details will be announced soon.</p>
+                  <p className="text-aws-orange font-bold">
+                    {selectedEvent.registrationLink ? (
+                      <a href={selectedEvent.registrationLink} target="_blank" rel="noopener noreferrer" className="underline hover:text-brand-navy">
+                        Register Now
+                      </a>
+                    ) : (
+                      'Details will be announced soon.'
+                    )}
+                  </p>
                 </div>
               </div>
             </div>

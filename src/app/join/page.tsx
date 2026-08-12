@@ -37,13 +37,48 @@ export default function Join() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!consent) {
       alert('Please agree to the privacy statement and data usage terms before registering.');
       return;
     }
-    setSubmitted(true);
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/join', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.fullName,
+          email: formData.email,
+          university: formData.university,
+          program: formData.program,
+          year: formData.year,
+          experience: formData.experienceLevel,
+          interests: interests,
+          consent: consent
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setSubmitted(true);
+      } else {
+        setError(data.error || 'Failed to submit registration. Please try again.');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('A network error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -54,45 +89,49 @@ export default function Join() {
         <h1 className="font-display font-extrabold text-3xl text-brand-navy tracking-tight">
           Join the Community
         </h1>
-        <p className="text-slate-500 font-sans text-xs sm:text-sm leading-relaxed">
+        <p className="text-slate-505 font-sans text-xs sm:text-sm leading-relaxed">
           Students interested in cloud computing, AI, data, DevOps and emerging technologies are welcome to connect with the community.
         </p>
       </section>
 
       {submitted ? (
-        <div className="tech-card rounded-lg p-8 sm:p-12 text-center space-y-6 max-w-xl mx-auto bg-white border border-slate-200">
+        <div className="tech-card rounded-lg p-8 sm:p-12 text-center space-y-6 max-w-xl mx-auto bg-white border border-slate-200 shadow-sm">
           <div className="mx-auto h-12 w-12 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center">
             <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h3 className="font-display font-bold text-slate-900 text-lg">Registration Form Processed</h3>
-          <p className="text-xs text-slate-600 font-sans leading-relaxed">
-            Thank you, <strong className="text-slate-800">{formData.fullName}</strong>. Your registration details have been validated.
+          <h3 className="font-display font-bold text-slate-900 text-lg">Registration Submitted</h3>
+          <p className="text-xs text-slate-650 font-sans leading-relaxed">
+            Thank you, <strong className="text-slate-800">{formData.fullName}</strong>. Your registration has been successfully recorded in the community database.
           </p>
 
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-5 text-left text-xs text-amber-800 font-sans space-y-2">
-            <p className="font-bold">⚠️ Backend Configuration Required</p>
-            <p>
-              This website is a community-managed frontend prototype. Submission data has not been sent to any cloud database because a secure database backend is not configured for this staging build.
-            </p>
-            <p>
-              To complete your community onboarding officially, please forward your registration details or contact us directly at: <br />
-              <a href={siteConfig.safeEmailLink} className="underline text-brand-navy font-semibold font-mono block mt-1 hover:text-aws-orange">
-                {siteConfig.email}
-              </a>
-            </p>
-          </div>
+          <p className="text-xs text-slate-500 font-sans leading-relaxed">
+            The community organizers will review your details and reach out to you at <strong className="text-slate-800">{formData.email}</strong> shortly.
+          </p>
 
           <button
-            onClick={() => setSubmitted(false)}
+            onClick={() => {
+              setSubmitted(false);
+              setFormData({
+                fullName: '',
+                email: '',
+                university: 'Chandigarh University – Uttar Pradesh',
+                program: '',
+                year: '1st Year',
+                experienceLevel: 'Beginner',
+                message: '',
+              });
+              setInterests([]);
+              setConsent(false);
+            }}
             className="btn-secondary py-2 text-xs"
           >
-            Go Back / Edit Details
+            Submit Another Registration
           </button>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="tech-card rounded-lg p-6 sm:p-10 space-y-6 max-w-2xl mx-auto bg-white border border-slate-200">
+        <form onSubmit={handleSubmit} className="tech-card rounded-lg p-6 sm:p-10 space-y-6 max-w-2xl mx-auto bg-white border border-slate-200 shadow-sm">
           {/* General Fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="space-y-1.5">
@@ -250,13 +289,32 @@ export default function Join() {
             </label>
           </div>
 
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded text-red-650 text-xs font-sans">
+              {error}
+            </div>
+          )}
+
           {/* Submit Button */}
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full btn-primary py-3"
+              disabled={loading}
+              className={`w-full btn-primary py-3 flex items-center justify-center space-x-2 ${
+                loading ? 'opacity-70 cursor-not-allowed' : ''
+              }`}
             >
-              Submit Registration
+              {loading ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 text-brand-navy" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span>Submitting...</span>
+                </>
+              ) : (
+                'Submit Registration'
+              )}
             </button>
           </div>
         </form>

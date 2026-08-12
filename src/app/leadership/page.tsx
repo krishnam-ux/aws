@@ -1,6 +1,16 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { siteConfig } from '@/data/siteConfig';
-import SectionHeader from '@/components/SectionHeader';
+
+interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  initials: string;
+  displayOrder: number;
+}
 
 // Reusable custom initials avatar component
 function InitialsAvatar({ name }: { name: string }) {
@@ -14,13 +24,42 @@ function InitialsAvatar({ name }: { name: string }) {
     .toUpperCase();
 
   return (
-    <div className="h-12 w-12 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-display font-extrabold text-sm text-brand-navy flex-shrink-0">
+    <div className="h-12 w-12 rounded bg-slate-105 border border-slate-200 flex items-center justify-center font-display font-extrabold text-sm text-brand-navy flex-shrink-0">
       {initials}
     </div>
   );
 }
 
 export default function Leadership() {
+  const [teamList, setTeamList] = useState<TeamMember[]>([]);
+
+  const defaultTeam: TeamMember[] = [
+    { id: 'team-krishnam', name: 'Krishnam', role: 'Technical Lead, Cloud & Infrastructure', initials: 'K', displayOrder: 1 },
+    { id: 'team-ayush', name: 'Ayush Pandey', role: 'Events & Operations Lead', initials: 'AP', displayOrder: 2 },
+    { id: 'team-priyanshu', name: 'Priyanshu Kumar', role: 'Marketing & Community Outreach Lead', initials: 'PK', displayOrder: 3 },
+    { id: 'team-aakarshan', name: 'Aakarshan Agnihotri', role: 'Content & Documentation Lead', initials: 'AA', displayOrder: 4 },
+    { id: 'team-ananya', name: 'Ananya Shukla', role: 'Design & Creative Lead', initials: 'AS', displayOrder: 5 }
+  ];
+
+  useEffect(() => {
+    async function loadTeam() {
+      try {
+        const response = await fetch('/api/team');
+        if (response.ok) {
+          const data = await response.json();
+          if (data && Array.isArray(data) && data.length > 0) {
+            setTeamList(data);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load team dynamically', err);
+      }
+      setTeamList(defaultTeam);
+    }
+    loadTeam();
+  }, []);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 space-y-16">
       {/* Introduction */}
@@ -48,7 +87,7 @@ export default function Leadership() {
                 <p className="text-[10px] text-slate-500 font-sans">{siteConfig.leader.organization}</p>
               </div>
             </div>
-            <p className="text-xs text-slate-600 font-sans leading-relaxed">
+            <p className="text-xs text-slate-650 font-sans leading-relaxed">
               {siteConfig.leader.description}
             </p>
           </div>
@@ -68,10 +107,10 @@ export default function Leadership() {
               <div>
                 <span className="text-[9px] uppercase font-bold tracking-widest text-slate-400 font-display block">Faculty Advisory</span>
                 <h3 className="font-display font-bold text-base text-slate-900 mt-0.5">{siteConfig.facultyContact.name}</h3>
-                <p className="text-[10px] text-slate-500 font-sans">{siteConfig.facultyContact.department}</p>
+                <p className="text-[10px] text-slate-505 font-sans">{siteConfig.facultyContact.department}</p>
               </div>
             </div>
-            <p className="text-xs text-slate-600 font-sans leading-relaxed">
+            <p className="text-xs text-slate-650 font-sans leading-relaxed">
               {siteConfig.facultyContact.description}
             </p>
           </div>
@@ -97,65 +136,21 @@ export default function Leadership() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
-          {/* Krishnam */}
-          <div className="group rounded-lg p-6 bg-slate-50 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-aws-orange">
-            <div className="flex flex-col items-center">
-              <div className="h-14 w-14 rounded-full bg-white border border-slate-200 flex items-center justify-center font-display font-extrabold text-sm text-brand-navy flex-shrink-0 mx-auto">
-                K
+          {teamList.map((member) => (
+            <div
+              key={member.id}
+              className="group rounded-lg p-6 bg-slate-55 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-aws-orange"
+            >
+              <div className="flex flex-col items-center">
+                <div className="h-14 w-14 rounded-full bg-white border border-slate-200 flex items-center justify-center font-display font-extrabold text-sm text-brand-navy flex-shrink-0 mx-auto">
+                  {member.initials}
+                </div>
+                <div className="w-6 h-[2px] bg-aws-orange mx-auto my-3"></div>
+                <h4 className="font-display font-semibold text-[17px] text-slate-900">{member.name}</h4>
               </div>
-              <div className="w-6 h-[2px] bg-aws-orange mx-auto my-3"></div>
-              <h4 className="font-display font-semibold text-[17px] text-slate-900">Krishnam</h4>
+              <p className="text-[13px] text-slate-500 font-sans mt-2">{member.role}</p>
             </div>
-            <p className="text-[13px] text-slate-500 font-sans mt-2">Technical Lead, Cloud & Infrastructure</p>
-          </div>
-
-          {/* Ayush Pandey */}
-          <div className="group rounded-lg p-6 bg-slate-50 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-aws-orange">
-            <div className="flex flex-col items-center">
-              <div className="h-14 w-14 rounded-full bg-white border border-slate-200 flex items-center justify-center font-display font-extrabold text-sm text-brand-navy flex-shrink-0 mx-auto">
-                AP
-              </div>
-              <div className="w-6 h-[2px] bg-aws-orange mx-auto my-3"></div>
-              <h4 className="font-display font-semibold text-[17px] text-slate-900">Ayush Pandey</h4>
-            </div>
-            <p className="text-[13px] text-slate-500 font-sans mt-2">Events & Operations Lead</p>
-          </div>
-
-          {/* Priyanshu Kumar */}
-          <div className="group rounded-lg p-6 bg-slate-50 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-aws-orange">
-            <div className="flex flex-col items-center">
-              <div className="h-14 w-14 rounded-full bg-white border border-slate-200 flex items-center justify-center font-display font-extrabold text-sm text-brand-navy flex-shrink-0 mx-auto">
-                PK
-              </div>
-              <div className="w-6 h-[2px] bg-aws-orange mx-auto my-3"></div>
-              <h4 className="font-display font-semibold text-[17px] text-slate-900">Priyanshu Kumar</h4>
-            </div>
-            <p className="text-[13px] text-slate-500 font-sans mt-2">Marketing & Community Outreach Lead</p>
-          </div>
-
-          {/* Aakarshan Agnihotri */}
-          <div className="group rounded-lg p-6 bg-slate-50 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-aws-orange">
-            <div className="flex flex-col items-center">
-              <div className="h-14 w-14 rounded-full bg-white border border-slate-200 flex items-center justify-center font-display font-extrabold text-sm text-brand-navy flex-shrink-0 mx-auto">
-                AA
-              </div>
-              <div className="w-6 h-[2px] bg-aws-orange mx-auto my-3"></div>
-              <h4 className="font-display font-semibold text-[17px] text-slate-900">Aakarshan Agnihotri</h4>
-            </div>
-            <p className="text-[13px] text-slate-500 font-sans mt-2">Content & Documentation Lead</p>
-          </div>
-
-          {/* Ananya Shukla */}
-          <div className="group rounded-lg p-6 bg-slate-50 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-aws-orange">
-            <div className="flex flex-col items-center">
-              <div className="h-14 w-14 rounded-full bg-white border border-slate-200 flex items-center justify-center font-display font-extrabold text-sm text-brand-navy flex-shrink-0 mx-auto">
-                AS
-              </div>
-              <div className="w-6 h-[2px] bg-aws-orange mx-auto my-3"></div>
-              <h4 className="font-display font-semibold text-[17px] text-slate-900">Ananya Shukla</h4>
-            </div>
-            <p className="text-[13px] text-slate-500 font-sans mt-2">Design & Creative Lead</p>
-          </div>
+          ))}
         </div>
       </section>
 
