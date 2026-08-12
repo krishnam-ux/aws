@@ -9,10 +9,14 @@ interface CommunityEvent {
   title: string;
   focus: string;
   outcome: string;
+  overview: string;
+  format: string;
+  whatYouWillLearn: string[];
 }
 
 export default function Events() {
   const [activeTab, setActiveTab] = useState<'Upcoming' | 'Ongoing' | 'Completed'>('Upcoming');
+  const [selectedEvent, setSelectedEvent] = useState<CommunityEvent | null>(null);
 
   const upcomingEvents: CommunityEvent[] = [
     {
@@ -20,42 +24,90 @@ export default function Events() {
       month: 'August',
       title: 'AWS Student Builder Group Inauguration & Cloud Kickstart',
       focus: 'Community Launch, Cloud Computing, AWS Fundamentals, Live Demo',
-      outcome: 'Students understand cloud fundamentals, join the community, and create an AWS Skill Builder account.'
+      outcome: 'Students understand cloud fundamentals, join the community, and create an AWS Skill Builder account.',
+      overview: 'The official launch event introducing students to the AWS Student Builder Group community and exploring the path to cloud learning.',
+      format: 'Community Inaugural & Keynote Kickstart',
+      whatYouWillLearn: [
+        'AWS Student Builder Group vision and local roadmap',
+        'Introduction to the global AWS Cloud ecosystem',
+        'Getting started with AWS Skill Builder learning resources',
+        'Setting up your cloud learning dashboard'
+      ]
     },
     {
       number: 'Event 02',
       month: 'September',
       title: 'AWS Core Services Workshop',
       focus: 'IAM, EC2, S3, AWS Console, Static Website Hosting',
-      outcome: 'Students deploy their first static website on AWS and understand core AWS services.'
+      outcome: 'Students deploy their first static website on AWS and understand core AWS services.',
+      overview: 'A hands-on technical workshop focused on the core AWS infrastructure components and console administration.',
+      format: 'Hands-on Technical Workshop',
+      whatYouWillLearn: [
+        'Designing virtual compute instances with Amazon EC2',
+        'Setting up secure storage containers using Amazon S3',
+        'Deploying a static web application to public endpoints',
+        'Implementing Identity Access Management (IAM) permissions'
+      ]
     },
     {
       number: 'Event 03',
       month: 'November',
       title: 'Build with AI on AWS',
       focus: 'Generative AI, Amazon Bedrock, Amazon Q, Prompt Engineering',
-      outcome: 'Students build a simple AI-powered application and understand AI services on AWS.'
+      outcome: 'Students build a simple AI-powered application and understand AI services on AWS.',
+      overview: 'An introductory session on deploying artificial intelligence workloads using Amazon Bedrock and AWS AI tools.',
+      format: 'Guided Lab & Technical Session',
+      whatYouWillLearn: [
+        'Foundations of Generative AI on AWS architecture',
+        'Exploring model endpoint scaling with Amazon Bedrock',
+        'Automating developer workflows using Amazon Q assistants',
+        'Designing efficient prompt workflows for foundation models'
+      ]
     },
     {
       number: 'Event 04',
       month: 'January',
       title: 'Build Modern Applications with AWS (Serverless)',
       focus: 'AWS Lambda, API Gateway, S3 Events, Event-Driven Architecture',
-      outcome: 'Students create their first serverless application and learn modern cloud architecture.'
+      outcome: 'Students create their first serverless application and learn modern cloud architecture.',
+      overview: 'Deploying event-driven serverless architectures to handle dynamic web APIs without server management.',
+      format: 'Developer Build Session',
+      whatYouWillLearn: [
+        'Writing serverless microservices inside AWS Lambda',
+        'Designing API routes using Amazon API Gateway endpoints',
+        'Triggering functions from Amazon S3 storage events',
+        'Scaling database connections under event-driven architectures'
+      ]
     },
     {
       number: 'Event 05',
       month: 'February',
       title: 'AWS Cloud Practitioner Certification Workshop & Mock Exam',
       focus: 'Certification Strategy, AWS Service Revision, Mock Test, Career Guidance',
-      outcome: 'Students assess their certification readiness and create a structured learning plan.'
+      outcome: 'Students assess their certification readiness and create a structured learning plan.',
+      overview: 'A guided exam readiness cohort covering AWS security, core services, support tiers, and pricing models.',
+      format: 'Certification Preparation & Mock Review',
+      whatYouWillLearn: [
+        'Detailed breakdown of the AWS Certified Cloud Practitioner domains',
+        'Revising VPC structures, security groups, and billing models',
+        'Attempting mock questions and reviewing incorrect answers',
+        'Career guidance and certification discount strategies'
+      ]
     },
     {
       number: 'Event 06',
       month: 'April',
       title: 'AWS Buildathon',
       focus: 'Team-Based Innovation, AWS Services, AI, Cloud Solutions, Project Presentation',
-      outcome: 'Students build and present a real-world cloud solution using AWS services.'
+      outcome: 'Students build and present a real-world cloud solution using AWS services.',
+      overview: 'A team hackathon where students collaborate to design, develop, and present cloud-based prototypes.',
+      format: 'Team Innovation Hackathon',
+      whatYouWillLearn: [
+        'Architecting cloud-native solutions in response to real-world prompts',
+        'Integrating AWS databases, AI, and backend services under time constraints',
+        'Working in cross-functional student engineering teams',
+        'Presenting architectural diagrams to peer panels'
+      ]
     }
   ];
 
@@ -68,7 +120,7 @@ export default function Events() {
           Community Events
         </h1>
         <p className="mt-4 text-xs sm:text-sm text-slate-500 font-sans leading-relaxed">
-          Track upcoming technical workshops, builder bootcamps, and cloud learning cohorts.
+          Track upcoming workshops, builder bootcamps, and cloud learning cohorts.
         </p>
         <div className="h-[2px] w-12 bg-aws-orange mt-4"></div>
       </section>
@@ -135,7 +187,10 @@ export default function Events() {
                   </div>
 
                   <div className="mt-6 pt-4 border-t border-slate-50">
-                    <button className="w-full text-center py-2 text-xs font-semibold rounded border border-slate-200 text-slate-500 bg-white hover:bg-slate-50 transition-colors cursor-default">
+                    <button
+                      onClick={() => setSelectedEvent(event)}
+                      className="w-full text-center py-2 text-xs font-semibold rounded border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
+                    >
                       View Details
                     </button>
                   </div>
@@ -157,6 +212,93 @@ export default function Events() {
           )}
         </div>
       </section>
+
+      {/* Event Details Modal */}
+      {selectedEvent && (
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm">
+          <div className="relative bg-white rounded-lg border border-slate-200 shadow-2xl max-w-lg w-full p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto">
+            {/* Top Bar Header */}
+            <div className="flex items-start justify-between">
+              <div className="space-y-1.5">
+                <div className="flex items-center space-x-2">
+                  <span className="inline-flex px-2 py-0.5 rounded text-[8px] font-bold font-sans uppercase tracking-wider bg-orange-50 border border-orange-200 text-aws-orange">
+                    Planned / Upcoming
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-400 font-bold">{selectedEvent.number}</span>
+                </div>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block font-display">
+                  {selectedEvent.month} Schedule
+                </span>
+                <h3 className="font-display font-bold text-lg text-slate-900 leading-snug">
+                  {selectedEvent.title}
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedEvent(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-50 transition-colors"
+                aria-label="Close modal"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="h-[1px] w-full bg-slate-100"></div>
+
+            {/* Event Meta Details */}
+            <div className="space-y-4 text-xs font-sans">
+              <div className="space-y-1">
+                <h4 className="font-semibold text-slate-900">Event Overview</h4>
+                <p className="text-slate-650 leading-relaxed">{selectedEvent.overview}</p>
+              </div>
+
+              <div className="space-y-1">
+                <h4 className="font-semibold text-slate-900">Key Focus Topics</h4>
+                <p className="text-slate-650 leading-relaxed">{selectedEvent.focus}</p>
+              </div>
+
+              <div className="space-y-1">
+                <h4 className="font-semibold text-slate-900">Learning Outcome</h4>
+                <p className="text-slate-650 italic leading-relaxed">{selectedEvent.outcome}</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <h4 className="font-semibold text-slate-900">What You Will Learn</h4>
+                <ul className="list-disc pl-4 space-y-1 text-slate-600">
+                  {selectedEvent.whatYouWillLearn.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                <div className="space-y-1">
+                  <h4 className="font-semibold text-slate-900">Event Format</h4>
+                  <p className="text-slate-700 font-semibold">{selectedEvent.format}</p>
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-semibold text-slate-900">Registration Status</h4>
+                  <p className="text-aws-orange font-bold">Details will be announced soon.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-4">
+              <span className="text-[10px] text-slate-400 font-sans italic">
+                Schedule subject to department approvals.
+              </span>
+              <button
+                onClick={() => setSelectedEvent(null)}
+                className="btn-secondary py-1.5 px-4 text-xs cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Event Schema Framework Reference */}
       <section className="bg-slate-50 border border-slate-200 rounded-lg p-6 sm:p-8 max-w-3xl mx-auto space-y-4">
