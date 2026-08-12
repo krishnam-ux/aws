@@ -401,7 +401,7 @@ export default function AdminDashboard() {
               <div className="flex items-center space-x-3 justify-center">
                 <img
                   src="/aws-logo.svg"
-                  style={{ height: '46px', width: 'auto', objectFit: 'contain' }}
+                  style={{ height: '35px', width: 'auto', objectFit: 'contain' }}
                   className="flex-shrink-0"
                   alt="AWS"
                 />
