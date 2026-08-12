@@ -91,55 +91,70 @@ export default function Leadership() {
           <h2 className="font-display font-extrabold text-2xl text-brand-navy tracking-tight mt-1">
             AWS SBG CU-UP Core Team
           </h2>
-          <p className="mt-2 text-xs text-slate-550 font-sans leading-relaxed">
+          <p className="mt-2 text-xs text-slate-500 font-sans leading-relaxed">
             Our student coordinators manage the execution of learning events, cloud labs, design, and community operations.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
           {/* Krishnam */}
-          <div className="tech-card-new rounded-md p-5 bg-white border border-slate-200 flex flex-col items-center text-center space-y-4">
-            <InitialsAvatar name="Krishnam" />
-            <div>
-              <h4 className="font-display font-bold text-slate-900 text-sm">Krishnam</h4>
-              <p className="text-[11px] text-slate-500 font-sans mt-1">Technical Lead, Cloud & Infrastructure</p>
+          <div className="group rounded-lg p-6 bg-slate-50 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-aws-orange">
+            <div className="flex flex-col items-center">
+              <div className="h-14 w-14 rounded-full bg-white border border-slate-200 flex items-center justify-center font-display font-extrabold text-sm text-brand-navy flex-shrink-0 mx-auto">
+                K
+              </div>
+              <div className="w-6 h-[2px] bg-aws-orange mx-auto my-3"></div>
+              <h4 className="font-display font-semibold text-[17px] text-slate-900">Krishnam</h4>
             </div>
+            <p className="text-[13px] text-slate-500 font-sans mt-2">Technical Lead, Cloud & Infrastructure</p>
           </div>
 
           {/* Ayush Pandey */}
-          <div className="tech-card-new rounded-md p-5 bg-white border border-slate-200 flex flex-col items-center text-center space-y-4">
-            <InitialsAvatar name="Ayush Pandey" />
-            <div>
-              <h4 className="font-display font-bold text-slate-900 text-sm">Ayush Pandey</h4>
-              <p className="text-[11px] text-slate-500 font-sans mt-1">Events & Operations Lead</p>
+          <div className="group rounded-lg p-6 bg-slate-50 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-aws-orange">
+            <div className="flex flex-col items-center">
+              <div className="h-14 w-14 rounded-full bg-white border border-slate-200 flex items-center justify-center font-display font-extrabold text-sm text-brand-navy flex-shrink-0 mx-auto">
+                AP
+              </div>
+              <div className="w-6 h-[2px] bg-aws-orange mx-auto my-3"></div>
+              <h4 className="font-display font-semibold text-[17px] text-slate-900">Ayush Pandey</h4>
             </div>
+            <p className="text-[13px] text-slate-500 font-sans mt-2">Events & Operations Lead</p>
           </div>
 
           {/* Priyanshu Kumar */}
-          <div className="tech-card-new rounded-md p-5 bg-white border border-slate-200 flex flex-col items-center text-center space-y-4">
-            <InitialsAvatar name="Priyanshu Kumar" />
-            <div>
-              <h4 className="font-display font-bold text-slate-900 text-sm">Priyanshu Kumar</h4>
-              <p className="text-[11px] text-slate-500 font-sans mt-1">Marketing & Community Outreach Lead</p>
+          <div className="group rounded-lg p-6 bg-slate-50 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-aws-orange">
+            <div className="flex flex-col items-center">
+              <div className="h-14 w-14 rounded-full bg-white border border-slate-200 flex items-center justify-center font-display font-extrabold text-sm text-brand-navy flex-shrink-0 mx-auto">
+                PK
+              </div>
+              <div className="w-6 h-[2px] bg-aws-orange mx-auto my-3"></div>
+              <h4 className="font-display font-semibold text-[17px] text-slate-900">Priyanshu Kumar</h4>
             </div>
+            <p className="text-[13px] text-slate-500 font-sans mt-2">Marketing & Community Outreach Lead</p>
           </div>
 
           {/* Aakarshan Agnihotri */}
-          <div className="tech-card-new rounded-md p-5 bg-white border border-slate-200 flex flex-col items-center text-center space-y-4">
-            <InitialsAvatar name="Aakarshan Agnihotri" />
-            <div>
-              <h4 className="font-display font-bold text-slate-900 text-sm">Aakarshan Agnihotri</h4>
-              <p className="text-[11px] text-slate-500 font-sans mt-1">Content & Documentation Lead</p>
+          <div className="group rounded-lg p-6 bg-slate-50 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-aws-orange">
+            <div className="flex flex-col items-center">
+              <div className="h-14 w-14 rounded-full bg-white border border-slate-200 flex items-center justify-center font-display font-extrabold text-sm text-brand-navy flex-shrink-0 mx-auto">
+                AA
+              </div>
+              <div className="w-6 h-[2px] bg-aws-orange mx-auto my-3"></div>
+              <h4 className="font-display font-semibold text-[17px] text-slate-900">Aakarshan Agnihotri</h4>
             </div>
+            <p className="text-[13px] text-slate-500 font-sans mt-2">Content & Documentation Lead</p>
           </div>
 
           {/* Ananya Shukla */}
-          <div className="tech-card-new rounded-md p-5 bg-white border border-slate-200 flex flex-col items-center text-center space-y-4">
-            <InitialsAvatar name="Ananya Shukla" />
-            <div>
-              <h4 className="font-display font-bold text-slate-900 text-sm">Ananya Shukla</h4>
-              <p className="text-[11px] text-slate-500 font-sans mt-1">Design & Creative Lead</p>
+          <div className="group rounded-lg p-6 bg-slate-50 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-aws-orange">
+            <div className="flex flex-col items-center">
+              <div className="h-14 w-14 rounded-full bg-white border border-slate-200 flex items-center justify-center font-display font-extrabold text-sm text-brand-navy flex-shrink-0 mx-auto">
+                AS
+              </div>
+              <div className="w-6 h-[2px] bg-aws-orange mx-auto my-3"></div>
+              <h4 className="font-display font-semibold text-[17px] text-slate-900">Ananya Shukla</h4>
             </div>
+            <p className="text-[13px] text-slate-500 font-sans mt-2">Design & Creative Lead</p>
           </div>
         </div>
       </section>
