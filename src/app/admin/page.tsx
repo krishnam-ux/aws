@@ -401,13 +401,15 @@ export default function AdminDashboard() {
               <div className="flex items-center space-x-3 justify-center">
                 <img
                   src="/aws-logo.svg"
-                  className="h-6 w-auto object-contain flex-shrink-0"
+                  style={{ height: '46px', width: 'auto', objectFit: 'contain' }}
+                  className="flex-shrink-0"
                   alt="AWS"
                 />
-                <span className="text-slate-350 font-sans">|</span>
+                <span className="text-slate-300 font-sans">|</span>
                 <img
                   src="/chandigarh-university-logo.png"
-                  className="h-8 w-auto object-contain flex-shrink-0"
+                  style={{ height: '46px', width: 'auto', objectFit: 'contain' }}
+                  className="flex-shrink-0"
                   alt="Chandigarh University"
                 />
               </div>
