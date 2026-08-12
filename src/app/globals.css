@@ -1,26 +1,124 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-navy: #0B1B2B;
+  --color-navy-dark: #111827;
+  --color-aws-orange: #FF9900;
+  --color-aws-orange-hover: #E08800;
+  --color-aws-blue: #146EF5;
+  --color-light-bg: #F7F8FA;
+  --color-border-gray: #D5DCE5;
+  
+  --font-sans: var(--font-sans), system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-sans), system-ui, -apple-system, sans-serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-sans: 'Inter';
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Global scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+::-webkit-scrollbar-track {
+  background: #F7F8FA;
+}
+::-webkit-scrollbar-thumb {
+  background: #D5DCE5;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #A1AEBE;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #FFFFFF;
+  color: #111827;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Restrained Enterprise-Grade Cards */
+.tech-card-new {
+  background-color: #FFFFFF;
+  border: 1px solid #D5DCE5;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease-in-out;
+}
+
+.tech-card-new-hover:hover {
+  border-color: #FF9900;
+  box-shadow: 0 3px 6px 0 rgba(11, 27, 43, 0.05);
+}
+
+.form-input-field {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background-color: #FFFFFF;
+  border: 1px solid #D5DCE5;
+  border-radius: 6px;
+  color: #111827;
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  transition: all 0.15s ease;
+}
+
+.form-input-field:focus {
+  outline: none;
+  border-color: #FF9900;
+  box-shadow: 0 0 0 1px #FF9900;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  background-color: #FF9900;
+  color: #0B1B2B;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background-color: #E08800;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  background-color: #FFFFFF;
+  color: #0B1B2B;
+  border: 1px solid #0B1B2B;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: #F7F8FA;
+  border-color: #0B1B2B;
+}
+
+.btn-secondary:active {
+  transform: scale(0.98);
 }
