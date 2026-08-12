@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { siteConfig } from '@/data/siteConfig';
 
 // Custom error-tolerant logo loader that hides broken image indicators and shows fallback text
@@ -31,14 +31,41 @@ function HeaderLogo({ src, fallbackText, width, className }: { src: string; fall
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
-  if (pathname?.startsWith('/admin')) {
-    return null;
-  }
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Keep the shortcut disabled while already inside the Admin Portal
+      if (pathname?.startsWith('/admin')) {
+        return;
+      }
+      
+      // Detect Windows/Meta key + Shift + K
+      if (e.metaKey && e.shiftKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        
+        const token = typeof window !== 'undefined' ? sessionStorage.getItem('adminToken') : null;
+        if (token) {
+          router.push('/admin/dashboard');
+        } else {
+          router.push('/admin/login');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [pathname, router]);
 
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
+
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
 
   const mainLinks = [
     { label: 'Home', href: '/' },
