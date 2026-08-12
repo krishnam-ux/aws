@@ -58,7 +58,7 @@ export const siteConfig = {
   orgName: 'AWS Student Builder Group at Chandigarh University – Uttar Pradesh',
   orgShortName: 'AWS SBG CU-UP',
   awsLogoUrl: '/aws-logo.svg',
-  cuLogoUrl: '/chandigarh-university-logo.png',
+  cuLogoUrl: '/chandigarh-university-logo.jpg',
   communityType: 'Student-led technology community',
   location: 'Chandigarh University – Uttar Pradesh, India',
   email: 'awssbgchandigarhuniversity@gmail.com',

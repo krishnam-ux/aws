@@ -407,7 +407,7 @@ export default function AdminDashboard() {
                 />
                 <span className="text-slate-300 font-sans">|</span>
                 <img
-                  src="/chandigarh-university-logo.png"
+                  src="/chandigarh-university-logo.jpg"
                   style={{ height: '46px', width: 'auto', objectFit: 'contain' }}
                   className="flex-shrink-0"
                   alt="Chandigarh University"
@@ -546,7 +546,7 @@ export default function AdminDashboard() {
           <div className="flex items-center space-x-3">
             <img src="/aws-logo.svg" className="h-4 w-auto object-contain flex-shrink-0" alt="AWS" />
             <span className="text-slate-350 font-sans">|</span>
-            <img src="/chandigarh-university-logo.png" className="h-6 w-auto object-contain flex-shrink-0" alt="CU" />
+            <img src="/chandigarh-university-logo.jpg" className="h-6 w-auto object-contain flex-shrink-0" alt="CU" />
             <span className="text-slate-350 hidden sm:inline">|</span>
             <div className="flex flex-col hidden sm:flex">
               <span className="font-display font-extrabold text-xs text-[#111827] leading-none">
