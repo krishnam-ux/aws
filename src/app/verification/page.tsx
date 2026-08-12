@@ -34,23 +34,16 @@ export default function Verification() {
             <div className="bg-slate-50 rounded p-4 space-y-1 text-xs text-slate-500 font-sans border border-slate-100">
               <p><span className="text-slate-700 font-medium">Group:</span> {siteConfig.orgShortName}</p>
               <p><span className="text-slate-700 font-medium">Group Leader:</span> {siteConfig.leader.name}</p>
+              <p><span className="text-slate-700 font-medium">Contact:</span> <a href="mailto:shuklaabhayas0@gmail.com" className="text-aws-orange hover:underline font-mono">shuklaabhayas0@gmail.com</a></p>
             </div>
           </div>
           <div className="mt-8">
-            {hasAwsUrl ? (
-              <a
-                href={siteConfig.AWS_BUILDER_CENTER_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full btn-primary text-center py-2 text-xs"
-              >
-                View Official Listing
-              </a>
-            ) : (
-              <div className="w-full text-center py-2 text-xs font-semibold text-slate-400 bg-slate-50 border border-slate-200 rounded">
-                Official listing — Coming Soon
-              </div>
-            )}
+            <a
+              href="mailto:shuklaabhayas0@gmail.com"
+              className="w-full btn-primary text-center py-2 text-xs block"
+            >
+              Contact
+            </a>
           </div>
         </div>
 
@@ -71,12 +64,7 @@ export default function Verification() {
             </div>
           </div>
           <div className="mt-8">
-            <Link
-              href="/leadership"
-              className="w-full btn-secondary text-center py-2 text-xs block"
-            >
-              Contact Advisors
-            </Link>
+            {/* Contact options removed as requested */}
           </div>
         </div>
 
