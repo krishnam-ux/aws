@@ -61,8 +61,8 @@ export const siteConfig = {
   cuLogoUrl: '/chandigarh-university-logo.png',
   communityType: 'Student-led technology community',
   location: 'Chandigarh University – Uttar Pradesh, India',
-  email: 'awssbgchandigarh...@gmail.com', // Obfuscated as requested
-  safeEmailLink: 'mailto:awssbgchandigarh...@gmail.com',
+  email: 'awssbgchandigarhuniversity@gmail.com',
+  safeEmailLink: 'mailto:awssbgchandigarhuniversity@gmail.com',
   
   // Leadership & Faculty Contact
   leader: {
@@ -159,7 +159,7 @@ export const siteConfig = {
     },
     {
       question: 'How can I invite a speaker?',
-      answer: 'If you want to suggest a technical speaker or conduct an industry session with our community, please use the form on our Collaborate page or email us at awssbgchandigarh...@gmail.com.'
+      answer: 'If you want to suggest a technical speaker or conduct an industry session with our community, please use the form on our Collaborate page or email us at awssbgchandigarhuniversity@gmail.com.'
     },
     {
       question: 'How can students participate?',
