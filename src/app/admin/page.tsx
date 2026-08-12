@@ -28,6 +28,8 @@ export default function AdminDashboard() {
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   // Layout States
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -391,56 +393,124 @@ export default function AdminDashboard() {
   // Login view
   if (!token) {
     return (
-      <div className="min-h-screen bg-[#F6F8FA] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
-        <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg border border-[#E2E8F0] shadow-sm">
-          <div className="text-center space-y-2">
-            <h2 className="font-display font-extrabold text-2xl text-[#111827] tracking-tight">
-              AWS SBG CU-UP
-            </h2>
-            <p className="text-xs text-[#64748B] font-sans">
-              Enter credentials to access the secure administration dashboard.
-            </p>
+      <div className="min-h-screen bg-[#F6F8FA] bg-[radial-gradient(#E2E8F0_1px,transparent_1px)] [background-size:16px_16px] flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
+        <div className="max-w-md w-full sm:w-[450px] space-y-6">
+          <div className="bg-white p-8 sm:p-10 rounded-xl border border-[#E2E8F0] shadow-sm space-y-8">
+            {/* Logos header */}
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="flex items-center space-x-3 justify-center">
+                <img
+                  src="/aws-logo.svg"
+                  className="h-6 w-auto object-contain flex-shrink-0"
+                  alt="AWS"
+                />
+                <span className="text-slate-350 font-sans">|</span>
+                <img
+                  src="/chandigarh-university-logo.png"
+                  className="h-8 w-auto object-contain flex-shrink-0"
+                  alt="Chandigarh University"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <h2 className="font-display font-extrabold text-sm text-[#111827] uppercase tracking-wider block">
+                  AWS SBG CU-UP
+                </h2>
+                <p className="text-xs text-[#64748B] font-medium font-sans">
+                  Admin Portal
+                </p>
+              </div>
+
+              <div className="inline-flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-2.5 py-0.5 rounded text-[10px] text-slate-500 font-medium font-sans">
+                <svg className="h-3 w-3 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <span>Secure Administration</span>
+              </div>
+            </div>
+
+            <div className="h-[1px] w-full bg-slate-100"></div>
+
+            {/* Login form */}
+            <form className="space-y-5" onSubmit={handleLogin}>
+              <div className="space-y-1.5">
+                <h3 className="font-display font-extrabold text-lg text-slate-900 leading-none">
+                  Welcome back
+                </h3>
+                <p className="text-[11px] text-slate-500 font-sans leading-relaxed">
+                  Sign in to access the AWS SBG CU-UP administration portal.
+                </p>
+              </div>
+
+              {loginError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded text-red-650 text-xs text-center font-sans">
+                  {loginError}
+                </div>
+              )}
+
+              <div className="space-y-4 text-xs font-sans">
+                <div className="space-y-1">
+                  <label className="font-bold text-[#64748B] uppercase tracking-wider block font-display">Username or Email</label>
+                  <input
+                    type="text"
+                    required
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900] text-sm font-sans"
+                    placeholder="Enter admin username"
+                  />
+                </div>
+
+                <div className="space-y-1 relative">
+                  <label className="font-bold text-[#64748B] uppercase tracking-wider block font-display">Password</label>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-3 py-2 pr-12 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900] text-sm font-sans"
+                    placeholder="Enter password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 bottom-2.5 text-[10px] font-bold text-slate-400 hover:text-slate-650 uppercase cursor-pointer"
+                  >
+                    {showPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
+
+                <div className="flex items-center">
+                  <label className="flex items-center space-x-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 text-[#FF9900] focus:ring-[#FF9900] cursor-pointer"
+                    />
+                    <span className="text-[#64748B] font-sans text-xs">Remember me</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#FF9900] hover:bg-[#E08800] text-white py-2.5 text-xs flex items-center justify-center font-bold rounded cursor-pointer transition-colors"
+                >
+                  {loading ? 'Authenticating...' : 'Sign In'}
+                </button>
+              </div>
+            </form>
           </div>
-          <form className="mt-8 space-y-4" onSubmit={handleLogin}>
-            {loginError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded text-red-605 text-xs text-center font-sans">
-                {loginError}
-              </div>
-            )}
-            <div className="space-y-3 text-xs">
-              <div className="space-y-1">
-                <label className="font-bold text-[#111827] uppercase tracking-wider block font-display">Username</label>
-                <input
-                  type="text"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900] text-sm font-sans"
-                  placeholder="admin"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="font-bold text-[#111827] uppercase tracking-wider block font-display">Password</label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900] text-sm font-sans"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-[#FF9900] hover:bg-[#E08800] text-white py-2.5 text-xs flex items-center justify-center font-bold rounded cursor-pointer transition-colors"
-              >
-                {loading ? 'Authenticating...' : 'Sign In'}
-              </button>
-            </div>
-          </form>
+
+          {/* Branding Footnote */}
+          <div className="text-center font-sans text-[10px] text-[#64748B] tracking-wide space-y-0.5">
+            <p className="font-bold text-[#111827]">AWS Student Builder Group</p>
+            <p>Chandigarh University – Uttar Pradesh</p>
+            <p className="italic text-[9px] mt-1 text-[#64748B]">Authorized administration portal</p>
+          </div>
         </div>
       </div>
     );
@@ -471,15 +541,17 @@ export default function AdminDashboard() {
             </svg>
           </button>
           
-          <div className="flex items-center space-x-2">
-            <span className="font-display font-extrabold text-sm tracking-tight text-[#111827]">
-              AWS SBG CU-UP
-            </span>
-            <span className="text-[10px] text-[#64748B] font-medium hidden sm:inline">|</span>
-            <span className="text-xs text-[#64748B] font-medium hidden sm:inline">Admin Portal</span>
-            <span className="bg-orange-50 border border-orange-200 text-[#FF9900] text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">
-              ADMIN
-            </span>
+          <div className="flex items-center space-x-3">
+            <img src="/aws-logo.svg" className="h-4 w-auto object-contain flex-shrink-0" alt="AWS" />
+            <span className="text-slate-350 font-sans">|</span>
+            <img src="/chandigarh-university-logo.png" className="h-6 w-auto object-contain flex-shrink-0" alt="CU" />
+            <span className="text-slate-350 hidden sm:inline">|</span>
+            <div className="flex flex-col hidden sm:flex">
+              <span className="font-display font-extrabold text-xs text-[#111827] leading-none">
+                AWS SBG CU-UP
+              </span>
+              <span className="text-[9px] text-[#64748B] font-semibold mt-1">Admin Panel</span>
+            </div>
           </div>
         </div>
 
@@ -565,12 +637,19 @@ export default function AdminDashboard() {
         >
           <div className="space-y-6 w-full">
             {/* Header info inside sidebar */}
-            {!isSidebarCollapsed && (
-              <div className="px-3 py-2 text-xs font-display">
-                <span className="font-extrabold text-white tracking-widest uppercase block">AWS STUDENT GROUP</span>
-                <span className="text-[#64748B] font-bold mt-1 block">CMS CONSOLE</span>
-              </div>
-            )}
+            <div className="px-3 py-2 flex items-center space-x-3 border-b border-[#152e46]/20 pb-4">
+              <img
+                src="/aws-logo.svg"
+                className="h-5 w-auto object-contain brightness-0 invert flex-shrink-0"
+                alt="AWS"
+              />
+              {!isSidebarCollapsed && (
+                <div className="flex flex-col">
+                  <span className="font-display font-extrabold text-[11px] tracking-tight text-white uppercase leading-none">AWS SBG CU-UP</span>
+                  <span className="text-[9px] text-[#64748B] font-bold mt-1">Admin Portal</span>
+                </div>
+              )}
+            </div>
 
             {/* Section groups */}
             <div className="space-y-4">
