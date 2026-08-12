@@ -84,6 +84,66 @@ export default function Leadership() {
         </div>
       </section>
 
+      {/* Core Team Directory */}
+      <section className="space-y-8">
+        <div className="max-w-3xl">
+          <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 font-display block">Coordinators</span>
+          <h2 className="font-display font-extrabold text-2xl text-brand-navy tracking-tight mt-1">
+            AWS SBG CU-UP Core Team
+          </h2>
+          <p className="mt-2 text-xs text-slate-550 font-sans leading-relaxed">
+            Our student coordinators manage the execution of learning events, cloud labs, design, and community operations.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+          {/* Krishnam */}
+          <div className="tech-card-new rounded-md p-5 bg-white border border-slate-200 flex flex-col items-center text-center space-y-4">
+            <InitialsAvatar name="Krishnam" />
+            <div>
+              <h4 className="font-display font-bold text-slate-900 text-sm">Krishnam</h4>
+              <p className="text-[11px] text-slate-500 font-sans mt-1">Technical Lead, Cloud & Infrastructure</p>
+            </div>
+          </div>
+
+          {/* Ayush Pandey */}
+          <div className="tech-card-new rounded-md p-5 bg-white border border-slate-200 flex flex-col items-center text-center space-y-4">
+            <InitialsAvatar name="Ayush Pandey" />
+            <div>
+              <h4 className="font-display font-bold text-slate-900 text-sm">Ayush Pandey</h4>
+              <p className="text-[11px] text-slate-500 font-sans mt-1">Events & Operations Lead</p>
+            </div>
+          </div>
+
+          {/* Priyanshu Kumar */}
+          <div className="tech-card-new rounded-md p-5 bg-white border border-slate-200 flex flex-col items-center text-center space-y-4">
+            <InitialsAvatar name="Priyanshu Kumar" />
+            <div>
+              <h4 className="font-display font-bold text-slate-900 text-sm">Priyanshu Kumar</h4>
+              <p className="text-[11px] text-slate-500 font-sans mt-1">Marketing & Community Outreach Lead</p>
+            </div>
+          </div>
+
+          {/* Aakarshan Agnihotri */}
+          <div className="tech-card-new rounded-md p-5 bg-white border border-slate-200 flex flex-col items-center text-center space-y-4">
+            <InitialsAvatar name="Aakarshan Agnihotri" />
+            <div>
+              <h4 className="font-display font-bold text-slate-900 text-sm">Aakarshan Agnihotri</h4>
+              <p className="text-[11px] text-slate-500 font-sans mt-1">Content & Documentation Lead</p>
+            </div>
+          </div>
+
+          {/* Ananya Shukla */}
+          <div className="tech-card-new rounded-md p-5 bg-white border border-slate-200 flex flex-col items-center text-center space-y-4">
+            <InitialsAvatar name="Ananya Shukla" />
+            <div>
+              <h4 className="font-display font-bold text-slate-900 text-sm">Ananya Shukla</h4>
+              <p className="text-[11px] text-slate-500 font-sans mt-1">Design & Creative Lead</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Advisory policy notice */}
       <section className="bg-slate-50 border border-slate-200 rounded-lg p-6 max-w-xl mx-auto text-center">
         <p className="text-[11px] text-slate-500 font-sans">
