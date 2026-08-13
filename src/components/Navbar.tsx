@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { siteConfig } from '@/data/siteConfig';
 
 // Custom error-tolerant logo loader that hides broken image indicators and shows fallback text
-function HeaderLogo({ src, fallbackText, width, className }: { src: string; fallbackText: string; width: string; className?: string }) {
+function HeaderLogo({ src, fallbackText, width, height, className }: { src: string; fallbackText: string; width?: string; height?: string; className?: string }) {
   const [hasError, setHasError] = useState(false);
 
   if (hasError || !src) {
@@ -23,7 +23,7 @@ function HeaderLogo({ src, fallbackText, width, className }: { src: string; fall
       alt="" // Must be empty to prevent visible alt text when broken
       className={className}
       onError={() => setHasError(true)}
-      style={{ width, height: 'auto', objectFit: 'contain' }}
+      style={{ width: width || 'auto', height: height || 'auto', objectFit: 'contain' }}
     />
   );
 }
@@ -117,16 +117,22 @@ export default function Navbar() {
           })}
         </nav>
 
-        {/* Right: Join CTA button */}
-        <div className="hidden lg:flex items-center">
+        {/* Right: Join CTA button & CU Logo */}
+        <div className="hidden lg:flex items-center gap-[20px]">
           <a
             href="https://chat.whatsapp.com/HuEI5i4I8KkEya47yBKynD"
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-primary py-1.5 px-3.5 text-xs"
+            className="btn-primary py-1.5 px-3.5 text-xs flex-shrink-0"
           >
             Join Community
           </a>
+          <HeaderLogo
+            src={siteConfig.cuLogoUrl}
+            fallbackText="Chandigarh University"
+            height="32px"
+            className="flex-shrink-0"
+          />
         </div>
 
         {/* Mobile Hamburger menu */}
@@ -177,15 +183,21 @@ export default function Navbar() {
             );
           })}
           
-          <div className="pt-3 border-t border-slate-100">
+          <div className="pt-3 border-t border-slate-100 flex items-center gap-[16px]">
             <a
               href="https://chat.whatsapp.com/HuEI5i4I8KkEya47yBKynD"
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full text-center py-2.5 rounded bg-aws-orange hover:bg-aws-orange-hover text-brand-navy font-display font-bold text-xs"
+              className="flex-grow text-center py-2.5 rounded bg-aws-orange hover:bg-aws-orange-hover text-brand-navy font-display font-bold text-xs"
             >
               Join Community
             </a>
+            <HeaderLogo
+              src={siteConfig.cuLogoUrl}
+              fallbackText="Chandigarh University"
+              height="28px"
+              className="flex-shrink-0"
+            />
           </div>
         </div>
       </div>
