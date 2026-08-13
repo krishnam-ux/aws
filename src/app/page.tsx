@@ -58,9 +58,14 @@ export default function Home() {
               A student-led technology community focused on cloud computing, artificial intelligence, data, DevOps and hands-on technology learning.
             </p>
             <div className="flex flex-wrap gap-3 pt-2">
-              <Link href="/join" className="btn-primary py-1.5 px-4 text-xs">
+              <a
+                href="https://chat.whatsapp.com/HuEI5i4I8KkEya47yBKynD"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary py-1.5 px-4 text-xs"
+              >
                 Join the Community
-              </Link>
+              </a>
               <Link href="/activities" className="btn-secondary py-1.5 px-4 text-xs">
                 Explore Activities
               </Link>
@@ -333,9 +338,14 @@ export default function Home() {
             We welcome opportunities to collaborate with educational organizations, technology communities, mentors, speakers and learning platforms on student-focused technical initiatives.
           </p>
           <div className="pt-4 flex justify-center gap-3">
-            <Link href="/join" className="btn-primary text-xs py-1.5 px-4">
+            <a
+              href="https://chat.whatsapp.com/HuEI5i4I8KkEya47yBKynD"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary text-xs py-1.5 px-4"
+            >
               Join the Community
-            </Link>
+            </a>
             <Link href="/collaborate" className="btn-secondary text-xs py-1.5 px-4">
               Start a Conversation
             </Link>

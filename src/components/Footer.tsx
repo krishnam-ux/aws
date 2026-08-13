@@ -129,9 +129,14 @@ export default function Footer() {
             </h4>
             <ul className="space-y-1.5 text-[11px] font-sans text-slate-400">
               <li>
-                <Link href="/join" className="hover:text-aws-orange transition-colors">
+                <a
+                  href="https://chat.whatsapp.com/HuEI5i4I8KkEya47yBKynD"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-aws-orange transition-colors"
+                >
                   Join Community
-                </Link>
+                </a>
               </li>
               <li>
                 <Link href="/collaborate" className="hover:text-aws-orange transition-colors">

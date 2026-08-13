@@ -93,7 +93,7 @@ export const siteConfig = {
     { label: 'Verification', href: '/verification' },
     { label: 'Leadership', href: '/leadership' },
     { label: 'Collaborate', href: '/collaborate' },
-    { label: 'Join', href: '/join' },
+    { label: 'Join', href: 'https://chat.whatsapp.com/HuEI5i4I8KkEya47yBKynD' },
   ],
 
   // Footer Links
@@ -105,7 +105,7 @@ export const siteConfig = {
     { label: 'Leadership', href: '/leadership' },
     { label: 'Governance', href: '/governance' },
     { label: 'Collaborate', href: '/collaborate' },
-    { label: 'Join Group', href: '/join' },
+    { label: 'Join Group', href: 'https://chat.whatsapp.com/HuEI5i4I8KkEya47yBKynD' },
     { label: 'Contact', href: '/contact' },
     { label: 'Transparency', href: '/transparency' },
     { label: 'Privacy Policy', href: '/privacy' },

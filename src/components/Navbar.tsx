@@ -119,12 +119,14 @@ export default function Navbar() {
 
         {/* Right: Join CTA button */}
         <div className="hidden lg:flex items-center">
-          <Link
-            href="/join"
+          <a
+            href="https://chat.whatsapp.com/HuEI5i4I8KkEya47yBKynD"
+            target="_blank"
+            rel="noopener noreferrer"
             className="btn-primary py-1.5 px-3.5 text-xs"
           >
             Join Community
-          </Link>
+          </a>
         </div>
 
         {/* Mobile Hamburger menu */}
@@ -176,12 +178,14 @@ export default function Navbar() {
           })}
           
           <div className="pt-3 border-t border-slate-100">
-            <Link
-              href="/join"
+            <a
+              href="https://chat.whatsapp.com/HuEI5i4I8KkEya47yBKynD"
+              target="_blank"
+              rel="noopener noreferrer"
               className="block w-full text-center py-2.5 rounded bg-aws-orange hover:bg-aws-orange-hover text-brand-navy font-display font-bold text-xs"
             >
               Join Community
-            </Link>
+            </a>
           </div>
         </div>
       </div>
