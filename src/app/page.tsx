@@ -1,5 +1,30 @@
 import Link from 'next/link';
 import { siteConfig } from '@/data/siteConfig';
+import { db } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
+
+// Reusable registration status badge renderer
+const renderRegStatusBadge = (status: string | undefined) => {
+  const s = (status || 'Not Open').toUpperCase();
+  let styleClasses = 'bg-slate-50 text-slate-500 border-slate-200';
+  
+  if (s === 'OPEN') {
+    styleClasses = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+  } else if (s === 'FULL') {
+    styleClasses = 'bg-red-50 text-red-700 border-red-200';
+  } else if (s === 'NOT OPEN') {
+    styleClasses = 'bg-amber-50 text-amber-700 border-amber-200';
+  } else if (s === 'CLOSED') {
+    styleClasses = 'bg-slate-100 text-slate-650 border-slate-350';
+  }
+
+  return (
+    <span className={`inline-flex px-2 py-0.5 rounded text-[8px] font-bold font-sans uppercase tracking-wider border ${styleClasses}`}>
+      REGISTRATION {s}
+    </span>
+  );
+};
 
 // Reusable custom initials avatar component
 function InitialsAvatar({ name }: { name: string }) {
@@ -19,7 +44,23 @@ function InitialsAvatar({ name }: { name: string }) {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const events = await db.events.getAll();
+  const registrations = await db.eventRegistrations.getAll();
+
+  const upcomingEvents = events
+    .filter(event => {
+      const s = (event.status || '').toUpperCase();
+      return s === 'UPCOMING';
+    })
+    .map(event => {
+      const count = registrations.filter(r => r.eventId === event.id && r.status !== 'Rejected' && r.status !== 'Cancelled').length;
+      return {
+        ...event,
+        registrationCount: count
+      };
+    });
+
   const exploreTechnologies = [
     { title: 'AWS Cloud', desc: 'Core cloud infrastructure, virtualization foundations, VPC networks, and serverless compute paradigms.' },
     { title: 'AI & Machine Learning', desc: 'Exploring prediction pipelines, modeling, dataset training steps, and SageMaker toolsets.' },
@@ -307,23 +348,126 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* 7. EVENTS Section Empty State */}
+      {/* 7. EVENTS Section */}
       <section className="py-16 sm:py-20 bg-[#F5F7FA] border-b border-border-gray">
         <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          <div className="max-w-2xl">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 font-display">CALENDAR</span>
-            <h2 className="font-display font-extrabold text-2xl text-brand-navy tracking-tight leading-tight mt-1">
-              NO UPCOMING EVENTS
-            </h2>
-          </div>
+          {upcomingEvents.length > 0 ? (
+            <>
+              <div className="max-w-2xl">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 font-display">CALENDAR</span>
+                <h2 className="font-display font-extrabold text-2xl text-brand-navy tracking-tight leading-tight mt-1">
+                  UPCOMING EVENTS
+                </h2>
+              </div>
 
-          <div className="tech-card-new rounded-md p-8 sm:p-12 text-center bg-white border border-border-gray max-w-xl mx-auto">
-            <h4 className="font-display font-bold text-slate-900 text-sm mb-2">No upcoming events have been published yet</h4>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-              We are working to complete academic clearances for our local study workshops. Please check back later.
-            </p>
-          </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {upcomingEvents.map((event, idx) => (
+                  <div
+                    key={idx}
+                    className="group relative rounded-lg p-6 bg-white border border-slate-200 shadow-sm flex flex-col justify-between h-full hover:border-aws-orange transition-all duration-200 font-sans"
+                  >
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className="inline-flex px-2 py-0.5 rounded text-[8px] font-bold font-sans uppercase tracking-wider bg-orange-50 border border-orange-200 text-aws-orange">
+                            {event.status || 'Upcoming'}
+                          </span>
+                          {renderRegStatusBadge(event.registrationStatus)}
+                        </div>
+                        {event.number && (
+                          <span className="text-[10px] font-mono text-slate-400 font-bold">{event.number}</span>
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-slate-505 uppercase tracking-widest block font-display">
+                          {event.date || event.month}
+                        </span>
+                        <h3 className="font-display font-bold text-base text-slate-900 leading-snug group-hover:text-brand-navy transition-colors">
+                          {event.title}
+                        </h3>
+                        {event.venue && (
+                          <span className="text-[10px] text-slate-500 font-sans block mt-1">
+                            📍 Venue: {event.venue}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="h-[1px] w-full bg-slate-100"></div>
+
+                      <div className="space-y-2 text-xs font-sans">
+                        <p className="text-slate-650 leading-relaxed">
+                          {event.overview || event.focus}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 pt-4 border-t border-slate-100 flex gap-3 text-xs">
+                      <Link
+                        href="/events"
+                        className="flex-grow text-center py-2 font-semibold rounded border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors cursor-pointer font-sans"
+                      >
+                        View Details
+                      </Link>
+                      {(() => {
+                        const isCapacityFull = event.maxRegistrations && event.maxRegistrations > 0 && event.registrationCount && event.registrationCount >= event.maxRegistrations;
+                        const regStatus = (event.registrationStatus || 'Not Open').toUpperCase();
+
+                        if (regStatus === 'FULL' || isCapacityFull) {
+                          return (
+                            <span className="flex-grow text-center py-2 font-bold rounded border border-red-200 text-red-500 bg-red-50 font-sans text-xs">
+                              Registration Full
+                            </span>
+                          );
+                        }
+
+                        if (regStatus === 'NOT OPEN') {
+                          return (
+                            <span className="flex-grow text-center py-2 font-semibold rounded border border-slate-200 text-slate-400 bg-slate-50 font-sans text-xs">
+                              Registration Not Open
+                            </span>
+                          );
+                        }
+
+                        if (regStatus === 'CLOSED') {
+                          return (
+                            <span className="flex-grow text-center py-2 font-semibold rounded border border-slate-200 text-slate-400 bg-slate-50 font-sans text-xs">
+                              Registration Closed
+                            </span>
+                          );
+                        }
+
+                        return (
+                          <Link
+                            href={`/events/${event.id}/register`}
+                            className="flex-grow text-center py-2 font-bold rounded bg-aws-orange hover:bg-orange-600 text-white transition-colors cursor-pointer font-sans text-xs flex items-center justify-center"
+                          >
+                            Register for Event
+                          </Link>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="max-w-2xl">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 font-display">CALENDAR</span>
+                <h2 className="font-display font-extrabold text-2xl text-brand-navy tracking-tight leading-tight mt-1">
+                  NO UPCOMING EVENTS
+                </h2>
+              </div>
+
+              <div className="tech-card-new rounded-md p-8 sm:p-12 text-center bg-white border border-border-gray max-w-xl mx-auto">
+                <h4 className="font-display font-bold text-slate-900 text-sm mb-2">No upcoming events have been published yet</h4>
+                <p className="text-xs text-slate-505 max-w-sm mx-auto leading-relaxed">
+                  We are working to complete academic clearances for our local study workshops. Please check back later.
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
