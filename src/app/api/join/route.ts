@@ -10,7 +10,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required registration parameters.' }, { status: 400 });
     }
 
-    const registrations = db.registrations.getAll();
+    const registrations = await db.registrations.getAll();
     const newReg = {
       id: `reg-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       name,
@@ -27,10 +27,10 @@ export async function POST(request: Request) {
     };
 
     registrations.push(newReg);
-    db.registrations.saveAll(registrations);
+    await db.registrations.saveAll(registrations);
 
     // Push notification to Admin
-    const notifications = db.notifications.getAll();
+    const notifications = await db.notifications.getAll();
     notifications.push({
       id: `notif-${Date.now()}`,
       type: 'registration',
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       status: 'unread',
       date: new Date().toISOString()
     });
-    db.notifications.saveAll(notifications);
+    await db.notifications.saveAll(notifications);
 
     return NextResponse.json({ success: true, registrationId: newReg.id });
   } catch (err) {

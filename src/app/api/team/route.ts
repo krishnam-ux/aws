@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 
 export async function GET() {
   try {
-    const team = db.coreTeam.getAll();
+    const team = await db.coreTeam.getAll();
     const publishedTeam = team
       .filter(m => m.status === 'Published')
       .sort((a, b) => a.displayOrder - b.displayOrder);

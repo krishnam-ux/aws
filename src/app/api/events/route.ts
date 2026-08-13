@@ -5,8 +5,8 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const events = db.events.getAll();
-    const registrations = db.eventRegistrations.getAll();
+    const events = await db.events.getAll();
+    const registrations = await db.eventRegistrations.getAll();
 
     const publicEvents = events
       .filter(event => {

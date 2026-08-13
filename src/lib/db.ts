@@ -18,11 +18,40 @@ export function generateSalt(): string {
   return crypto.randomBytes(16).toString('hex');
 }
 
+const IS_NETLIFY = process.env.NETLIFY === 'true' || !!process.env.NETLIFY_DEV || !!process.env.SITE_ID;
+
+// Helper to get Netlify Blobs store
+async function getBlobStore() {
+  if (IS_NETLIFY) {
+    try {
+      const { getStore } = await import('@netlify/blobs');
+      return getStore('awssbg-db');
+    } catch (e) {
+      console.error('Failed to import @netlify/blobs:', e);
+    }
+  }
+  return null;
+}
+
 // Generic read/write functions
-function readJsonFile<T>(filename: string, defaultValue: T): T {
+async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
+  if (IS_NETLIFY) {
+    const store = await getBlobStore();
+    if (store) {
+      try {
+        const val = await store.get(filename, { type: 'text' });
+        if (val) {
+          return JSON.parse(val) as T;
+        }
+      } catch (err) {
+        console.error(`Error reading from blob: ${filename}`, err);
+      }
+    }
+  }
+
   const filePath = path.join(DB_DIR, filename);
   if (!fs.existsSync(filePath)) {
-    writeJsonFile(filename, defaultValue);
+    await writeJsonFile(filename, defaultValue);
     return defaultValue;
   }
   try {
@@ -34,7 +63,19 @@ function readJsonFile<T>(filename: string, defaultValue: T): T {
   }
 }
 
-function writeJsonFile<T>(filename: string, data: T): void {
+async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
+  if (IS_NETLIFY) {
+    const store = await getBlobStore();
+    if (store) {
+      try {
+        await store.set(filename, JSON.stringify(data, null, 2));
+        return;
+      } catch (err) {
+        console.error(`Error writing to blob: ${filename}`, err);
+      }
+    }
+  }
+
   const filePath = path.join(DB_DIR, filename);
   try {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
@@ -268,27 +309,27 @@ const DEFAULT_CONTENT = {
 // Database APIs
 export const db = {
   admins: {
-    getAll: () => readJsonFile('admin_users.json', DEFAULT_ADMINS()),
-    saveAll: (data: any) => writeJsonFile('admin_users.json', data)
+    getAll: async () => await readJsonFile('admin_users.json', DEFAULT_ADMINS()),
+    saveAll: async (data: any) => await writeJsonFile('admin_users.json', data)
   },
   registrations: {
-    getAll: () => readJsonFile<any[]>('registrations.json', []),
-    saveAll: (data: any[]) => writeJsonFile('registrations.json', data)
+    getAll: async () => await readJsonFile<any[]>('registrations.json', []),
+    saveAll: async (data: any[]) => await writeJsonFile('registrations.json', data)
   },
   eventRegistrations: {
-    getAll: () => readJsonFile<any[]>('event_registrations.json', []),
-    saveAll: (data: any[]) => writeJsonFile('event_registrations.json', data)
+    getAll: async () => await readJsonFile<any[]>('event_registrations.json', []),
+    saveAll: async (data: any[]) => await writeJsonFile('event_registrations.json', data)
   },
   events: {
-    getAll: () => readJsonFile<any[]>('events.json', DEFAULT_EVENTS),
-    saveAll: (data: any[]) => writeJsonFile('events.json', data)
+    getAll: async () => await readJsonFile<any[]>('events.json', DEFAULT_EVENTS),
+    saveAll: async (data: any[]) => await writeJsonFile('events.json', data)
   },
   announcements: {
-    getAll: () => readJsonFile<any[]>('announcements.json', []),
-    saveAll: (data: any[]) => writeJsonFile('announcements.json', data)
+    getAll: async () => await readJsonFile<any[]>('announcements.json', []),
+    saveAll: async (data: any[]) => await writeJsonFile('announcements.json', data)
   },
   resources: {
-    getAll: () => readJsonFile<any[]>('resources.json', [
+    getAll: async () => await readJsonFile<any[]>('resources.json', [
       {
         id: 'res-01',
         title: 'AWS Ramp-Up Guide: Cloud Practitioner',
@@ -310,30 +351,30 @@ export const db = {
         status: 'Published'
       }
     ]),
-    saveAll: (data: any[]) => writeJsonFile('resources.json', data)
+    saveAll: async (data: any[]) => await writeJsonFile('resources.json', data)
   },
   verificationRequests: {
-    getAll: () => readJsonFile<any[]>('verification_requests.json', []),
-    saveAll: (data: any[]) => writeJsonFile('verification_requests.json', data)
+    getAll: async () => await readJsonFile<any[]>('verification_requests.json', []),
+    saveAll: async (data: any[]) => await writeJsonFile('verification_requests.json', data)
   },
   coreTeam: {
-    getAll: () => readJsonFile<any[]>('core_team.json', DEFAULT_CORE_TEAM),
-    saveAll: (data: any[]) => writeJsonFile('core_team.json', data)
+    getAll: async () => await readJsonFile<any[]>('core_team.json', DEFAULT_CORE_TEAM),
+    saveAll: async (data: any[]) => await writeJsonFile('core_team.json', data)
   },
   collaborationRequests: {
-    getAll: () => readJsonFile<any[]>('collaboration_requests.json', []),
-    saveAll: (data: any[]) => writeJsonFile('collaboration_requests.json', data)
+    getAll: async () => await readJsonFile<any[]>('collaboration_requests.json', []),
+    saveAll: async (data: any[]) => await writeJsonFile('collaboration_requests.json', data)
   },
   websiteContent: {
-    get: () => readJsonFile('website_content.json', DEFAULT_CONTENT),
-    save: (data: any) => writeJsonFile('website_content.json', data)
+    get: async () => await readJsonFile('website_content.json', DEFAULT_CONTENT),
+    save: async (data: any) => await writeJsonFile('website_content.json', data)
   },
   notifications: {
-    getAll: () => readJsonFile<any[]>('notifications.json', []),
-    saveAll: (data: any[]) => writeJsonFile('notifications.json', data)
+    getAll: async () => await readJsonFile<any[]>('notifications.json', []),
+    saveAll: async (data: any[]) => await writeJsonFile('notifications.json', data)
   },
   contactMessages: {
-    getAll: () => readJsonFile<any[]>('contact_messages.json', []),
-    saveAll: (data: any[]) => writeJsonFile('contact_messages.json', data)
+    getAll: async () => await readJsonFile<any[]>('contact_messages.json', []),
+    saveAll: async (data: any[]) => await writeJsonFile('contact_messages.json', data)
   }
 };

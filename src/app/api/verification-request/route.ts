@@ -10,7 +10,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required request parameters.' }, { status: 400 });
     }
 
-    const requests = db.verificationRequests.getAll();
+    const requests = await db.verificationRequests.getAll();
     const newRequest = {
       id: `ver-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       name,
@@ -24,10 +24,10 @@ export async function POST(request: Request) {
     };
 
     requests.push(newRequest);
-    db.verificationRequests.saveAll(requests);
+    await db.verificationRequests.saveAll(requests);
 
     // Push notification to Admin
-    const notifications = db.notifications.getAll();
+    const notifications = await db.notifications.getAll();
     notifications.push({
       id: `notif-${Date.now()}`,
       type: 'verification',
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       status: 'unread',
       date: new Date().toISOString()
     });
-    db.notifications.saveAll(notifications);
+    await db.notifications.saveAll(notifications);
 
     return NextResponse.json({ success: true, requestId: newRequest.id });
   } catch (err) {

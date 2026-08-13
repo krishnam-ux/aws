@@ -25,7 +25,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Missing credentials.' }, { status: 400 });
       }
 
-      const admins = db.admins.getAll();
+      const admins = await db.admins.getAll();
       const admin = admins.find(a => a.username === username);
 
       if (!admin) {
@@ -47,14 +47,14 @@ export async function POST(request: Request) {
 
     // 2. Dashboard Stats
     if (action === 'get-stats') {
-      const registrations = db.registrations.getAll(); // join community
-      const eventRegistrations = db.eventRegistrations.getAll(); // event registrations
-      const events = db.events.getAll();
-      const verifications = db.verificationRequests.getAll();
-      const announcements = db.announcements.getAll();
-      const resources = db.resources.getAll();
-      const collaborations = db.collaborationRequests.getAll();
-      const contactMessages = db.contactMessages.getAll();
+      const registrations = await db.registrations.getAll(); // join community
+      const eventRegistrations = await db.eventRegistrations.getAll(); // event registrations
+      const events = await db.events.getAll();
+      const verifications = await db.verificationRequests.getAll();
+      const announcements = await db.announcements.getAll();
+      const resources = await db.resources.getAll();
+      const collaborations = await db.collaborationRequests.getAll();
+      const contactMessages = await db.contactMessages.getAll();
 
       const counts = {
         registrations: eventRegistrations.length, // total event registrations
@@ -91,49 +91,49 @@ export async function POST(request: Request) {
 
     // 3. Registrations Management (Join Community)
     if (action === 'get-registrations') {
-      return NextResponse.json(db.registrations.getAll());
+      return NextResponse.json(await db.registrations.getAll());
     }
     if (action === 'update-registration') {
       const { id, status, notes } = body;
-      const registrations = db.registrations.getAll();
+      const registrations = await db.registrations.getAll();
       const idx = registrations.findIndex(r => r.id === id);
       if (idx !== -1) {
         registrations[idx].status = status || registrations[idx].status;
         registrations[idx].notes = notes !== undefined ? notes : registrations[idx].notes;
-        db.registrations.saveAll(registrations);
+        await db.registrations.saveAll(registrations);
         return NextResponse.json({ success: true });
       }
       return NextResponse.json({ error: 'Registration not found' }, { status: 404 });
     }
     if (action === 'delete-registration') {
       const { id } = body;
-      let registrations = db.registrations.getAll();
+      let registrations = await db.registrations.getAll();
       registrations = registrations.filter(r => r.id !== id);
-      db.registrations.saveAll(registrations);
+      await db.registrations.saveAll(registrations);
       return NextResponse.json({ success: true });
     }
 
     // 3b. Event Registrations Management
     if (action === 'get-event-registrations') {
-      return NextResponse.json(db.eventRegistrations.getAll());
+      return NextResponse.json(await db.eventRegistrations.getAll());
     }
     if (action === 'update-event-registration') {
       const { id, status, notes } = body;
-      const regs = db.eventRegistrations.getAll();
+      const regs = await db.eventRegistrations.getAll();
       const idx = regs.findIndex(r => r.id === id);
       if (idx !== -1) {
         regs[idx].status = status || regs[idx].status;
         regs[idx].notes = notes !== undefined ? notes : regs[idx].notes;
-        db.eventRegistrations.saveAll(regs);
+        await db.eventRegistrations.saveAll(regs);
         return NextResponse.json({ success: true });
       }
       return NextResponse.json({ error: 'Event registration not found' }, { status: 404 });
     }
     if (action === 'delete-event-registration') {
       const { id } = body;
-      let regs = db.eventRegistrations.getAll();
+      let regs = await db.eventRegistrations.getAll();
       regs = regs.filter(r => r.id !== id);
-      db.eventRegistrations.saveAll(regs);
+      await db.eventRegistrations.saveAll(regs);
       return NextResponse.json({ success: true });
     }
     if (action === 'delete-event-registrations-bulk') {
@@ -141,9 +141,9 @@ export async function POST(request: Request) {
       if (!Array.isArray(ids)) {
         return NextResponse.json({ error: 'Parameter ids must be an array.' }, { status: 400 });
       }
-      let regs = db.eventRegistrations.getAll();
+      let regs = await db.eventRegistrations.getAll();
       regs = regs.filter(r => !ids.includes(r.id));
-      db.eventRegistrations.saveAll(regs);
+      await db.eventRegistrations.saveAll(regs);
       return NextResponse.json({ success: true });
     }
     if (action === 'delete-event-registrations-all') {
@@ -151,19 +151,19 @@ export async function POST(request: Request) {
       if (!eventId) {
         return NextResponse.json({ error: 'Missing parameter: eventId.' }, { status: 400 });
       }
-      let regs = db.eventRegistrations.getAll();
+      let regs = await db.eventRegistrations.getAll();
       regs = regs.filter(r => r.eventId !== eventId);
-      db.eventRegistrations.saveAll(regs);
+      await db.eventRegistrations.saveAll(regs);
       return NextResponse.json({ success: true });
     }
 
     // 4. Events Management
     if (action === 'get-events') {
-      return NextResponse.json(db.events.getAll());
+      return NextResponse.json(await db.events.getAll());
     }
     if (action === 'create-event') {
       const { event } = body;
-      const events = db.events.getAll();
+      const events = await db.events.getAll();
       const newEvent = {
         status: 'Draft',
         registrationStatus: 'Not Open',
@@ -172,112 +172,112 @@ export async function POST(request: Request) {
         number: `Event 0${events.length + 1}`
       };
       events.push(newEvent);
-      db.events.saveAll(events);
+      await db.events.saveAll(events);
       return NextResponse.json({ success: true, event: newEvent });
     }
     if (action === 'update-event') {
       const { event } = body;
-      const events = db.events.getAll();
+      const events = await db.events.getAll();
       const idx = events.findIndex(e => e.id === event.id);
       if (idx !== -1) {
         const updatedEvent = { ...events[idx], ...event };
         if (!updatedEvent.status) updatedEvent.status = 'Draft';
         if (!updatedEvent.registrationStatus) updatedEvent.registrationStatus = 'Not Open';
         events[idx] = updatedEvent;
-        db.events.saveAll(events);
+        await db.events.saveAll(events);
         return NextResponse.json({ success: true });
       }
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
     if (action === 'delete-event') {
       const { id } = body;
-      let events = db.events.getAll();
+      let events = await db.events.getAll();
       events = events.filter(e => e.id !== id);
-      db.events.saveAll(events);
+      await db.events.saveAll(events);
       return NextResponse.json({ success: true });
     }
 
     // 5. Announcements Management
     if (action === 'get-announcements') {
-      return NextResponse.json(db.announcements.getAll());
+      return NextResponse.json(await db.announcements.getAll());
     }
     if (action === 'create-announcement') {
       const { announcement } = body;
-      const announcements = db.announcements.getAll();
+      const announcements = await db.announcements.getAll();
       const newAnn = {
         ...announcement,
         id: `ann-${Date.now()}`,
         date: new Date().toISOString()
       };
       announcements.push(newAnn);
-      db.announcements.saveAll(announcements);
+      await db.announcements.saveAll(announcements);
       return NextResponse.json({ success: true, announcement: newAnn });
     }
     if (action === 'update-announcement') {
       const { announcement } = body;
-      const announcements = db.announcements.getAll();
+      const announcements = await db.announcements.getAll();
       const idx = announcements.findIndex(a => a.id === announcement.id);
       if (idx !== -1) {
         announcements[idx] = { ...announcements[idx], ...announcement };
-        db.announcements.saveAll(announcements);
+        await db.announcements.saveAll(announcements);
         return NextResponse.json({ success: true });
       }
       return NextResponse.json({ error: 'Announcement not found' }, { status: 404 });
     }
     if (action === 'delete-announcement') {
       const { id } = body;
-      let announcements = db.announcements.getAll();
+      let announcements = await db.announcements.getAll();
       announcements = announcements.filter(a => a.id !== id);
-      db.announcements.saveAll(announcements);
+      await db.announcements.saveAll(announcements);
       return NextResponse.json({ success: true });
     }
 
     // 6. Resources Management
     if (action === 'get-resources') {
-      return NextResponse.json(db.resources.getAll());
+      return NextResponse.json(await db.resources.getAll());
     }
     if (action === 'create-resource') {
       const { resource } = body;
-      const resources = db.resources.getAll();
+      const resources = await db.resources.getAll();
       const newRes = {
         ...resource,
         id: `res-${Date.now()}`
       };
       resources.push(newRes);
-      db.resources.saveAll(resources);
+      await db.resources.saveAll(resources);
       return NextResponse.json({ success: true, resource: newRes });
     }
     if (action === 'update-resource') {
       const { resource } = body;
-      const resources = db.resources.getAll();
+      const resources = await db.resources.getAll();
       const idx = resources.findIndex(r => r.id === resource.id);
       if (idx !== -1) {
         resources[idx] = { ...resources[idx], ...resource };
-        db.resources.saveAll(resources);
+        await db.resources.saveAll(resources);
         return NextResponse.json({ success: true });
       }
       return NextResponse.json({ error: 'Resource not found' }, { status: 404 });
     }
     if (action === 'delete-resource') {
       const { id } = body;
-      let resources = db.resources.getAll();
+      let resources = await db.resources.getAll();
       resources = resources.filter(r => r.id !== id);
-      db.resources.saveAll(resources);
+      await db.resources.saveAll(resources);
       return NextResponse.json({ success: true });
     }
 
     // 7. Verification Requests Management
     if (action === 'get-verifications') {
-      return NextResponse.json(db.verificationRequests.getAll());
+      return NextResponse.json(await db.verificationRequests.getAll());
     }
     if (action === 'update-verification') {
       const { id, status, notes } = body;
-      const verifications = db.verificationRequests.getAll();
+      const verifications = await db.verificationRequests.getAll();
       const idx = verifications.findIndex(v => v.id === id);
       if (idx !== -1) {
         verifications[idx].status = status || verifications[idx].status;
         verifications[idx].notes = notes !== undefined ? notes : verifications[idx].notes;
-        db.verificationRequests.saveAll(verifications);
+        await db.verificationRequests.saveAll(verifications);
         return NextResponse.json({ success: true });
       }
       return NextResponse.json({ error: 'Verification request not found' }, { status: 404 });
@@ -285,41 +285,41 @@ export async function POST(request: Request) {
 
     // 8. Core Team Management
     if (action === 'get-team') {
-      return NextResponse.json(db.coreTeam.getAll());
+      return NextResponse.json(await db.coreTeam.getAll());
     }
     if (action === 'create-team-member') {
       const { member } = body;
-      const team = db.coreTeam.getAll();
+      const team = await db.coreTeam.getAll();
       const newMember = {
         ...member,
         id: `team-${Date.now()}`,
         displayOrder: team.length + 1
       };
       team.push(newMember);
-      db.coreTeam.saveAll(team);
+      await db.coreTeam.saveAll(team);
       return NextResponse.json({ success: true, member: newMember });
     }
     if (action === 'update-team-member') {
       const { member } = body;
-      const team = db.coreTeam.getAll();
+      const team = await db.coreTeam.getAll();
       const idx = team.findIndex(t => t.id === member.id);
       if (idx !== -1) {
         team[idx] = { ...team[idx], ...member };
-        db.coreTeam.saveAll(team);
+        await db.coreTeam.saveAll(team);
         return NextResponse.json({ success: true });
       }
       return NextResponse.json({ error: 'Team member not found' }, { status: 404 });
     }
     if (action === 'delete-team-member') {
       const { id } = body;
-      let team = db.coreTeam.getAll();
+      let team = await db.coreTeam.getAll();
       team = team.filter(t => t.id !== id);
-      db.coreTeam.saveAll(team);
+      await db.coreTeam.saveAll(team);
       return NextResponse.json({ success: true });
     }
     if (action === 'reorder-team') {
       const { orders } = body; // Array of { id, displayOrder }
-      const team = db.coreTeam.getAll();
+      const team = await db.coreTeam.getAll();
       orders.forEach((o: any) => {
         const idx = team.findIndex(t => t.id === o.id);
         if (idx !== -1) {
@@ -327,21 +327,21 @@ export async function POST(request: Request) {
         }
       });
       team.sort((a, b) => a.displayOrder - b.displayOrder);
-      db.coreTeam.saveAll(team);
+      await db.coreTeam.saveAll(team);
       return NextResponse.json({ success: true });
     }
 
     // 9. Collaborations Management
     if (action === 'get-collaborations') {
-      return NextResponse.json(db.collaborationRequests.getAll());
+      return NextResponse.json(await db.collaborationRequests.getAll());
     }
     if (action === 'update-collaboration') {
       const { id, status } = body;
-      const collaborations = db.collaborationRequests.getAll();
+      const collaborations = await db.collaborationRequests.getAll();
       const idx = collaborations.findIndex(c => c.id === id);
       if (idx !== -1) {
         collaborations[idx].status = status || collaborations[idx].status;
-        db.collaborationRequests.saveAll(collaborations);
+        await db.collaborationRequests.saveAll(collaborations);
         return NextResponse.json({ success: true });
       }
       return NextResponse.json({ error: 'Collaboration request not found' }, { status: 404 });
@@ -349,11 +349,11 @@ export async function POST(request: Request) {
 
     // 10. Website Content CMS Management
     if (action === 'get-content') {
-      return NextResponse.json(db.websiteContent.get());
+      return NextResponse.json(await db.websiteContent.get());
     }
     if (action === 'update-content') {
       const { content } = body;
-      db.websiteContent.save(content);
+      await db.websiteContent.save(content);
       return NextResponse.json({ success: true });
     }
 
@@ -364,7 +364,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Missing passwords.' }, { status: 400 });
       }
 
-      const admins = db.admins.getAll();
+      const admins = await db.admins.getAll();
       const admin = admins[0]; // main admin
       const currentHash = hashPassword(currentPassword, admin.salt);
       if (currentHash !== admin.passwordHash) {
@@ -373,40 +373,40 @@ export async function POST(request: Request) {
 
       admin.salt = generateSalt();
       admin.passwordHash = hashPassword(newPassword, admin.salt);
-      db.admins.saveAll(admins);
+      await db.admins.saveAll(admins);
       return NextResponse.json({ success: true });
     }
 
     // 12. Notifications Management
     if (action === 'get-notifications') {
-      return NextResponse.json(db.notifications.getAll());
+      return NextResponse.json(await db.notifications.getAll());
     }
     if (action === 'mark-notifications-read') {
-      const notifications = db.notifications.getAll();
+      const notifications = await db.notifications.getAll();
       notifications.forEach(n => { n.status = 'read'; });
-      db.notifications.saveAll(notifications);
+      await db.notifications.saveAll(notifications);
       return NextResponse.json({ success: true });
     }
 
     if (action === 'get-contact-messages') {
-      return NextResponse.json(db.contactMessages.getAll());
+      return NextResponse.json(await db.contactMessages.getAll());
     }
     if (action === 'update-contact-message') {
       const { id, status } = body;
-      const messages = db.contactMessages.getAll();
+      const messages = await db.contactMessages.getAll();
       const idx = messages.findIndex(m => m.id === id);
       if (idx !== -1) {
         messages[idx].status = status || messages[idx].status;
-        db.contactMessages.saveAll(messages);
+        await db.contactMessages.saveAll(messages);
         return NextResponse.json({ success: true });
       }
       return NextResponse.json({ error: 'Contact message not found' }, { status: 404 });
     }
     if (action === 'delete-contact-message') {
       const { id } = body;
-      let messages = db.contactMessages.getAll();
+      let messages = await db.contactMessages.getAll();
       messages = messages.filter(m => m.id !== id);
-      db.contactMessages.saveAll(messages);
+      await db.contactMessages.saveAll(messages);
       return NextResponse.json({ success: true });
     }
 

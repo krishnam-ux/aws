@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     }
 
     // Find the event
-    const events = db.events.getAll();
+    const events = await db.events.getAll();
     const event = events.find(e => e.id === eventId);
     if (!event) {
       return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Registration for this event is not open.' }, { status: 400 });
     }
 
-    const regList = db.eventRegistrations.getAll();
+    const regList = await db.eventRegistrations.getAll();
 
     // Check for duplicates (same email + same event)
     const duplicate = regList.find(r => r.eventId === eventId && r.email.toLowerCase() === email.toLowerCase());
@@ -107,10 +107,10 @@ export async function POST(request: Request) {
     };
 
     regList.push(newReg);
-    db.eventRegistrations.saveAll(regList);
+    await db.eventRegistrations.saveAll(regList);
 
     // Create Admin notification
-    const notifications = db.notifications.getAll();
+    const notifications = await db.notifications.getAll();
     notifications.push({
       id: `notif-${Date.now()}`,
       title: 'New Event Registration',
@@ -118,7 +118,7 @@ export async function POST(request: Request) {
       date: new Date().toISOString(),
       status: 'unread'
     });
-    db.notifications.saveAll(notifications);
+    await db.notifications.saveAll(notifications);
 
     return NextResponse.json({
       success: true,

@@ -10,7 +10,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required message parameters.' }, { status: 400 });
     }
 
-    const messages = db.contactMessages.getAll();
+    const messages = await db.contactMessages.getAll();
     const newMsg = {
       id: `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       name,
@@ -22,10 +22,10 @@ export async function POST(request: Request) {
     };
 
     messages.push(newMsg);
-    db.contactMessages.saveAll(messages);
+    await db.contactMessages.saveAll(messages);
 
     // Push notification to Admin
-    const notifications = db.notifications.getAll();
+    const notifications = await db.notifications.getAll();
     notifications.push({
       id: `notif-${Date.now()}`,
       type: 'contact',
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       status: 'unread',
       date: new Date().toISOString()
     });
-    db.notifications.saveAll(notifications);
+    await db.notifications.saveAll(notifications);
 
     return NextResponse.json({ success: true, requestId: newMsg.id });
   } catch (err) {
