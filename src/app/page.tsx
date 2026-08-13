@@ -265,9 +265,9 @@ export default function Home() {
                 </div>
               </div>
               <div className="pt-6">
-                <Link href="/contact" className="text-xs text-brand-navy hover:text-aws-orange font-bold font-sans">
+                <a href="mailto:shuklaabhayas0@gmail.com" className="text-xs text-brand-navy hover:text-aws-orange font-bold font-sans">
                   Get in Touch &rarr;
-                </Link>
+                </a>
               </div>
             </div>
           </div>

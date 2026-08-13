@@ -93,9 +93,9 @@ export default function Leadership() {
           </div>
           <div className="mt-8 border-t border-slate-100 pt-4 flex justify-between items-center text-[10px] font-sans text-slate-400">
             <span>Verified Coordinator</span>
-            <Link href="/contact" className="text-brand-navy hover:text-aws-orange font-bold">
+            <a href="mailto:shuklaabhayas0@gmail.com" className="text-brand-navy hover:text-aws-orange font-bold">
               Contact &rarr;
-            </Link>
+            </a>
           </div>
         </div>
 

@@ -130,12 +130,12 @@ export default function Verification() {
               <h4 className="font-display font-bold text-slate-900 text-sm">University Community Approval</h4>
               <p className="text-[10px] text-slate-400 mt-0.5 font-sans">Status: University Communication Available</p>
             </div>
-            <Link
-              href="/contact"
-              className="btn-secondary py-1.5 text-xs"
+            <a
+              href={siteConfig.safeEmailLink}
+              className="btn-secondary py-1.5 text-xs text-center"
             >
               Contact Community
-            </Link>
+            </a>
           </div>
         </div>
 
