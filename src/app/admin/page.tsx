@@ -66,7 +66,7 @@ export default function AdminDashboard() {
     selectedIds?: string[];
   } | null>(null);
 
-  const [updatingEventIds, setUpdatingEventIds] = useState<Record<string, boolean>>({});
+  const [statusSaveState, setStatusSaveState] = useState<Record<string, 'saving' | 'saved' | 'failed' | null>>({});
 
   // DB Data
   const [registrations, setRegistrations] = useState<any[]>([]);
@@ -113,7 +113,7 @@ export default function AdminDashboard() {
 
   // Form Fields
   const [eventForm, setEventForm] = useState<any>({
-    title: '', month: 'August', date: '', time: 'TBA', venue: 'TBA', description: '', focus: '', outcome: '', speaker: 'TBA', registrationLink: '', status: 'Planned', image: '', format: 'Hands-on Technical Workshop', whatYouWillLearn: ''
+    title: '', month: 'August', date: '', time: 'TBA', venue: 'TBA', description: '', focus: '', outcome: '', speaker: 'TBA', registrationLink: '', status: 'Draft', registrationStatus: 'Not Open', image: '', format: 'Hands-on Technical Workshop', whatYouWillLearn: ''
   });
   const [announcementForm, setAnnouncementForm] = useState<any>({
     title: '', category: 'General', description: '', status: 'Published', image: ''
@@ -335,12 +335,13 @@ export default function AdminDashboard() {
 
   const updateEventStatusField = async (eventId: string, field: string, value: string) => {
     const prevEvents = [...events];
+    const stateKey = `${eventId}-${field}`;
     
     // Optimistic UI state update
     setEvents(prevEvents.map(e => e.id === eventId ? { ...e, [field]: value } : e));
     
-    // Set loading indicator
-    setUpdatingEventIds(prev => ({ ...prev, [eventId]: true }));
+    // Set saving indicator
+    setStatusSaveState(prev => ({ ...prev, [stateKey]: 'saving' }));
     setActionError('');
     setActionSuccess('');
 
@@ -349,26 +350,29 @@ export default function AdminDashboard() {
       if (res && res.success) {
         await fetchTabItems();
         await fetchStats();
-        setActionSuccess('Event updated successfully!');
-        setTimeout(() => setActionSuccess(''), 3000);
+        
+        setStatusSaveState(prev => ({ ...prev, [stateKey]: 'saved' }));
+        // Clear saved status after 2 seconds
+        setTimeout(() => {
+          setStatusSaveState(prev => ({ ...prev, [stateKey]: null }));
+        }, 2000);
       } else {
         // Rollback state on failure
         setEvents(prevEvents);
-        setActionError('Unable to update event status. Please try again.');
-        setTimeout(() => setActionError(''), 5000);
+        setStatusSaveState(prev => ({ ...prev, [stateKey]: 'failed' }));
+        setActionError('Update failed. Please try again.');
+        setTimeout(() => {
+          setStatusSaveState(prev => ({ ...prev, [stateKey]: null }));
+        }, 4000);
       }
     } catch (err) {
       // Rollback state on error
       setEvents(prevEvents);
-      setActionError('Unable to update event status. Please try again.');
-      setTimeout(() => setActionError(''), 5000);
-    } finally {
-      // Clear loading indicator
-      setUpdatingEventIds(prev => {
-        const next = { ...prev };
-        delete next[eventId];
-        return next;
-      });
+      setStatusSaveState(prev => ({ ...prev, [stateKey]: 'failed' }));
+      setActionError('Update failed. Please try again.');
+      setTimeout(() => {
+        setStatusSaveState(prev => ({ ...prev, [stateKey]: null }));
+      }, 4000);
     }
   };
 
@@ -455,7 +459,7 @@ export default function AdminDashboard() {
     if (res && res.success) {
       fetchTabItems();
       setCreateType(null);
-      setEventForm({ title: '', month: 'August', date: '', time: 'TBA', venue: 'TBA', description: '', focus: '', outcome: '', speaker: 'TBA', registrationLink: '', status: 'Planned', image: '', format: 'Hands-on Technical Workshop', whatYouWillLearn: '' });
+      setEventForm({ title: '', month: 'August', date: '', time: 'TBA', venue: 'TBA', description: '', focus: '', outcome: '', speaker: 'TBA', registrationLink: '', status: 'Draft', registrationStatus: 'Not Open', image: '', format: 'Hands-on Technical Workshop', whatYouWillLearn: '' });
     }
   };
 
@@ -1559,36 +1563,59 @@ export default function AdminDashboard() {
                           <td className="px-4 py-3 font-semibold text-[#111827]">{event.title}</td>
                           <td className="px-4 py-3 font-medium text-slate-700">{event.month}</td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <select
-                              value={event.status}
-                              disabled={!!updatingEventIds[event.id]}
-                              onChange={(e) => updateEventStatusField(event.id, 'status', e.target.value)}
-                              className={`px-2 py-1 border border-[#E2E8F0] rounded bg-white font-medium text-xs focus:outline-none focus:ring-1 focus:ring-[#FF9900] ${
-                                !!updatingEventIds[event.id] ? 'opacity-50 cursor-not-allowed' : ''
-                              }`}
-                            >
-                              <option value="Draft">Draft</option>
-                              <option value="Upcoming">Upcoming</option>
-                              <option value="Ongoing">Ongoing</option>
-                              <option value="Completed">Completed</option>
-                              <option value="Cancelled">Cancelled</option>
-                              <option value="Unpublished">Unpublished</option>
-                            </select>
+                            <div className="flex flex-col space-y-1">
+                              <select
+                                value={event.status || 'Draft'}
+                                disabled={statusSaveState[`${event.id}-status`] === 'saving'}
+                                onChange={(e) => updateEventStatusField(event.id, 'status', e.target.value)}
+                                className={`px-2 py-1 border border-[#E2E8F0] rounded bg-white font-medium text-xs focus:outline-none focus:ring-1 focus:ring-[#FF9900] ${
+                                  statusSaveState[`${event.id}-status`] === 'saving' ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                              >
+                                <option value="Draft">Draft</option>
+                                <option value="Planned">Planned</option>
+                                <option value="Upcoming">Upcoming</option>
+                                <option value="Ongoing">Ongoing</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
+                                <option value="Unpublished">Unpublished</option>
+                              </select>
+                              {statusSaveState[`${event.id}-status`] === 'saving' && (
+                                <span className="text-[10px] text-slate-500 font-semibold animate-pulse">Saving...</span>
+                              )}
+                              {statusSaveState[`${event.id}-status`] === 'saved' && (
+                                <span className="text-[10px] text-emerald-600 font-bold">Saved</span>
+                              )}
+                              {statusSaveState[`${event.id}-status`] === 'failed' && (
+                                <span className="text-[10px] text-red-650 font-bold">Update failed. Please try again.</span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <select
-                              value={event.registrationStatus || 'Not Open'}
-                              disabled={!!updatingEventIds[event.id]}
-                              onChange={(e) => updateEventStatusField(event.id, 'registrationStatus', e.target.value)}
-                              className={`px-2 py-1 border border-[#E2E8F0] rounded bg-white font-medium text-xs focus:outline-none focus:ring-1 focus:ring-[#FF9900] ${
-                                !!updatingEventIds[event.id] ? 'opacity-50 cursor-not-allowed' : ''
-                              }`}
-                            >
-                              <option value="Not Open">Not Open</option>
-                              <option value="Open">Open</option>
-                              <option value="Closed">Closed</option>
-                              <option value="Full">Full</option>
-                            </select>
+                            <div className="flex flex-col space-y-1">
+                              <select
+                                value={event.registrationStatus || 'Not Open'}
+                                disabled={statusSaveState[`${event.id}-registrationStatus`] === 'saving'}
+                                onChange={(e) => updateEventStatusField(event.id, 'registrationStatus', e.target.value)}
+                                className={`px-2 py-1 border border-[#E2E8F0] rounded bg-white font-medium text-xs focus:outline-none focus:ring-1 focus:ring-[#FF9900] ${
+                                  statusSaveState[`${event.id}-registrationStatus`] === 'saving' ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                              >
+                                <option value="Not Open">Not Open</option>
+                                <option value="Open">Open</option>
+                                <option value="Closed">Closed</option>
+                                <option value="Full">Full</option>
+                              </select>
+                              {statusSaveState[`${event.id}-registrationStatus`] === 'saving' && (
+                                <span className="text-[10px] text-slate-500 font-semibold animate-pulse">Saving...</span>
+                              )}
+                              {statusSaveState[`${event.id}-registrationStatus`] === 'saved' && (
+                                <span className="text-[10px] text-emerald-600 font-bold">Saved</span>
+                              )}
+                              {statusSaveState[`${event.id}-registrationStatus`] === 'failed' && (
+                                <span className="text-[10px] text-red-650 font-bold">Update failed. Please try again.</span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-4 py-3 font-semibold">
                             <button

@@ -14,7 +14,7 @@
       "Getting started with AWS Skill Builder learning resources",
       "Setting up your cloud learning dashboard"
     ],
-    "status": "Upcoming",
+    "status": "Draft",
     "date": "August 2026",
     "time": "TBA",
     "venue": "TBA",
@@ -23,7 +23,7 @@
     "image": "",
     "isRegistrationOpen": false,
     "isPublished": false,
-    "registrationStatus": "Open"
+    "registrationStatus": "Not Open"
   },
   {
     "id": "event-02",

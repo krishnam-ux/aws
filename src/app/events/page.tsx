@@ -172,12 +172,21 @@ export default function Events() {
 
 
 
-  const upcomingFiltered = eventsList.filter(e => e.status === 'Planned' || e.status === 'Upcoming');
-  const ongoingFiltered = eventsList.filter(e => e.status === 'Ongoing');
-  const completedFiltered = eventsList.filter(e => e.status === 'Completed' || e.status === 'Cancelled');
+  const upcomingFiltered = eventsList.filter(e => {
+    const s = (e.status || '').toUpperCase();
+    return s === 'PLANNED' || s === 'UPCOMING';
+  });
+  const ongoingFiltered = eventsList.filter(e => {
+    const s = (e.status || '').toUpperCase();
+    return s === 'ONGOING';
+  });
+  const completedFiltered = eventsList.filter(e => {
+    const s = (e.status || '').toUpperCase();
+    return s === 'COMPLETED' || s === 'CANCELLED';
+  });
 
   const renderRegStatusBadge = (status: string | undefined) => {
-    const s = (status || 'Open').toUpperCase();
+    const s = (status || 'Not Open').toUpperCase();
     let styleClasses = 'bg-slate-50 text-slate-500 border-slate-200';
     
     if (s === 'OPEN') {
@@ -199,7 +208,7 @@ export default function Events() {
 
   const renderRegisterButton = (event: CommunityEvent) => {
     const isCapacityFull = event.maxRegistrations && event.maxRegistrations > 0 && event.registrationCount && event.registrationCount >= event.maxRegistrations;
-    const regStatus = (event.registrationStatus || 'Open').toUpperCase();
+    const regStatus = (event.registrationStatus || 'Not Open').toUpperCase();
 
     if (regStatus === 'FULL' || isCapacityFull) {
       return (
@@ -212,7 +221,13 @@ export default function Events() {
     }
 
     if (regStatus === 'NOT OPEN') {
-      return null;
+      return (
+        <span
+          className="flex-grow text-center py-2 font-semibold rounded border border-slate-200 text-slate-450 bg-slate-50 font-sans text-xs"
+        >
+          Registration Not Open
+        </span>
+      );
     }
 
     if (regStatus === 'CLOSED') {

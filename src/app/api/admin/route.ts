@@ -165,6 +165,8 @@ export async function POST(request: Request) {
       const { event } = body;
       const events = db.events.getAll();
       const newEvent = {
+        status: 'Draft',
+        registrationStatus: 'Not Open',
         ...event,
         id: `event-${Date.now()}`,
         number: `Event 0${events.length + 1}`
@@ -178,7 +180,10 @@ export async function POST(request: Request) {
       const events = db.events.getAll();
       const idx = events.findIndex(e => e.id === event.id);
       if (idx !== -1) {
-        events[idx] = { ...events[idx], ...event };
+        const updatedEvent = { ...events[idx], ...event };
+        if (!updatedEvent.status) updatedEvent.status = 'Draft';
+        if (!updatedEvent.registrationStatus) updatedEvent.registrationStatus = 'Not Open';
+        events[idx] = updatedEvent;
         db.events.saveAll(events);
         return NextResponse.json({ success: true });
       }
