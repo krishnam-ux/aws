@@ -32,7 +32,8 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [university, setUniversity] = useState('Chandigarh University');
+  const [university, setUniversity] = useState('Chandigarh University – Uttar Pradesh');
+  const [customUniversity, setCustomUniversity] = useState('');
   const [program, setProgram] = useState('');
   const [year, setYear] = useState('1st Year');
   const [studentId, setStudentId] = useState('');
@@ -82,6 +83,12 @@ export default function RegisterPage({ params }: RegisterPageProps) {
     }
   }, [eventId]);
 
+  useEffect(() => {
+    if (event) {
+      document.title = `Register: ${event.title} | AWS Student Builder Group`;
+    }
+  }, [event]);
+
   const handleInterestChange = (interest: string) => {
     if (interests.includes(interest)) {
       setInterests(interests.filter((i) => i !== interest));
@@ -107,7 +114,13 @@ export default function RegisterPage({ params }: RegisterPageProps) {
       errors.phone = 'Please enter a valid phone number (10 to 15 digits)';
     }
 
-    if (!university.trim()) errors.university = 'University name is required';
+    if (university === 'Other') {
+      if (!customUniversity.trim()) {
+        errors.customUniversity = 'Please specify your university';
+      }
+    } else {
+      if (!university.trim()) errors.university = 'University name is required';
+    }
     if (!program.trim()) errors.program = 'Program or course is required';
     
     if (interests.length === 0) {
@@ -165,7 +178,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
           fullName,
           email,
           phone,
-          university,
+          university: university === 'Other' ? customUniversity : university,
           program,
           year,
           studentId,
@@ -360,19 +373,46 @@ export default function RegisterPage({ params }: RegisterPageProps) {
               <label htmlFor="university" className="block font-bold text-slate-700 uppercase tracking-wider text-[10px]">
                 University <span className="text-red-500">*</span>
               </label>
-              <input
+              <select
                 id="university"
                 name="university"
-                type="text"
                 value={university}
-                onChange={(e) => setUniversity(e.target.value)}
-                placeholder="Enter university name"
-                className={`w-full p-2 border rounded font-sans text-xs focus:outline-none focus:ring-1 focus:ring-aws-orange bg-[#F6F8FA] ${
+                onChange={(e) => {
+                  setUniversity(e.target.value);
+                  if (e.target.value !== 'Other') {
+                    setCustomUniversity('');
+                  }
+                }}
+                className={`w-full p-2 border border-[#E2E8F0] rounded font-sans text-xs focus:outline-none focus:ring-1 focus:ring-aws-orange bg-white ${
                   formErrors.university ? 'border-red-500 focus:ring-red-500' : 'border-[#E2E8F0]'
                 }`}
-              />
+              >
+                <option value="Chandigarh University – Uttar Pradesh">Chandigarh University – Uttar Pradesh</option>
+                <option value="Other">Other</option>
+              </select>
               {formErrors.university && <p className="text-red-500 text-[10px] font-semibold mt-0.5">{formErrors.university}</p>}
             </div>
+
+            {/* Specify Custom University */}
+            {university === 'Other' && (
+              <div className="space-y-1.5">
+                <label htmlFor="customUniversity" className="block font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                  Please specify your university <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="customUniversity"
+                  name="customUniversity"
+                  type="text"
+                  value={customUniversity}
+                  onChange={(e) => setCustomUniversity(e.target.value)}
+                  placeholder="Enter your university name"
+                  className={`w-full p-2 border rounded font-sans text-xs focus:outline-none focus:ring-1 focus:ring-aws-orange bg-[#F6F8FA] ${
+                    formErrors.customUniversity ? 'border-red-500 focus:ring-red-500' : 'border-[#E2E8F0]'
+                  }`}
+                />
+                {formErrors.customUniversity && <p className="text-red-500 text-[10px] font-semibold mt-0.5">{formErrors.customUniversity}</p>}
+              </div>
+            )}
 
             {/* Program / Course */}
             <div className="space-y-1.5">
