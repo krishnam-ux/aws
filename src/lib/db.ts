@@ -34,12 +34,14 @@ async function getBlobStore() {
 }
 
 // Memory cache to hide eventual consistency latency in production/serverless environments
-const memoryDbCache: Record<string, any> = {};
+const memoryDbCache: Record<string, { data: any; expiresAt: number }> = {};
+const CACHE_TTL_MS = 5000; // 5 seconds cache TTL
 
 // Generic read/write functions
 async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
-  if (memoryDbCache[filename] !== undefined) {
-    return memoryDbCache[filename] as T;
+  const cached = memoryDbCache[filename];
+  if (cached !== undefined && Date.now() < cached.expiresAt) {
+    return cached.data as T;
   }
 
   if (IS_NETLIFY) {
@@ -49,7 +51,10 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
         const val = await store.get(filename, { type: 'text' });
         if (val) {
           const parsed = JSON.parse(val) as T;
-          memoryDbCache[filename] = parsed;
+          memoryDbCache[filename] = {
+            data: parsed,
+            expiresAt: Date.now() + CACHE_TTL_MS
+          };
           return parsed;
         }
       } catch (err) {
@@ -66,7 +71,10 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
   try {
     const data = fs.readFileSync(filePath, 'utf-8');
     const parsed = JSON.parse(data) as T;
-    memoryDbCache[filename] = parsed;
+    memoryDbCache[filename] = {
+      data: parsed,
+      expiresAt: Date.now() + CACHE_TTL_MS
+    };
     return parsed;
   } catch (err) {
     console.error(`Error reading database file: ${filename}`, err);
@@ -76,7 +84,10 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
 
 async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
   // Update memory cache immediately
-  memoryDbCache[filename] = data;
+  memoryDbCache[filename] = {
+    data,
+    expiresAt: Date.now() + CACHE_TTL_MS
+  };
 
   if (IS_NETLIFY) {
     const store = await getBlobStore();
