@@ -64,6 +64,8 @@ export default function AdminDashboard() {
     selectedIds?: string[];
   } | null>(null);
 
+  const [updatingEventIds, setUpdatingEventIds] = useState<Record<string, boolean>>({});
+
   // DB Data
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [events, setEvents] = useState<CommunityEvent[]>([]);
@@ -315,10 +317,41 @@ export default function AdminDashboard() {
   };
 
   const updateEventStatusField = async (eventId: string, field: string, value: string) => {
-    const res = await apiCall({ action: 'update-event', event: { id: eventId, [field]: value } });
-    if (res && res.success) {
-      fetchTabItems();
-      fetchStats();
+    const prevEvents = [...events];
+    
+    // Optimistic UI state update
+    setEvents(prevEvents.map(e => e.id === eventId ? { ...e, [field]: value } : e));
+    
+    // Set loading indicator
+    setUpdatingEventIds(prev => ({ ...prev, [eventId]: true }));
+    setActionError('');
+    setActionSuccess('');
+
+    try {
+      const res = await apiCall({ action: 'update-event', event: { id: eventId, [field]: value } });
+      if (res && res.success) {
+        await fetchTabItems();
+        await fetchStats();
+        setActionSuccess('Event updated successfully!');
+        setTimeout(() => setActionSuccess(''), 3000);
+      } else {
+        // Rollback state on failure
+        setEvents(prevEvents);
+        setActionError('Unable to update event status. Please try again.');
+        setTimeout(() => setActionError(''), 5000);
+      }
+    } catch (err) {
+      // Rollback state on error
+      setEvents(prevEvents);
+      setActionError('Unable to update event status. Please try again.');
+      setTimeout(() => setActionError(''), 5000);
+    } finally {
+      // Clear loading indicator
+      setUpdatingEventIds(prev => {
+        const next = { ...prev };
+        delete next[eventId];
+        return next;
+      });
     }
   };
 
@@ -1396,8 +1429,11 @@ export default function AdminDashboard() {
                           <td className="px-4 py-3 whitespace-nowrap">
                             <select
                               value={event.status}
+                              disabled={!!updatingEventIds[event.id]}
                               onChange={(e) => updateEventStatusField(event.id, 'status', e.target.value)}
-                              className="px-2 py-1 border border-[#E2E8F0] rounded bg-white font-medium text-xs focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                              className={`px-2 py-1 border border-[#E2E8F0] rounded bg-white font-medium text-xs focus:outline-none focus:ring-1 focus:ring-[#FF9900] ${
+                                !!updatingEventIds[event.id] ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
                             >
                               <option value="Draft">Draft</option>
                               <option value="Upcoming">Upcoming</option>
@@ -1410,8 +1446,11 @@ export default function AdminDashboard() {
                           <td className="px-4 py-3 whitespace-nowrap">
                             <select
                               value={event.registrationStatus || 'Not Open'}
+                              disabled={!!updatingEventIds[event.id]}
                               onChange={(e) => updateEventStatusField(event.id, 'registrationStatus', e.target.value)}
-                              className="px-2 py-1 border border-[#E2E8F0] rounded bg-white font-medium text-xs focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                              className={`px-2 py-1 border border-[#E2E8F0] rounded bg-white font-medium text-xs focus:outline-none focus:ring-1 focus:ring-[#FF9900] ${
+                                !!updatingEventIds[event.id] ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
                             >
                               <option value="Not Open">Not Open</option>
                               <option value="Open">Open</option>
