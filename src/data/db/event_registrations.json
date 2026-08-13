@@ -1,0 +1,26 @@
+[
+  {
+    "id": "reg-1786563760841-4575",
+    "eventId": "event-02",
+    "eventName": "AWS Core Services Workshop",
+    "name": "John Doe",
+    "email": "john.doe@chd.edu.in",
+    "phone": "+91 98765 43210",
+    "university": "Chandigarh UnivChandigarh Universityersity",
+    "program": "B.Tech CSE",
+    "year": "4th Year",
+    "studentId": "22BCS10234",
+    "interests": [
+      "AWS Cloud",
+      "AI / ML"
+    ],
+    "experienceLevel": "Intermediate",
+    "linkedin": "https://linkedin.com/in/johndoe",
+    "github": "https://github.com/johndoe",
+    "motivation": "I want to learn core AWS infrastructure and EC2.",
+    "consent": true,
+    "date": "2026-08-12T19:42:40.841Z",
+    "status": "Attended",
+    "notes": "DONE"
+  }
+]

@@ -1,1 +1,100 @@
-[]
+[
+  {
+    "id": "notif-1786563760845",
+    "title": "New Event Registration",
+    "description": "John Doe registered for AWS Core Services Workshop.",
+    "date": "2026-08-12T19:42:40.845Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1786602319309",
+    "title": "New Event Registration",
+    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-08-13T06:25:19.309Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1786602319402",
+    "title": "New Event Registration",
+    "description": "Second Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-08-13T06:25:19.402Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1786602531886",
+    "title": "New Event Registration",
+    "description": "John Doe registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-08-13T06:28:51.886Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1786604576569",
+    "title": "New Event Registration",
+    "description": "Alice Cooper registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-08-13T07:02:56.569Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1786604942974",
+    "title": "New Event Registration",
+    "description": "Test Student 1 registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-08-13T07:09:02.974Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1786604943009",
+    "title": "New Event Registration",
+    "description": "Test Student 2 registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-08-13T07:09:03.010Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1786604943059",
+    "title": "New Event Registration",
+    "description": "Test Student 3 registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-08-13T07:09:03.059Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1786604943108",
+    "title": "New Event Registration",
+    "description": "Test Student 4 registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-08-13T07:09:03.108Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1786604971424",
+    "title": "New Event Registration",
+    "description": "Test Student 1 registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-08-13T07:09:31.424Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1786604971458",
+    "title": "New Event Registration",
+    "description": "Test Student 2 registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-08-13T07:09:31.458Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1786604971495",
+    "title": "New Event Registration",
+    "description": "Test Student 3 registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-08-13T07:09:31.495Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1786604971539",
+    "title": "New Event Registration",
+    "description": "Test Student 4 registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-08-13T07:09:31.539Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1786604971690",
+    "title": "New Event Registration",
+    "description": "Event 2 Student registered for AWS Core Services Workshop.",
+    "date": "2026-08-13T07:09:31.690Z",
+    "status": "unread"
+  }
+]

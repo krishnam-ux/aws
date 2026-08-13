@@ -47,7 +47,8 @@ export async function POST(request: Request) {
 
     // 2. Dashboard Stats
     if (action === 'get-stats') {
-      const registrations = db.registrations.getAll();
+      const registrations = db.registrations.getAll(); // join community
+      const eventRegistrations = db.eventRegistrations.getAll(); // event registrations
       const events = db.events.getAll();
       const verifications = db.verificationRequests.getAll();
       const announcements = db.announcements.getAll();
@@ -55,15 +56,19 @@ export async function POST(request: Request) {
       const collaborations = db.collaborationRequests.getAll();
 
       const counts = {
-        registrations: registrations.length,
-        events: events.filter(e => e.status !== 'Draft').length,
+        registrations: eventRegistrations.length, // total event registrations
+        joinCommunity: registrations.length,
+        events: events.filter(e => e.status !== 'Draft' && e.status !== 'Unpublished').length,
+        upcomingEvents: events.filter(e => e.status === 'Planned' || e.status === 'Upcoming').length,
+        openRegistrations: events.filter(e => e.registrationStatus === 'Open' && e.status !== 'Draft' && e.status !== 'Unpublished').length,
+        pendingRegistrations: eventRegistrations.filter(r => r.status === 'New').length,
         verifications: verifications.filter(v => v.status === 'New').length,
         announcements: announcements.length,
         resources: resources.length,
         collaborations: collaborations.filter(c => c.status === 'New').length
       };
 
-      const recentRegistrations = [...registrations]
+      const recentRegistrations = [...eventRegistrations]
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 5);
 
@@ -72,13 +77,13 @@ export async function POST(request: Request) {
         .slice(0, 5);
 
       const upcomingEvents = events
-        .filter(e => e.status === 'Planned' || e.status === 'Upcoming')
-        .slice(0, 5);
+        .filter(e => e.status !== 'Draft' && e.status !== 'Unpublished')
+        .slice(0, 6);
 
       return NextResponse.json({ counts, recentRegistrations, recentVerifications, upcomingEvents });
     }
 
-    // 3. Registrations Management
+    // 3. Registrations Management (Join Community)
     if (action === 'get-registrations') {
       return NextResponse.json(db.registrations.getAll());
     }
@@ -99,6 +104,50 @@ export async function POST(request: Request) {
       let registrations = db.registrations.getAll();
       registrations = registrations.filter(r => r.id !== id);
       db.registrations.saveAll(registrations);
+      return NextResponse.json({ success: true });
+    }
+
+    // 3b. Event Registrations Management
+    if (action === 'get-event-registrations') {
+      return NextResponse.json(db.eventRegistrations.getAll());
+    }
+    if (action === 'update-event-registration') {
+      const { id, status, notes } = body;
+      const regs = db.eventRegistrations.getAll();
+      const idx = regs.findIndex(r => r.id === id);
+      if (idx !== -1) {
+        regs[idx].status = status || regs[idx].status;
+        regs[idx].notes = notes !== undefined ? notes : regs[idx].notes;
+        db.eventRegistrations.saveAll(regs);
+        return NextResponse.json({ success: true });
+      }
+      return NextResponse.json({ error: 'Event registration not found' }, { status: 404 });
+    }
+    if (action === 'delete-event-registration') {
+      const { id } = body;
+      let regs = db.eventRegistrations.getAll();
+      regs = regs.filter(r => r.id !== id);
+      db.eventRegistrations.saveAll(regs);
+      return NextResponse.json({ success: true });
+    }
+    if (action === 'delete-event-registrations-bulk') {
+      const { ids } = body;
+      if (!Array.isArray(ids)) {
+        return NextResponse.json({ error: 'Parameter ids must be an array.' }, { status: 400 });
+      }
+      let regs = db.eventRegistrations.getAll();
+      regs = regs.filter(r => !ids.includes(r.id));
+      db.eventRegistrations.saveAll(regs);
+      return NextResponse.json({ success: true });
+    }
+    if (action === 'delete-event-registrations-all') {
+      const { eventId } = body;
+      if (!eventId) {
+        return NextResponse.json({ error: 'Missing parameter: eventId.' }, { status: 400 });
+      }
+      let regs = db.eventRegistrations.getAll();
+      regs = regs.filter(r => r.eventId !== eventId);
+      db.eventRegistrations.saveAll(regs);
       return NextResponse.json({ success: true });
     }
 

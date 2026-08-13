@@ -14,13 +14,16 @@
       "Getting started with AWS Skill Builder learning resources",
       "Setting up your cloud learning dashboard"
     ],
-    "status": "Planned",
+    "status": "Upcoming",
     "date": "August 2026",
     "time": "TBA",
     "venue": "TBA",
     "speaker": "TBA",
     "registrationLink": "",
-    "image": ""
+    "image": "",
+    "isRegistrationOpen": false,
+    "isPublished": false,
+    "registrationStatus": "Open"
   },
   {
     "id": "event-02",
@@ -37,13 +40,15 @@
       "Deploying a static web application to public endpoints",
       "Implementing Identity Access Management (IAM) permissions"
     ],
-    "status": "Planned",
+    "status": "Upcoming",
     "date": "September 2026",
     "time": "TBA",
     "venue": "TBA",
     "speaker": "TBA",
     "registrationLink": "",
-    "image": ""
+    "image": "",
+    "isRegistrationOpen": true,
+    "registrationStatus": "Not Open"
   },
   {
     "id": "event-03",
@@ -60,13 +65,15 @@
       "Automating developer workflows using Amazon Q assistants",
       "Designing efficient prompt workflows for foundation models"
     ],
-    "status": "Planned",
+    "status": "Upcoming",
     "date": "November 2026",
     "time": "TBA",
     "venue": "TBA",
     "speaker": "TBA",
     "registrationLink": "",
-    "image": ""
+    "image": "",
+    "isRegistrationOpen": false,
+    "registrationStatus": "Not Open"
   },
   {
     "id": "event-04",
@@ -83,13 +90,15 @@
       "Triggering functions from Amazon S3 storage events",
       "Scaling database connections under event-driven architectures"
     ],
-    "status": "Planned",
+    "status": "Upcoming",
     "date": "January 2027",
     "time": "TBA",
     "venue": "TBA",
     "speaker": "TBA",
     "registrationLink": "",
-    "image": ""
+    "image": "",
+    "isRegistrationOpen": false,
+    "registrationStatus": "Not Open"
   },
   {
     "id": "event-05",
@@ -106,13 +115,15 @@
       "Attempting mock questions and reviewing incorrect answers",
       "Career guidance and certification discount strategies"
     ],
-    "status": "Planned",
+    "status": "Upcoming",
     "date": "February 2027",
     "time": "TBA",
     "venue": "TBA",
     "speaker": "TBA",
     "registrationLink": "",
-    "image": ""
+    "image": "",
+    "isRegistrationOpen": false,
+    "registrationStatus": "Not Open"
   },
   {
     "id": "event-06",
@@ -129,12 +140,14 @@
       "Working in cross-functional student engineering teams",
       "Presenting architectural diagrams to peer panels"
     ],
-    "status": "Planned",
+    "status": "Upcoming",
     "date": "April 2027",
     "time": "TBA",
     "venue": "TBA",
     "speaker": "TBA",
     "registrationLink": "",
-    "image": ""
+    "image": "",
+    "isRegistrationOpen": false,
+    "registrationStatus": "Not Open"
   }
 ]

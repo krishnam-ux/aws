@@ -72,13 +72,15 @@ const DEFAULT_EVENTS = [
       'Getting started with AWS Skill Builder learning resources',
       'Setting up your cloud learning dashboard'
     ],
-    status: 'Planned',
+    status: 'Upcoming',
     date: 'August 2026',
     time: 'TBA',
     venue: 'TBA',
     speaker: 'TBA',
     registrationLink: '',
-    image: ''
+    image: '',
+    registrationStatus: 'Open',
+    maxRegistrations: -1
   },
   {
     id: 'event-02',
@@ -95,13 +97,15 @@ const DEFAULT_EVENTS = [
       'Deploying a static web application to public endpoints',
       'Implementing Identity Access Management (IAM) permissions'
     ],
-    status: 'Planned',
+    status: 'Upcoming',
     date: 'September 2026',
     time: 'TBA',
     venue: 'TBA',
     speaker: 'TBA',
     registrationLink: '',
-    image: ''
+    image: '',
+    registrationStatus: 'Open',
+    maxRegistrations: -1
   },
   {
     id: 'event-03',
@@ -118,13 +122,15 @@ const DEFAULT_EVENTS = [
       'Automating developer workflows using Amazon Q assistants',
       'Designing efficient prompt workflows for foundation models'
     ],
-    status: 'Planned',
+    status: 'Upcoming',
     date: 'November 2026',
     time: 'TBA',
     venue: 'TBA',
     speaker: 'TBA',
     registrationLink: '',
-    image: ''
+    image: '',
+    registrationStatus: 'Open',
+    maxRegistrations: -1
   },
   {
     id: 'event-04',
@@ -141,13 +147,15 @@ const DEFAULT_EVENTS = [
       'Triggering functions from Amazon S3 storage events',
       'Scaling database connections under event-driven architectures'
     ],
-    status: 'Planned',
+    status: 'Upcoming',
     date: 'January 2027',
     time: 'TBA',
     venue: 'TBA',
     speaker: 'TBA',
     registrationLink: '',
-    image: ''
+    image: '',
+    registrationStatus: 'Open',
+    maxRegistrations: -1
   },
   {
     id: 'event-05',
@@ -159,18 +167,20 @@ const DEFAULT_EVENTS = [
     overview: 'A guided exam readiness cohort covering AWS security, core services, support tiers, and pricing models.',
     format: 'Certification Preparation & Mock Review',
     whatYouWillLearn: [
-      'Detailed breakdown of the AWS Certified Cloud Practitioner domains',
-      'Revising VPC structures, security groups, and billing models',
-      'Attempting mock questions and reviewing incorrect answers',
-      'Career guidance and certification discount strategies'
+      'Detailed breakdown of the AWS Certified Cloud Practitioner domains revision',
+      'Revising VPC structures, security groups, and billing models revision',
+      'Attempting mock questions and reviewing incorrect answers revision',
+      'Career guidance and certification discount strategies revision'
     ],
-    status: 'Planned',
+    status: 'Upcoming',
     date: 'February 2027',
     time: 'TBA',
     venue: 'TBA',
     speaker: 'TBA',
     registrationLink: '',
-    image: ''
+    image: '',
+    registrationStatus: 'Open',
+    maxRegistrations: -1
   },
   {
     id: 'event-06',
@@ -187,13 +197,15 @@ const DEFAULT_EVENTS = [
       'Working in cross-functional student engineering teams',
       'Presenting architectural diagrams to peer panels'
     ],
-    status: 'Planned',
+    status: 'Upcoming',
     date: 'April 2027',
     time: 'TBA',
     venue: 'TBA',
     speaker: 'TBA',
     registrationLink: '',
-    image: ''
+    image: '',
+    registrationStatus: 'Open',
+    maxRegistrations: -1
   }
 ];
 
@@ -262,6 +274,10 @@ export const db = {
   registrations: {
     getAll: () => readJsonFile<any[]>('registrations.json', []),
     saveAll: (data: any[]) => writeJsonFile('registrations.json', data)
+  },
+  eventRegistrations: {
+    getAll: () => readJsonFile<any[]>('event_registrations.json', []),
+    saveAll: (data: any[]) => writeJsonFile('event_registrations.json', data)
   },
   events: {
     getAll: () => readJsonFile<any[]>('events.json', DEFAULT_EVENTS),

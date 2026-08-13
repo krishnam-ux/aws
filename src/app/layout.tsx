@@ -22,7 +22,9 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://awssbg-cuup.vercel.app'),
   icons: {
     icon: [
-      { url: '/icon.png', sizes: '32x32 16x16 48x48', type: 'image/png' },
+      { url: '/icon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/icon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icon-48x48.png', sizes: '48x48', type: 'image/png' },
       { url: '/favicon.ico', sizes: 'any' }
     ],
     apple: [
