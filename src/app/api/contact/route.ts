@@ -10,34 +10,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required message parameters.' }, { status: 400 });
     }
 
-    const collaborations = db.collaborationRequests.getAll();
-    const newRequest = {
-      id: `collab-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    const messages = db.contactMessages.getAll();
+    const newMsg = {
+      id: `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       name,
       email,
-      organization: organization || 'Individual / Student',
-      type: type || 'General Inquiry', // Collaboration Type
+      subject: type || 'General Inquiry',
       message,
-      status: 'New', // Status: New, Contacted, In Discussion, Completed, Rejected
+      status: 'NEW', // Default status: NEW
       date: new Date().toISOString()
     };
 
-    collaborations.push(newRequest);
-    db.collaborationRequests.saveAll(collaborations);
+    messages.push(newMsg);
+    db.contactMessages.saveAll(messages);
 
     // Push notification to Admin
     const notifications = db.notifications.getAll();
     notifications.push({
       id: `notif-${Date.now()}`,
-      type: 'collaboration',
-      title: 'New Collaboration Request',
-      description: `${name} has sent a collaboration proposal.`,
+      type: 'contact',
+      title: 'New Contact Message',
+      description: `New message from ${name}: "${newMsg.subject}"`,
       status: 'unread',
       date: new Date().toISOString()
     });
     db.notifications.saveAll(notifications);
 
-    return NextResponse.json({ success: true, requestId: newRequest.id });
+    return NextResponse.json({ success: true, requestId: newMsg.id });
   } catch (err) {
     console.error('API Contact Error:', err);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

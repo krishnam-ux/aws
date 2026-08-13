@@ -96,5 +96,13 @@
     "description": "Event 2 Student registered for AWS Core Services Workshop.",
     "date": "2026-08-13T07:09:31.690Z",
     "status": "unread"
+  },
+  {
+    "id": "notif-1786621740890",
+    "type": "contact",
+    "title": "New Contact Message",
+    "description": "New message from Jane Doe: \"Cloud Lab Workshop Request\"",
+    "status": "unread",
+    "date": "2026-08-13T11:49:00.890Z"
   }
 ]

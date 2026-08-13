@@ -40,16 +40,18 @@ export default function AdminDashboard() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   // Tabs structure matching user specifications
-  const [activeTab, setActiveTab] = useState<'Dashboard' | 'Registrations' | 'EventRegistrations' | 'Verification' | 'Collaborations' | 'Events' | 'Announcements' | 'Resources' | 'CoreTeam' | 'Content' | 'Settings'>('Dashboard');
+  const [activeTab, setActiveTab] = useState<'Dashboard' | 'Registrations' | 'EventRegistrations' | 'Verification' | 'Collaborations' | 'Events' | 'Announcements' | 'Resources' | 'CoreTeam' | 'Content' | 'Settings' | 'ContactMessages'>('Dashboard');
 
   // Stats / Dashboard data
   const [stats, setStats] = useState<any>({
-    counts: { registrations: 0, joinCommunity: 0, events: 0, upcomingEvents: 0, openRegistrations: 0, pendingRegistrations: 0, verifications: 0, announcements: 0, resources: 0, collaborations: 0 },
+    counts: { registrations: 0, joinCommunity: 0, events: 0, upcomingEvents: 0, openRegistrations: 0, pendingRegistrations: 0, verifications: 0, announcements: 0, resources: 0, collaborations: 0, contactMessages: 0 },
     recentRegistrations: [],
     recentVerifications: [],
+    recentContactMessages: [],
     upcomingEvents: []
   });
 
+  const [contactMessages, setContactMessages] = useState<any[]>([]);
   // DB Data
   const [eventRegistrations, setEventRegistrations] = useState<any[]>([]);
   const [selectedEventRegs, setSelectedEventRegs] = useState<CommunityEvent | null>(null);
@@ -87,10 +89,22 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
 
+  // Contact messages filter states
+  const [contactSearchQuery, setContactSearchQuery] = useState('');
+  const [contactFilterStatus, setContactFilterStatus] = useState('All');
+  const [contactSortOrder, setContactSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [contactCurrentPage, setContactCurrentPage] = useState(1);
+  const [selectedContactMessage, setSelectedContactMessage] = useState<any | null>(null);
+  const [contactDeleteConfirmation, setContactDeleteConfirmation] = useState<any | null>(null);
+
   // Reset bulk selection when layout state changes to prevent unintended operations on hidden records
   useEffect(() => {
     setSelectedRegIds([]);
   }, [activeTab, selectedEventRegs, searchQuery, filterStatus]);
+
+  useEffect(() => {
+    setContactCurrentPage(1);
+  }, [contactSearchQuery, contactFilterStatus]);
 
   // Crud/View Modals
   const [viewItem, setViewItem] = useState<any | null>(null);
@@ -234,6 +248,9 @@ export default function AdminDashboard() {
     } else if (activeTab === 'Dashboard') {
       const data = await apiCall({ action: 'get-notifications' });
       if (data) setNotifications(data);
+    } else if (activeTab === 'ContactMessages') {
+      const data = await apiCall({ action: 'get-contact-messages' });
+      if (data) setContactMessages(data);
     }
   };
 
@@ -352,6 +369,54 @@ export default function AdminDashboard() {
         delete next[eventId];
         return next;
       });
+    }
+  };
+
+  const markContactMessageStatus = async (id: string, status: string) => {
+    setActionError('');
+    setActionSuccess('');
+    const res = await apiCall({ action: 'update-contact-message', id, status });
+    if (res && res.success) {
+      if (selectedContactMessage && selectedContactMessage.id === id) {
+        setSelectedContactMessage({ ...selectedContactMessage, status });
+      }
+      setActionSuccess(`Message marked as ${status.toLowerCase()}!`);
+      setTimeout(() => setActionSuccess(''), 3000);
+      await fetchTabItems();
+      await fetchStats();
+    } else {
+      setActionError('Failed to update message status.');
+      setTimeout(() => setActionError(''), 4000);
+    }
+  };
+
+  const deleteContactMessageConfirmed = async (id: string) => {
+    setActionError('');
+    setActionSuccess('');
+    const res = await apiCall({ action: 'delete-contact-message', id });
+    if (res && res.success) {
+      setActionSuccess('Contact message deleted successfully!');
+      setTimeout(() => setActionSuccess(''), 3000);
+      setContactDeleteConfirmation(null);
+      if (selectedContactMessage && selectedContactMessage.id === id) {
+        setSelectedContactMessage(null);
+      }
+      await fetchTabItems();
+      await fetchStats();
+    } else {
+      setActionError('Failed to delete contact message.');
+      setTimeout(() => setActionError(''), 4000);
+    }
+  };
+
+  const openViewContactMessage = async (msg: any) => {
+    setSelectedContactMessage(msg);
+    if (msg.status === 'NEW') {
+      const res = await apiCall({ action: 'update-contact-message', id: msg.id, status: 'READ' });
+      if (res && res.success) {
+        await fetchTabItems();
+        await fetchStats();
+      }
     }
   };
 
@@ -661,6 +726,32 @@ export default function AdminDashboard() {
     );
   }
 
+  // Filter, sort and paginate contact messages
+  const filteredContactMessages = contactMessages.filter(msg => {
+    const query = contactSearchQuery.toLowerCase();
+    const nameMatch = msg.name?.toLowerCase().includes(query) || false;
+    const emailMatch = msg.email?.toLowerCase().includes(query) || false;
+    const subjectMatch = msg.subject?.toLowerCase().includes(query) || false;
+    const messageMatch = msg.message?.toLowerCase().includes(query) || false;
+    const matchesSearch = nameMatch || emailMatch || subjectMatch || messageMatch;
+
+    const matchesStatus = contactFilterStatus === 'All' || msg.status === contactFilterStatus;
+    return matchesSearch && matchesStatus;
+  });
+
+  const sortedContactMessages = [...filteredContactMessages].sort((a, b) => {
+    const timeA = new Date(a.date).getTime();
+    const timeB = new Date(b.date).getTime();
+    return contactSortOrder === 'newest' ? timeB - timeA : timeA - timeB;
+  });
+
+  const contactItemsPerPage = 10;
+  const contactTotalPages = Math.ceil(sortedContactMessages.length / contactItemsPerPage) || 1;
+  const paginatedContactMessages = sortedContactMessages.slice(
+    (contactCurrentPage - 1) * contactItemsPerPage,
+    contactCurrentPage * contactItemsPerPage
+  );
+
   // Active navigation checker helper
   const getNavClass = (tabId: typeof activeTab) => {
     const isActive = activeTab === tabId;
@@ -835,6 +926,12 @@ export default function AdminDashboard() {
                   </svg>
                   {!isSidebarCollapsed && <span>Collaborations</span>}
                 </button>
+                <button onClick={() => setActiveTab('ContactMessages')} className={getNavClass('ContactMessages')}>
+                  <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  {!isSidebarCollapsed && <span>Contact Messages</span>}
+                </button>
               </div>
 
               {/* Group: Content */}
@@ -943,12 +1040,13 @@ export default function AdminDashboard() {
               </div>
 
               {/* 5. STATISTICS METRICS GRID */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                 {[
                   { label: 'Total Students Registered', value: stats.counts.registrations, desc: 'Total event enrollment logs', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1z' },
-                  { label: 'Upcoming Events', value: stats.counts.upcomingEvents, desc: 'Planned calendar schedules', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2z' },
+                  { label: 'Upcoming Events', value: stats.counts.upcomingEvents, desc: 'Planned calendar schedules', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
                   { label: 'Open Registrations', value: stats.counts.openRegistrations, desc: 'Active student intakes open', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04z' },
-                  { label: 'Pending Registrations', value: stats.counts.pendingRegistrations, desc: 'New submissions to review', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253z' }
+                  { label: 'Pending Registrations', value: stats.counts.pendingRegistrations, desc: 'New submissions to review', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253z' },
+                  { label: 'New Contact Messages', value: stats.counts.contactMessages, desc: 'New submissions from visitors', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' }
                 ].map((card, idx) => (
                   <div key={idx} className="bg-white border border-[#E2E8F0] p-5 rounded-lg shadow-sm space-y-3 relative overflow-hidden flex items-center justify-between">
                     <div className="space-y-1">
@@ -1005,7 +1103,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* 7. RECENT ACTIVITY GRID */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Recent Registrations Card */}
                 <div className="bg-white border border-[#E2E8F0] p-6 rounded-lg shadow-sm space-y-5">
                   <h3 className="font-display font-bold text-sm text-[#111827] border-b border-[#E2E8F0] pb-3">
@@ -1032,6 +1130,40 @@ export default function AdminDashboard() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1z" />
                         </svg>
                         <p className="text-xs">No registrations yet.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Recent Contact Messages Card */}
+                <div className="bg-white border border-[#E2E8F0] p-6 rounded-lg shadow-sm space-y-5">
+                  <h3 className="font-display font-bold text-sm text-[#111827] border-b border-[#E2E8F0] pb-3">
+                    Recent Contact Messages
+                  </h3>
+                  <div className="divide-y divide-slate-100 text-xs">
+                    {stats.recentContactMessages && stats.recentContactMessages.length > 0 ? (
+                      stats.recentContactMessages.map((msg: any, idx: number) => (
+                        <div key={idx} className="py-3 flex items-center justify-between hover:bg-slate-50 px-2 rounded transition-colors">
+                          <div className="min-w-0 flex-1 pr-2">
+                            <p className="font-bold text-[#111827] truncate">{msg.name}</p>
+                            <p className="text-[10px] text-[#64748B] font-mono mt-0.5 truncate">{msg.subject} - {msg.email}</p>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase font-sans flex-shrink-0 ${
+                            msg.status === 'NEW' ? 'bg-orange-50 text-[#FF9900] border border-orange-200' :
+                            msg.status === 'READ' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                            msg.status === 'REPLIED' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                            'bg-slate-50 text-slate-700 border border-slate-200'
+                          }`}>
+                            {msg.status}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-[#64748B] space-y-2">
+                        <svg className="h-8 w-8 mx-auto text-slate-350" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <p className="text-xs">No messages yet.</p>
                       </div>
                     )}
                   </div>
@@ -1910,6 +2042,189 @@ export default function AdminDashboard() {
               </form>
             </div>
           )}
+
+          {/* TAB 12: CONTACT MESSAGES */}
+          {activeTab === 'ContactMessages' && (
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#E2E8F0] pb-5">
+                <div className="space-y-1.5">
+                  <h1 className="font-display font-extrabold text-2xl lg:text-3xl text-[#111827] tracking-tight">
+                    Contact Messages
+                  </h1>
+                  <p className="text-xs text-[#64748B] font-sans leading-relaxed">
+                    View and manage user messages submitted through the public contact page.
+                  </p>
+                </div>
+              </div>
+
+              {/* Filters & Actions */}
+              <div className="bg-white border border-[#E2E8F0] p-4 rounded-lg shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-3 flex-grow max-w-3xl">
+                  {/* Search */}
+                  <div className="relative min-w-[200px] flex-grow">
+                    <input
+                      type="text"
+                      placeholder="Search messages (Name, email, subject, message)..."
+                      value={contactSearchQuery}
+                      onChange={(e) => setContactSearchQuery(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 border border-[#E2E8F0] rounded text-xs focus:outline-none focus:ring-1 focus:ring-[#FF9900] bg-[#F6F8FA] font-medium font-sans"
+                    />
+                    <svg className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+
+                  {/* Status filter */}
+                  <div className="flex items-center space-x-1.5 flex-shrink-0">
+                    <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider font-display">Status:</span>
+                    <select
+                      value={contactFilterStatus}
+                      onChange={(e) => setContactFilterStatus(e.target.value)}
+                      className="px-2.5 py-1.5 border border-[#E2E8F0] rounded bg-white text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#FF9900] font-sans"
+                    >
+                      <option value="All">All Statuses</option>
+                      <option value="NEW">New</option>
+                      <option value="READ">Read</option>
+                      <option value="REPLIED">Replied</option>
+                      <option value="ARCHIVED">Archived</option>
+                    </select>
+                  </div>
+
+                  {/* Sort Order */}
+                  <div className="flex items-center space-x-1.5 flex-shrink-0">
+                    <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider font-display">Sort:</span>
+                    <select
+                      value={contactSortOrder}
+                      onChange={(e) => setContactSortOrder(e.target.value as any)}
+                      className="px-2.5 py-1.5 border border-[#E2E8F0] rounded bg-white text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#FF9900] font-sans"
+                    >
+                      <option value="newest">Newest First</option>
+                      <option value="oldest">Oldest First</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="text-[10px] text-[#64748B] font-mono whitespace-nowrap">
+                  Showing {paginatedContactMessages.length} of {sortedContactMessages.length} messages
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-slate-650 font-sans">
+                    <thead className="bg-slate-50 border-b border-[#E2E8F0] text-[10px] font-bold text-[#475569] uppercase tracking-wider">
+                      <tr>
+                        <th className="px-4 py-3 text-left">Name</th>
+                        <th className="px-4 py-3 text-left">Email</th>
+                        <th className="px-4 py-3 text-left">Subject</th>
+                        <th className="px-4 py-3 text-left">Submitted</th>
+                        <th className="px-4 py-3 text-left">Status</th>
+                        <th className="px-4 py-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {paginatedContactMessages.length > 0 ? (
+                        paginatedContactMessages.map((msg: any) => (
+                          <tr key={msg.id} className="hover:bg-slate-50">
+                            <td className="px-4 py-3 font-semibold text-[#111827]">{msg.name}</td>
+                            <td className="px-4 py-3 font-mono text-slate-600 select-all">{msg.email}</td>
+                            <td className="px-4 py-3 font-medium text-slate-700 max-w-xs truncate" title={msg.subject}>
+                              {msg.subject}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-slate-500 font-mono">
+                              {new Date(msg.date).toLocaleString()}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase font-sans ${
+                                msg.status === 'NEW' ? 'bg-orange-50 text-[#FF9900] border border-orange-200 animate-pulse' :
+                                msg.status === 'READ' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                                msg.status === 'REPLIED' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                'bg-slate-50 text-slate-700 border border-slate-200'
+                              }`}>
+                                {msg.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-right space-x-2">
+                              <button
+                                onClick={() => openViewContactMessage(msg)}
+                                className="underline font-bold text-[#FF9900] hover:text-orange-700 cursor-pointer"
+                              >
+                                View
+                              </button>
+                              {msg.status === 'NEW' && (
+                                <button
+                                  onClick={() => markContactMessageStatus(msg.id, 'READ')}
+                                  className="underline text-blue-600 hover:text-blue-800 cursor-pointer"
+                                >
+                                  Read
+                                </button>
+                              )}
+                              {msg.status !== 'REPLIED' && (
+                                <button
+                                  onClick={() => markContactMessageStatus(msg.id, 'REPLIED')}
+                                  className="underline text-emerald-600 hover:text-emerald-800 cursor-pointer"
+                                >
+                                  Replied
+                                </button>
+                              )}
+                              {msg.status !== 'ARCHIVED' && (
+                                <button
+                                  onClick={() => markContactMessageStatus(msg.id, 'ARCHIVED')}
+                                  className="underline text-slate-500 hover:text-slate-700 cursor-pointer"
+                                >
+                                  Archive
+                                </button>
+                              )}
+                              <button
+                                onClick={() => setContactDeleteConfirmation(msg.id)}
+                                className="underline text-red-500 hover:text-red-700 cursor-pointer font-semibold"
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={6} className="text-center py-12 text-[#64748B] space-y-2">
+                            <svg className="h-8 w-8 mx-auto text-slate-350" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            <p className="text-xs">No contact messages match search or filters.</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                {contactTotalPages > 1 && (
+                  <div className="bg-slate-50 border-t border-[#E2E8F0] px-4 py-3 flex items-center justify-between font-sans">
+                    <button
+                      onClick={() => setContactCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={contactCurrentPage === 1}
+                      className="px-2.5 py-1 bg-white border border-[#E2E8F0] rounded hover:border-[#FF9900] text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-[10px] font-mono text-[#64748B]">
+                      Page {contactCurrentPage} of {contactTotalPages}
+                    </span>
+                    <button
+                      onClick={() => setContactCurrentPage(prev => Math.min(prev + 1, contactTotalPages))}
+                      disabled={contactCurrentPage === contactTotalPages}
+                      className="px-2.5 py-1 bg-white border border-[#E2E8F0] rounded hover:border-[#FF9900] text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
@@ -2614,6 +2929,127 @@ export default function AdminDashboard() {
                 className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded cursor-pointer transition-colors font-sans"
               >
                 Delete Permanently
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* VIEW CONTACT MESSAGE DETAILS MODAL */}
+      {selectedContactMessage && (
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm font-sans text-xs">
+          <div className="bg-white rounded-lg border border-[#E2E8F0] shadow-2xl max-w-lg w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto font-sans text-xs">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div className="space-y-0.5">
+                <h3 className="font-display font-bold text-sm text-[#111827]">Contact Message Details</h3>
+                <span className="text-[9px] font-mono text-slate-400">ID: {selectedContactMessage.id}</span>
+              </div>
+              <button onClick={() => setSelectedContactMessage(null)} className="text-slate-400 hover:text-slate-650 cursor-pointer">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-md border border-slate-100">
+              <div>
+                <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400 block">From</span>
+                <span className="font-bold text-slate-800">{selectedContactMessage.name}</span>
+              </div>
+              <div>
+                <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400 block">Email Address</span>
+                <span className="font-mono text-slate-800 select-all font-semibold">{selectedContactMessage.email}</span>
+              </div>
+              <div className="col-span-2">
+                <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400 block">Subject</span>
+                <span className="font-medium text-slate-800">{selectedContactMessage.subject}</span>
+              </div>
+              <div className="col-span-2">
+                <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400 block">Submitted At</span>
+                <span className="font-mono text-slate-800">{new Date(selectedContactMessage.date).toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400 block">Message Body</span>
+              <div className="p-4 bg-white border border-slate-200 rounded text-slate-700 leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap select-text font-sans font-medium">
+                {selectedContactMessage.message}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+              <div className="flex space-x-2">
+                {selectedContactMessage.status !== 'REPLIED' && (
+                  <button
+                    onClick={() => markContactMessageStatus(selectedContactMessage.id, 'REPLIED')}
+                    className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold rounded cursor-pointer transition-colors"
+                  >
+                    Mark as Replied
+                  </button>
+                )}
+                {selectedContactMessage.status !== 'ARCHIVED' && (
+                  <button
+                    onClick={() => markContactMessageStatus(selectedContactMessage.id, 'ARCHIVED')}
+                    className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded cursor-pointer transition-colors"
+                  >
+                    Archive
+                  </button>
+                )}
+              </div>
+              <div className="flex space-x-2">
+                <a
+                  href={`mailto:${selectedContactMessage.email}?subject=Re:%20${encodeURIComponent(selectedContactMessage.subject)}`}
+                  onClick={() => markContactMessageStatus(selectedContactMessage.id, 'REPLIED')}
+                  className="px-4 py-1.5 bg-[#FF9900] hover:bg-orange-600 text-white font-bold rounded cursor-pointer transition-colors inline-flex items-center space-x-1"
+                >
+                  ✉️ Reply via Email
+                </a>
+                <button
+                  onClick={() => setSelectedContactMessage(null)}
+                  className="px-4 py-1.5 bg-[#F6F8FA] border border-slate-200 rounded font-semibold cursor-pointer hover:bg-slate-100"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONTACT MESSAGE CONFIRMATION DIALOG */}
+      {contactDeleteConfirmation && (
+        <div className="fixed inset-0 z-55 overflow-y-auto flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm font-sans text-xs">
+          <div className="bg-white rounded-lg border border-[#E2E8F0] shadow-2xl max-w-md w-full p-6 space-y-5 font-sans">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-display font-extrabold text-sm text-red-650">Delete Contact Message?</h3>
+              <button
+                type="button"
+                onClick={() => setContactDeleteConfirmation(null)}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <p className="text-slate-700 leading-relaxed font-medium">
+              This action will permanently delete this contact message. This action cannot be undone.
+            </p>
+
+            <div className="pt-4 border-t border-slate-100 flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setContactDeleteConfirmation(null)}
+                className="px-4 py-1.5 bg-[#F6F8FA] border border-slate-200 rounded font-semibold cursor-pointer hover:bg-slate-100 font-sans"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteContactMessageConfirmed(contactDeleteConfirmation)}
+                className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded cursor-pointer transition-colors font-sans"
+              >
+                Delete
               </button>
             </div>
           </div>

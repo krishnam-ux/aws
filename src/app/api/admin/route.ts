@@ -54,6 +54,7 @@ export async function POST(request: Request) {
       const announcements = db.announcements.getAll();
       const resources = db.resources.getAll();
       const collaborations = db.collaborationRequests.getAll();
+      const contactMessages = db.contactMessages.getAll();
 
       const counts = {
         registrations: eventRegistrations.length, // total event registrations
@@ -65,7 +66,8 @@ export async function POST(request: Request) {
         verifications: verifications.filter(v => v.status === 'New').length,
         announcements: announcements.length,
         resources: resources.length,
-        collaborations: collaborations.filter(c => c.status === 'New').length
+        collaborations: collaborations.filter(c => c.status === 'New').length,
+        contactMessages: contactMessages.filter(m => m.status === 'NEW').length
       };
 
       const recentRegistrations = [...eventRegistrations]
@@ -76,11 +78,15 @@ export async function POST(request: Request) {
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 5);
 
+      const recentContactMessages = [...contactMessages]
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, 5);
+
       const upcomingEvents = events
         .filter(e => e.status !== 'Draft' && e.status !== 'Unpublished')
         .slice(0, 6);
 
-      return NextResponse.json({ counts, recentRegistrations, recentVerifications, upcomingEvents });
+      return NextResponse.json({ counts, recentRegistrations, recentVerifications, upcomingEvents, recentContactMessages });
     }
 
     // 3. Registrations Management (Join Community)
@@ -374,6 +380,28 @@ export async function POST(request: Request) {
       const notifications = db.notifications.getAll();
       notifications.forEach(n => { n.status = 'read'; });
       db.notifications.saveAll(notifications);
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === 'get-contact-messages') {
+      return NextResponse.json(db.contactMessages.getAll());
+    }
+    if (action === 'update-contact-message') {
+      const { id, status } = body;
+      const messages = db.contactMessages.getAll();
+      const idx = messages.findIndex(m => m.id === id);
+      if (idx !== -1) {
+        messages[idx].status = status || messages[idx].status;
+        db.contactMessages.saveAll(messages);
+        return NextResponse.json({ success: true });
+      }
+      return NextResponse.json({ error: 'Contact message not found' }, { status: 404 });
+    }
+    if (action === 'delete-contact-message') {
+      const { id } = body;
+      let messages = db.contactMessages.getAll();
+      messages = messages.filter(m => m.id !== id);
+      db.contactMessages.saveAll(messages);
       return NextResponse.json({ success: true });
     }
 

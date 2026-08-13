@@ -331,5 +331,9 @@ export const db = {
   notifications: {
     getAll: () => readJsonFile<any[]>('notifications.json', []),
     saveAll: (data: any[]) => writeJsonFile('notifications.json', data)
+  },
+  contactMessages: {
+    getAll: () => readJsonFile<any[]>('contact_messages.json', []),
+    saveAll: (data: any[]) => writeJsonFile('contact_messages.json', data)
   }
 };
