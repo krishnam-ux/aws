@@ -33,15 +33,24 @@ async function getBlobStore() {
   return null;
 }
 
+// Memory cache to hide eventual consistency latency in production/serverless environments
+const memoryDbCache: Record<string, any> = {};
+
 // Generic read/write functions
 async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
+  if (memoryDbCache[filename] !== undefined) {
+    return memoryDbCache[filename] as T;
+  }
+
   if (IS_NETLIFY) {
     const store = await getBlobStore();
     if (store) {
       try {
         const val = await store.get(filename, { type: 'text' });
         if (val) {
-          return JSON.parse(val) as T;
+          const parsed = JSON.parse(val) as T;
+          memoryDbCache[filename] = parsed;
+          return parsed;
         }
       } catch (err) {
         console.error(`Error reading from blob: ${filename}`, err);
@@ -56,7 +65,9 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
   }
   try {
     const data = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(data) as T;
+    const parsed = JSON.parse(data) as T;
+    memoryDbCache[filename] = parsed;
+    return parsed;
   } catch (err) {
     console.error(`Error reading database file: ${filename}`, err);
     return defaultValue;
@@ -64,6 +75,9 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
 }
 
 async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
+  // Update memory cache immediately
+  memoryDbCache[filename] = data;
+
   if (IS_NETLIFY) {
     const store = await getBlobStore();
     if (store) {
