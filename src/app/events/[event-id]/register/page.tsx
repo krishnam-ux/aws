@@ -242,7 +242,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
     };
 
     return (
-      <div className="max-w-xl mx-auto px-4 py-12 sm:py-16 font-sans text-xs">
+      <div className="max-w-xl mx-auto px-4 pt-24 pb-12 sm:pt-28 sm:pb-16 font-sans text-xs">
         {/* Subtle Centered Logo Header */}
         <div className="flex items-center justify-center space-x-3 mb-6">
           <img src="/aws-logo.svg" alt="AWS Logo" className="h-6 w-auto object-contain" />
