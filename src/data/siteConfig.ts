@@ -93,6 +93,7 @@ export const siteConfig = {
     { label: 'Verification', href: '/verification' },
     { label: 'Leadership', href: '/leadership' },
     { label: 'Collaborate', href: '/collaborate' },
+    { label: 'Feedback', href: '/feedback' },
     { label: 'Join', href: 'https://chat.whatsapp.com/HuEI5i4I8KkEya47yBKynD' },
   ],
 
@@ -105,6 +106,7 @@ export const siteConfig = {
     { label: 'Leadership', href: '/leadership' },
     { label: 'Governance', href: '/governance' },
     { label: 'Collaborate', href: '/collaborate' },
+    { label: 'Feedback', href: '/feedback' },
     { label: 'Join Group', href: 'https://chat.whatsapp.com/HuEI5i4I8KkEya47yBKynD' },
     { label: 'Contact', href: '/contact' },
     { label: 'Transparency', href: '/transparency' },

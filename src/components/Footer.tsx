@@ -148,6 +148,11 @@ export default function Footer() {
                   Contact
                 </Link>
               </li>
+              <li>
+                <Link href="/feedback" className="hover:text-aws-orange transition-colors">
+                  Feedback
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

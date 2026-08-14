@@ -79,7 +79,7 @@ export default function AdminDashboard() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   // Tabs structure matching user specifications
-  const [activeTab, setActiveTab] = useState<'Dashboard' | 'Registrations' | 'EventRegistrations' | 'Verification' | 'Collaborations' | 'Events' | 'Announcements' | 'Resources' | 'CoreTeam' | 'Content' | 'Settings' | 'ContactMessages'>('Dashboard');
+  const [activeTab, setActiveTab] = useState<'Dashboard' | 'Registrations' | 'EventRegistrations' | 'Verification' | 'Collaborations' | 'Events' | 'Announcements' | 'Resources' | 'CoreTeam' | 'Content' | 'Settings' | 'ContactMessages' | 'Feedback'>('Dashboard');
 
   // Stats / Dashboard data
   const [stats, setStats] = useState<any>({
@@ -110,6 +110,7 @@ export default function AdminDashboard() {
   // DB Data
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [events, setEvents] = useState<CommunityEvent[]>([]);
+  const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [resources, setResources] = useState<any[]>([]);
   const [verifications, setVerifications] = useState<any[]>([]);
@@ -166,6 +167,16 @@ export default function AdminDashboard() {
   const [contentForm, setContentForm] = useState<any>({
     heroTitle: '', heroSubtitle: '', heroDescription: '', aboutHeading: '', aboutDescription: ''
   });
+  // Feedback states
+  const [feedbackSearch, setFeedbackSearch] = useState('');
+  const [feedbackStatusFilter, setFeedbackStatusFilter] = useState<'All' | 'New' | 'Reviewed' | 'Published' | 'Archived'>('All');
+  const [feedbackSort, setFeedbackSort] = useState<'Newest' | 'Oldest' | 'Highest' | 'Lowest'>('Newest');
+  const [feedbackEventFilter, setFeedbackEventFilter] = useState('');
+  const [selectedFeedback, setSelectedFeedback] = useState<any>(null);
+  const [isViewFeedbackModalOpen, setIsViewFeedbackModalOpen] = useState(false);
+  const [isEditFeedbackModalOpen, setIsEditFeedbackModalOpen] = useState(false);
+  const [feedbackCurrentPage, setFeedbackCurrentPage] = useState(1);
+
   const [settingsForm, setSettingsForm] = useState({
     currentPassword: '', newPassword: '', confirmPassword: ''
   });
@@ -191,6 +202,11 @@ export default function AdminDashboard() {
       fetchTabItems();
     }
   }, [token, activeTab]);
+
+  // Reset feedback page on filters change
+  useEffect(() => {
+    setFeedbackCurrentPage(1);
+  }, [feedbackSearch, feedbackStatusFilter, feedbackSort, feedbackEventFilter]);
 
   // Auth Handler
   const handleLogin = async (e: React.FormEvent) => {
@@ -265,6 +281,8 @@ export default function AdminDashboard() {
       if (data) setEvents(data);
       const regs = await apiCall({ action: 'get-event-registrations' });
       if (regs) setEventRegistrations(regs);
+      const feeds = await apiCall({ action: 'get-feedbacks' });
+      if (feeds) setFeedbacks(feeds);
     } else if (activeTab === 'Announcements') {
       const data = await apiCall({ action: 'get-announcements' });
       if (data) setAnnouncements(data);
@@ -292,6 +310,11 @@ export default function AdminDashboard() {
     } else if (activeTab === 'ContactMessages') {
       const data = await apiCall({ action: 'get-contact-messages' });
       if (data) setContactMessages(data);
+    } else if (activeTab === 'Feedback') {
+      const data = await apiCall({ action: 'get-feedbacks' });
+      if (data) setFeedbacks(data);
+      const evts = await apiCall({ action: 'get-events' });
+      if (evts) setEvents(evts);
     }
   };
 
@@ -514,6 +537,58 @@ export default function AdminDashboard() {
   const exportEventCSV = (event: CommunityEvent) => exportEventData(event, 'csv');
   const exportEventExcel = (event: CommunityEvent) => exportEventData(event, 'excel');
   const exportEventPDF = (event: CommunityEvent) => exportEventData(event, 'pdf');
+
+  const exportFeedbackData = async (format: 'csv' | 'excel' | 'pdf') => {
+    const key = `feedback-${format}`;
+    if (exportingStates[key]) return;
+    setExportingStates(prev => ({ ...prev, [key]: true }));
+
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          action: `export-feedbacks-${format}`,
+          eventId: feedbackEventFilter || null
+        })
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        let errMsg = 'Unable to export feedback. Please try again.';
+        try {
+          const errData = JSON.parse(errText);
+          if (errData.error) errMsg = errData.error;
+        } catch (_) {}
+        alert(errMsg);
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      const allEvents = events || [];
+      const event = allEvents.find(e => e.id === feedbackEventFilter);
+      const title = event ? event.title : 'All-Events';
+      const formattedTitle = title.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+
+      a.download = `${formattedTitle}-feedback.${format === 'excel' ? 'xlsx' : format}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(`Feedback ${format} export error:`, err);
+      alert('Unable to export feedback. Please try again.');
+    } finally {
+      setExportingStates(prev => ({ ...prev, [key]: false }));
+    }
+  };
 
   const addRegNote = async (id: string, notes: string) => {
     const res = await apiCall({ action: 'update-registration', id, notes });
@@ -1127,6 +1202,12 @@ export default function AdminDashboard() {
                   </svg>
                   {!isSidebarCollapsed && <span>Resources</span>}
                 </button>
+                <button onClick={() => setActiveTab('Feedback')} className={getNavClass('Feedback')}>
+                  <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                  </svg>
+                  {!isSidebarCollapsed && <span>Feedback</span>}
+                </button>
               </div>
 
               {/* Group: Organization */}
@@ -1719,6 +1800,7 @@ export default function AdminDashboard() {
                       <th className="px-4 py-3 text-left">Event Status</th>
                       <th className="px-4 py-3 text-left">Registration Status</th>
                       <th className="px-4 py-3 text-left">Registrations</th>
+                      <th className="px-4 py-3 text-left">Feedback</th>
                       <th className="px-4 py-3 text-left">Format</th>
                       <th className="px-4 py-3 text-right">Actions</th>
                     </tr>
@@ -1793,10 +1875,30 @@ export default function AdminDashboard() {
                               {eventRegistrations.filter(r => r.eventId === event.id).length} / {event.maxRegistrations && event.maxRegistrations > 0 ? event.maxRegistrations : '∞'}
                             </button>
                           </td>
+                          <td className="px-4 py-3 font-semibold">
+                            <button
+                              onClick={() => {
+                                setFeedbackEventFilter(event.id);
+                                setActiveTab('Feedback');
+                              }}
+                              className="underline text-[#FF9900] hover:text-orange-700 transition-colors"
+                            >
+                              {feedbacks.filter(f => f.eventId === event.id).length}
+                            </button>
+                          </td>
                           <td className="px-4 py-3 truncate max-w-[120px]">{event.format}</td>
                           <td className="px-4 py-3 text-right space-x-3 whitespace-nowrap">
                             <button onClick={() => setSelectedEventRegs(event)} className="text-brand-navy hover:text-[#FF9900] font-bold cursor-pointer">
                               View Registrations
+                            </button>
+                            <button
+                              onClick={() => {
+                                setFeedbackEventFilter(event.id);
+                                setActiveTab('Feedback');
+                              }}
+                              className="text-[#FF9900] hover:text-orange-700 font-bold cursor-pointer"
+                            >
+                              View Feedback
                             </button>
                             <button 
                               disabled={exportingStates[`${event.id}-csv`]} 
@@ -2479,6 +2581,643 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
+
+          {/* TAB 13: FEEDBACK */}
+          {activeTab === 'Feedback' && (() => {
+            const getFilteredFeedbacks = () => {
+              let result = [...feedbacks];
+
+              // Event Filter
+              if (feedbackEventFilter) {
+                result = result.filter(f => f.eventId === feedbackEventFilter);
+              }
+
+              // Status Filter
+              if (feedbackStatusFilter !== 'All') {
+                result = result.filter(f => f.status === feedbackStatusFilter);
+              }
+
+              // Search
+              if (feedbackSearch.trim()) {
+                const q = feedbackSearch.toLowerCase().trim();
+                result = result.filter(f => {
+                  const evt = events.find(e => e.id === f.eventId);
+                  const eventTitle = evt ? evt.title.toLowerCase() : 'general community / others';
+                  return (
+                    f.name.toLowerCase().includes(q) ||
+                    f.email.toLowerCase().includes(q) ||
+                    (f.university && f.university.toLowerCase().includes(q)) ||
+                    eventTitle.includes(q) ||
+                    f.feedback.toLowerCase().includes(q)
+                  );
+                });
+              }
+
+              // Sort
+              if (feedbackSort === 'Newest') {
+                result.sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime());
+              } else if (feedbackSort === 'Oldest') {
+                result.sort((a, b) => new Date(a.createdAt || '').getTime() - new Date(b.createdAt || '').getTime());
+              } else if (feedbackSort === 'Highest') {
+                result.sort((a, b) => b.rating - a.rating);
+              } else if (feedbackSort === 'Lowest') {
+                result.sort((a, b) => a.rating - b.rating);
+              }
+
+              return result;
+            };
+
+            const processedFeedbacks = getFilteredFeedbacks();
+            const feedbackItemsPerPage = 20;
+            const feedbackTotalPages = Math.ceil(processedFeedbacks.length / feedbackItemsPerPage) || 1;
+            const paginatedFeedbacks = processedFeedbacks.slice(
+              (feedbackCurrentPage - 1) * feedbackItemsPerPage,
+              feedbackCurrentPage * feedbackItemsPerPage
+            );
+
+            return (
+              <div className="space-y-6 animate-fadeIn">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#E2E8F0] pb-5">
+                  <div className="space-y-1.5">
+                    <h1 className="font-display font-extrabold text-2xl lg:text-3xl text-[#111827] tracking-tight">
+                      Feedback CMS
+                    </h1>
+                    <p className="text-xs text-[#64748B] font-sans leading-relaxed">
+                      Monitor, filter, edit, and export student feedback submissions.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Statistics Grid */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4">
+                  {/* Total Feedback */}
+                  <div className="bg-white border border-[#E2E8F0] p-3 rounded-lg shadow-sm space-y-1">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Total</span>
+                    <span className="text-lg font-extrabold text-[#111827] block">{feedbacks.length}</span>
+                  </div>
+                  {/* Average Rating */}
+                  <div className="bg-white border border-[#E2E8F0] p-3 rounded-lg shadow-sm space-y-1">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block flex items-center gap-1">
+                      Avg Rating <span className="text-[#FF9900]">★</span>
+                    </span>
+                    <span className="text-lg font-extrabold text-[#FF9900] block">
+                      {feedbacks.length > 0
+                        ? (feedbacks.reduce((acc, f) => acc + Number(f.rating), 0) / feedbacks.length).toFixed(1)
+                        : '0.0'}
+                    </span>
+                  </div>
+                  {/* Star breakdowns */}
+                  {[5, 4, 3, 2, 1].map((star) => (
+                    <div key={star} className="bg-white border border-[#E2E8F0] p-3 rounded-lg shadow-sm space-y-1">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">{star} Star</span>
+                      <span className="text-lg font-extrabold text-slate-700 block">
+                        {feedbacks.filter(f => Number(f.rating) === star).length}
+                      </span>
+                    </div>
+                  ))}
+                  {/* New count */}
+                  <div className="bg-white border border-[#E2E8F0] p-3 rounded-lg shadow-sm space-y-1">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">New</span>
+                    <span className={`text-lg font-extrabold block ${feedbacks.filter(f => f.status === 'New').length > 0 ? 'text-[#FF9900] animate-pulse' : 'text-slate-700'}`}>
+                      {feedbacks.filter(f => f.status === 'New').length}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Filters & Actions */}
+                <div className="bg-white border border-[#E2E8F0] p-4 rounded-lg shadow-sm space-y-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    {/* Search */}
+                    <div className="relative min-w-[200px] flex-grow md:max-w-xs">
+                      <input
+                        type="text"
+                        placeholder="Search (Name, email, university, feedback)..."
+                        value={feedbackSearch}
+                        onChange={(e) => setFeedbackSearch(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 border border-[#E2E8F0] rounded text-xs focus:outline-none focus:ring-1 focus:ring-[#FF9900] bg-[#F6F8FA] font-medium font-sans"
+                      />
+                      <svg className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+
+                    {/* Event filter */}
+                    <div className="flex items-center space-x-1.5 flex-shrink-0">
+                      <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider font-display">Event:</span>
+                      <select
+                        value={feedbackEventFilter}
+                        onChange={(e) => setFeedbackEventFilter(e.target.value)}
+                        className="px-2.5 py-1.5 border border-[#E2E8F0] rounded bg-white text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#FF9900] font-sans"
+                      >
+                        <option value="">All Events</option>
+                        {events.map((evt) => (
+                          <option key={evt.id} value={evt.id}>
+                            {evt.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Status filter */}
+                    <div className="flex items-center space-x-1.5 flex-shrink-0">
+                      <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider font-display">Status:</span>
+                      <select
+                        value={feedbackStatusFilter}
+                        onChange={(e) => setFeedbackStatusFilter(e.target.value as any)}
+                        className="px-2.5 py-1.5 border border-[#E2E8F0] rounded bg-white text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#FF9900] font-sans"
+                      >
+                        <option value="All">All Statuses</option>
+                        <option value="New">New</option>
+                        <option value="Reviewed">Reviewed</option>
+                        <option value="Published">Published</option>
+                        <option value="Archived">Archived</option>
+                      </select>
+                    </div>
+
+                    {/* Sort Order */}
+                    <div className="flex items-center space-x-1.5 flex-shrink-0">
+                      <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider font-display">Sort:</span>
+                      <select
+                        value={feedbackSort}
+                        onChange={(e) => setFeedbackSort(e.target.value as any)}
+                        className="px-2.5 py-1.5 border border-[#E2E8F0] rounded bg-white text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#FF9900] font-sans"
+                      >
+                        <option value="Newest">Newest First</option>
+                        <option value="Oldest">Oldest First</option>
+                        <option value="Highest">Highest Rating</option>
+                        <option value="Lowest">Lowest Rating</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between border-t border-slate-100 pt-3 gap-3">
+                    {/* Export buttons */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => exportFeedbackData('csv')}
+                        disabled={exportingStates['feedback-csv']}
+                        className="px-3 py-1.5 bg-white border border-[#E2E8F0] hover:border-[#FF9900] hover:text-[#FF9900] rounded text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                      >
+                        {exportingStates['feedback-csv'] ? 'Preparing...' : 'Export CSV'}
+                      </button>
+                      <button
+                        onClick={() => exportFeedbackData('excel')}
+                        disabled={exportingStates['feedback-excel']}
+                        className="px-3 py-1.5 bg-white border border-[#E2E8F0] hover:border-[#FF9900] hover:text-[#FF9900] rounded text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                      >
+                        {exportingStates['feedback-excel'] ? 'Preparing...' : 'Export Excel'}
+                      </button>
+                      <button
+                        onClick={() => exportFeedbackData('pdf')}
+                        disabled={exportingStates['feedback-pdf']}
+                        className="px-3 py-1.5 bg-white border border-[#E2E8F0] hover:border-[#FF9900] hover:text-[#FF9900] rounded text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                      >
+                        {exportingStates['feedback-pdf'] ? 'Preparing...' : 'Export PDF'}
+                      </button>
+                    </div>
+
+                    <div className="text-[10px] text-[#64748B] font-mono">
+                      Showing {paginatedFeedbacks.length} of {processedFeedbacks.length} feedbacks
+                    </div>
+                  </div>
+                </div>
+
+                {/* Table */}
+                <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-sm overflow-hidden font-sans">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-slate-650">
+                      <thead className="bg-slate-50 border-b border-[#E2E8F0] text-[10px] font-bold text-[#475569] uppercase tracking-wider">
+                        <tr>
+                          <th className="px-4 py-3 text-left">Student Name</th>
+                          <th className="px-4 py-3 text-left">Email</th>
+                          <th className="px-4 py-3 text-left">University</th>
+                          <th className="px-4 py-3 text-left">Event</th>
+                          <th className="px-4 py-3 text-center">Rating</th>
+                          <th className="px-4 py-3 text-center">Experience</th>
+                          <th className="px-4 py-3 text-left">Feedback comments</th>
+                          <th className="px-4 py-3 text-left">Status</th>
+                          <th className="px-4 py-3 text-left">Date</th>
+                          <th className="px-4 py-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {paginatedFeedbacks.length > 0 ? (
+                          paginatedFeedbacks.map((f: any) => {
+                            const evt = events.find(e => e.id === f.eventId);
+                            const eventTitle = evt ? evt.title : 'General / Others';
+                            return (
+                              <tr key={f.id} className="hover:bg-slate-50">
+                                <td className="px-4 py-3 font-semibold text-[#111827]">{f.name}</td>
+                                <td className="px-4 py-3 font-mono text-slate-500 select-all">{f.email}</td>
+                                <td className="px-4 py-3 text-slate-600">{f.university}</td>
+                                <td className="px-4 py-3 font-medium text-slate-700 max-w-[120px] truncate" title={eventTitle}>
+                                  {eventTitle}
+                                </td>
+                                <td className="px-4 py-3 text-center font-bold text-[#FF9900] whitespace-nowrap">{f.rating} ★</td>
+                                <td className="px-4 py-3 text-center font-medium text-slate-600">{f.experience}</td>
+                                <td className="px-4 py-3 max-w-[180px] truncate text-slate-500" title={f.feedback}>
+                                  {f.feedback}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase ${
+                                    f.status === 'New' ? 'bg-orange-50 text-[#FF9900] border border-orange-200 animate-pulse' :
+                                    f.status === 'Reviewed' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                                    f.status === 'Published' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                    'bg-slate-50 text-slate-700 border border-slate-200'
+                                  }`}>
+                                    {f.status}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-slate-500 font-mono">
+                                  {f.createdAt ? new Date(f.createdAt).toLocaleDateString() : ''}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-right space-x-2">
+                                  <button
+                                    onClick={() => {
+                                      setSelectedFeedback(f);
+                                      setIsViewFeedbackModalOpen(true);
+                                    }}
+                                    className="underline font-bold text-[#FF9900] hover:text-orange-700 cursor-pointer"
+                                  >
+                                    View
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedFeedback({ ...f });
+                                      setIsEditFeedbackModalOpen(true);
+                                    }}
+                                    className="underline text-blue-600 hover:text-blue-800 cursor-pointer"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      if (confirm('Are you sure you want to delete this feedback?')) {
+                                        try {
+                                          const res = await fetch(`/api/admin/feedback/${f.id}`, {
+                                            method: 'DELETE',
+                                            headers: {
+                                              'Authorization': `Bearer ${token}`
+                                            }
+                                          });
+                                          if (res.ok) {
+                                            alert('Feedback deleted successfully.');
+                                            fetchTabItems();
+                                          } else {
+                                            const err = await res.json();
+                                            alert(err.error || 'Failed to delete feedback.');
+                                          }
+                                        } catch (err) {
+                                          console.error(err);
+                                          alert('An error occurred while deleting.');
+                                        }
+                                      }
+                                    }}
+                                    className="underline text-red-500 hover:text-red-700 cursor-pointer font-semibold"
+                                  >
+                                    Delete
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        ) : (
+                          <tr>
+                            <td colSpan={10} className="text-center py-12 text-[#64748B] space-y-2">
+                              <svg className="h-8 w-8 mx-auto text-slate-350" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                              </svg>
+                              <p className="text-xs">No feedback matches search or filters.</p>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination */}
+                  {feedbackTotalPages > 1 && (
+                    <div className="bg-slate-50 border-t border-[#E2E8F0] px-4 py-3 flex items-center justify-between font-sans">
+                      <button
+                        onClick={() => setFeedbackCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={feedbackCurrentPage === 1}
+                        className="px-2.5 py-1 bg-white border border-[#E2E8F0] rounded hover:border-[#FF9900] text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-[10px] font-mono text-[#64748B]">
+                        Page {feedbackCurrentPage} of {feedbackTotalPages}
+                      </span>
+                      <button
+                        onClick={() => setFeedbackCurrentPage(prev => Math.min(prev + 1, feedbackTotalPages))}
+                        disabled={feedbackCurrentPage === feedbackTotalPages}
+                        className="px-2.5 py-1 bg-white border border-[#E2E8F0] rounded hover:border-[#FF9900] text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* View Feedback Modal */}
+                {isViewFeedbackModalOpen && selectedFeedback && (
+                  <div className="fixed inset-0 z-55 overflow-y-auto flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm">
+                    <div className="bg-white rounded-lg border border-[#E2E8F0] shadow-2xl max-w-xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto font-sans text-xs text-slate-700">
+                      <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+                        <h3 className="font-display font-bold text-sm text-[#111827]">Feedback Details</h3>
+                        <button onClick={() => { setIsViewFeedbackModalOpen(false); setSelectedFeedback(null); }} className="text-slate-400 hover:text-slate-650 cursor-pointer">
+                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 border-b border-slate-100 pb-4">
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Feedback ID</span>
+                          <span className="font-mono text-slate-600 select-all">{selectedFeedback.id}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Event</span>
+                          <span className="font-medium text-slate-800">
+                            {events.find(e => e.id === selectedFeedback.eventId)?.title || 'General / Others'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Student Name</span>
+                          <span className="font-medium text-slate-800">{selectedFeedback.name}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Email</span>
+                          <span className="font-mono text-slate-800 select-all">{selectedFeedback.email}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">University</span>
+                          <span className="font-medium text-slate-800">{selectedFeedback.university}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Submitted Date</span>
+                          <span className="font-mono text-slate-600">{new Date(selectedFeedback.createdAt).toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Rating</span>
+                          <span className="font-bold text-[#FF9900] text-sm">{selectedFeedback.rating} ★</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Experience</span>
+                          <span className="font-medium text-slate-800">{selectedFeedback.experience}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Recommendation</span>
+                          <span className="font-medium text-slate-800">{selectedFeedback.recommendation}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Status</span>
+                          <span className={`inline-block px-2 py-0.5 rounded text-[8px] font-bold uppercase mt-1 ${
+                            selectedFeedback.status === 'New' ? 'bg-orange-50 text-[#FF9900]' :
+                            selectedFeedback.status === 'Reviewed' ? 'bg-blue-50 text-blue-700' :
+                            selectedFeedback.status === 'Published' ? 'bg-emerald-50 text-emerald-700' :
+                            'bg-slate-50 text-slate-700'
+                          }`}>
+                            {selectedFeedback.status}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Detailed Comments</span>
+                          <p className="bg-slate-50 border border-slate-100 p-2.5 rounded text-slate-700 leading-relaxed whitespace-pre-wrap mt-1">
+                            {selectedFeedback.feedback}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">What they liked</span>
+                          <p className="bg-slate-50 border border-slate-100 p-2.5 rounded text-slate-700 leading-relaxed whitespace-pre-wrap mt-1">
+                            {selectedFeedback.liked || 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">What can be improved</span>
+                          <p className="bg-slate-50 border border-slate-100 p-2.5 rounded text-slate-700 leading-relaxed whitespace-pre-wrap mt-1">
+                            {selectedFeedback.improvements || 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Admin Notes</span>
+                          <p className="bg-orange-50/50 border border-orange-100 p-2.5 rounded text-slate-700 leading-relaxed whitespace-pre-wrap mt-1 font-medium">
+                            {selectedFeedback.adminNotes || 'No notes added.'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Edit Feedback Modal */}
+                {isEditFeedbackModalOpen && selectedFeedback && (
+                  <div className="fixed inset-0 z-55 overflow-y-auto flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm">
+                    <div className="bg-white rounded-lg border border-[#E2E8F0] shadow-2xl max-w-xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto font-sans text-xs text-slate-700">
+                      <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+                        <h3 className="font-display font-bold text-sm text-[#111827]">Edit Feedback Record</h3>
+                        <button onClick={() => { setIsEditFeedbackModalOpen(false); setSelectedFeedback(null); }} className="text-slate-400 hover:text-slate-650 cursor-pointer">
+                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <form onSubmit={async (e) => {
+                        e.preventDefault();
+                        try {
+                          const res = await fetch(`/api/admin/feedback/${selectedFeedback.id}`, {
+                            method: 'PUT',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify(selectedFeedback)
+                          });
+
+                          if (res.ok) {
+                            alert('Feedback updated successfully.');
+                            setIsEditFeedbackModalOpen(false);
+                            setSelectedFeedback(null);
+                            fetchTabItems();
+                          } else {
+                            const err = await res.json();
+                            alert(err.error || 'Failed to update feedback.');
+                          }
+                        } catch (err) {
+                          console.error(err);
+                          alert('An error occurred during save.');
+                        }
+                      }} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="flex flex-col space-y-1">
+                            <label className="font-bold text-slate-800">Student Name</label>
+                            <input
+                              type="text"
+                              value={selectedFeedback.name}
+                              onChange={(e) => setSelectedFeedback({ ...selectedFeedback, name: e.target.value })}
+                              className="px-2.5 py-1.5 border border-[#E2E8F0] rounded"
+                              required
+                            />
+                          </div>
+                          <div className="flex flex-col space-y-1">
+                            <label className="font-bold text-slate-800">Email</label>
+                            <input
+                              type="email"
+                              value={selectedFeedback.email}
+                              onChange={(e) => setSelectedFeedback({ ...selectedFeedback, email: e.target.value })}
+                              className="px-2.5 py-1.5 border border-[#E2E8F0] rounded"
+                              required
+                            />
+                          </div>
+                          <div className="flex flex-col space-y-1">
+                            <label className="font-bold text-slate-800">University</label>
+                            <input
+                              type="text"
+                              value={selectedFeedback.university}
+                              onChange={(e) => setSelectedFeedback({ ...selectedFeedback, university: e.target.value })}
+                              className="px-2.5 py-1.5 border border-[#E2E8F0] rounded"
+                            />
+                          </div>
+                          <div className="flex flex-col space-y-1">
+                            <label className="font-bold text-slate-800">Event</label>
+                            <select
+                              value={selectedFeedback.eventId || ''}
+                              onChange={(e) => setSelectedFeedback({ ...selectedFeedback, eventId: e.target.value || null })}
+                              className="px-2.5 py-1.5 border border-[#E2E8F0] rounded bg-white"
+                            >
+                              <option value="">General Community / Others</option>
+                              {events.map((evt) => (
+                                <option key={evt.id} value={evt.id}>
+                                  {evt.title}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="flex flex-col space-y-1">
+                            <label className="font-bold text-slate-800">Rating (1 to 5 Stars)</label>
+                            <select
+                              value={selectedFeedback.rating}
+                              onChange={(e) => setSelectedFeedback({ ...selectedFeedback, rating: Number(e.target.value) })}
+                              className="px-2.5 py-1.5 border border-[#E2E8F0] rounded bg-white font-bold text-[#FF9900]"
+                            >
+                              <option value={1}>1 Star ★</option>
+                              <option value={2}>2 Stars ★★</option>
+                              <option value={3}>3 Stars ★★★</option>
+                              <option value={4}>4 Stars ★★★★</option>
+                              <option value={5}>5 Stars ★★★★★</option>
+                            </select>
+                          </div>
+                          <div className="flex flex-col space-y-1">
+                            <label className="font-bold text-slate-800">Experience</label>
+                            <select
+                              value={selectedFeedback.experience}
+                              onChange={(e) => setSelectedFeedback({ ...selectedFeedback, experience: e.target.value })}
+                              className="px-2.5 py-1.5 border border-[#E2E8F0] rounded bg-white"
+                            >
+                              <option value="Excellent">Excellent</option>
+                              <option value="Very Good">Very Good</option>
+                              <option value="Good">Good</option>
+                              <option value="Average">Average</option>
+                              <option value="Poor">Poor</option>
+                            </select>
+                          </div>
+                          <div className="flex flex-col space-y-1">
+                            <label className="font-bold text-slate-800">Recommendation</label>
+                            <select
+                              value={selectedFeedback.recommendation}
+                              onChange={(e) => setSelectedFeedback({ ...selectedFeedback, recommendation: e.target.value })}
+                              className="px-2.5 py-1.5 border border-[#E2E8F0] rounded bg-white"
+                            >
+                              <option value="Yes">Yes, definitely</option>
+                              <option value="Maybe">Maybe</option>
+                              <option value="No">No</option>
+                            </select>
+                          </div>
+                          <div className="flex flex-col space-y-1">
+                            <label className="font-bold text-slate-800">Status</label>
+                            <select
+                              value={selectedFeedback.status}
+                              onChange={(e) => setSelectedFeedback({ ...selectedFeedback, status: e.target.value })}
+                              className="px-2.5 py-1.5 border border-[#E2E8F0] rounded bg-white font-bold"
+                            >
+                              <option value="New">New</option>
+                              <option value="Reviewed">Reviewed</option>
+                              <option value="Published">Published</option>
+                              <option value="Archived">Archived</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col space-y-1">
+                          <label className="font-bold text-slate-800">Feedback Comments</label>
+                          <textarea
+                            rows={3}
+                            value={selectedFeedback.feedback}
+                            onChange={(e) => setSelectedFeedback({ ...selectedFeedback, feedback: e.target.value })}
+                            className="px-2.5 py-1.5 border border-[#E2E8F0] rounded resize-y"
+                            required
+                          />
+                        </div>
+
+                        <div className="flex flex-col space-y-1">
+                          <label className="font-bold text-slate-800">What they liked</label>
+                          <textarea
+                            rows={2}
+                            value={selectedFeedback.liked}
+                            onChange={(e) => setSelectedFeedback({ ...selectedFeedback, liked: e.target.value })}
+                            className="px-2.5 py-1.5 border border-[#E2E8F0] rounded resize-y"
+                          />
+                        </div>
+
+                        <div className="flex flex-col space-y-1">
+                          <label className="font-bold text-slate-800">What can be improved</label>
+                          <textarea
+                            rows={2}
+                            value={selectedFeedback.improvements}
+                            onChange={(e) => setSelectedFeedback({ ...selectedFeedback, improvements: e.target.value })}
+                            className="px-2.5 py-1.5 border border-[#E2E8F0] rounded resize-y"
+                          />
+                        </div>
+
+                        <div className="flex flex-col space-y-1">
+                          <label className="font-bold text-slate-800">Admin Notes</label>
+                          <textarea
+                            rows={2}
+                            placeholder="Add coordinator notes or summary here..."
+                            value={selectedFeedback.adminNotes}
+                            onChange={(e) => setSelectedFeedback({ ...selectedFeedback, adminNotes: e.target.value })}
+                            className="px-2.5 py-1.5 border border-[#E2E8F0] rounded resize-y bg-orange-50/20 focus:bg-white"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                          <button
+                            type="button"
+                            onClick={() => { setIsEditFeedbackModalOpen(false); setSelectedFeedback(null); }}
+                            className="px-4 py-2 border border-[#E2E8F0] rounded text-slate-650 hover:bg-slate-50 font-bold transition-colors cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            className="px-4 py-2 bg-[#FF9900] hover:bg-[#E08800] text-white font-bold rounded shadow-sm transition-colors cursor-pointer"
+                          >
+                            Save Changes
+                        </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </main>
       </div>
 

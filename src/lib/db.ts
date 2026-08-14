@@ -101,6 +101,39 @@ async function ensureRegistrationsTable() {
   }
 }
 
+async function ensureFeedbackTable() {
+  if (!sql) return;
+  try {
+    await ensurePostgresTable();
+    await sql`
+      CREATE TABLE IF NOT EXISTS feedback (
+        id VARCHAR(255) PRIMARY KEY,
+        event_id VARCHAR(255),
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        university VARCHAR(255),
+        rating INTEGER NOT NULL,
+        experience VARCHAR(100),
+        feedback TEXT NOT NULL,
+        liked TEXT,
+        improvements TEXT,
+        recommendation VARCHAR(50),
+        status VARCHAR(50) NOT NULL DEFAULT 'New',
+        admin_notes TEXT NOT NULL DEFAULT '',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_feedback_event_id ON feedback(event_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_feedback_email ON feedback(email)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_feedback_rating ON feedback(rating)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_feedback_created_at ON feedback(created_at)`;
+  } catch (err) {
+    console.error('Failed to ensure feedback table exists in PostgreSQL:', err);
+  }
+}
+
 async function migrateRegistrationsToPostgres() {
   if (!sql) return;
   try {
@@ -851,5 +884,149 @@ export const db = {
   logos: {
     getMap: async () => await readJsonFile<Record<string, string>>('collaboration_logos.json', {}),
     saveMap: async (data: Record<string, string>) => await writeJsonFile('collaboration_logos.json', data)
+  },
+  feedback: {
+    getAll: async (): Promise<any[]> => {
+      if (sql) {
+        await ensureFeedbackTable();
+        try {
+          const rows = await sql`
+            SELECT * FROM feedback ORDER BY created_at DESC
+          `;
+          return rows.map((r: any) => ({
+            id: r.id,
+            eventId: r.event_id,
+            name: r.name,
+            email: r.email,
+            university: r.university || '',
+            rating: Number(r.rating),
+            experience: r.experience || '',
+            feedback: r.feedback || '',
+            liked: r.liked || '',
+            improvements: r.improvements || '',
+            recommendation: r.recommendation || '',
+            status: r.status || 'New',
+            adminNotes: r.admin_notes || '',
+            createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+            updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString()
+          }));
+        } catch (err) {
+          console.error('Postgres error in feedback.getAll:', err);
+          throw err;
+        }
+      }
+      return await readJsonFile<any[]>('feedback.json', []);
+    },
+
+    insertOne: async (f: any): Promise<void> => {
+      if (sql) {
+        await ensureFeedbackTable();
+        try {
+          await sql`
+            INSERT INTO feedback (
+              id, event_id, name, email, university, rating, experience,
+              feedback, liked, improvements, recommendation, status, admin_notes,
+              created_at, updated_at
+            ) VALUES (
+              ${f.id}, ${f.eventId || null}, ${f.name}, ${f.email}, ${f.university || ''},
+              ${Number(f.rating)}, ${f.experience || ''}, ${f.feedback || ''},
+              ${f.liked || ''}, ${f.improvements || ''}, ${f.recommendation || ''},
+              ${f.status || 'New'}, ${f.adminNotes || ''},
+              ${f.createdAt || new Date().toISOString()}, ${f.updatedAt || new Date().toISOString()}
+            )
+          `;
+          return;
+        } catch (err) {
+          console.error('Postgres error in feedback.insertOne:', err);
+          throw err;
+        }
+      }
+      const data = await readJsonFile<any[]>('feedback.json', []);
+      data.push(f);
+      await writeJsonFile('feedback.json', data);
+    },
+
+    updateOne: async (id: string, fields: Partial<any>): Promise<void> => {
+      if (sql) {
+        await ensureFeedbackTable();
+        try {
+          await sql`
+            UPDATE feedback
+            SET 
+              name = ${fields.name !== undefined ? fields.name : sql`name`},
+              email = ${fields.email !== undefined ? fields.email : sql`email`},
+              university = ${fields.university !== undefined ? fields.university : sql`university`},
+              event_id = ${fields.eventId !== undefined ? (fields.eventId || null) : sql`event_id`},
+              rating = ${fields.rating !== undefined ? Number(fields.rating) : sql`rating`},
+              experience = ${fields.experience !== undefined ? fields.experience : sql`experience`},
+              feedback = ${fields.feedback !== undefined ? fields.feedback : sql`feedback`},
+              liked = ${fields.liked !== undefined ? fields.liked : sql`liked`},
+              improvements = ${fields.improvements !== undefined ? fields.improvements : sql`improvements`},
+              recommendation = ${fields.recommendation !== undefined ? fields.recommendation : sql`recommendation`},
+              status = ${fields.status !== undefined ? fields.status : sql`status`},
+              admin_notes = ${fields.adminNotes !== undefined ? fields.adminNotes : sql`admin_notes`},
+              updated_at = ${new Date().toISOString()}
+            WHERE id = ${id}
+          `;
+          return;
+        } catch (err) {
+          console.error('Postgres error in feedback.updateOne:', err);
+          throw err;
+        }
+      }
+      const data = await readJsonFile<any[]>('feedback.json', []);
+      const idx = data.findIndex(r => r.id === id);
+      if (idx !== -1) {
+        data[idx] = { ...data[idx], ...fields, updatedAt: new Date().toISOString() };
+        await writeJsonFile('feedback.json', data);
+      }
+    },
+
+    deleteOne: async (id: string): Promise<void> => {
+      if (sql) {
+        await ensureFeedbackTable();
+        try {
+          await sql`
+            DELETE FROM feedback WHERE id = ${id}
+          `;
+          return;
+        } catch (err) {
+          console.error('Postgres error in feedback.deleteOne:', err);
+          throw err;
+        }
+      }
+      let data = await readJsonFile<any[]>('feedback.json', []);
+      data = data.filter(r => r.id !== id);
+      await writeJsonFile('feedback.json', data);
+    },
+
+    saveAll: async (data: any[]): Promise<void> => {
+      if (sql) {
+        await ensureFeedbackTable();
+        try {
+          await sql`DELETE FROM feedback`;
+          for (const f of data) {
+            await sql`
+              INSERT INTO feedback (
+                id, event_id, name, email, university, rating, experience,
+                feedback, liked, improvements, recommendation, status, admin_notes,
+                created_at, updated_at
+              ) VALUES (
+                ${f.id}, ${f.eventId || null}, ${f.name}, ${f.email}, ${f.university || ''},
+                ${Number(f.rating)}, ${f.experience || ''}, ${f.feedback || ''},
+                ${f.liked || ''}, ${f.improvements || ''}, ${f.recommendation || ''},
+                ${f.status || 'New'}, ${f.adminNotes || ''},
+                ${f.createdAt || new Date().toISOString()}, ${f.updatedAt || new Date().toISOString()}
+              )
+            `;
+          }
+          return;
+        } catch (err) {
+          console.error('Postgres error in feedback.saveAll:', err);
+          throw err;
+        }
+      }
+      await writeJsonFile('feedback.json', data);
+    }
   }
 };

@@ -692,6 +692,257 @@ export async function POST(request: Request) {
           }
         });
       }
+
+      // Feedback Administrative Actions
+      if (action === 'get-feedbacks') {
+        return NextResponse.json(await db.feedback.getAll());
+      }
+
+      if (action === 'update-feedback') {
+        const { id, feedback } = body;
+        try {
+          await db.feedback.updateOne(id, feedback);
+          return NextResponse.json({ success: true });
+        } catch (err: any) {
+          return NextResponse.json({ error: err.message }, { status: 500 });
+        }
+      }
+
+      if (action === 'delete-feedback') {
+        const { id } = body;
+        try {
+          await db.feedback.deleteOne(id);
+          return NextResponse.json({ success: true });
+        } catch (err: any) {
+          return NextResponse.json({ error: err.message }, { status: 500 });
+        }
+      }
+
+      // Feedback Exports
+      if (action === 'export-feedbacks-csv' || action === 'export-feedbacks-excel' || action === 'export-feedbacks-pdf') {
+        const { eventId } = body;
+        const allEvents = await db.events.getAll();
+        const allFeedbacks = await db.feedback.getAll();
+        
+        let filtered = allFeedbacks;
+        let eventTitle = 'All-Events';
+        if (eventId) {
+          const event = allEvents.find(e => e.id === eventId);
+          if (!event) {
+            return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
+          }
+          filtered = allFeedbacks.filter(f => f.eventId === eventId);
+          eventTitle = event.title;
+        }
+
+        if (filtered.length === 0) {
+          return NextResponse.json({ error: 'No feedback records available to export.' }, { status: 400 });
+        }
+
+        const formattedTitle = eventTitle.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+
+        if (action === 'export-feedbacks-csv') {
+          const headers = [
+            'Feedback ID',
+            'Student Name',
+            'Email',
+            'University',
+            'Event Name',
+            'Rating',
+            'Experience',
+            'Feedback Comments',
+            'What they liked',
+            'What can we improve',
+            'Recommendation',
+            'Status',
+            'Admin Notes',
+            'Submitted Date'
+          ].join(',');
+
+          const rows = filtered.map(f => {
+            const e = allEvents.find(ev => ev.id === f.eventId);
+            const evName = e ? e.title : 'General / Others';
+            return [
+              f.id,
+              f.name,
+              f.email,
+              f.university,
+              evName,
+              f.rating,
+              f.experience,
+              f.feedback,
+              f.liked,
+              f.improvements,
+              f.recommendation,
+              f.status,
+              f.adminNotes,
+              f.createdAt ? new Date(f.createdAt).toLocaleString() : ''
+            ].map(val => {
+              const str = String(val);
+              return `"${str.replace(/"/g, '""')}"`;
+            }).join(',');
+          });
+
+          const csvContent = [headers, ...rows].join('\n');
+          return new NextResponse(csvContent, {
+            status: 200,
+            headers: {
+              'Content-Type': 'text/csv;charset=utf-8',
+              'Content-Disposition': `attachment; filename="${encodeURIComponent(formattedTitle)}-feedback.csv"`,
+              'Cache-Control': 'no-store'
+            }
+          });
+        }
+
+        if (action === 'export-feedbacks-excel') {
+          const XLSX = require('xlsx');
+          const sheetData = filtered.map(f => {
+            const e = allEvents.find(ev => ev.id === f.eventId);
+            const evName = e ? e.title : 'General / Others';
+            return {
+              'Feedback ID': f.id,
+              'Student Name': f.name,
+              'Email': f.email,
+              'University': f.university,
+              'Event Name': evName,
+              'Rating': f.rating,
+              'Experience': f.experience,
+              'Feedback Comments': f.feedback,
+              'What they liked': f.liked,
+              'What can we improve': f.improvements,
+              'Recommendation': f.recommendation,
+              'Status': f.status,
+              'Admin Notes': f.adminNotes,
+              'Submitted Date': f.createdAt ? new Date(f.createdAt).toLocaleString() : ''
+            };
+          });
+
+          const wb = XLSX.utils.book_new();
+          const ws = XLSX.utils.json_to_sheet(sheetData);
+          XLSX.utils.book_append_sheet(wb, ws, 'Feedback');
+
+          const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+          return new NextResponse(excelBuffer as any, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              'Content-Disposition': `attachment; filename="${encodeURIComponent(formattedTitle)}-feedback.xlsx"`,
+              'Cache-Control': 'no-store'
+            }
+          });
+        }
+
+        if (action === 'export-feedbacks-pdf') {
+          const { jsPDF } = require('jspdf');
+          const doc = new jsPDF({
+            orientation: 'landscape',
+            unit: 'pt',
+            format: 'a4'
+          });
+
+          // Report Header
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(16);
+          doc.setTextColor(15, 23, 42); // #0F172A
+          doc.text('AWS Student Builder Group', 421, 40, { align: 'center' });
+
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(10);
+          doc.setTextColor(100, 116, 139); // #64748B
+          doc.text('Chandigarh University – Uttar Pradesh', 421, 55, { align: 'center' });
+
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(13);
+          doc.setTextColor(255, 153, 0); // #FF9900
+          doc.text('Feedback Report', 421, 75, { align: 'center' });
+
+          // Meta Info Box
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9);
+          doc.setTextColor(30, 41, 59); // #1E293B
+          doc.text(`Event/Target: ${eventTitle}`, 30, 105);
+          doc.text(`Total Feedbacks: ${filtered.length}`, 30, 120);
+          doc.text(`Report Generated: ${new Date().toLocaleString()}`, 30, 135);
+
+          // Table Headers drawer
+          const drawHeaders = (y: number) => {
+            doc.setFillColor(241, 245, 249); // #F1F5F9
+            doc.rect(30, y - 10, 782, 18, 'F');
+            
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.setTextColor(15, 23, 42); // #0F172A
+            
+            doc.text('No.', 35, y, { maxWidth: 25 });
+            doc.text('Student Name', 65, y, { maxWidth: 100 });
+            doc.text('Email', 170, y, { maxWidth: 110 });
+            doc.text('Event', 285, y, { maxWidth: 140 });
+            doc.text('Rating', 430, y, { maxWidth: 30 });
+            doc.text('Exp.', 465, y, { maxWidth: 45 });
+            doc.text('Feedback Comments', 515, y, { maxWidth: 165 });
+            doc.text('Status', 685, y, { maxWidth: 45 });
+            doc.text('Date', 735, y, { maxWidth: 70 });
+            
+            // Draw bottom line
+            doc.setDrawColor(226, 232, 240); // #E2E8F0
+            doc.setLineWidth(0.5);
+            doc.line(30, y + 10, 812, y + 10);
+          };
+
+          let currentY = 165;
+          drawHeaders(currentY);
+          currentY += 18;
+
+          filtered.forEach((f, idx) => {
+            if (currentY > 530) {
+              doc.addPage();
+              currentY = 40;
+              drawHeaders(currentY);
+              currentY += 18;
+            }
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.5);
+            doc.setTextColor(51, 65, 85); // #334155
+
+            doc.text(`${idx + 1}`, 35, currentY);
+            
+            const safeText = (txt: string, maxLen: number) => {
+              const str = txt || '';
+              return str.length > maxLen ? str.slice(0, maxLen) + '...' : str;
+            };
+
+            const e = allEvents.find(ev => ev.id === f.eventId);
+            const evName = e ? e.title : 'General / Others';
+
+            doc.text(safeText(f.name, 22), 65, currentY);
+            doc.text(safeText(f.email, 24), 170, currentY);
+            doc.text(safeText(evName, 32), 285, currentY);
+            doc.text(`${f.rating} ★`, 430, currentY);
+            doc.text(safeText(f.experience, 12), 465, currentY);
+            doc.text(safeText(f.feedback, 45), 515, currentY);
+            doc.text(safeText(f.status || 'New', 12), 685, currentY);
+            doc.text(f.createdAt ? new Date(f.createdAt).toLocaleDateString() : '', 735, currentY);
+
+            // Draw row bottom line
+            doc.setDrawColor(241, 245, 249); // #F1F5F9
+            doc.setLineWidth(0.5);
+            doc.line(30, currentY + 8, 812, currentY + 8);
+            
+            currentY += 15;
+          });
+
+          const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+          return new NextResponse(pdfBuffer as any, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/pdf',
+              'Content-Disposition': `attachment; filename="${encodeURIComponent(formattedTitle)}-feedback.pdf"`,
+              'Cache-Control': 'no-store'
+            }
+          });
+        }
+      }
     }
 
     return NextResponse.json({ error: 'Unknown action parameter' }, { status: 400 });

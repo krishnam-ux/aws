@@ -74,7 +74,8 @@ export default function Navbar() {
     { label: 'Events', href: '/events' },
     { label: 'Resources', href: '/resources' },
     { label: 'Verification', href: '/verification' },
-    { label: 'Leadership', href: '/leadership' }
+    { label: 'Leadership', href: '/leadership' },
+    { label: 'Feedback', href: '/feedback' }
   ];
 
   return (
