@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const events = await db.events.getAll();
@@ -8,10 +10,12 @@ export async function GET() {
     const publicEvents = events
       .filter(e => e.status !== 'Draft' && e.status !== 'Unpublished')
       .map(e => ({ id: e.id, title: e.title }));
-    return NextResponse.json({ success: true, events: publicEvents });
+    return NextResponse.json({ success: true, events: publicEvents }, {
+      headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+    });
   } catch (err) {
     console.error('API Feedback GET Error:', err);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' } });
   }
 }
 
@@ -33,19 +37,28 @@ export async function POST(request: Request) {
 
     // Required fields check
     if (!name || !email || !university || !rating || !feedback) {
-      return NextResponse.json({ error: 'Missing required feedback fields.' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required feedback fields.' }, {
+        status: 400,
+        headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+      });
     }
 
     // Rating check
     const ratingNum = Number(rating);
     if (isNaN(ratingNum) || ratingNum < 1 || ratingNum > 5) {
-      return NextResponse.json({ error: 'Invalid rating. Please select between 1 and 5 stars.' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid rating. Please select between 1 and 5 stars.' }, {
+        status: 400,
+        headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+      });
     }
 
     // Verify email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return NextResponse.json({ error: 'Invalid email address format.' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid email address format.' }, {
+        status: 400,
+        headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+      });
     }
 
     // Verify the event if eventId is provided
@@ -54,7 +67,10 @@ export async function POST(request: Request) {
       const events = await db.events.getAll();
       const event = events.find(e => e.id === eventId);
       if (!event) {
-        return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
+        return NextResponse.json({ error: 'Event not found.' }, {
+          status: 404,
+          headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+        });
       }
       eventTitle = event.title;
     }
@@ -87,7 +103,10 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: false,
         error: 'Database transaction failed. Your feedback was not recorded.'
-      }, { status: 500 });
+      }, {
+        status: 500,
+        headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+      });
     }
 
     // Create Admin notification
@@ -109,9 +128,14 @@ export async function POST(request: Request) {
       success: true,
       feedbackId,
       eventTitle
+    }, {
+      headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
     });
   } catch (err) {
     console.error('API Feedback POST Error:', err);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, {
+      status: 500,
+      headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+    });
   }
 }

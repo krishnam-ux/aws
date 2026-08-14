@@ -243,6 +243,7 @@ export default function AdminDashboard() {
     try {
       const response = await fetch('/api/admin', {
         method: 'POST',
+        cache: 'no-store',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`

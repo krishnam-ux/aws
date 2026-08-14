@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 const SECURE_TOKEN = 'awssbg-admin-session-token-secure-hash';
 
 function isAuthorized(request: Request): boolean {
@@ -26,10 +28,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Feedback record not found.' }, { status: 404 });
     }
 
-    return NextResponse.json(item);
+    return NextResponse.json(item, {
+      headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+    });
   } catch (err) {
     console.error('API Admin Feedback Item GET Error:', err);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, {
+      status: 500,
+      headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+    });
   }
 }
 
@@ -64,13 +71,19 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     // Required fields check (if provided for update, let's validate them)
     if (name === '' || email === '' || rating === '' || feedback === '') {
-      return NextResponse.json({ error: 'Fields name, email, rating, and feedback cannot be empty.' }, { status: 400 });
+      return NextResponse.json({ error: 'Fields name, email, rating, and feedback cannot be empty.' }, {
+        status: 400,
+        headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+      });
     }
 
     if (rating !== undefined) {
       const ratingNum = Number(rating);
       if (isNaN(ratingNum) || ratingNum < 1 || ratingNum > 5) {
-        return NextResponse.json({ error: 'Invalid rating. Must be between 1 and 5 stars.' }, { status: 400 });
+        return NextResponse.json({ error: 'Invalid rating. Must be between 1 and 5 stars.' }, {
+          status: 400,
+          headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+        });
       }
     }
 
@@ -93,13 +106,21 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       await db.feedback.updateOne(id, fieldsToUpdate);
     } catch (dbErr: any) {
       console.error('API Admin Feedback Item Update DB Error:', dbErr);
-      return NextResponse.json({ error: 'Database update failed.' }, { status: 500 });
+      return NextResponse.json({ error: 'Database update failed.' }, {
+        status: 500,
+        headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+      });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, {
+      headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+    });
   } catch (err) {
     console.error('API Admin Feedback Item PUT Error:', err);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, {
+      status: 500,
+      headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+    });
   }
 }
 
@@ -113,19 +134,30 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     const feedbacks = await db.feedback.getAll();
     const item = feedbacks.find(f => f.id === id);
     if (!item) {
-      return NextResponse.json({ error: 'Feedback record not found.' }, { status: 404 });
+      return NextResponse.json({ error: 'Feedback record not found.' }, {
+        status: 404,
+        headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+      });
     }
 
     try {
       await db.feedback.deleteOne(id);
     } catch (dbErr: any) {
       console.error('API Admin Feedback Item Delete DB Error:', dbErr);
-      return NextResponse.json({ error: 'Database deletion failed.' }, { status: 500 });
+      return NextResponse.json({ error: 'Database deletion failed.' }, {
+        status: 500,
+        headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+      });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, {
+      headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+    });
   } catch (err) {
     console.error('API Admin Feedback Item DELETE Error:', err);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, {
+      status: 500,
+      headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+    });
   }
 }

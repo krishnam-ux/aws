@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db, hashPassword, generateSalt } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 const SECURE_TOKEN = 'awssbg-admin-session-token-secure-hash';
 
 // Helper to verify admin auth token

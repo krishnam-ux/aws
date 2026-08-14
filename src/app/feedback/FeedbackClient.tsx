@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 
 export default function FeedbackClient() {
   // Form State
@@ -28,7 +26,7 @@ export default function FeedbackClient() {
   useEffect(() => {
     async function loadEvents() {
       try {
-        const res = await fetch('/api/feedback');
+        const res = await fetch('/api/feedback', { cache: 'no-store' });
         const data = await res.json();
         if (res.ok && data.success) {
           setEvents(data.events || []);
@@ -77,6 +75,7 @@ export default function FeedbackClient() {
     try {
       const response = await fetch('/api/feedback', {
         method: 'POST',
+        cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
@@ -108,8 +107,6 @@ export default function FeedbackClient() {
 
   return (
     <div className="min-h-screen bg-[#F6F8FA] flex flex-col font-sans">
-      <Navbar />
-
       <main className="flex-grow max-w-3xl w-full mx-auto px-4 py-12 sm:px-6 lg:px-8">
         <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-sm overflow-hidden p-6 sm:p-10 space-y-8 relative">
           
@@ -401,8 +398,6 @@ export default function FeedbackClient() {
           )}
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

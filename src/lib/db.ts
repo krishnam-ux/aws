@@ -324,7 +324,7 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
     }
   }
 
-  // 4. Default Local File Fallback
+  // 4. Local file fallback only when no database backend is configured.
   const filePath = path.join(DB_DIR, filename);
   if (!fs.existsSync(filePath)) {
     await writeJsonFile(filename, defaultValue);
@@ -359,8 +359,13 @@ async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
 
   // 2. Try PostgreSQL
   if (process.env.DATABASE_URL) {
-    await writePostgres(filename, data);
-    return;
+    try {
+      await writePostgres(filename, data);
+      return;
+    } catch (err) {
+      console.error(`PostgreSQL write failed for ${filename}:`, err);
+      throw err;
+    }
   }
 
   // 3. Try Netlify Blobs
@@ -376,7 +381,7 @@ async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
     }
   }
 
-  // 4. Default Local File Fallback
+  // 4. Local file fallback only when no database backend is configured.
   const filePath = path.join(DB_DIR, filename);
   try {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
@@ -887,6 +892,9 @@ export const db = {
   },
   feedback: {
     getAll: async (): Promise<any[]> => {
+      if (process.env.DATABASE_URL && !sql) {
+        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      }
       if (sql) {
         await ensureFeedbackTable();
         try {
@@ -919,6 +927,9 @@ export const db = {
     },
 
     insertOne: async (f: any): Promise<void> => {
+      if (process.env.DATABASE_URL && !sql) {
+        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      }
       if (sql) {
         await ensureFeedbackTable();
         try {
@@ -947,6 +958,9 @@ export const db = {
     },
 
     updateOne: async (id: string, fields: Partial<any>): Promise<void> => {
+      if (process.env.DATABASE_URL && !sql) {
+        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      }
       if (sql) {
         await ensureFeedbackTable();
         try {
@@ -983,6 +997,9 @@ export const db = {
     },
 
     deleteOne: async (id: string): Promise<void> => {
+      if (process.env.DATABASE_URL && !sql) {
+        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      }
       if (sql) {
         await ensureFeedbackTable();
         try {
@@ -1001,6 +1018,9 @@ export const db = {
     },
 
     saveAll: async (data: any[]): Promise<void> => {
+      if (process.env.DATABASE_URL && !sql) {
+        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      }
       if (sql) {
         await ensureFeedbackTable();
         try {
