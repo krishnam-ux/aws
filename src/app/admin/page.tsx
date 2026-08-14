@@ -278,43 +278,43 @@ export default function AdminDashboard() {
       if (data) setEventRegistrations(data);
     } else if (activeTab === 'Events') {
       const data = await apiCall({ action: 'get-events' });
-      if (data) setEvents(data);
+      if (Array.isArray(data)) setEvents(data);
       const regs = await apiCall({ action: 'get-event-registrations' });
-      if (regs) setEventRegistrations(regs);
+      if (Array.isArray(regs)) setEventRegistrations(regs);
       const feeds = await apiCall({ action: 'get-feedbacks' });
-      if (feeds) setFeedbacks(feeds);
+      if (Array.isArray(feeds)) setFeedbacks(feeds);
     } else if (activeTab === 'Announcements') {
       const data = await apiCall({ action: 'get-announcements' });
-      if (data) setAnnouncements(data);
+      if (Array.isArray(data)) setAnnouncements(data);
     } else if (activeTab === 'Resources') {
       const data = await apiCall({ action: 'get-resources' });
-      if (data) setResources(data);
+      if (Array.isArray(data)) setResources(data);
     } else if (activeTab === 'Verification') {
       const data = await apiCall({ action: 'get-verifications' });
-      if (data) setVerifications(data);
+      if (Array.isArray(data)) setVerifications(data);
     } else if (activeTab === 'CoreTeam') {
       const data = await apiCall({ action: 'get-team' });
-      if (data) setTeamMembers(data);
+      if (Array.isArray(data)) setTeamMembers(data);
     } else if (activeTab === 'Collaborations') {
       const data = await apiCall({ action: 'get-collaborations' });
-      if (data) setCollaborations(data);
+      if (Array.isArray(data)) setCollaborations(data);
     } else if (activeTab === 'Content') {
       const data = await apiCall({ action: 'get-content' });
-      if (data) {
+      if (data && !data.error) {
         setWebsiteContent(data);
         setContentForm(data);
       }
     } else if (activeTab === 'Dashboard') {
       const data = await apiCall({ action: 'get-notifications' });
-      if (data) setNotifications(data);
+      if (Array.isArray(data)) setNotifications(data);
     } else if (activeTab === 'ContactMessages') {
       const data = await apiCall({ action: 'get-contact-messages' });
-      if (data) setContactMessages(data);
+      if (Array.isArray(data)) setContactMessages(data);
     } else if (activeTab === 'Feedback') {
       const data = await apiCall({ action: 'get-feedbacks' });
-      if (data) setFeedbacks(data);
+      if (Array.isArray(data)) setFeedbacks(data);
       const evts = await apiCall({ action: 'get-events' });
-      if (evts) setEvents(evts);
+      if (Array.isArray(evts)) setEvents(evts);
     }
   };
 
@@ -1883,7 +1883,7 @@ export default function AdminDashboard() {
                               }}
                               className="underline text-[#FF9900] hover:text-orange-700 transition-colors"
                             >
-                              {feedbacks.filter(f => f.eventId === event.id).length}
+                              {(Array.isArray(feedbacks) ? feedbacks : []).filter(f => f.eventId === event.id).length}
                             </button>
                           </td>
                           <td className="px-4 py-3 truncate max-w-[120px]">{event.format}</td>
@@ -2585,7 +2585,7 @@ export default function AdminDashboard() {
           {/* TAB 13: FEEDBACK */}
           {activeTab === 'Feedback' && (() => {
             const getFilteredFeedbacks = () => {
-              let result = [...feedbacks];
+              let result = Array.isArray(feedbacks) ? [...feedbacks] : [];
 
               // Event Filter
               if (feedbackEventFilter) {
@@ -2654,7 +2654,7 @@ export default function AdminDashboard() {
                   {/* Total Feedback */}
                   <div className="bg-white border border-[#E2E8F0] p-3 rounded-lg shadow-sm space-y-1">
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Total</span>
-                    <span className="text-lg font-extrabold text-[#111827] block">{feedbacks.length}</span>
+                    <span className="text-lg font-extrabold text-[#111827] block">{Array.isArray(feedbacks) ? feedbacks.length : 0}</span>
                   </div>
                   {/* Average Rating */}
                   <div className="bg-white border border-[#E2E8F0] p-3 rounded-lg shadow-sm space-y-1">
@@ -2662,7 +2662,7 @@ export default function AdminDashboard() {
                       Avg Rating <span className="text-[#FF9900]">★</span>
                     </span>
                     <span className="text-lg font-extrabold text-[#FF9900] block">
-                      {feedbacks.length > 0
+                      {Array.isArray(feedbacks) && feedbacks.length > 0
                         ? (feedbacks.reduce((acc, f) => acc + Number(f.rating), 0) / feedbacks.length).toFixed(1)
                         : '0.0'}
                     </span>
@@ -2672,15 +2672,15 @@ export default function AdminDashboard() {
                     <div key={star} className="bg-white border border-[#E2E8F0] p-3 rounded-lg shadow-sm space-y-1">
                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">{star} Star</span>
                       <span className="text-lg font-extrabold text-slate-700 block">
-                        {feedbacks.filter(f => Number(f.rating) === star).length}
+                        {(Array.isArray(feedbacks) ? feedbacks : []).filter(f => Number(f.rating) === star).length}
                       </span>
                     </div>
                   ))}
                   {/* New count */}
                   <div className="bg-white border border-[#E2E8F0] p-3 rounded-lg shadow-sm space-y-1">
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">New</span>
-                    <span className={`text-lg font-extrabold block ${feedbacks.filter(f => f.status === 'New').length > 0 ? 'text-[#FF9900] animate-pulse' : 'text-slate-700'}`}>
-                      {feedbacks.filter(f => f.status === 'New').length}
+                    <span className={`text-lg font-extrabold block ${(Array.isArray(feedbacks) ? feedbacks : []).filter(f => f.status === 'New').length > 0 ? 'text-[#FF9900] animate-pulse' : 'text-slate-700'}`}>
+                      {(Array.isArray(feedbacks) ? feedbacks : []).filter(f => f.status === 'New').length}
                     </span>
                   </div>
                 </div>
