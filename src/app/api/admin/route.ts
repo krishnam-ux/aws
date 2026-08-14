@@ -528,6 +528,16 @@ export async function POST(request: Request) {
       if (action === 'export-pdf') {
         const PDFDocument = require('pdfkit');
         
+        let regularFontBuffer;
+        let mediumFontBuffer;
+        try {
+          regularFontBuffer = await getFontRegular();
+          mediumFontBuffer = await getFontMedium();
+        } catch (fontErr) {
+          console.error('Failed to load Google Fonts for PDF:', fontErr);
+          return NextResponse.json({ error: 'Unable to load fonts for PDF generation.' }, { status: 500 });
+        }
+
         const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
           const doc = new PDFDocument({ 
             layout: 'landscape', 
@@ -540,16 +550,20 @@ export async function POST(request: Request) {
           doc.on('end', () => resolve(Buffer.concat(chunks)));
           doc.on('error', (err: any) => reject(err));
 
+          // Register Fonts
+          doc.registerFont('Roboto-Regular', regularFontBuffer);
+          doc.registerFont('Roboto-Medium', mediumFontBuffer);
+
           // Report Header
-          doc.font('Helvetica-Bold').fontSize(16).fillColor('#0F172A').text('AWS Student Builder Group', { align: 'center' });
-          doc.fontSize(10).fillColor('#64748B').text('Chandigarh University – Uttar Pradesh', { align: 'center' });
+          doc.font('Roboto-Medium').fontSize(16).fillColor('#0F172A').text('AWS Student Builder Group', { align: 'center' });
+          doc.font('Roboto-Regular').fontSize(10).fillColor('#64748B').text('Chandigarh University – Uttar Pradesh', { align: 'center' });
           doc.moveDown(0.5);
           
-          doc.fontSize(13).fillColor('#FF9900').text('Event Registration Report', { align: 'center' });
+          doc.font('Roboto-Medium').fontSize(13).fillColor('#FF9900').text('Event Registration Report', { align: 'center' });
           doc.moveDown(1);
 
           // Meta Table
-          doc.font('Helvetica-Bold').fontSize(9).fillColor('#1E293B');
+          doc.font('Roboto-Medium').fontSize(9).fillColor('#1E293B');
           doc.text(`Event Name: ${event.title}`);
           doc.text(`Event Date: ${event.date || 'TBA'} | Time: ${event.time || 'TBA'}`);
           doc.text(`Venue: ${event.venue || 'TBA'} | Status: ${event.registrationStatus || 'Closed'}`);
@@ -559,7 +573,7 @@ export async function POST(request: Request) {
 
           // Table Headers
           const drawHeaders = (y: number) => {
-            doc.font('Helvetica-Bold').fontSize(8).fillColor('#0F172A');
+            doc.font('Roboto-Medium').fontSize(8).fillColor('#0F172A');
             doc.rect(30, y - 4, 782, 20).fill('#F1F5F9');
             doc.fillColor('#0F172A');
             doc.text('No.', 35, y, { width: 25 });
@@ -585,7 +599,7 @@ export async function POST(request: Request) {
               currentY += 20;
             }
 
-            doc.font('Helvetica').fontSize(7.5).fillColor('#334155');
+            doc.font('Roboto-Regular').fontSize(7.5).fillColor('#334155');
             doc.text(`${idx + 1}`, 35, currentY, { width: 25 });
             doc.text(r.name || '', 65, currentY, { width: 110, height: 14, ellipsis: true });
             doc.text(r.email || '', 180, currentY, { width: 155, height: 14, ellipsis: true });
@@ -618,4 +632,24 @@ export async function POST(request: Request) {
     console.error('API Admin Main Error:', err);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
+}
+
+// Global caching variables and helpers for font downloads
+let cachedFontRegular: Buffer | null = null;
+let cachedFontMedium: Buffer | null = null;
+
+async function getFontRegular(): Promise<Buffer> {
+  if (cachedFontRegular) return cachedFontRegular;
+  const res = await fetch('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf');
+  if (!res.ok) throw new Error('Failed to fetch regular font');
+  cachedFontRegular = Buffer.from(await res.arrayBuffer());
+  return cachedFontRegular;
+}
+
+async function getFontMedium(): Promise<Buffer> {
+  if (cachedFontMedium) return cachedFontMedium;
+  const res = await fetch('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Medium.ttf');
+  if (!res.ok) throw new Error('Failed to fetch medium/bold font');
+  cachedFontMedium = Buffer.from(await res.arrayBuffer());
+  return cachedFontMedium;
 }
