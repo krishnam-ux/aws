@@ -174,6 +174,7 @@ export default function AdminDashboard() {
   const [actionSuccess, setActionSuccess] = useState('');
   const [actionError, setActionError] = useState('');
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [exportingStates, setExportingStates] = useState<Record<string, boolean>>({});
 
   // Hydration check
   useEffect(() => {
@@ -464,27 +465,21 @@ export default function AdminDashboard() {
     }
   };
 
-  const exportEventCSV = (event: CommunityEvent) => {
-    const list = eventRegistrations.filter(r => r.eventId === event.id);
-    exportToCSV(list, `registrations_${event.title.toLowerCase().replace(/[^a-z0-9]/g, '_')}`);
-  };
+  const exportEventData = async (event: CommunityEvent, format: 'csv' | 'excel' | 'pdf') => {
+    const key = `${event.id}-${format}`;
+    if (exportingStates[key]) return;
 
-  const exportEventExcel = async (event: CommunityEvent) => {
-    const eventRegsCount = eventRegistrations.filter(r => r.eventId === event.id).length;
-    if (eventRegsCount === 0) {
-      alert("No registrations available to export.");
-      return;
-    }
+    setExportingStates(prev => ({ ...prev, [key]: true }));
 
     try {
-      setLoading(true);
+      const action = format === 'csv' ? 'export-csv' : format === 'excel' ? 'export-excel' : 'export-pdf';
       const res = await fetch('/api/admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ action: 'export-excel', eventId: event.id })
+        body: JSON.stringify({ action, eventId: event.id })
       });
 
       if (!res.ok) {
@@ -503,65 +498,22 @@ export default function AdminDashboard() {
       const a = document.createElement('a');
       a.href = url;
       const safeTitle = event.title.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
-      a.download = `${safeTitle}-registrations.xlsx`;
+      a.download = `${safeTitle}-registrations.${format === 'excel' ? 'xlsx' : format}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('Excel export error:', err);
+      console.error(`${format} export error:`, err);
       alert('Unable to export registrations. Please try again.');
     } finally {
-      setLoading(false);
+      setExportingStates(prev => ({ ...prev, [key]: false }));
     }
   };
 
-  const exportEventPDF = async (event: CommunityEvent) => {
-    const eventRegsCount = eventRegistrations.filter(r => r.eventId === event.id).length;
-    if (eventRegsCount === 0) {
-      alert("No registrations available to export.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const res = await fetch('/api/admin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ action: 'export-pdf', eventId: event.id })
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        let errMsg = 'Unable to export registrations. Please try again.';
-        try {
-          const errData = JSON.parse(errText);
-          if (errData.error) errMsg = errData.error;
-        } catch (_) {}
-        alert(errMsg);
-        return;
-      }
-
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const safeTitle = event.title.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
-      a.download = `${safeTitle}-registrations.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('PDF export error:', err);
-      alert('Unable to export registrations. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const exportEventCSV = (event: CommunityEvent) => exportEventData(event, 'csv');
+  const exportEventExcel = (event: CommunityEvent) => exportEventData(event, 'excel');
+  const exportEventPDF = (event: CommunityEvent) => exportEventData(event, 'pdf');
 
   const addRegNote = async (id: string, notes: string) => {
     const res = await apiCall({ action: 'update-registration', id, notes });
@@ -1846,8 +1798,26 @@ export default function AdminDashboard() {
                             <button onClick={() => setSelectedEventRegs(event)} className="text-brand-navy hover:text-[#FF9900] font-bold cursor-pointer">
                               View Registrations
                             </button>
-                            <button onClick={() => exportEventCSV(event)} className="text-slate-600 hover:text-slate-800 font-semibold cursor-pointer">
-                              Export CSV
+                            <button 
+                              disabled={exportingStates[`${event.id}-csv`]} 
+                              onClick={() => exportEventCSV(event)} 
+                              className="text-slate-600 hover:text-[#FF9900] font-semibold cursor-pointer disabled:opacity-50"
+                            >
+                              {exportingStates[`${event.id}-csv`] ? 'Preparing...' : 'Export CSV'}
+                            </button>
+                            <button 
+                              disabled={exportingStates[`${event.id}-excel`]} 
+                              onClick={() => exportEventExcel(event)} 
+                              className="text-slate-600 hover:text-[#FF9900] font-semibold cursor-pointer disabled:opacity-50"
+                            >
+                              {exportingStates[`${event.id}-excel`] ? 'Preparing...' : 'Export Excel'}
+                            </button>
+                            <button 
+                              disabled={exportingStates[`${event.id}-pdf`]} 
+                              onClick={() => exportEventPDF(event)} 
+                              className="text-slate-600 hover:text-[#FF9900] font-semibold cursor-pointer disabled:opacity-50"
+                            >
+                              {exportingStates[`${event.id}-pdf`] ? 'Preparing...' : 'Export PDF'}
                             </button>
                             <button onClick={() => openEditModal(event)} className="text-brand-navy hover:text-[#FF9900] font-bold cursor-pointer">
                               Edit
@@ -3141,22 +3111,25 @@ export default function AdminDashboard() {
                   </button>
                 )}
                 <button
+                  disabled={exportingStates[`${selectedEventRegs.id}-csv`]}
                   onClick={() => exportEventCSV(selectedEventRegs)}
-                  className="px-3 py-1.5 bg-[#F6F8FA] border border-[#E2E8F0] text-slate-800 hover:border-[#FF9900] hover:text-[#FF9900] rounded font-bold transition-colors cursor-pointer text-[10px]"
+                  className="px-3 py-1.5 bg-[#F6F8FA] border border-[#E2E8F0] text-slate-800 hover:border-[#FF9900] hover:text-[#FF9900] rounded font-bold transition-colors cursor-pointer text-[10px] disabled:opacity-50"
                 >
-                  Export CSV
+                  {exportingStates[`${selectedEventRegs.id}-csv`] ? 'Preparing...' : 'Export CSV'}
                 </button>
                 <button
+                  disabled={exportingStates[`${selectedEventRegs.id}-excel`]}
                   onClick={() => exportEventExcel(selectedEventRegs)}
-                  className="px-3 py-1.5 bg-[#F6F8FA] border border-[#E2E8F0] text-slate-800 hover:border-[#FF9900] hover:text-[#FF9900] rounded font-bold transition-colors cursor-pointer text-[10px]"
+                  className="px-3 py-1.5 bg-[#F6F8FA] border border-[#E2E8F0] text-slate-800 hover:border-[#FF9900] hover:text-[#FF9900] rounded font-bold transition-colors cursor-pointer text-[10px] disabled:opacity-50"
                 >
-                  Export Excel
+                  {exportingStates[`${selectedEventRegs.id}-excel`] ? 'Preparing...' : 'Export Excel'}
                 </button>
                 <button
+                  disabled={exportingStates[`${selectedEventRegs.id}-pdf`]}
                   onClick={() => exportEventPDF(selectedEventRegs)}
-                  className="px-3 py-1.5 bg-[#F6F8FA] border border-[#E2E8F0] text-slate-800 hover:border-[#FF9900] hover:text-[#FF9900] rounded font-bold transition-colors cursor-pointer text-[10px]"
+                  className="px-3 py-1.5 bg-[#F6F8FA] border border-[#E2E8F0] text-slate-800 hover:border-[#FF9900] hover:text-[#FF9900] rounded font-bold transition-colors cursor-pointer text-[10px] disabled:opacity-50"
                 >
-                  Export PDF
+                  {exportingStates[`${selectedEventRegs.id}-pdf`] ? 'Preparing...' : 'Export PDF'}
                 </button>
               </div>
             </div>

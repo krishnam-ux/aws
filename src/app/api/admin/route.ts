@@ -444,7 +444,7 @@ export async function POST(request: Request) {
     }
 
     // 13. Data Export Management
-    if (action === 'export-excel' || action === 'export-pdf') {
+    if (action === 'export-csv' || action === 'export-excel' || action === 'export-pdf') {
       const { eventId } = body;
       if (!eventId) {
         return NextResponse.json({ error: 'Missing parameter: eventId.' }, { status: 400 });
@@ -461,6 +461,64 @@ export async function POST(request: Request) {
 
       if (eventRegs.length === 0) {
         return NextResponse.json({ error: 'No registrations available to export.' }, { status: 400 });
+      }
+
+      if (action === 'export-csv') {
+        const rows = eventRegs.map((r, index) => {
+          return [
+            r.id,
+            r.name,
+            r.email,
+            r.phone || '',
+            r.university,
+            r.program,
+            r.year,
+            r.studentId || '',
+            Array.isArray(r.interests) ? r.interests.join('; ') : r.interests,
+            r.experienceLevel || 'Beginner',
+            r.linkedin || '',
+            r.github || '',
+            r.motivation || '',
+            r.consent ? 'Yes' : 'No',
+            r.status || 'New',
+            r.date ? new Date(r.date).toLocaleDateString() : '',
+            r.date ? new Date(r.date).toLocaleTimeString() : ''
+          ].map(val => {
+            const str = String(val);
+            return `"${str.replace(/"/g, '""')}"`;
+          }).join(',');
+        });
+
+        const headers = [
+          'Registration ID',
+          'Student Name',
+          'Email',
+          'Phone',
+          'University',
+          'Program',
+          'Year',
+          'Student ID',
+          'Technical Interests',
+          'Experience Level',
+          'LinkedIn',
+          'GitHub',
+          'Motivation',
+          'Consent',
+          'Status',
+          'Registration Date',
+          'Registration Time'
+        ].join(',');
+
+        const csvContent = [headers, ...rows].join('\n');
+        
+        return new NextResponse(csvContent, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/csv;charset=utf-8',
+            'Content-Disposition': `attachment; filename="${encodeURIComponent(event.title)}-registrations.csv"`,
+            'Cache-Control': 'no-store'
+          }
+        });
       }
 
       if (action === 'export-excel') {
@@ -526,95 +584,104 @@ export async function POST(request: Request) {
       }
 
       if (action === 'export-pdf') {
-        const PDFDocument = require('pdfkit');
-        
-        let regularFontBuffer;
-        let mediumFontBuffer;
-        try {
-          regularFontBuffer = await getFontRegular();
-          mediumFontBuffer = await getFontMedium();
-        } catch (fontErr) {
-          console.error('Failed to load Google Fonts for PDF:', fontErr);
-          return NextResponse.json({ error: 'Unable to load fonts for PDF generation.' }, { status: 500 });
-        }
+        const { jsPDF } = require('jspdf');
+        const doc = new jsPDF({
+          orientation: 'landscape',
+          unit: 'pt',
+          format: 'a4'
+        });
 
-        const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
-          const doc = new PDFDocument({ 
-            layout: 'landscape', 
-            size: 'A4', 
-            margin: 30 
-          });
-          const chunks: any[] = [];
+        // Report Header
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(15, 23, 42); // #0F172A
+        doc.text('AWS Student Builder Group', 421, 40, { align: 'center' });
 
-          doc.on('data', (chunk: any) => chunks.push(chunk));
-          doc.on('end', () => resolve(Buffer.concat(chunks)));
-          doc.on('error', (err: any) => reject(err));
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(100, 116, 139); // #64748B
+        doc.text('Chandigarh University – Uttar Pradesh', 421, 55, { align: 'center' });
 
-          // Register Fonts
-          doc.registerFont('Roboto-Regular', regularFontBuffer);
-          doc.registerFont('Roboto-Medium', mediumFontBuffer);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(13);
+        doc.setTextColor(255, 153, 0); // #FF9900
+        doc.text('Event Registration Report', 421, 75, { align: 'center' });
 
-          // Report Header
-          doc.font('Roboto-Medium').fontSize(16).fillColor('#0F172A').text('AWS Student Builder Group', { align: 'center' });
-          doc.font('Roboto-Regular').fontSize(10).fillColor('#64748B').text('Chandigarh University – Uttar Pradesh', { align: 'center' });
-          doc.moveDown(0.5);
+        // Meta Info Box
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(30, 41, 59); // #1E293B
+        doc.text(`Event Name: ${event.title}`, 30, 105);
+        doc.text(`Event Date: ${event.date || 'TBA'} | Time: ${event.time || 'TBA'}`, 30, 120);
+        doc.text(`Venue: ${event.venue || 'TBA'} | Status: ${event.registrationStatus || 'Closed'}`, 30, 135);
+        doc.text(`Total Registrations: ${eventRegs.length}`, 30, 150);
+        doc.text(`Report Generated: ${new Date().toLocaleString()}`, 30, 165);
+
+        // Table Headers drawer
+        const drawHeaders = (y: number) => {
+          doc.setFillColor(241, 245, 249); // #F1F5F9
+          doc.rect(30, y - 10, 782, 18, 'F');
           
-          doc.font('Roboto-Medium').fontSize(13).fillColor('#FF9900').text('Event Registration Report', { align: 'center' });
-          doc.moveDown(1);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8);
+          doc.setTextColor(15, 23, 42); // #0F172A
+          
+          doc.text('No.', 35, y, { maxWidth: 25 });
+          doc.text('Student Name', 65, y, { maxWidth: 110 });
+          doc.text('Email', 180, y, { maxWidth: 155 });
+          doc.text('University', 340, y, { maxWidth: 145 });
+          doc.text('Program', 490, y, { maxWidth: 115 });
+          doc.text('Year', 610, y, { maxWidth: 50 });
+          doc.text('Status', 665, y, { maxWidth: 45 });
+          doc.text('Registration Date', 715, y, { maxWidth: 90 });
+          
+          // Draw bottom line
+          doc.setDrawColor(226, 232, 240); // #E2E8F0
+          doc.setLineWidth(0.5);
+          doc.line(30, y + 10, 812, y + 10);
+        };
 
-          // Meta Table
-          doc.font('Roboto-Medium').fontSize(9).fillColor('#1E293B');
-          doc.text(`Event Name: ${event.title}`);
-          doc.text(`Event Date: ${event.date || 'TBA'} | Time: ${event.time || 'TBA'}`);
-          doc.text(`Venue: ${event.venue || 'TBA'} | Status: ${event.registrationStatus || 'Closed'}`);
-          doc.text(`Total Registrations: ${eventRegs.length}`);
-          doc.text(`Report Generated: ${new Date().toLocaleString()}`);
-          doc.moveDown(1.5);
+        let currentY = 195;
+        drawHeaders(currentY);
+        currentY += 18;
 
-          // Table Headers
-          const drawHeaders = (y: number) => {
-            doc.font('Roboto-Medium').fontSize(8).fillColor('#0F172A');
-            doc.rect(30, y - 4, 782, 20).fill('#F1F5F9');
-            doc.fillColor('#0F172A');
-            doc.text('No.', 35, y, { width: 25 });
-            doc.text('Student Name', 65, y, { width: 110 });
-            doc.text('Email', 180, y, { width: 155 });
-            doc.text('University', 340, y, { width: 145 });
-            doc.text('Program', 490, y, { width: 115 });
-            doc.text('Year', 610, y, { width: 50 });
-            doc.text('Status', 665, y, { width: 45 });
-            doc.text('Registration Date', 715, y, { width: 90 });
-            doc.strokeColor('#E2E8F0').lineWidth(0.5).moveTo(30, y + 15).lineTo(812, y + 15).stroke();
+        eventRegs.forEach((r, idx) => {
+          if (currentY > 530) {
+            doc.addPage();
+            currentY = 40;
+            drawHeaders(currentY);
+            currentY += 18;
+          }
+
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7.5);
+          doc.setTextColor(51, 65, 85); // #334155
+
+          doc.text(`${idx + 1}`, 35, currentY);
+          
+          // Helper to truncate text to prevent overflow
+          const safeText = (txt: string, maxLen: number) => {
+            const str = txt || '';
+            return str.length > maxLen ? str.slice(0, maxLen) + '...' : str;
           };
 
-          let currentY = doc.y;
-          drawHeaders(currentY);
-          currentY += 20;
+          doc.text(safeText(r.name, 25), 65, currentY);
+          doc.text(safeText(r.email, 35), 180, currentY);
+          doc.text(safeText(r.university, 30), 340, currentY);
+          doc.text(safeText(r.program, 25), 490, currentY);
+          doc.text(safeText(r.year, 15), 610, currentY);
+          doc.text(safeText(r.status || 'New', 10), 665, currentY);
+          doc.text(r.date ? new Date(r.date).toLocaleDateString() : '', 715, currentY);
 
-          eventRegs.forEach((r, idx) => {
-            if (currentY > 520) {
-              doc.addPage();
-              currentY = 40;
-              drawHeaders(currentY);
-              currentY += 20;
-            }
-
-            doc.font('Roboto-Regular').fontSize(7.5).fillColor('#334155');
-            doc.text(`${idx + 1}`, 35, currentY, { width: 25 });
-            doc.text(r.name || '', 65, currentY, { width: 110, height: 14, ellipsis: true });
-            doc.text(r.email || '', 180, currentY, { width: 155, height: 14, ellipsis: true });
-            doc.text(r.university || '', 340, currentY, { width: 145, height: 14, ellipsis: true });
-            doc.text(r.program || '', 490, currentY, { width: 115, height: 14, ellipsis: true });
-            doc.text(r.year || '', 610, currentY, { width: 50, height: 14, ellipsis: true });
-            doc.text(r.status || 'New', 665, currentY, { width: 45, height: 14, ellipsis: true });
-            doc.text(r.date ? new Date(r.date).toLocaleString() : '', 715, currentY, { width: 90, height: 14, ellipsis: true });
-
-            doc.strokeColor('#F1F5F9').moveTo(30, currentY + 12).lineTo(812, currentY + 12).stroke();
-            currentY += 18;
-          });
-
-          doc.end();
+          // Draw row bottom line
+          doc.setDrawColor(241, 245, 249); // #F1F5F9
+          doc.setLineWidth(0.5);
+          doc.line(30, currentY + 8, 812, currentY + 8);
+          
+          currentY += 15;
         });
+
+        const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
 
         return new NextResponse(pdfBuffer as any, {
           status: 200,
@@ -632,24 +699,4 @@ export async function POST(request: Request) {
     console.error('API Admin Main Error:', err);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
-}
-
-// Global caching variables and helpers for font downloads
-let cachedFontRegular: Buffer | null = null;
-let cachedFontMedium: Buffer | null = null;
-
-async function getFontRegular(): Promise<Buffer> {
-  if (cachedFontRegular) return cachedFontRegular;
-  const res = await fetch('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf');
-  if (!res.ok) throw new Error('Failed to fetch regular font');
-  cachedFontRegular = Buffer.from(await res.arrayBuffer());
-  return cachedFontRegular;
-}
-
-async function getFontMedium(): Promise<Buffer> {
-  if (cachedFontMedium) return cachedFontMedium;
-  const res = await fetch('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Medium.ttf');
-  if (!res.ok) throw new Error('Failed to fetch medium/bold font');
-  cachedFontMedium = Buffer.from(await res.arrayBuffer());
-  return cachedFontMedium;
 }
