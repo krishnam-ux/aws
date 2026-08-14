@@ -469,6 +469,100 @@ export default function AdminDashboard() {
     exportToCSV(list, `registrations_${event.title.toLowerCase().replace(/[^a-z0-9]/g, '_')}`);
   };
 
+  const exportEventExcel = async (event: CommunityEvent) => {
+    const eventRegsCount = eventRegistrations.filter(r => r.eventId === event.id).length;
+    if (eventRegsCount === 0) {
+      alert("No registrations available to export.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ action: 'export-excel', eventId: event.id })
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        let errMsg = 'Unable to export registrations. Please try again.';
+        try {
+          const errData = JSON.parse(errText);
+          if (errData.error) errMsg = errData.error;
+        } catch (_) {}
+        alert(errMsg);
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeTitle = event.title.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+      a.download = `${safeTitle}-registrations.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Excel export error:', err);
+      alert('Unable to export registrations. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const exportEventPDF = async (event: CommunityEvent) => {
+    const eventRegsCount = eventRegistrations.filter(r => r.eventId === event.id).length;
+    if (eventRegsCount === 0) {
+      alert("No registrations available to export.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ action: 'export-pdf', eventId: event.id })
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        let errMsg = 'Unable to export registrations. Please try again.';
+        try {
+          const errData = JSON.parse(errText);
+          if (errData.error) errMsg = errData.error;
+        } catch (_) {}
+        alert(errMsg);
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeTitle = event.title.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+      a.download = `${safeTitle}-registrations.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('PDF export error:', err);
+      alert('Unable to export registrations. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const addRegNote = async (id: string, notes: string) => {
     const res = await apiCall({ action: 'update-registration', id, notes });
     if (res && res.success) {
@@ -3051,6 +3145,18 @@ export default function AdminDashboard() {
                   className="px-3 py-1.5 bg-[#F6F8FA] border border-[#E2E8F0] text-slate-800 hover:border-[#FF9900] hover:text-[#FF9900] rounded font-bold transition-colors cursor-pointer text-[10px]"
                 >
                   Export CSV
+                </button>
+                <button
+                  onClick={() => exportEventExcel(selectedEventRegs)}
+                  className="px-3 py-1.5 bg-[#F6F8FA] border border-[#E2E8F0] text-slate-800 hover:border-[#FF9900] hover:text-[#FF9900] rounded font-bold transition-colors cursor-pointer text-[10px]"
+                >
+                  Export Excel
+                </button>
+                <button
+                  onClick={() => exportEventPDF(selectedEventRegs)}
+                  className="px-3 py-1.5 bg-[#F6F8FA] border border-[#E2E8F0] text-slate-800 hover:border-[#FF9900] hover:text-[#FF9900] rounded font-bold transition-colors cursor-pointer text-[10px]"
+                >
+                  Export PDF
                 </button>
               </div>
             </div>

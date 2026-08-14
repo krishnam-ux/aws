@@ -443,6 +443,176 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
+    // 13. Data Export Management
+    if (action === 'export-excel' || action === 'export-pdf') {
+      const { eventId } = body;
+      if (!eventId) {
+        return NextResponse.json({ error: 'Missing parameter: eventId.' }, { status: 400 });
+      }
+
+      const events = await db.events.getAll();
+      const event = events.find(e => e.id === eventId);
+      if (!event) {
+        return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
+      }
+
+      const registrations = await db.eventRegistrations.getAll();
+      const eventRegs = registrations.filter(r => r.eventId === eventId);
+
+      if (eventRegs.length === 0) {
+        return NextResponse.json({ error: 'No registrations available to export.' }, { status: 400 });
+      }
+
+      if (action === 'export-excel') {
+        const XLSX = require('xlsx');
+        
+        const rows = eventRegs.map((r, index) => ({
+          'Registration ID': r.id,
+          'Student Name': r.name,
+          'Email': r.email,
+          'Phone': r.phone || '',
+          'University': r.university,
+          'Program': r.program,
+          'Year': r.year,
+          'Student ID': r.studentId || '',
+          'Technical Interests': Array.isArray(r.interests) ? r.interests.join(', ') : r.interests,
+          'Experience Level': r.experienceLevel || 'Beginner',
+          'LinkedIn': r.linkedin || '',
+          'GitHub': r.github || '',
+          'Motivation': r.motivation || '',
+          'Consent': r.consent ? 'Yes' : 'No',
+          'Status': r.status || 'New',
+          'Registration Date': r.date ? new Date(r.date).toLocaleDateString() : '',
+          'Registration Time': r.date ? new Date(r.date).toLocaleTimeString() : ''
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(rows);
+        
+        // Auto column sizing
+        const colWidths = [
+          { wch: 25 }, // Reg ID
+          { wch: 20 }, // Name
+          { wch: 25 }, // Email
+          { wch: 15 }, // Phone
+          { wch: 30 }, // University
+          { wch: 25 }, // Program
+          { wch: 10 }, // Year
+          { wch: 12 }, // Student ID
+          { wch: 30 }, // Interests
+          { wch: 15 }, // Experience
+          { wch: 30 }, // LinkedIn
+          { wch: 30 }, // GitHub
+          { wch: 45 }, // Motivation
+          { wch: 8 },  // Consent
+          { wch: 10 }, // Status
+          { wch: 15 }, // Date
+          { wch: 15 }  // Time
+        ];
+        worksheet['!cols'] = colWidths;
+
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Registrations');
+        
+        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+        
+        return new NextResponse(excelBuffer as any, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition': `attachment; filename="${encodeURIComponent(event.title)}-registrations.xlsx"`,
+            'Cache-Control': 'no-store'
+          }
+        });
+      }
+
+      if (action === 'export-pdf') {
+        const PDFDocument = require('pdfkit');
+        
+        const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
+          const doc = new PDFDocument({ 
+            layout: 'landscape', 
+            size: 'A4', 
+            margin: 30 
+          });
+          const chunks: any[] = [];
+
+          doc.on('data', (chunk: any) => chunks.push(chunk));
+          doc.on('end', () => resolve(Buffer.concat(chunks)));
+          doc.on('error', (err: any) => reject(err));
+
+          // Report Header
+          doc.font('Helvetica-Bold').fontSize(16).fillColor('#0F172A').text('AWS Student Builder Group', { align: 'center' });
+          doc.fontSize(10).fillColor('#64748B').text('Chandigarh University – Uttar Pradesh', { align: 'center' });
+          doc.moveDown(0.5);
+          
+          doc.fontSize(13).fillColor('#FF9900').text('Event Registration Report', { align: 'center' });
+          doc.moveDown(1);
+
+          // Meta Table
+          doc.font('Helvetica-Bold').fontSize(9).fillColor('#1E293B');
+          doc.text(`Event Name: ${event.title}`);
+          doc.text(`Event Date: ${event.date || 'TBA'} | Time: ${event.time || 'TBA'}`);
+          doc.text(`Venue: ${event.venue || 'TBA'} | Status: ${event.registrationStatus || 'Closed'}`);
+          doc.text(`Total Registrations: ${eventRegs.length}`);
+          doc.text(`Report Generated: ${new Date().toLocaleString()}`);
+          doc.moveDown(1.5);
+
+          // Table Headers
+          const drawHeaders = (y: number) => {
+            doc.font('Helvetica-Bold').fontSize(8).fillColor('#0F172A');
+            doc.rect(30, y - 4, 782, 20).fill('#F1F5F9');
+            doc.fillColor('#0F172A');
+            doc.text('No.', 35, y, { width: 25 });
+            doc.text('Student Name', 65, y, { width: 110 });
+            doc.text('Email', 180, y, { width: 155 });
+            doc.text('University', 340, y, { width: 145 });
+            doc.text('Program', 490, y, { width: 115 });
+            doc.text('Year', 610, y, { width: 50 });
+            doc.text('Status', 665, y, { width: 45 });
+            doc.text('Registration Date', 715, y, { width: 90 });
+            doc.strokeColor('#E2E8F0').lineWidth(0.5).moveTo(30, y + 15).lineTo(812, y + 15).stroke();
+          };
+
+          let currentY = doc.y;
+          drawHeaders(currentY);
+          currentY += 20;
+
+          eventRegs.forEach((r, idx) => {
+            if (currentY > 520) {
+              doc.addPage();
+              currentY = 40;
+              drawHeaders(currentY);
+              currentY += 20;
+            }
+
+            doc.font('Helvetica').fontSize(7.5).fillColor('#334155');
+            doc.text(`${idx + 1}`, 35, currentY, { width: 25 });
+            doc.text(r.name || '', 65, currentY, { width: 110, height: 14, ellipsis: true });
+            doc.text(r.email || '', 180, currentY, { width: 155, height: 14, ellipsis: true });
+            doc.text(r.university || '', 340, currentY, { width: 145, height: 14, ellipsis: true });
+            doc.text(r.program || '', 490, currentY, { width: 115, height: 14, ellipsis: true });
+            doc.text(r.year || '', 610, currentY, { width: 50, height: 14, ellipsis: true });
+            doc.text(r.status || 'New', 665, currentY, { width: 45, height: 14, ellipsis: true });
+            doc.text(r.date ? new Date(r.date).toLocaleString() : '', 715, currentY, { width: 90, height: 14, ellipsis: true });
+
+            doc.strokeColor('#F1F5F9').moveTo(30, currentY + 12).lineTo(812, currentY + 12).stroke();
+            currentY += 18;
+          });
+
+          doc.end();
+        });
+
+        return new NextResponse(pdfBuffer as any, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="${encodeURIComponent(event.title)}-registrations.pdf"`,
+            'Cache-Control': 'no-store'
+          }
+        });
+      }
+    }
+
     return NextResponse.json({ error: 'Unknown action parameter' }, { status: 400 });
   } catch (err) {
     console.error('API Admin Main Error:', err);
