@@ -23,6 +23,7 @@ interface CommunityEvent {
   registrationStatus?: string;
   maxRegistrations?: number;
   registrationCount?: number;
+  collaborations?: string[];
 }
 
 interface EventsClientProps {
@@ -176,6 +177,15 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
                         <h3 className="font-display font-bold text-base text-slate-900 leading-snug group-hover:text-brand-navy transition-colors">
                           {event.title}
                         </h3>
+                        {event.collaborations && event.collaborations.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {event.collaborations.map((collab, cIdx) => (
+                              <span key={cIdx} className="inline-flex px-1.5 py-0.5 rounded text-[8px] font-bold font-sans uppercase bg-slate-100 border border-slate-200 text-slate-600">
+                                With {collab}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                       <div className="h-[1px] w-full bg-slate-100"></div>
@@ -241,6 +251,15 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
                         <h3 className="font-display font-bold text-base text-slate-900 leading-snug group-hover:text-brand-navy transition-colors">
                           {event.title}
                         </h3>
+                        {event.collaborations && event.collaborations.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {event.collaborations.map((collab, cIdx) => (
+                              <span key={cIdx} className="inline-flex px-1.5 py-0.5 rounded text-[8px] font-bold font-sans uppercase bg-slate-100 border border-slate-200 text-slate-600">
+                                With {collab}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                       <div className="h-[1px] w-full bg-slate-100"></div>
@@ -306,6 +325,15 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
                         <h3 className="font-display font-bold text-base text-slate-900 leading-snug group-hover:text-brand-navy transition-colors">
                           {event.title}
                         </h3>
+                        {event.collaborations && event.collaborations.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {event.collaborations.map((collab, cIdx) => (
+                              <span key={cIdx} className="inline-flex px-1.5 py-0.5 rounded text-[8px] font-bold font-sans uppercase bg-slate-100 border border-slate-200 text-slate-600">
+                                With {collab}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                       <div className="h-[1px] w-full bg-slate-100"></div>
@@ -387,6 +415,22 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
                 <h4 className="font-semibold text-slate-900">Event Overview</h4>
                 <p className="text-slate-600 leading-relaxed">{selectedEvent.overview || 'Details will be announced soon.'}</p>
               </div>
+
+              {selectedEvent.collaborations && selectedEvent.collaborations.length > 0 && (
+                <div className="space-y-1">
+                  <h4 className="font-semibold text-slate-900 font-display text-[10px] uppercase tracking-wider text-slate-400">In Collaboration With</h4>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {selectedEvent.collaborations.map((org, index) => (
+                      <span
+                        key={index}
+                        className="bg-brand-navy/5 text-brand-navy border border-brand-navy/10 px-2 py-0.5 rounded text-[9px] font-bold tracking-wide uppercase"
+                      >
+                        {org}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {selectedEvent.registrationStatus?.toUpperCase() === 'NOT OPEN' && (
                 <div className="p-3 bg-amber-50 border border-amber-100 rounded text-amber-800 text-center font-sans text-xs italic font-medium">

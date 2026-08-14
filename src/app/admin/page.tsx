@@ -113,7 +113,7 @@ export default function AdminDashboard() {
 
   // Form Fields
   const [eventForm, setEventForm] = useState<any>({
-    title: '', month: 'August', date: '', time: 'TBA', venue: 'TBA', description: '', focus: '', outcome: '', speaker: 'TBA', registrationLink: '', status: 'Draft', registrationStatus: 'Not Open', image: '', format: 'Hands-on Technical Workshop', whatYouWillLearn: ''
+    title: '', month: 'August', date: '', time: 'TBA', venue: 'TBA', description: '', focus: '', outcome: '', speaker: 'TBA', registrationLink: '', status: 'Draft', registrationStatus: 'Not Open', image: '', format: 'Hands-on Technical Workshop', whatYouWillLearn: '', collaborations: [], customCollab: ''
   });
   const [announcementForm, setAnnouncementForm] = useState<any>({
     title: '', category: 'General', description: '', status: 'Published', image: ''
@@ -446,31 +446,66 @@ export default function AdminDashboard() {
     }
   };
 
+  const openEditModal = (event: any) => {
+    const dbCollabs = event.collaborations || [];
+    const uiCollabs: string[] = [];
+    let customCollab = '';
+    
+    dbCollabs.forEach((c: string) => {
+      if (['GitHub', 'DataCamp', 'AI/ML Club'].includes(c)) {
+        uiCollabs.push(c);
+      } else {
+        if (!uiCollabs.includes('Other')) {
+          uiCollabs.push('Other');
+        }
+        customCollab = c;
+      }
+    });
+
+    setEditItem({
+      ...event,
+      collaborations: uiCollabs,
+      customCollab,
+    });
+  };
+
   // 2. Events CRUD
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
+    const collabs = (eventForm.collaborations || []).filter((c: string) => c !== 'Other');
+    if ((eventForm.collaborations || []).includes('Other') && eventForm.customCollab) {
+      collabs.push(eventForm.customCollab);
+    }
     const formatted = {
       ...eventForm,
+      collaborations: collabs,
       whatYouWillLearn: typeof eventForm.whatYouWillLearn === 'string'
         ? eventForm.whatYouWillLearn.split('\n').filter((l: string) => l.trim().length > 0)
         : eventForm.whatYouWillLearn
     };
+    delete formatted.customCollab;
     const res = await apiCall({ action: 'create-event', event: formatted });
     if (res && res.success) {
       fetchTabItems();
       setCreateType(null);
-      setEventForm({ title: '', month: 'August', date: '', time: 'TBA', venue: 'TBA', description: '', focus: '', outcome: '', speaker: 'TBA', registrationLink: '', status: 'Draft', registrationStatus: 'Not Open', image: '', format: 'Hands-on Technical Workshop', whatYouWillLearn: '' });
+      setEventForm({ title: '', month: 'August', date: '', time: 'TBA', venue: 'TBA', description: '', focus: '', outcome: '', speaker: 'TBA', registrationLink: '', status: 'Draft', registrationStatus: 'Not Open', image: '', format: 'Hands-on Technical Workshop', whatYouWillLearn: '', collaborations: [], customCollab: '' });
     }
   };
 
   const handleUpdateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
+    const collabs = (editItem.collaborations || []).filter((c: string) => c !== 'Other');
+    if ((editItem.collaborations || []).includes('Other') && editItem.customCollab) {
+      collabs.push(editItem.customCollab);
+    }
     const formatted = {
       ...editItem,
+      collaborations: collabs,
       whatYouWillLearn: Array.isArray(editItem.whatYouWillLearn) 
         ? editItem.whatYouWillLearn 
         : editItem.whatYouWillLearn.split('\n').filter((l: string) => l.trim().length > 0)
     };
+    delete formatted.customCollab;
     const res = await apiCall({ action: 'update-event', event: formatted });
     if (res && res.success) {
       fetchTabItems();
@@ -1633,7 +1668,7 @@ export default function AdminDashboard() {
                             <button onClick={() => exportEventCSV(event)} className="text-slate-600 hover:text-slate-800 font-semibold cursor-pointer">
                               Export CSV
                             </button>
-                            <button onClick={() => setEditItem(event)} className="text-brand-navy hover:text-[#FF9900] font-bold cursor-pointer">
+                            <button onClick={() => openEditModal(event)} className="text-brand-navy hover:text-[#FF9900] font-bold cursor-pointer">
                               Edit
                             </button>
                             {event.status === 'Completed' && (
@@ -2554,6 +2589,43 @@ export default function AdminDashboard() {
                   />
                 </div>
               </div>
+
+              <div className="space-y-1.5 border-t border-slate-100 pt-3">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Event Collaboration</label>
+                <div className="flex flex-wrap gap-4 mt-2">
+                  {['GitHub', 'DataCamp', 'AI/ML Club', 'Other'].map(org => {
+                    const current = eventForm.collaborations || [];
+                    const isChecked = current.includes(org);
+                    return (
+                      <label key={org} className="inline-flex items-center space-x-2 font-medium cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            const updated = isChecked ? current.filter((c: string) => c !== org) : [...current, org];
+                            setEventForm({ ...eventForm, collaborations: updated });
+                          }}
+                          className="rounded text-aws-orange focus:ring-aws-orange h-3.5 w-3.5 border-slate-350"
+                        />
+                        <span>{org}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {(eventForm.collaborations || []).includes('Other') && (
+                  <div className="mt-3 space-y-1">
+                    <label className="block font-bold text-slate-600 text-[9px] uppercase tracking-wider">Organization / Company Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={eventForm.customCollab || ''}
+                      onChange={(e) => setEventForm({ ...eventForm, customCollab: e.target.value })}
+                      placeholder="Enter custom organization name"
+                      className="w-full px-3 py-1.5 border border-[#E2E8F0] rounded focus:outline-none font-medium"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="pt-4 border-t border-[#E2E8F0] flex justify-end space-x-3">
@@ -2698,6 +2770,43 @@ export default function AdminDashboard() {
                     className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none font-medium"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1.5 border-t border-slate-100 pt-3">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Event Collaboration</label>
+                <div className="flex flex-wrap gap-4 mt-2">
+                  {['GitHub', 'DataCamp', 'AI/ML Club', 'Other'].map(org => {
+                    const current = editItem.collaborations || [];
+                    const isChecked = current.includes(org);
+                    return (
+                      <label key={org} className="inline-flex items-center space-x-2 font-medium cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            const updated = isChecked ? current.filter((c: string) => c !== org) : [...current, org];
+                            setEditItem({ ...editItem, collaborations: updated });
+                          }}
+                          className="rounded text-aws-orange focus:ring-aws-orange h-3.5 w-3.5 border-slate-350"
+                        />
+                        <span>{org}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {(editItem.collaborations || []).includes('Other') && (
+                  <div className="mt-3 space-y-1">
+                    <label className="block font-bold text-slate-600 text-[9px] uppercase tracking-wider">Organization / Company Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={editItem.customCollab || ''}
+                      onChange={(e) => setEditItem({ ...editItem, customCollab: e.target.value })}
+                      placeholder="Enter custom organization name"
+                      className="w-full px-3 py-1.5 border border-[#E2E8F0] rounded focus:outline-none font-medium"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 

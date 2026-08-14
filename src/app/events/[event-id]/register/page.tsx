@@ -14,6 +14,7 @@ interface CommunityEvent {
   format: string;
   status?: string;
   registrationStatus?: string;
+  collaborations?: string[];
 }
 
 interface RegisterPageProps {
@@ -300,6 +301,11 @@ export default function RegisterPage({ params }: RegisterPageProps) {
           <p className="text-slate-505 text-xs leading-relaxed max-w-2xl font-medium pt-1">
             {event.overview}
           </p>
+          {event.collaborations && event.collaborations.length > 0 && (
+            <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-md text-brand-navy font-semibold text-[11px] leading-relaxed">
+              This event is organized in collaboration with <span className="text-aws-orange">{event.collaborations.join(', ')}</span>.
+            </div>
+          )}
         </div>
 
         {submissionError && (
