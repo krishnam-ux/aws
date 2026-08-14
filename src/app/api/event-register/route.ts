@@ -106,8 +106,15 @@ export async function POST(request: Request) {
       notes: ''
     };
 
-    regList.push(newReg);
-    await db.eventRegistrations.saveAll(regList);
+    try {
+      await db.eventRegistrations.insertOne(newReg);
+    } catch (dbErr: any) {
+      console.error('API Event Register DB Insert Error:', dbErr);
+      return NextResponse.json({
+        success: false,
+        error: 'Database transaction failed. Your registration was not recorded.'
+      }, { status: 500 });
+    }
 
     // Create Admin notification
     const notifications = await db.notifications.getAll();

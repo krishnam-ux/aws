@@ -75,7 +75,7 @@ export default function Leadership() {
       </section>
 
       {/* Leadership Directory */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
         {/* Abhay Shukla */}
         <div className="tech-card-new rounded p-6 sm:p-8 bg-white border border-slate-200 relative overflow-hidden flex flex-col justify-between border-t-[4px] border-t-aws-orange">
           <div className="space-y-6">
@@ -105,17 +105,40 @@ export default function Leadership() {
             <div className="flex items-center space-x-4">
               <InitialsAvatar name="Vaibhav Sharma" />
               <div>
-                <span className="text-[9px] uppercase font-bold tracking-widest text-slate-400 font-display block">Student Group Leader</span>
+                <span className="text-[9px] uppercase font-bold tracking-widest text-slate-400 font-display block">CO-LEADER</span>
                 <h3 className="font-display font-bold text-base text-slate-900 mt-0.5">Vaibhav Sharma</h3>
-                <p className="text-[10px] text-slate-500 font-sans">Chandigarh University – Uttar Pradesh</p>
+                <p className="text-[10px] text-slate-500 font-sans">AWS Student Builder Group at Chandigarh University – Uttar Pradesh</p>
               </div>
             </div>
             <p className="text-xs text-slate-650 font-sans leading-relaxed">
-              Vaibhav Sharma co-leads the AWS Student Builder Group at Chandigarh University – Uttar Pradesh, helping coordinate cloud learning initiatives, hands-on lab workloads, and tech bootcamps.
+              Vaibhav Sharma supports the AWS Student Builder Group at Chandigarh University – Uttar Pradesh and helps coordinate community activities, student engagement, cloud, AI, data, and emerging technology initiatives.
             </p>
           </div>
           <div className="mt-8 border-t border-slate-100 pt-4 flex justify-between items-center text-[10px] font-sans text-slate-400">
             <span>Verified Coordinator</span>
+            <a href={siteConfig.safeEmailLink} className="text-brand-navy hover:text-aws-orange font-bold">
+              Contact &rarr;
+            </a>
+          </div>
+        </div>
+
+        {/* Shivam Kumar */}
+        <div className="tech-card-new rounded p-6 sm:p-8 bg-white border border-slate-200 relative overflow-hidden flex flex-col justify-between border-t-[4px] border-t-aws-orange">
+          <div className="space-y-6">
+            <div className="flex items-center space-x-4">
+              <InitialsAvatar name="Shivam Kumar" />
+              <div>
+                <span className="text-[9px] uppercase font-bold tracking-widest text-slate-400 font-display block">MENTOR</span>
+                <h3 className="font-display font-bold text-base text-slate-900 mt-0.5">Shivam Kumar</h3>
+                <p className="text-[10px] text-slate-500 font-sans">AWS Student Builder Group at Chandigarh University – Uttar Pradesh</p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-650 font-sans leading-relaxed">
+              Mentor supporting the AWS Student Builder Group at Chandigarh University – Uttar Pradesh, providing guidance to student leaders and supporting community learning, technical activities, and overall growth.
+            </p>
+          </div>
+          <div className="mt-8 border-t border-slate-100 pt-4 flex justify-between items-center text-[10px] font-sans text-slate-400">
+            <span>Verified Mentor</span>
             <a href={siteConfig.safeEmailLink} className="text-brand-navy hover:text-aws-orange font-bold">
               Contact &rarr;
             </a>
@@ -130,7 +153,7 @@ export default function Leadership() {
               <div>
                 <span className="text-[9px] uppercase font-bold tracking-widest text-slate-400 font-display block">Faculty Advisory</span>
                 <h3 className="font-display font-bold text-base text-slate-900 mt-0.5">{siteConfig.facultyContact.name}</h3>
-                <p className="text-[10px] text-slate-505 font-sans">{siteConfig.facultyContact.department}</p>
+                <p className="text-[10px] text-slate-550 font-sans">{siteConfig.facultyContact.department}</p>
               </div>
             </div>
             <p className="text-xs text-slate-650 font-sans leading-relaxed">

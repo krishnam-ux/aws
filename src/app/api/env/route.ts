@@ -14,7 +14,7 @@ export async function GET() {
   
   return NextResponse.json({ 
     envKeys: Object.keys(process.env),
-    dbKeysFiltered: keys,
+    dbFilteredKeys: keys,
     DATABASE_URL_exists: !!process.env.DATABASE_URL,
     KV_REST_API_URL_exists: !!process.env.KV_REST_API_URL,
   });

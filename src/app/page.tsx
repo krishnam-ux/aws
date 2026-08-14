@@ -336,13 +336,15 @@ export default async function Home() {
               </div>
             </div>
 
-            {/* Prof. Ajay Kumar Singh */}
+            {/* Vaibhav Sharma */}
             <div className="tech-card-new rounded-md p-6 flex items-start space-x-4 bg-white">
-              <InitialsAvatar name={siteConfig.facultyContact.name} />
+              <InitialsAvatar name="Vaibhav Sharma" />
               <div className="space-y-2 font-sans text-xs">
-                <h4 className="font-bold text-slate-900 text-sm font-display">{siteConfig.facultyContact.name}</h4>
-                <p className="font-bold text-slate-500 uppercase tracking-wider text-[9px]">Faculty Advisory</p>
-                <p className="text-slate-600 leading-relaxed">{siteConfig.facultyContact.description}</p>
+                <h4 className="font-bold text-slate-900 text-sm font-display">Vaibhav Sharma</h4>
+                <p className="font-bold text-slate-500 uppercase tracking-wider text-[9px]">CO-LEADER</p>
+                <p className="text-slate-600 leading-relaxed">
+                  Vaibhav Sharma supports the AWS Student Builder Group at Chandigarh University – Uttar Pradesh and helps coordinate community activities, student engagement, cloud, AI, data, and emerging technology initiatives.
+                </p>
               </div>
             </div>
           </div>

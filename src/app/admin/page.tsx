@@ -26,6 +26,44 @@ interface CommunityEvent {
   registrationStatus?: string;
 }
 
+const renderCollabLogo = (orgName: string, customLogoUrl?: string, className: string = "h-4 w-4 object-contain inline-block") => {
+  if (orgName === 'GitHub') {
+    return (
+      <svg className={`${className} text-slate-800`} fill="currentColor" viewBox="0 0 24 24">
+        <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.162 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+      </svg>
+    );
+  }
+  if (orgName === 'DataCamp') {
+    return (
+      <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+        <rect width="24" height="24" rx="4" fill="#03EF8A" />
+        <path d="M6 6h6a4 4 0 014 4v4a4 4 0 01-4 4H6V6zm2 2v8h4a2 2 0 002-2v-4a2 2 0 00-2-2H8z" fill="#05234A" />
+      </svg>
+    );
+  }
+  if (orgName === 'AI/ML Club') {
+    return (
+      <svg className={`${className} text-[#FF9900]`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+      </svg>
+    );
+  }
+  if (customLogoUrl) {
+    return (
+      <img
+        src={customLogoUrl}
+        alt={`${orgName} Logo`}
+        className={className}
+        onError={(e) => {
+          (e.target as HTMLElement).style.display = 'none';
+        }}
+      />
+    );
+  }
+  return null;
+};
+
 export default function AdminDashboard() {
   const [token, setToken] = useState<string | null>(null);
   const [username, setUsername] = useState('');
@@ -34,6 +72,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Layout States
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -113,7 +152,7 @@ export default function AdminDashboard() {
 
   // Form Fields
   const [eventForm, setEventForm] = useState<any>({
-    title: '', month: 'August', date: '', time: 'TBA', venue: 'TBA', description: '', focus: '', outcome: '', speaker: 'TBA', registrationLink: '', status: 'Draft', registrationStatus: 'Not Open', image: '', format: 'Hands-on Technical Workshop', whatYouWillLearn: '', collaborations: [], customCollab: ''
+    title: '', month: 'August', date: '', time: 'TBA', venue: 'TBA', description: '', focus: '', outcome: '', speaker: 'TBA', registrationLink: '', status: 'Draft', registrationStatus: 'Not Open', image: '', format: 'Hands-on Technical Workshop', whatYouWillLearn: '', collaborations: [], customCollab: '', customCollabLogo: ''
   });
   const [announcementForm, setAnnouncementForm] = useState<any>({
     title: '', category: 'General', description: '', status: 'Published', image: ''
@@ -134,6 +173,7 @@ export default function AdminDashboard() {
   // Action status indicators
   const [actionSuccess, setActionSuccess] = useState('');
   const [actionError, setActionError] = useState('');
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   // Hydration check
   useEffect(() => {
@@ -446,6 +486,48 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleLogoUpload = async (file: File, isEdit: boolean) => {
+    if (!['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/gif'].includes(file.type)) {
+      alert('Invalid image format. Allowed formats: PNG, JPG, JPEG, SVG, GIF.');
+      return;
+    }
+    if (file.size > 500 * 1024) {
+      alert('File too large. Maximum size allowed: 500KB.');
+      return;
+    }
+    
+    setIsUploading(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64Data = reader.result as string;
+      try {
+        const response = await fetch('/api/admin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ action: 'upload-logo', base64Data })
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          if (isEdit) {
+            setEditItem({ ...editItem, customCollabLogo: data.url });
+          } else {
+            setEventForm({ ...eventForm, customCollabLogo: data.url });
+          }
+        } else {
+          alert(data.error || 'Failed to upload logo.');
+        }
+      } catch (err) {
+        alert('Network error uploading logo.');
+      } finally {
+        setIsUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const openEditModal = (event: any) => {
     const dbCollabs = event.collaborations || [];
     const uiCollabs: string[] = [];
@@ -466,6 +548,7 @@ export default function AdminDashboard() {
       ...event,
       collaborations: uiCollabs,
       customCollab,
+      customCollabLogo: event.customCollabLogo || ''
     });
   };
 
@@ -476,9 +559,11 @@ export default function AdminDashboard() {
     if ((eventForm.collaborations || []).includes('Other') && eventForm.customCollab) {
       collabs.push(eventForm.customCollab);
     }
+    const hasOther = (eventForm.collaborations || []).includes('Other');
     const formatted = {
       ...eventForm,
       collaborations: collabs,
+      customCollabLogo: hasOther ? eventForm.customCollabLogo : '',
       whatYouWillLearn: typeof eventForm.whatYouWillLearn === 'string'
         ? eventForm.whatYouWillLearn.split('\n').filter((l: string) => l.trim().length > 0)
         : eventForm.whatYouWillLearn
@@ -488,7 +573,7 @@ export default function AdminDashboard() {
     if (res && res.success) {
       fetchTabItems();
       setCreateType(null);
-      setEventForm({ title: '', month: 'August', date: '', time: 'TBA', venue: 'TBA', description: '', focus: '', outcome: '', speaker: 'TBA', registrationLink: '', status: 'Draft', registrationStatus: 'Not Open', image: '', format: 'Hands-on Technical Workshop', whatYouWillLearn: '', collaborations: [], customCollab: '' });
+      setEventForm({ title: '', month: 'August', date: '', time: 'TBA', venue: 'TBA', description: '', focus: '', outcome: '', speaker: 'TBA', registrationLink: '', status: 'Draft', registrationStatus: 'Not Open', image: '', format: 'Hands-on Technical Workshop', whatYouWillLearn: '', collaborations: [], customCollab: '', customCollabLogo: '' });
     }
   };
 
@@ -498,9 +583,11 @@ export default function AdminDashboard() {
     if ((editItem.collaborations || []).includes('Other') && editItem.customCollab) {
       collabs.push(editItem.customCollab);
     }
+    const hasOther = (editItem.collaborations || []).includes('Other');
     const formatted = {
       ...editItem,
       collaborations: collabs,
+      customCollabLogo: hasOther ? editItem.customCollabLogo : '',
       whatYouWillLearn: Array.isArray(editItem.whatYouWillLearn) 
         ? editItem.whatYouWillLearn 
         : editItem.whatYouWillLearn.split('\n').filter((l: string) => l.trim().length > 0)
@@ -2045,63 +2132,104 @@ export default function AdminDashboard() {
 
           {/* TAB 12: SETTINGS */}
           {activeTab === 'Settings' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Profile Card */}
-              <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-sm p-6 space-y-5 text-xs font-sans">
-                <h2 className="font-display font-extrabold text-lg text-[#111827] border-b border-[#E2E8F0] pb-3">Admin Profile</h2>
-                <div className="space-y-3">
-                  <div>
-                    <span className="font-bold text-slate-400 block uppercase tracking-wider">Role</span>
-                    <p className="font-bold text-slate-800 mt-0.5 text-sm">System Administrator</p>
+            <div className="space-y-6">
+              {/* Profile Card & Header */}
+              <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-sm overflow-hidden text-xs font-sans">
+                {/* Visual Header Banner */}
+                <div className="h-24 bg-gradient-to-r from-brand-navy to-slate-800 relative">
+                  <div className="absolute top-4 right-6 bg-[#FF9900]/10 text-[#FF9900] border border-[#FF9900]/25 px-2.5 py-0.5 rounded-full text-[9px] font-bold font-sans">
+                    AWS SBG CU-UP System Profile
                   </div>
-                  <div>
-                    <span className="font-bold text-slate-400 block uppercase tracking-wider">Default Username</span>
-                    <p className="font-semibold text-slate-850 mt-0.5">admin</p>
+                </div>
+
+                {/* Profile Header Details block */}
+                <div className="px-6 pb-6 relative">
+                  <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-5 -mt-10 mb-6">
+                    {/* Circular Avatar */}
+                    <div className="h-20 w-20 rounded-full border-4 border-white bg-gradient-to-br from-[#FF9900] to-orange-600 flex items-center justify-center font-display font-extrabold text-white text-xl shadow-md flex-shrink-0">
+                      AA
+                    </div>
+                    {/* Name & Role block */}
+                    <div className="mt-4 sm:mt-0 space-y-1">
+                      <div className="flex items-center space-x-2.5">
+                        <h2 className="font-display font-extrabold text-lg text-slate-900 leading-none">
+                          AWS SBG CU-UP Administrator
+                        </h2>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold font-sans bg-emerald-50 border border-emerald-200 text-emerald-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
+                          Active
+                        </span>
+                      </div>
+                      <p className="text-slate-500 font-semibold">{siteConfig.orgShortName} • System Administrator</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4 border-t border-slate-100">
+                    {/* Column 1: Account Information */}
+                    <div className="space-y-5">
+                      <div>
+                        <h3 className="font-display font-extrabold text-sm text-slate-900 border-b border-slate-100 pb-2">
+                          Account Information
+                        </h3>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center py-0.5">
+                          <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">ADMIN EMAIL</span>
+                          <span className="font-bold text-slate-800 text-[13px]">awsadmin@culko.in</span>
+                        </div>
+                        <div className="flex justify-between items-center py-0.5">
+                          <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">ROLE</span>
+                          <span className="font-semibold text-slate-800 text-[13px]">System Administrator</span>
+                        </div>
+                        <div className="flex justify-between items-center py-0.5">
+                          <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">ACCOUNT STATUS</span>
+                          <span className="inline-flex items-center font-bold text-emerald-700">
+                            Active
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Column 2: Login Credentials & Security */}
+                    <div className="space-y-5">
+                      <div>
+                        <h3 className="font-display font-extrabold text-sm text-slate-900 border-b border-slate-100 pb-2">
+                          Security & Login Credentials
+                        </h3>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center py-0.5">
+                          <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">Login Username</span>
+                          <span className="font-mono text-slate-800 text-[12px]">awsadmin@culko.in</span>
+                        </div>
+                        <div className="flex justify-between items-center py-0.5">
+                          <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">System Security</span>
+                          <span className="text-slate-500 font-medium">PBKDF2 SHA-512 Enforced</span>
+                        </div>
+                        <div className="flex justify-between items-center py-0.5">
+                          <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">LAST LOGIN</span>
+                          <span className="text-slate-500 font-semibold">Current Active Session</span>
+                        </div>
+                      </div>
+                      
+                      <div className="pt-3 flex justify-start">
+                        <button
+                          type="button"
+                          onClick={() => setIsPasswordModalOpen(true)}
+                          className="px-4 py-2 bg-[#FF9900] hover:bg-[#E08800] text-white text-[11px] font-bold rounded shadow-sm cursor-pointer transition-colors flex items-center space-x-1.5"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                          <span>Change System Password</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-
-              {/* Password update form */}
-              <form onSubmit={handlePasswordChange} className="bg-white border border-[#E2E8F0] rounded-lg shadow-sm p-6 space-y-5">
-                <h2 className="font-display font-extrabold text-lg text-[#111827] border-b border-[#E2E8F0] pb-3">Change Password</h2>
-                <div className="space-y-3 text-xs font-sans">
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 uppercase tracking-wider block font-display">Current Password</label>
-                    <input
-                      type="password"
-                      required
-                      value={settingsForm.currentPassword}
-                      onChange={(e) => setSettingsForm({ ...settingsForm, currentPassword: e.target.value })}
-                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 uppercase tracking-wider block font-display">New Password</label>
-                    <input
-                      type="password"
-                      required
-                      value={settingsForm.newPassword}
-                      onChange={(e) => setSettingsForm({ ...settingsForm, newPassword: e.target.value })}
-                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 uppercase tracking-wider block font-display">Confirm Password</label>
-                    <input
-                      type="password"
-                      required
-                      value={settingsForm.confirmPassword}
-                      onChange={(e) => setSettingsForm({ ...settingsForm, confirmPassword: e.target.value })}
-                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
-                    />
-                  </div>
-                </div>
-                <div className="pt-2 flex justify-end">
-                  <button type="submit" className="px-4 py-2 bg-[#FF9900] hover:bg-[#E08800] text-white text-xs font-bold rounded shadow-sm cursor-pointer transition-colors">
-                    Update Password
-                  </button>
-                </div>
-              </form>
             </div>
           )}
 
@@ -2607,22 +2735,45 @@ export default function AdminDashboard() {
                           }}
                           className="rounded text-aws-orange focus:ring-aws-orange h-3.5 w-3.5 border-slate-350"
                         />
-                        <span>{org}</span>
+                        <span className="inline-flex items-center space-x-1.5">
+                          {renderCollabLogo(org, org === 'Other' ? eventForm.customCollabLogo : undefined, "h-3.5 w-3.5 object-contain flex-shrink-0")}
+                          <span>{org}</span>
+                        </span>
                       </label>
                     );
                   })}
                 </div>
                 {(eventForm.collaborations || []).includes('Other') && (
-                  <div className="mt-3 space-y-1">
-                    <label className="block font-bold text-slate-600 text-[9px] uppercase tracking-wider">Organization / Company Name</label>
-                    <input
-                      type="text"
-                      required
-                      value={eventForm.customCollab || ''}
-                      onChange={(e) => setEventForm({ ...eventForm, customCollab: e.target.value })}
-                      placeholder="Enter custom organization name"
-                      className="w-full px-3 py-1.5 border border-[#E2E8F0] rounded focus:outline-none font-medium"
-                    />
+                  <div className="mt-3 space-y-2.5">
+                    <div className="space-y-1">
+                      <label className="block font-bold text-slate-600 text-[9px] uppercase tracking-wider">Organization / Company Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={eventForm.customCollab || ''}
+                        onChange={(e) => setEventForm({ ...eventForm, customCollab: e.target.value })}
+                        placeholder="Enter custom organization name"
+                        className="w-full px-3 py-1.5 border border-[#E2E8F0] rounded focus:outline-none font-medium"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block font-bold text-slate-600 text-[9px] uppercase tracking-wider">Organization Logo (Optional)</label>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="file"
+                          accept="image/png, image/jpeg, image/jpg, image/svg+xml, image/gif"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleLogoUpload(file, false);
+                          }}
+                          className="w-full text-[10px] text-slate-505 file:mr-3 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-aws-orange/10 file:text-aws-orange hover:file:bg-aws-orange/20 cursor-pointer"
+                        />
+                        {isUploading && <span className="text-[10px] text-slate-400 animate-pulse font-medium">Uploading...</span>}
+                        {eventForm.customCollabLogo && (
+                          <img src={eventForm.customCollabLogo} alt="Preview" className="h-6 w-auto max-h-6 object-contain rounded border border-slate-100 bg-white" />
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -2789,22 +2940,45 @@ export default function AdminDashboard() {
                           }}
                           className="rounded text-aws-orange focus:ring-aws-orange h-3.5 w-3.5 border-slate-350"
                         />
-                        <span>{org}</span>
+                        <span className="inline-flex items-center space-x-1.5">
+                          {renderCollabLogo(org, org === 'Other' ? editItem.customCollabLogo : undefined, "h-3.5 w-3.5 object-contain flex-shrink-0")}
+                          <span>{org}</span>
+                        </span>
                       </label>
                     );
                   })}
                 </div>
                 {(editItem.collaborations || []).includes('Other') && (
-                  <div className="mt-3 space-y-1">
-                    <label className="block font-bold text-slate-600 text-[9px] uppercase tracking-wider">Organization / Company Name</label>
-                    <input
-                      type="text"
-                      required
-                      value={editItem.customCollab || ''}
-                      onChange={(e) => setEditItem({ ...editItem, customCollab: e.target.value })}
-                      placeholder="Enter custom organization name"
-                      className="w-full px-3 py-1.5 border border-[#E2E8F0] rounded focus:outline-none font-medium"
-                    />
+                  <div className="mt-3 space-y-2.5">
+                    <div className="space-y-1">
+                      <label className="block font-bold text-slate-600 text-[9px] uppercase tracking-wider">Organization / Company Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={editItem.customCollab || ''}
+                        onChange={(e) => setEditItem({ ...editItem, customCollab: e.target.value })}
+                        placeholder="Enter custom organization name"
+                        className="w-full px-3 py-1.5 border border-[#E2E8F0] rounded focus:outline-none font-medium"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block font-bold text-slate-600 text-[9px] uppercase tracking-wider">Organization Logo (Optional)</label>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="file"
+                          accept="image/png, image/jpeg, image/jpg, image/svg+xml, image/gif"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleLogoUpload(file, true);
+                          }}
+                          className="w-full text-[10px] text-slate-550 file:mr-3 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-aws-orange/10 file:text-aws-orange hover:file:bg-aws-orange/20 cursor-pointer"
+                        />
+                        {isUploading && <span className="text-[10px] text-slate-400 animate-pulse font-medium">Uploading...</span>}
+                        {editItem.customCollabLogo && (
+                          <img src={editItem.customCollabLogo} alt="Preview" className="h-6 w-auto max-h-6 object-contain rounded border border-slate-100 bg-white" />
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -3188,6 +3362,108 @@ export default function AdminDashboard() {
                 Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* CHANGE SYSTEM PASSWORD MODAL */}
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 z-[100] overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-xl max-w-md w-full overflow-hidden transition-all">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] bg-slate-50 px-6 py-4">
+              <h3 className="font-display font-extrabold text-base text-[#111827]">
+                Change System Password
+              </h3>
+              <button
+                onClick={() => {
+                  setIsPasswordModalOpen(false);
+                  setSettingsForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                }}
+                className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Modal Form */}
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (settingsForm.newPassword !== settingsForm.confirmPassword) {
+                alert('New passwords do not match.');
+                return;
+              }
+              const res = await apiCall({
+                action: 'change-password',
+                currentPassword: settingsForm.currentPassword,
+                newPassword: settingsForm.newPassword
+              });
+              if (res && res.success) {
+                alert('Password updated successfully!');
+                setSettingsForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                setIsPasswordModalOpen(false);
+              } else {
+                alert(res.error || 'Failed to update password.');
+              }
+            }} className="p-6 space-y-4">
+              <div className="space-y-1.5 text-xs font-sans">
+                <label className="font-bold text-slate-700 uppercase tracking-wider block font-display">
+                  Current Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={settingsForm.currentPassword}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, currentPassword: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                />
+              </div>
+              <div className="space-y-1.5 text-xs font-sans">
+                <label className="font-bold text-slate-700 uppercase tracking-wider block font-display">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={settingsForm.newPassword}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, newPassword: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                />
+              </div>
+              <div className="space-y-1.5 text-xs font-sans">
+                <label className="font-bold text-slate-700 uppercase tracking-wider block font-display">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={settingsForm.confirmPassword}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, confirmPassword: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                />
+              </div>
+              
+              <div className="pt-4 border-t border-[#E2E8F0] flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPasswordModalOpen(false);
+                    setSettingsForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                  }}
+                  className="px-4 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold rounded shadow-sm cursor-pointer transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-[#FF9900] hover:bg-[#E08800] text-white text-xs font-bold rounded shadow-sm cursor-pointer transition-colors"
+                >
+                  Update Password
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

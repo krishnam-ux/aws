@@ -118,7 +118,7 @@ export default function Navbar() {
         </nav>
 
         {/* Right: Join CTA button & CU Logo */}
-        <div className="hidden lg:flex items-center gap-[20px]">
+        <div className="hidden lg:flex items-center space-x-4">
           <a
             href="https://chat.whatsapp.com/HuEI5i4I8KkEya47yBKynD"
             target="_blank"
@@ -127,10 +127,11 @@ export default function Navbar() {
           >
             Join Community
           </a>
+          <div className="h-6 w-[1px] bg-slate-200 flex-shrink-0"></div>
           <HeaderLogo
             src={siteConfig.cuLogoUrl}
             fallbackText="Chandigarh University"
-            height="32px"
+            height="44px"
             className="flex-shrink-0"
           />
         </div>
@@ -183,7 +184,7 @@ export default function Navbar() {
             );
           })}
           
-          <div className="pt-3 border-t border-slate-100 flex items-center gap-[16px]">
+          <div className="pt-3 border-t border-slate-100 flex items-center space-x-3.5">
             <a
               href="https://chat.whatsapp.com/HuEI5i4I8KkEya47yBKynD"
               target="_blank"
@@ -192,10 +193,11 @@ export default function Navbar() {
             >
               Join Community
             </a>
+            <div className="h-6 w-[1px] bg-slate-200 flex-shrink-0"></div>
             <HeaderLogo
               src={siteConfig.cuLogoUrl}
               fallbackText="Chandigarh University"
-              height="28px"
+              height="40px"
               className="flex-shrink-0"
             />
           </div>

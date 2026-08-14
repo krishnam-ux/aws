@@ -45,6 +45,36 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized administrative access.' }, { status: 401 });
     }
 
+    // Logo Upload handler
+    if (action === 'upload-logo') {
+      const { base64Data } = body;
+      if (!base64Data) {
+        return NextResponse.json({ error: 'Missing base64 data.' }, { status: 400 });
+      }
+      
+      const matches = base64Data.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+      if (!matches) {
+        return NextResponse.json({ error: 'Invalid file format.' }, { status: 400 });
+      }
+      
+      const mimeType = matches[1];
+      if (!['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/gif'].includes(mimeType)) {
+        return NextResponse.json({ error: 'Invalid image format. Allowed formats: PNG, JPG, JPEG, SVG, GIF.' }, { status: 400 });
+      }
+      
+      const approxBytes = Math.round((base64Data.length * 3) / 4);
+      if (approxBytes > 500 * 1024) {
+        return NextResponse.json({ error: 'File too large. Maximum size allowed: 500KB.' }, { status: 400 });
+      }
+      
+      const id = `logo-${Date.now()}`;
+      const logosMap = await db.logos.getMap();
+      logosMap[id] = base64Data;
+      await db.logos.saveMap(logosMap);
+      
+      return NextResponse.json({ success: true, url: `/api/collaboration-logos?id=${id}` });
+    }
+
     // 2. Dashboard Stats
     if (action === 'get-stats') {
       const registrations = await db.registrations.getAll(); // join community
@@ -119,42 +149,45 @@ export async function POST(request: Request) {
     }
     if (action === 'update-event-registration') {
       const { id, status, notes } = body;
-      const regs = await db.eventRegistrations.getAll();
-      const idx = regs.findIndex(r => r.id === id);
-      if (idx !== -1) {
-        regs[idx].status = status || regs[idx].status;
-        regs[idx].notes = notes !== undefined ? notes : regs[idx].notes;
-        await db.eventRegistrations.saveAll(regs);
+      try {
+        await db.eventRegistrations.updateOne(id, { status, notes });
         return NextResponse.json({ success: true });
+      } catch (err: any) {
+        return NextResponse.json({ error: err.message }, { status: 500 });
       }
-      return NextResponse.json({ error: 'Event registration not found' }, { status: 404 });
     }
     if (action === 'delete-event-registration') {
       const { id } = body;
-      let regs = await db.eventRegistrations.getAll();
-      regs = regs.filter(r => r.id !== id);
-      await db.eventRegistrations.saveAll(regs);
-      return NextResponse.json({ success: true });
+      try {
+        await db.eventRegistrations.deleteOne(id);
+        return NextResponse.json({ success: true });
+      } catch (err: any) {
+        return NextResponse.json({ error: err.message }, { status: 500 });
+      }
     }
     if (action === 'delete-event-registrations-bulk') {
       const { ids } = body;
       if (!Array.isArray(ids)) {
         return NextResponse.json({ error: 'Parameter ids must be an array.' }, { status: 400 });
       }
-      let regs = await db.eventRegistrations.getAll();
-      regs = regs.filter(r => !ids.includes(r.id));
-      await db.eventRegistrations.saveAll(regs);
-      return NextResponse.json({ success: true });
+      try {
+        await db.eventRegistrations.deleteBulk(ids);
+        return NextResponse.json({ success: true });
+      } catch (err: any) {
+        return NextResponse.json({ error: err.message }, { status: 500 });
+      }
     }
     if (action === 'delete-event-registrations-all') {
       const { eventId } = body;
       if (!eventId) {
         return NextResponse.json({ error: 'Missing parameter: eventId.' }, { status: 400 });
       }
-      let regs = await db.eventRegistrations.getAll();
-      regs = regs.filter(r => r.eventId !== eventId);
-      await db.eventRegistrations.saveAll(regs);
-      return NextResponse.json({ success: true });
+      try {
+        await db.eventRegistrations.deleteByEventId(eventId);
+        return NextResponse.json({ success: true });
+      } catch (err: any) {
+        return NextResponse.json({ error: err.message }, { status: 500 });
+      }
     }
 
     // 4. Events Management

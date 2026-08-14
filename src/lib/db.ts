@@ -63,6 +63,99 @@ async function ensurePostgresTable() {
   }
 }
 
+async function ensureRegistrationsTable() {
+  if (!sql) return;
+  try {
+    await ensurePostgresTable();
+    await sql`
+      CREATE TABLE IF NOT EXISTS registrations (
+        id VARCHAR(255) PRIMARY KEY,
+        event_id VARCHAR(255) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(255) NOT NULL,
+        university VARCHAR(255) NOT NULL,
+        program VARCHAR(255) NOT NULL,
+        year VARCHAR(255) NOT NULL,
+        student_id VARCHAR(255) NOT NULL,
+        interests TEXT NOT NULL,
+        experience_level VARCHAR(255) NOT NULL,
+        linkedin VARCHAR(255) NOT NULL,
+        github VARCHAR(255) NOT NULL,
+        motivation TEXT NOT NULL,
+        consent BOOLEAN NOT NULL,
+        status VARCHAR(255) NOT NULL DEFAULT 'New',
+        notes TEXT NOT NULL DEFAULT '',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_registrations_event_id ON registrations(event_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_registrations_email ON registrations(email)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_registrations_status ON registrations(status)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_registrations_created_at ON registrations(created_at)`;
+    
+    // Run migration checks
+    await migrateRegistrationsToPostgres();
+  } catch (err) {
+    console.error('Failed to ensure registrations table exists in PostgreSQL:', err);
+  }
+}
+
+async function migrateRegistrationsToPostgres() {
+  if (!sql) return;
+  try {
+    const oldRows = await sql`
+      SELECT value FROM kv_store WHERE key = 'event_registrations.json'
+    `;
+    if (!oldRows || oldRows.length === 0) {
+      return;
+    }
+
+    const oldData = JSON.parse(oldRows[0].value);
+    if (!Array.isArray(oldData) || oldData.length === 0) {
+      return;
+    }
+
+    console.log(`Migration: Found ${oldData.length} registrations in event_registrations.json to migrate.`);
+
+    const existingRows = await sql`
+      SELECT id FROM registrations
+    `;
+    const existingIds = new Set(existingRows.map((r: any) => r.id));
+
+    let migratedCount = 0;
+    for (const reg of oldData) {
+      if (existingIds.has(reg.id)) {
+        continue;
+      }
+      
+      const interestsStr = Array.isArray(reg.interests) ? JSON.stringify(reg.interests) : JSON.stringify([reg.interests]);
+      const emailVal = reg.email || reg.emailAddress || '';
+      
+      await sql`
+        INSERT INTO registrations (
+          id, event_id, name, email, phone, university, program, year, student_id,
+          interests, experience_level, linkedin, github, motivation, consent,
+          status, notes, created_at
+        ) VALUES (
+          ${reg.id}, ${reg.eventId || reg.event_id}, ${reg.name}, ${emailVal}, ${reg.phone || ''},
+          ${reg.university}, ${reg.program}, ${reg.year}, ${reg.studentId || reg.student_id || ''},
+          ${interestsStr}, ${reg.experienceLevel || 'Beginner'}, ${reg.linkedin || ''},
+          ${reg.github || ''}, ${reg.motivation || ''}, ${!!reg.consent},
+          ${reg.status || 'New'}, ${reg.notes || ''}, ${reg.date || reg.created_at || new Date().toISOString()}
+        )
+      `;
+      migratedCount++;
+    }
+
+    if (migratedCount > 0) {
+      console.log(`Migration: Successfully imported ${migratedCount} registrations into the registrations table.`);
+    }
+  } catch (err) {
+    console.error('Migration error in migrateRegistrationsToPostgres:', err);
+  }
+}
+
 async function readPostgres<T>(filename: string, defaultValue: T): Promise<T> {
   if (!sql) return defaultValue;
   try {
@@ -265,7 +358,7 @@ const DEFAULT_ADMINS = () => {
   const passwordHash = hashPassword('awssbgadmin123', salt);
   return [
     {
-      username: 'admin',
+      username: 'awsadmin@culko.in',
       salt,
       passwordHash
     }
@@ -484,7 +577,21 @@ const DEFAULT_CONTENT = {
 // Database APIs
 export const db = {
   admins: {
-    getAll: async () => await readJsonFile('admin_users.json', DEFAULT_ADMINS()),
+    getAll: async () => {
+      let data = await readJsonFile<any[]>('admin_users.json', DEFAULT_ADMINS());
+      let migrated = false;
+      data = data.map(admin => {
+        if (admin.username === 'admin') {
+          admin.username = 'awsadmin@culko.in';
+          migrated = true;
+        }
+        return admin;
+      });
+      if (migrated) {
+        await writeJsonFile('admin_users.json', data);
+      }
+      return data;
+    },
     saveAll: async (data: any) => await writeJsonFile('admin_users.json', data)
   },
   registrations: {
@@ -492,8 +599,197 @@ export const db = {
     saveAll: async (data: any[]) => await writeJsonFile('registrations.json', data)
   },
   eventRegistrations: {
-    getAll: async () => await readJsonFile<any[]>('event_registrations.json', []),
-    saveAll: async (data: any[]) => await writeJsonFile('event_registrations.json', data)
+    getAll: async (): Promise<any[]> => {
+      if (sql) {
+        await ensureRegistrationsTable();
+        try {
+          const rows = await sql`
+            SELECT * FROM registrations ORDER BY created_at DESC
+          `;
+          return rows.map((r: any) => ({
+            id: r.id,
+            eventId: r.event_id,
+            name: r.name,
+            email: r.email,
+            phone: r.phone,
+            university: r.university,
+            program: r.program,
+            year: r.year,
+            studentId: r.student_id,
+            interests: (() => {
+              try {
+                return JSON.parse(r.interests);
+              } catch(e) {
+                return [r.interests];
+              }
+            })(),
+            experienceLevel: r.experience_level,
+            linkedin: r.linkedin,
+            github: r.github,
+            motivation: r.motivation,
+            consent: r.consent,
+            status: r.status,
+            notes: r.notes,
+            date: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString()
+          }));
+        } catch (err) {
+          console.error('Postgres error in eventRegistrations.getAll:', err);
+          throw err;
+        }
+      }
+      return await readJsonFile<any[]>('event_registrations.json', []);
+    },
+
+    insertOne: async (reg: any): Promise<void> => {
+      if (sql) {
+        await ensureRegistrationsTable();
+        const interestsStr = Array.isArray(reg.interests) ? JSON.stringify(reg.interests) : JSON.stringify([reg.interests]);
+        try {
+          await sql`
+            INSERT INTO registrations (
+              id, event_id, name, email, phone, university, program, year, student_id,
+              interests, experience_level, linkedin, github, motivation, consent,
+              status, notes, created_at
+            ) VALUES (
+              ${reg.id}, ${reg.eventId}, ${reg.name}, ${reg.email}, ${reg.phone || ''},
+              ${reg.university}, ${reg.program}, ${reg.year}, ${reg.studentId || ''},
+              ${interestsStr}, ${reg.experienceLevel || 'Beginner'}, ${reg.linkedin || ''},
+              ${reg.github || ''}, ${reg.motivation || ''}, ${!!reg.consent},
+              ${reg.status || 'New'}, ${reg.notes || ''}, ${reg.date || new Date().toISOString()}
+            )
+          `;
+          return;
+        } catch (err) {
+          console.error('Postgres error in eventRegistrations.insertOne:', err);
+          throw err;
+        }
+      }
+      const data = await readJsonFile<any[]>('event_registrations.json', []);
+      data.push(reg);
+      await writeJsonFile('event_registrations.json', data);
+    },
+
+    updateOne: async (id: string, fields: Partial<any>): Promise<void> => {
+      if (sql) {
+        await ensureRegistrationsTable();
+        try {
+          if (fields.status !== undefined && fields.notes !== undefined) {
+            await sql`
+              UPDATE registrations
+              SET status = ${fields.status}, notes = ${fields.notes}
+              WHERE id = ${id}
+            `;
+          } else if (fields.status !== undefined) {
+            await sql`
+              UPDATE registrations
+              SET status = ${fields.status}
+              WHERE id = ${id}
+            `;
+          } else if (fields.notes !== undefined) {
+            await sql`
+              UPDATE registrations
+              SET notes = ${fields.notes}
+              WHERE id = ${id}
+            `;
+          }
+          return;
+        } catch (err) {
+          console.error('Postgres error in eventRegistrations.updateOne:', err);
+          throw err;
+        }
+      }
+      const data = await readJsonFile<any[]>('event_registrations.json', []);
+      const idx = data.findIndex(r => r.id === id);
+      if (idx !== -1) {
+        data[idx] = { ...data[idx], ...fields };
+        if (fields.eventId) data[idx].eventId = fields.eventId;
+        await writeJsonFile('event_registrations.json', data);
+      }
+    },
+
+    deleteOne: async (id: string): Promise<void> => {
+      if (sql) {
+        await ensureRegistrationsTable();
+        try {
+          await sql`
+            DELETE FROM registrations WHERE id = ${id}
+          `;
+          return;
+        } catch (err) {
+          console.error('Postgres error in eventRegistrations.deleteOne:', err);
+          throw err;
+        }
+      }
+      let data = await readJsonFile<any[]>('event_registrations.json', []);
+      data = data.filter(r => r.id !== id);
+      await writeJsonFile('event_registrations.json', data);
+    },
+
+    deleteByEventId: async (eventId: string): Promise<void> => {
+      if (sql) {
+        await ensureRegistrationsTable();
+        try {
+          await sql`
+            DELETE FROM registrations WHERE event_id = ${eventId}
+          `;
+          return;
+        } catch (err) {
+          console.error('Postgres error in eventRegistrations.deleteByEventId:', err);
+          throw err;
+        }
+      }
+      let data = await readJsonFile<any[]>('event_registrations.json', []);
+      data = data.filter(r => r.eventId !== eventId);
+      await writeJsonFile('event_registrations.json', data);
+    },
+
+    deleteBulk: async (ids: string[]): Promise<void> => {
+      if (sql) {
+        await ensureRegistrationsTable();
+        try {
+          await sql`
+            DELETE FROM registrations WHERE id = ANY(${ids})
+          `;
+          return;
+        } catch (err) {
+          console.error('Postgres error in eventRegistrations.deleteBulk:', err);
+          throw err;
+        }
+      }
+      let data = await readJsonFile<any[]>('event_registrations.json', []);
+      data = data.filter(r => !ids.includes(r.id));
+      await writeJsonFile('event_registrations.json', data);
+    },
+
+    saveAll: async (data: any[]): Promise<void> => {
+      if (sql) {
+        await ensureRegistrationsTable();
+        try {
+          await sql`DELETE FROM registrations`;
+          for (const reg of data) {
+            const interestsStr = Array.isArray(reg.interests) ? JSON.stringify(reg.interests) : JSON.stringify([reg.interests]);
+            await sql`
+              INSERT INTO registrations (
+                id, event_id, name, email, phone, university, program, year, student_id,
+                interests, experience_level, linkedin, github, motivation, consent,
+                status, notes, created_at
+              ) VALUES (
+                ${reg.id}, ${reg.eventId || reg.event_id}, ${reg.name}, ${reg.email}, ${reg.phone || ''},
+                ${reg.university}, ${reg.program}, ${reg.year}, ${reg.studentId || reg.student_id || ''},
+                ${interestsStr}, ${reg.experienceLevel || 'Beginner'}, ${reg.linkedin || ''},
+                ${reg.github || ''}, ${reg.motivation || ''}, ${!!reg.consent},
+                ${reg.status || 'New'}, ${reg.notes || ''}, ${reg.date || reg.created_at || new Date().toISOString()}
+              )
+            `;
+          }
+          return;
+        } catch (err) {
+          console.error('Postgres error in eventRegistrations.saveAll:', err);
+          throw err;
+        }
+      }
+      await writeJsonFile('event_registrations.json', data);
+    }
   },
   events: {
     getAll: async () => await readJsonFile<any[]>('events.json', DEFAULT_EVENTS),
@@ -551,5 +847,9 @@ export const db = {
   contactMessages: {
     getAll: async () => await readJsonFile<any[]>('contact_messages.json', []),
     saveAll: async (data: any[]) => await writeJsonFile('contact_messages.json', data)
+  },
+  logos: {
+    getMap: async () => await readJsonFile<Record<string, string>>('collaboration_logos.json', {}),
+    saveMap: async (data: Record<string, string>) => await writeJsonFile('collaboration_logos.json', data)
   }
 };

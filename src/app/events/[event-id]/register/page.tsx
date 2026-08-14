@@ -15,9 +15,48 @@ interface CommunityEvent {
   status?: string;
   registrationStatus?: string;
   collaborations?: string[];
+  customCollabLogo?: string;
   date?: string;
   venue?: string;
 }
+
+const renderCollabLogo = (orgName: string, customLogoUrl?: string, className: string = "h-4 w-4 object-contain inline-block") => {
+  if (orgName === 'GitHub') {
+    return (
+      <svg className={`${className} text-slate-800`} fill="currentColor" viewBox="0 0 24 24">
+        <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.162 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+      </svg>
+    );
+  }
+  if (orgName === 'DataCamp') {
+    return (
+      <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+        <rect width="24" height="24" rx="4" fill="#03EF8A" />
+        <path d="M6 6h6a4 4 0 014 4v4a4 4 0 01-4 4H6V6zm2 2v8h4a2 2 0 002-2v-4a2 2 0 00-2-2H8z" fill="#05234A" />
+      </svg>
+    );
+  }
+  if (orgName === 'AI/ML Club') {
+    return (
+      <svg className={`${className} text-[#FF9900]`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+      </svg>
+    );
+  }
+  if (customLogoUrl) {
+    return (
+      <img
+        src={customLogoUrl}
+        alt={`${orgName} Logo`}
+        className={className}
+        onError={(e) => {
+          (e.target as HTMLElement).style.display = 'none';
+        }}
+      />
+    );
+  }
+  return null;
+};
 
 interface RegisterPageProps {
   params: Promise<{ 'event-id': string }>;
@@ -375,15 +414,20 @@ export default function RegisterPage({ params }: RegisterPageProps) {
               <h3 className="font-display font-extrabold text-slate-800 text-[10px] uppercase tracking-wider">
                 In Collaboration With
               </h3>
-              <div className="flex flex-wrap gap-1.5 mt-1">
-                {event.collaborations.map((org, index) => (
-                  <span
-                    key={index}
-                    className="bg-brand-navy/5 text-brand-navy border border-brand-navy/10 px-2.5 py-1 rounded text-[9px] font-bold tracking-wide uppercase"
-                  >
-                    {org}
-                  </span>
-                ))}
+              <div className="flex flex-wrap gap-2 mt-1">
+                {event.collaborations.map((org, index) => {
+                  const isPre = ['GitHub', 'DataCamp', 'AI/ML Club'].includes(org);
+                  const logo = renderCollabLogo(org, isPre ? undefined : event.customCollabLogo, "h-4.5 w-4.5 object-contain inline-block mr-1.5 flex-shrink-0");
+                  return (
+                    <span
+                      key={index}
+                      className="bg-brand-navy/5 text-brand-navy border border-brand-navy/10 px-2.5 py-1 rounded text-[9px] font-bold tracking-wide uppercase inline-flex items-center"
+                    >
+                      {logo}
+                      <span>{org}</span>
+                    </span>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -440,7 +484,22 @@ export default function RegisterPage({ params }: RegisterPageProps) {
           </p>
           {event.collaborations && event.collaborations.length > 0 && (
             <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-md text-brand-navy font-semibold text-[11px] leading-relaxed">
-              This event is organized in collaboration with <span className="text-aws-orange">{event.collaborations.join(', ')}</span>.
+              This event is organized in collaboration with:
+              <div className="flex flex-wrap gap-2 mt-2.5">
+                {event.collaborations.map((org, index) => {
+                  const isPre = ['GitHub', 'DataCamp', 'AI/ML Club'].includes(org);
+                  const logo = renderCollabLogo(org, isPre ? undefined : event.customCollabLogo, "h-4.5 w-4.5 object-contain inline-block mr-1.5 flex-shrink-0");
+                  return (
+                    <span
+                      key={index}
+                      className="bg-white border border-blue-200/80 px-2 py-0.5 rounded text-[10px] font-bold text-slate-800 inline-flex items-center"
+                    >
+                      {logo}
+                      <span>{org}</span>
+                    </span>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
