@@ -15,6 +15,8 @@ interface CommunityEvent {
   status?: string;
   registrationStatus?: string;
   collaborations?: string[];
+  date?: string;
+  venue?: string;
 }
 
 interface RegisterPageProps {
@@ -50,6 +52,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState('');
   const [successData, setSuccessData] = useState<{ id: string; eventName: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const interestOptions = ['AWS Cloud', 'AI / ML', 'Data', 'DevOps', 'Cybersecurity', 'Generative AI', 'Other'];
 
@@ -231,48 +234,182 @@ export default function RegisterPage({ params }: RegisterPageProps) {
         </div>
       </div>
     );
-  }
+  }  if (successData) {
+    const handleCopy = () => {
+      navigator.clipboard.writeText(successData.id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    };
 
-  if (successData) {
     return (
-      <div className="max-w-xl mx-auto px-4 py-20 font-sans text-xs">
-        <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-md p-8 text-center space-y-6">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100 border border-emerald-200">
-            <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          
-          <div className="space-y-2">
-            <h1 className="font-display font-extrabold text-slate-900 text-lg uppercase tracking-wider">
-              Registration Successful
-            </h1>
-            <div className="h-[2px] w-12 bg-aws-orange mx-auto"></div>
-          </div>
+      <div className="max-w-xl mx-auto px-4 py-12 sm:py-16 font-sans text-xs">
+        {/* Subtle Centered Logo Header */}
+        <div className="flex items-center justify-center space-x-3 mb-6">
+          <img src="/aws-logo.svg" alt="AWS Logo" className="h-6 w-auto object-contain" />
+          <div className="h-5 w-[1px] bg-slate-350"></div>
+          <img src="/chandigarh-university-logo.jpg" alt="Chandigarh University Logo" className="h-6 w-auto object-contain" />
+        </div>
 
-          <div className="bg-slate-50 border border-slate-100 rounded-lg p-5 text-left space-y-3">
-            <div>
-              <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Event Name</span>
-              <span className="font-semibold text-slate-800 text-sm block mt-0.5">{successData.eventName}</span>
+        {/* Success Card */}
+        <div className="bg-white border border-slate-200 rounded-xl shadow-lg p-6 sm:p-8 space-y-6">
+          {/* Checked Icon & Header */}
+          <div className="text-center space-y-3">
+            <div className="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 shadow-sm">
+              <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
             </div>
-            <div className="h-[1px] bg-slate-200/60"></div>
-            <div>
-              <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Registration ID</span>
-              <span className="font-mono font-bold text-brand-navy block mt-0.5 select-all">{successData.id}</span>
+            <div className="space-y-1.5">
+              <h1 className="font-display font-black text-slate-900 text-lg uppercase tracking-wider">
+                Registration Successful
+              </h1>
+              <p className="text-slate-500 font-medium text-xs leading-relaxed max-w-sm mx-auto">
+                Your registration has been successfully submitted. Please keep your registration reference for future communication.
+              </p>
             </div>
           </div>
 
-          <p className="text-slate-505 font-medium leading-relaxed">
-            Thank you for registering.
-          </p>
+          <div className="h-[1px] w-full bg-slate-100"></div>
 
-          <div className="pt-2">
-            <Link
-              href="/events"
-              className="inline-block px-5 py-2 bg-aws-orange hover:bg-orange-600 text-white font-bold rounded shadow-sm transition-colors text-xs"
-            >
-              Back to Events
-            </Link>
+          {/* Registration Details Grid */}
+          <div className="space-y-4">
+            <h3 className="font-display font-extrabold text-slate-800 text-[10px] uppercase tracking-wider">
+              Registration Details
+            </h3>
+            
+            <div className="bg-slate-50 border border-slate-150 rounded-lg p-4 space-y-3">
+              {/* Event Name */}
+              <div>
+                <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">Event Name</span>
+                <span className="font-bold text-slate-900 text-xs block mt-0.5 leading-snug">{successData.eventName}</span>
+              </div>
+              
+              <div className="h-[1px] bg-slate-200/60"></div>
+
+              {/* Registration Reference / ID with copy button */}
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">Registration Reference</span>
+                  <span className="font-mono font-extrabold text-brand-navy block mt-0.5 text-xs tracking-wide select-all">{successData.id}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="inline-flex items-center space-x-1 px-2.5 py-1 bg-white border border-slate-200 hover:border-slate-350 hover:bg-slate-50 rounded text-[9px] font-bold text-slate-600 transition-colors shadow-sm cursor-pointer select-none"
+                  title="Copy Registration ID"
+                >
+                  {copied ? (
+                    <>
+                      <svg className="h-3 w-3 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-emerald-600">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                      </svg>
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="h-[1px] bg-slate-200/60"></div>
+
+              {/* Grid for Status, Date & Venue */}
+              <div className="grid grid-cols-2 gap-3.5 text-xs">
+                <div>
+                  <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">Status</span>
+                  <div className="mt-1">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider bg-emerald-50 border border-emerald-250 text-emerald-700">
+                      Confirmed
+                    </span>
+                  </div>
+                </div>
+                
+                {event.date && (
+                  <div>
+                    <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">Event Date</span>
+                    <span className="font-semibold text-slate-700 block mt-0.5">{event.date}</span>
+                  </div>
+                )}
+                
+                {event.venue && (
+                  <div className="col-span-2">
+                    <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">Event Venue</span>
+                    <span className="font-semibold text-slate-700 block mt-0.5 leading-snug">{event.venue}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Attendee Details */}
+          {(fullName || email) && (
+            <div className="space-y-3">
+              <h3 className="font-display font-extrabold text-slate-800 text-[10px] uppercase tracking-wider">
+                Attendee Details
+              </h3>
+              <div className="bg-slate-50 border border-slate-150 rounded-lg p-4 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {fullName && (
+                  <div>
+                    <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">Name</span>
+                    <span className="font-semibold text-slate-700 block mt-0.5">{fullName}</span>
+                  </div>
+                )}
+                {email && (
+                  <div>
+                    <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">Email Address</span>
+                    <span className="font-semibold text-slate-700 block mt-0.5 break-all">{email}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Collaboration Section */}
+          {event.collaborations && event.collaborations.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="font-display font-extrabold text-slate-800 text-[10px] uppercase tracking-wider">
+                In Collaboration With
+              </h3>
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                {event.collaborations.map((org, index) => (
+                  <span
+                    key={index}
+                    className="bg-brand-navy/5 text-brand-navy border border-brand-navy/10 px-2.5 py-1 rounded text-[9px] font-bold tracking-wide uppercase"
+                  >
+                    {org}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="h-[1px] w-full bg-slate-100"></div>
+
+          {/* Buttons & Footer */}
+          <div className="space-y-4 text-center">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link
+                href="/events"
+                className="w-full sm:w-auto px-6 py-2 bg-aws-orange hover:bg-orange-600 text-white font-bold rounded shadow-md transition-colors text-xs text-center cursor-pointer select-none"
+              >
+                View Event
+              </Link>
+              <Link
+                href="/events"
+                className="w-full sm:w-auto px-6 py-2 bg-white border border-slate-200 hover:border-slate-350 hover:bg-slate-50 text-slate-700 font-bold rounded shadow-sm transition-colors text-xs text-center cursor-pointer select-none"
+              >
+                Back to Events
+              </Link>
+            </div>
+            
+            <p className="text-[10px] text-slate-400 font-medium tracking-wide">
+              Thank you for registering with AWS Student Builder Group.
+            </p>
           </div>
         </div>
       </div>
