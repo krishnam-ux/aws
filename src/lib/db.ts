@@ -33,6 +33,120 @@ async function getBlobStore() {
   return null;
 }
 
+// PostgreSQL integration
+let sql: any = null;
+if (process.env.DATABASE_URL) {
+  try {
+    const postgres = require('postgres');
+    sql = postgres(process.env.DATABASE_URL, {
+      ssl: 'require',
+      max: 10,
+      idle_timeout: 20,
+      connect_timeout: 30
+    });
+  } catch (err) {
+    console.error('Failed to initialize postgres client:', err);
+  }
+}
+
+async function ensurePostgresTable() {
+  if (!sql) return;
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS kv_store (
+        key TEXT PRIMARY KEY,
+        value TEXT
+      )
+    `;
+  } catch (err) {
+    console.error('Failed to ensure kv_store table exists in PostgreSQL:', err);
+  }
+}
+
+async function readPostgres<T>(filename: string, defaultValue: T): Promise<T> {
+  if (!sql) return defaultValue;
+  try {
+    await ensurePostgresTable();
+    const rows = await sql`
+      SELECT value FROM kv_store WHERE key = ${filename}
+    `;
+    if (rows && rows.length > 0) {
+      return JSON.parse(rows[0].value) as T;
+    }
+  } catch (err) {
+    console.error(`Postgres error reading key ${filename}:`, err);
+  }
+  return defaultValue;
+}
+
+async function writePostgres<T>(filename: string, data: T): Promise<void> {
+  if (!sql) return;
+  try {
+    await ensurePostgresTable();
+    const strValue = JSON.stringify(data);
+    await sql`
+      INSERT INTO kv_store (key, value)
+      VALUES (${filename}, ${strValue})
+      ON CONFLICT (key)
+      DO UPDATE SET value = ${strValue}
+    `;
+  } catch (err) {
+    console.error(`Postgres error writing key ${filename}:`, err);
+  }
+}
+
+// Vercel KV integration
+async function readKv<T>(filename: string, defaultValue: T): Promise<T> {
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+  if (!url || !token) return defaultValue;
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(['GET', filename]),
+      cache: 'no-store'
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.result) {
+        return JSON.parse(data.result) as T;
+      }
+    } else {
+      console.error(`Vercel KV GET error for ${filename}:`, await res.text());
+    }
+  } catch (err) {
+    console.error(`Vercel KV fetch error for ${filename}:`, err);
+  }
+  return defaultValue;
+}
+
+async function writeKv<T>(filename: string, data: T): Promise<void> {
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+  if (!url || !token) return;
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(['SET', filename, JSON.stringify(data)])
+    });
+    if (!res.ok) {
+      console.error(`Vercel KV SET error for ${filename}:`, await res.text());
+    }
+  } catch (err) {
+    console.error(`Vercel KV fetch error for ${filename}:`, err);
+  }
+}
+
 // Memory cache to hide eventual consistency latency in production/serverless environments
 const memoryDbCache: Record<string, { data: any; expiresAt: number }> = {};
 const CACHE_TTL_MS = 5000; // 5 seconds cache TTL
@@ -44,6 +158,27 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
     return cached.data as T;
   }
 
+  // 1. Try Vercel KV
+  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+    const val = await readKv(filename, defaultValue);
+    memoryDbCache[filename] = {
+      data: val,
+      expiresAt: Date.now() + CACHE_TTL_MS
+    };
+    return val;
+  }
+
+  // 2. Try PostgreSQL
+  if (process.env.DATABASE_URL) {
+    const val = await readPostgres(filename, defaultValue);
+    memoryDbCache[filename] = {
+      data: val,
+      expiresAt: Date.now() + CACHE_TTL_MS
+    };
+    return val;
+  }
+
+  // 3. Try Netlify Blobs
   if (IS_NETLIFY) {
     const store = await getBlobStore();
     if (store) {
@@ -63,6 +198,7 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
     }
   }
 
+  // 4. Default Local File Fallback
   const filePath = path.join(DB_DIR, filename);
   if (!fs.existsSync(filePath)) {
     await writeJsonFile(filename, defaultValue);
@@ -89,6 +225,19 @@ async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
     expiresAt: Date.now() + CACHE_TTL_MS
   };
 
+  // 1. Try Vercel KV
+  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+    await writeKv(filename, data);
+    return;
+  }
+
+  // 2. Try PostgreSQL
+  if (process.env.DATABASE_URL) {
+    await writePostgres(filename, data);
+    return;
+  }
+
+  // 3. Try Netlify Blobs
   if (IS_NETLIFY) {
     const store = await getBlobStore();
     if (store) {
@@ -101,6 +250,7 @@ async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
     }
   }
 
+  // 4. Default Local File Fallback
   const filePath = path.join(DB_DIR, filename);
   try {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
