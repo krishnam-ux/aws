@@ -445,6 +445,53 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
+    // 12b. Feedback Administrative Actions
+    const isGetVisibilityAction = action === 'get-feedback-page-status' || action === 'get_feedback_page_visibility';
+    const isSetVisibilityAction = action === 'set-feedback-page-status' || action === 'set_feedback_page_visibility';
+
+    if (isGetVisibilityAction) {
+      const published = await db.settings.getFeedbackPagePublished();
+      return NextResponse.json({ published });
+    }
+
+    if (isSetVisibilityAction) {
+      const { published } = body;
+      if (typeof published !== 'boolean') {
+        return NextResponse.json({ error: 'Published flag must be a boolean.' }, { status: 400 });
+      }
+
+      try {
+        await db.settings.setFeedbackPagePublished(published);
+        return NextResponse.json({ success: true, published });
+      } catch (err: any) {
+        return NextResponse.json({ error: err.message }, { status: 500 });
+      }
+    }
+
+    if (action === 'get-feedbacks') {
+      return NextResponse.json(await db.feedback.getAll());
+    }
+
+    if (action === 'update-feedback') {
+      const { id, feedback } = body;
+      try {
+        await db.feedback.updateOne(id, feedback);
+        return NextResponse.json({ success: true });
+      } catch (err: any) {
+        return NextResponse.json({ error: err.message }, { status: 500 });
+      }
+    }
+
+    if (action === 'delete-feedback') {
+      const { id } = body;
+      try {
+        await db.feedback.deleteOne(id);
+        return NextResponse.json({ success: true });
+      } catch (err: any) {
+        return NextResponse.json({ error: err.message }, { status: 500 });
+      }
+    }
+
     // 13. Data Export Management
     if (action === 'export-csv' || action === 'export-excel' || action === 'export-pdf') {
       const { eventId } = body;
@@ -693,53 +740,6 @@ export async function POST(request: Request) {
             'Cache-Control': 'no-store'
           }
         });
-      }
-
-      // Feedback Administrative Actions
-      const isGetVisibilityAction = action === 'get-feedback-page-status' || action === 'get_feedback_page_visibility';
-      const isSetVisibilityAction = action === 'set-feedback-page-status' || action === 'set_feedback_page_visibility';
-
-      if (isGetVisibilityAction) {
-        const published = await db.settings.getFeedbackPagePublished();
-        return NextResponse.json({ published });
-      }
-
-      if (isSetVisibilityAction) {
-        const { published } = body;
-        if (typeof published !== 'boolean') {
-          return NextResponse.json({ error: 'Published flag must be a boolean.' }, { status: 400 });
-        }
-
-        try {
-          await db.settings.setFeedbackPagePublished(published);
-          return NextResponse.json({ success: true, published });
-        } catch (err: any) {
-          return NextResponse.json({ error: err.message }, { status: 500 });
-        }
-      }
-
-      if (action === 'get-feedbacks') {
-        return NextResponse.json(await db.feedback.getAll());
-      }
-
-      if (action === 'update-feedback') {
-        const { id, feedback } = body;
-        try {
-          await db.feedback.updateOne(id, feedback);
-          return NextResponse.json({ success: true });
-        } catch (err: any) {
-          return NextResponse.json({ error: err.message }, { status: 500 });
-        }
-      }
-
-      if (action === 'delete-feedback') {
-        const { id } = body;
-        try {
-          await db.feedback.deleteOne(id);
-          return NextResponse.json({ success: true });
-        } catch (err: any) {
-          return NextResponse.json({ error: err.message }, { status: 500 });
-        }
       }
 
       // Feedback Exports
