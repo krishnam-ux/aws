@@ -5,6 +5,90 @@ import { db, hashPassword, generateSalt } from '@/lib/db';
 export const dynamic = 'force-dynamic';
 
 const SECURE_TOKEN = 'awssbg-admin-session-token-secure-hash';
+const ALLOWED_EVENT_STATUSES = ['Draft', 'Planned', 'Upcoming', 'Ongoing', 'Completed', 'Cancelled', 'Unpublished'];
+const ALLOWED_REGISTRATION_STATUSES = ['Open', 'Not Open', 'Closed', 'Full'];
+
+function normalizeEventPayload(event: any): any {
+  if (!event || typeof event !== 'object') {
+    throw new Error('Event payload is required.');
+  }
+
+  const safeTitle = String(event.title || '').trim();
+  if (!safeTitle) {
+    throw new Error('Title cannot be empty.');
+  }
+
+  const normalizedDate = String(event.date || '').trim();
+  if (!normalizedDate || Number.isNaN(new Date(normalizedDate).getTime())) {
+    throw new Error('Date must be valid.');
+  }
+
+  const normalizedVenue = String(event.venue || '').trim();
+  if (!normalizedVenue) {
+    throw new Error('Venue should not be empty.');
+  }
+
+  const status = String(event.status || 'Draft');
+  if (!ALLOWED_EVENT_STATUSES.includes(status)) {
+    throw new Error('Event status is invalid.');
+  }
+
+  const registrationStatus = String(event.registrationStatus || 'Not Open');
+  if (!ALLOWED_REGISTRATION_STATUSES.includes(registrationStatus)) {
+    throw new Error('Registration status is invalid.');
+  }
+
+  const whatYouWillLearn = Array.isArray(event.whatYouWillLearn)
+    ? event.whatYouWillLearn
+        .map((item: any) => String(item ?? '').trim())
+        .filter(Boolean)
+    : typeof event.whatYouWillLearn === 'string'
+      ? event.whatYouWillLearn
+          .split(/\n|\r\n|;/)
+          .map((item: string) => item.trim())
+          .filter(Boolean)
+      : [];
+
+  const collaborations = Array.isArray(event.collaborations)
+    ? event.collaborations.filter((item: any) => item !== null && item !== undefined && String(item).trim() !== '')
+    : [];
+
+  return {
+    ...event,
+    id: String(event.id).trim(),
+    title: safeTitle,
+    description: String(event.description ?? event.overview ?? '').trim(),
+    overview: String(event.overview ?? event.description ?? '').trim(),
+    date: normalizedDate,
+    time: String(event.time ?? '').trim(),
+    endTime: String(event.endTime ?? '').trim(),
+    venue: normalizedVenue,
+    fullVenueAddress: String(event.fullVenueAddress ?? '').trim(),
+    city: String(event.city ?? '').trim(),
+    status,
+    registrationStatus,
+    focus: String(event.focus ?? '').trim(),
+    outcome: String(event.outcome ?? '').trim(),
+    aboutTheEvent: String(event.aboutTheEvent ?? event.description ?? '').trim(),
+    requirements: String(event.requirements ?? '').trim(),
+    additionalInfo: String(event.additionalInfo ?? '').trim(),
+    whatYouWillLearn,
+    collaborations,
+    maxRegistrations: event.maxRegistrations !== undefined && event.maxRegistrations !== null && event.maxRegistrations !== ''
+      ? Number(event.maxRegistrations)
+      : undefined,
+    eventFormat: String(event.eventFormat ?? event.format ?? '').trim(),
+    format: String(event.format ?? event.eventFormat ?? '').trim(),
+    collaborationName: String(event.collaborationName ?? event.customCollab ?? '').trim(),
+    collaborationDescription: String(event.collaborationDescription ?? '').trim(),
+    collaborationWebsite: String(event.collaborationWebsite ?? '').trim(),
+    customCollab: String(event.customCollab ?? event.collaborationName ?? '').trim(),
+    customCollabLogo: String(event.customCollabLogo ?? '').trim(),
+    collaborationLogo: String(event.collaborationLogo ?? event.customCollabLogo ?? '').trim(),
+    registrationDeadline: String(event.registrationDeadline ?? '').trim(),
+    image: String(event.image ?? '').trim()
+  };
+}
 
 // Helper to verify admin auth token
 function isAuthorized(request: Request): boolean {
@@ -213,17 +297,28 @@ export async function POST(request: Request) {
     }
     if (action === 'update-event') {
       const { event } = body;
-      const events = await db.events.getAll();
-      const idx = events.findIndex(e => e.id === event.id);
-      if (idx !== -1) {
-        const updatedEvent = { ...events[idx], ...event };
+      if (!event || !event.id) {
+        return NextResponse.json({ error: 'Event ID is required.' }, { status: 400 });
+      }
+
+      try {
+        const normalizedEvent = normalizeEventPayload(event);
+        const events = await db.events.getAll();
+        const idx = events.findIndex(e => e.id === normalizedEvent.id);
+        if (idx === -1) {
+          return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
+        }
+
+        const updatedEvent = { ...events[idx], ...normalizedEvent };
         if (!updatedEvent.status) updatedEvent.status = 'Draft';
         if (!updatedEvent.registrationStatus) updatedEvent.registrationStatus = 'Not Open';
+
         events[idx] = updatedEvent;
         await db.events.saveAll(events);
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, event: updatedEvent });
+      } catch (err: any) {
+        return NextResponse.json({ error: err.message || 'Unable to update event.' }, { status: 400 });
       }
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
     if (action === 'delete-event') {
       const { id } = body;
@@ -852,7 +947,7 @@ export async function POST(request: Request) {
           { title: 'Registration Date', width: 92 },
           { title: 'Student Signature', width: 138 }
         ];
-        const signatureLeaders = [siteConfig.leader.name, 'Vaibhav Sharma'];
+        const leaderNames = [siteConfig.leader.name, 'Vaibhav Sharma'];
 
         const formatDateLabel = (value?: string) => {
           if (!value) return '—';
@@ -867,10 +962,24 @@ export async function POST(request: Request) {
           return str.length > maxLen ? `${str.slice(0, maxLen - 1)}…` : str;
         };
 
-        const drawHeader = (y: number) => {
+        const addPageHeader = (title: string) => {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(15);
+          doc.setTextColor(15, 23, 42);
+          doc.text('AWS Student Builder Group', pageWidth / 2, 24, { align: 'center' });
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          doc.setTextColor(100, 116, 139);
+          doc.text('Chandigarh University – Uttar Pradesh', pageWidth / 2, 38, { align: 'center' });
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(12);
+          doc.setTextColor(255, 153, 0);
+          doc.text(title, pageWidth / 2, 52, { align: 'center' });
+        };
+
+        const drawTableHeader = (y: number) => {
           doc.setFillColor(241, 245, 249);
           doc.rect(margin, y - 10, tableWidth, 18, 'F');
-
           let x = margin;
           doc.setDrawColor(226, 232, 240);
           doc.setLineWidth(0.5);
@@ -884,9 +993,9 @@ export async function POST(request: Request) {
           });
         };
 
-        const drawRegistrationRow = (row: any, idx: number, y: number) => {
+        const drawTableRow = (row: any, idx: number, y: number) => {
           let x = margin;
-          const rowValues = [
+          const values = [
             String(idx + 1),
             safeText(row.name, 22),
             safeText(row.email, 26),
@@ -901,16 +1010,16 @@ export async function POST(request: Request) {
           doc.setDrawColor(226, 232, 240);
           doc.setLineWidth(0.35);
           tableColumns.forEach((column, columnIndex) => {
-            const value = rowValues[columnIndex];
             const colX = x;
             const colWidth = column.width;
+            const value = values[columnIndex];
 
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(7);
             doc.setTextColor(51, 65, 85);
 
             if (columnIndex === tableColumns.length - 1) {
-              doc.line(colX + 8, y + 12, colX + colWidth - 12, y + 12);
+              doc.line(colX + 8, y + 11, colX + colWidth - 12, y + 11);
             } else {
               const lines = doc.splitTextToSize(value, colWidth - 8);
               doc.text(lines.slice(0, 2), colX + 4, y + 8);
@@ -921,94 +1030,97 @@ export async function POST(request: Request) {
           });
         };
 
-        const drawSignatureSection = () => {
-          const sectionY = 52;
+        const drawSignatureSection = (startY: number) => {
+          let currentY = startY;
           doc.setFont('helvetica', 'bold');
+          doc.setFontSize(12);
           doc.setTextColor(15, 23, 42);
-          doc.setFontSize(13);
-          doc.text('Leadership Approvals & Signatures', margin, sectionY);
+          doc.text('Leadership & Authorization', margin, currentY);
+          currentY += 18;
 
           const signatureWidth = 190;
-          const leftX = margin + 10;
+          const leftX = margin + 12;
           const rightX = pageWidth / 2 + 30;
 
-          signatureLeaders.forEach((leaderName, index) => {
+          leaderNames.forEach((leaderName, index) => {
             const currentX = index === 0 ? leftX : rightX;
-            const lineY = sectionY + 36;
+            const lineY = currentY + 20;
             doc.setDrawColor(15, 23, 42);
             doc.setLineWidth(0.8);
             doc.line(currentX, lineY, currentX + signatureWidth, lineY);
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
+            doc.setFontSize(9);
             doc.setTextColor(30, 41, 59);
             doc.text(leaderName, currentX, lineY + 18);
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(9);
+            doc.setFontSize(8.5);
             doc.text('AWS Student Builder Group Leader', currentX, lineY + 30);
           });
 
-          const authX = pageWidth / 2 - 95;
-          const authY = sectionY + 98;
+          const authX = pageWidth / 2 - 94;
+          const authY = currentY + 76;
           doc.setDrawColor(15, 23, 42);
           doc.setLineWidth(0.8);
-          doc.line(authX, authY, authX + 190, authY);
+          doc.line(authX, authY, authX + 188, authY);
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(10);
           doc.setTextColor(15, 23, 42);
-          doc.text('Authorized Signature', authX + 48, authY + 16);
+          doc.text('Authorized Signature', authX + 36, authY + 16);
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(9);
-          doc.text('AWS Student Builder Group', authX + 22, authY + 28);
-          doc.text('Chandigarh University – Uttar Pradesh', authX - 10, authY + 40);
-          doc.text('Date: ______________________', authX + 20, authY + 62);
-          doc.text('Place: _____________________', authX + 18, authY + 78);
+          doc.text('AWS Student Builder Group', authX + 18, authY + 30);
+          doc.text('Chandigarh University – Uttar Pradesh', authX - 8, authY + 42);
+          doc.text('Date: ______________________________', authX + 10, authY + 62);
         };
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(16);
-        doc.setTextColor(15, 23, 42);
-        doc.text('AWS Student Builder Group', pageWidth / 2, 30, { align: 'center' });
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(100, 116, 139);
-        doc.text('Chandigarh University – Uttar Pradesh', pageWidth / 2, 45, { align: 'center' });
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(13);
-        doc.setTextColor(255, 153, 0);
-        doc.text('Official Event Registration Record', pageWidth / 2, 62, { align: 'center' });
-
+        addPageHeader('EVENT REGISTRATION REPORT');
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(9);
         doc.setTextColor(30, 41, 59);
-        doc.text(`Event Name: ${event.title}`, margin, 90);
-        doc.text(`Date: ${event.date || 'TBA'} | Time: ${event.time || 'TBA'}`, margin, 105);
-        doc.text(`Venue: ${event.venue || 'TBA'} | Status: ${event.registrationStatus || 'Closed'}`, margin, 120);
-        doc.text(`Total Registrations: ${eventRegs.length}`, margin, 135);
-        doc.text(`Report Generated: ${new Date().toLocaleString()}`, margin, 150);
+        doc.text(`Event Name: ${event.title}`, margin, 76);
+        doc.text(`Event Date: ${event.date || 'TBA'} | Time: ${event.time || 'TBA'}`, margin, 90);
+        doc.text(`Venue: ${event.venue || 'TBA'} | Status: ${event.registrationStatus || 'Closed'}`, margin, 104);
+        doc.text(`Total Registrations: ${eventRegs.length}`, margin, 118);
+        doc.text(`Report Generated: ${new Date().toLocaleString()}`, margin, 132);
 
-        let currentY = 180;
-        drawHeader(currentY);
+        let currentY = 154;
+        let activePage = 1;
+        const rowsPerPage = 18;
+
+        const finalizeSignatureSection = () => {
+          const signatureStartY = currentY + 18;
+          if (signatureStartY > pageHeight - 170) {
+            doc.addPage();
+            activePage += 1;
+            addPageHeader('LEADERSHIP & AUTHORIZATION');
+            currentY = 76;
+          }
+          drawSignatureSection(currentY + 8);
+        };
+
+        drawTableHeader(currentY);
         currentY += 20;
 
         eventRegs.forEach((r, idx) => {
-          if (currentY > pageHeight - 140) {
+          if (currentY > pageHeight - 110) {
             doc.addPage();
-            currentY = 40;
-            drawHeader(currentY);
+            activePage += 1;
+            addPageHeader('EVENT REGISTRATION REPORT');
+            currentY = 150;
+            drawTableHeader(currentY);
             currentY += 20;
           }
 
-          drawRegistrationRow(r, idx, currentY);
+          drawTableRow(r, idx, currentY);
           currentY += 18;
         });
 
-        doc.addPage();
-        drawSignatureSection();
+        finalizeSignatureSection();
 
         doc.setFont('helvetica', 'italic');
         doc.setFontSize(8);
         doc.setTextColor(100, 116, 139);
-        doc.text('Generated by AWS Student Builder Group | Confidential Attendance Record', margin, pageHeight - 16);
+        doc.text('Generated by AWS Student Builder Group | Confidential Attendance Record', margin, pageHeight - 18);
 
         const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
         return new NextResponse(pdfBuffer as any, {

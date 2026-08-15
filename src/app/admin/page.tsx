@@ -11,12 +11,17 @@ interface CommunityEvent {
   focus: string;
   outcome: string;
   overview: string;
+  description?: string;
   format: string;
+  eventFormat?: string;
   whatYouWillLearn: string[] | string;
   status: string;
   date?: string;
   time?: string;
+  endTime?: string;
   venue?: string;
+  fullVenueAddress?: string;
+  city?: string;
   speaker?: string;
   registrationLink?: string;
   image?: string;
@@ -24,6 +29,16 @@ interface CommunityEvent {
   isRegistrationOpen?: boolean;
   maxRegistrations?: number;
   registrationStatus?: string;
+  aboutTheEvent?: string;
+  requirements?: string;
+  additionalInfo?: string;
+  collaborationName?: string;
+  collaborationDescription?: string;
+  collaborationWebsite?: string;
+  registrationDeadline?: string;
+  collaborations?: string[];
+  customCollab?: string;
+  customCollabLogo?: string;
 }
 
 const renderCollabLogo = (orgName: string, customLogoUrl?: string, className: string = "h-4 w-4 object-contain inline-block") => {
@@ -186,6 +201,8 @@ export default function AdminDashboard() {
   // Action status indicators
   const [actionSuccess, setActionSuccess] = useState('');
   const [actionError, setActionError] = useState('');
+  const [eventEditError, setEventEditError] = useState('');
+  const [isSavingEvent, setIsSavingEvent] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [exportingStates, setExportingStates] = useState<Record<string, boolean>>({});
 
@@ -713,10 +730,56 @@ export default function AdminDashboard() {
 
     setEditItem({
       ...event,
+      title: event.title || '',
+      description: event.description || event.overview || '',
+      overview: event.overview || event.description || '',
+      focus: event.focus || '',
+      outcome: event.outcome || '',
+      date: event.date || '',
+      time: event.time || '',
+      endTime: event.endTime || '',
+      venue: event.venue || '',
+      fullVenueAddress: event.fullVenueAddress || '',
+      city: event.city || '',
+      format: event.format || event.eventFormat || '',
+      eventFormat: event.eventFormat || event.format || '',
+      status: event.status || 'Draft',
+      registrationStatus: event.registrationStatus || 'Not Open',
+      maxRegistrations: event.maxRegistrations ?? -1,
+      registrationDeadline: event.registrationDeadline || '',
+      aboutTheEvent: event.aboutTheEvent || event.description || '',
+      requirements: event.requirements || '',
+      additionalInfo: event.additionalInfo || '',
+      collaborationName: event.collaborationName || customCollab || '',
+      collaborationDescription: event.collaborationDescription || '',
+      collaborationWebsite: event.collaborationWebsite || '',
       collaborations: uiCollabs,
       customCollab,
-      customCollabLogo: event.customCollabLogo || ''
+      customCollabLogo: event.customCollabLogo || event.collaborationLogo || ''
     });
+    setEventEditError('');
+  };
+
+  const validateEventForm = (eventData: any) => {
+    if (!eventData.title || !eventData.title.trim()) {
+      return 'Title cannot be empty.';
+    }
+    if (!eventData.date || Number.isNaN(new Date(eventData.date).getTime())) {
+      return 'Date must be valid.';
+    }
+    if (!eventData.time || !eventData.time.trim()) {
+      return 'Event time is required.';
+    }
+    if (!eventData.venue || !eventData.venue.trim()) {
+      return 'Venue should not be empty.';
+    }
+    if (!eventData.status || !['Draft', 'Planned', 'Upcoming', 'Ongoing', 'Completed', 'Cancelled', 'Unpublished'].includes(eventData.status)) {
+      return 'Event status is invalid.';
+    }
+    if (!eventData.registrationStatus || !['Open', 'Not Open', 'Closed', 'Full'].includes(eventData.registrationStatus)) {
+      return 'Registration status is invalid.';
+    }
+    return '';
   };
 
   // 2. Events CRUD
@@ -746,6 +809,14 @@ export default function AdminDashboard() {
 
   const handleUpdateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editItem) return;
+
+    const validationError = validateEventForm(editItem);
+    if (validationError) {
+      setEventEditError(validationError);
+      return;
+    }
+
     const collabs = (editItem.collaborations || []).filter((c: string) => c !== 'Other');
     if ((editItem.collaborations || []).includes('Other') && editItem.customCollab) {
       collabs.push(editItem.customCollab);
@@ -753,17 +824,55 @@ export default function AdminDashboard() {
     const hasOther = (editItem.collaborations || []).includes('Other');
     const formatted = {
       ...editItem,
+      id: editItem.id,
+      title: editItem.title.trim(),
+      description: editItem.description || editItem.overview || '',
+      overview: editItem.overview || editItem.description || '',
+      focus: editItem.focus || '',
+      date: editItem.date || '',
+      time: editItem.time || '',
+      endTime: editItem.endTime || '',
+      venue: editItem.venue || '',
+      fullVenueAddress: editItem.fullVenueAddress || '',
+      city: editItem.city || '',
+      format: editItem.format || editItem.eventFormat || '',
+      eventFormat: editItem.eventFormat || editItem.format || '',
+      status: editItem.status || 'Draft',
+      registrationStatus: editItem.registrationStatus || 'Not Open',
+      maxRegistrations: editItem.maxRegistrations ?? -1,
+      registrationDeadline: editItem.registrationDeadline || '',
+      aboutTheEvent: editItem.aboutTheEvent || editItem.description || '',
+      requirements: editItem.requirements || '',
+      additionalInfo: editItem.additionalInfo || '',
+      collaborationName: editItem.collaborationName || editItem.customCollab || '',
+      collaborationDescription: editItem.collaborationDescription || '',
+      collaborationWebsite: editItem.collaborationWebsite || '',
       collaborations: collabs,
       customCollabLogo: hasOther ? editItem.customCollabLogo : '',
-      whatYouWillLearn: Array.isArray(editItem.whatYouWillLearn) 
-        ? editItem.whatYouWillLearn 
-        : editItem.whatYouWillLearn.split('\n').filter((l: string) => l.trim().length > 0)
+      whatYouWillLearn: Array.isArray(editItem.whatYouWillLearn)
+        ? editItem.whatYouWillLearn
+        : (editItem.whatYouWillLearn || '').split('\n').map((l: string) => l.trim()).filter(Boolean)
     };
     delete formatted.customCollab;
-    const res = await apiCall({ action: 'update-event', event: formatted });
-    if (res && res.success) {
-      fetchTabItems();
-      setEditItem(null);
+    setIsSavingEvent(true);
+    setEventEditError('');
+    setActionSuccess('');
+    setActionError('');
+
+    try {
+      const res = await apiCall({ action: 'update-event', event: formatted });
+      if (res && res.success) {
+        setActionSuccess('Event updated successfully.');
+        setTimeout(() => setActionSuccess(''), 3000);
+        await fetchTabItems();
+        setEditItem(null);
+      } else {
+        setEventEditError(res?.error || 'Unable to update event. Please try again.');
+      }
+    } catch (err) {
+      setEventEditError('Unable to update event. Please try again.');
+    } finally {
+      setIsSavingEvent(false);
     }
   };
 
@@ -3753,6 +3862,141 @@ export default function AdminDashboard() {
                 />
               </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Date</label>
+                  <input
+                    type="date"
+                    value={editItem.date || ''}
+                    onChange={(e) => setEditItem({ ...editItem, date: e.target.value })}
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Start Time</label>
+                  <input
+                    type="text"
+                    value={editItem.time || ''}
+                    onChange={(e) => setEditItem({ ...editItem, time: e.target.value })}
+                    placeholder="10:00 AM"
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">End Time</label>
+                  <input
+                    type="text"
+                    value={editItem.endTime || ''}
+                    onChange={(e) => setEditItem({ ...editItem, endTime: e.target.value })}
+                    placeholder="1:00 PM"
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">City / Location</label>
+                  <input
+                    type="text"
+                    value={editItem.city || ''}
+                    onChange={(e) => setEditItem({ ...editItem, city: e.target.value })}
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Venue</label>
+                <input
+                  type="text"
+                  value={editItem.venue || ''}
+                  onChange={(e) => setEditItem({ ...editItem, venue: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Full Venue Address</label>
+                <input
+                  type="text"
+                  value={editItem.fullVenueAddress || ''}
+                  onChange={(e) => setEditItem({ ...editItem, fullVenueAddress: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">About the Event</label>
+                <textarea
+                  rows={3}
+                  value={editItem.aboutTheEvent || editItem.description || ''}
+                  onChange={(e) => setEditItem({ ...editItem, aboutTheEvent: e.target.value, description: e.target.value, overview: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Requirements / Eligibility</label>
+                <textarea
+                  rows={2}
+                  value={editItem.requirements || ''}
+                  onChange={(e) => setEditItem({ ...editItem, requirements: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Additional Event Information</label>
+                <textarea
+                  rows={2}
+                  value={editItem.additionalInfo || ''}
+                  onChange={(e) => setEditItem({ ...editItem, additionalInfo: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Collaborating Organization</label>
+                <input
+                  type="text"
+                  value={editItem.collaborationName || editItem.customCollab || ''}
+                  onChange={(e) => setEditItem({ ...editItem, collaborationName: e.target.value, customCollab: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Collaboration Details</label>
+                <textarea
+                  rows={2}
+                  value={editItem.collaborationDescription || ''}
+                  onChange={(e) => setEditItem({ ...editItem, collaborationDescription: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Collaboration Website / Link</label>
+                <input
+                  type="url"
+                  value={editItem.collaborationWebsite || ''}
+                  onChange={(e) => setEditItem({ ...editItem, collaborationWebsite: e.target.value })}
+                  placeholder="https://example.com"
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Registration Deadline</label>
+                <input
+                  type="date"
+                  value={editItem.registrationDeadline || ''}
+                  onChange={(e) => setEditItem({ ...editItem, registrationDeadline: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                />
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Event Status</label>
@@ -3854,12 +4098,18 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            {eventEditError && (
+              <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 rounded text-[10px] font-medium">
+                {eventEditError}
+              </div>
+            )}
+
             <div className="pt-4 border-t border-[#E2E8F0] flex justify-end space-x-3">
               <button type="button" onClick={() => setEditItem(null)} className="px-4 py-1.5 bg-[#F6F8FA] border border-[#E2E8F0] rounded font-semibold cursor-pointer hover:bg-slate-100">
                 Cancel
               </button>
-              <button type="submit" className="px-4 py-1.5 bg-[#FF9900] hover:bg-[#E08800] text-white font-bold rounded cursor-pointer transition-colors">
-                Update
+              <button type="submit" disabled={isSavingEvent} className="px-4 py-1.5 bg-[#FF9900] hover:bg-[#E08800] text-white font-bold rounded cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                {isSavingEvent ? 'Saving...' : 'Update'}
               </button>
             </div>
           </form>
