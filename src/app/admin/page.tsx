@@ -172,6 +172,8 @@ export default function AdminDashboard() {
   const [feedbackStatusFilter, setFeedbackStatusFilter] = useState<'All' | 'New' | 'Reviewed' | 'Published' | 'Archived'>('All');
   const [feedbackSort, setFeedbackSort] = useState<'Newest' | 'Oldest' | 'Highest' | 'Lowest'>('Newest');
   const [feedbackEventFilter, setFeedbackEventFilter] = useState('');
+  const [feedbackPagePublished, setFeedbackPagePublished] = useState(true);
+  const [isFeedbackPageToggleLoading, setIsFeedbackPageToggleLoading] = useState(false);
   const [selectedFeedback, setSelectedFeedback] = useState<any>(null);
   const [isViewFeedbackModalOpen, setIsViewFeedbackModalOpen] = useState(false);
   const [isEditFeedbackModalOpen, setIsEditFeedbackModalOpen] = useState(false);
@@ -270,6 +272,44 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleFeedbackPageStatusToggle = async (nextPublished: boolean) => {
+    if (isFeedbackPageToggleLoading) return;
+
+    const actionText = nextPublished ? 'publish' : 'unpublish';
+    const confirmed = window.confirm(
+      nextPublished
+        ? 'Are you sure you want to publish the Feedback page? Visitors will be able to access and submit feedback again.'
+        : 'Are you sure you want to unpublish the Feedback page? Visitors will no longer be able to access or submit feedback.'
+    );
+
+    if (!confirmed) return;
+
+    setIsFeedbackPageToggleLoading(true);
+    setActionError('');
+    setActionSuccess('');
+
+    try {
+      const data = await apiCall({ action: 'set_feedback_page_visibility', published: nextPublished });
+      if (data && data.success) {
+        setFeedbackPagePublished(nextPublished);
+        setActionSuccess(`Feedback page ${nextPublished ? 'published' : 'unpublished'} successfully.`);
+        setTimeout(() => setActionSuccess(''), 3000);
+      } else {
+        setActionError(data?.error || `Failed to ${actionText} the feedback page.`);
+        setTimeout(() => setActionError(''), 4000);
+      }
+    } finally {
+      setIsFeedbackPageToggleLoading(false);
+    }
+  };
+
+  const fetchFeedbackPageStatus = async () => {
+    const data = await apiCall({ action: 'get_feedback_page_visibility' });
+    if (data && typeof data.published === 'boolean') {
+      setFeedbackPagePublished(data.published);
+    }
+  };
+
   const fetchTabItems = async () => {
     if (activeTab === 'Registrations') {
       const data = await apiCall({ action: 'get-registrations' });
@@ -312,6 +352,10 @@ export default function AdminDashboard() {
       const data = await apiCall({ action: 'get-contact-messages' });
       if (Array.isArray(data)) setContactMessages(data);
     } else if (activeTab === 'Feedback') {
+      const status = await apiCall({ action: 'get_feedback_page_visibility' });
+      if (status && typeof status.published === 'boolean') {
+        setFeedbackPagePublished(status.published);
+      }
       const data = await apiCall({ action: 'get-feedbacks' });
       if (Array.isArray(data)) setFeedbacks(data);
       const evts = await apiCall({ action: 'get-events' });
@@ -2647,6 +2691,27 @@ export default function AdminDashboard() {
                     <p className="text-xs text-[#64748B] font-sans leading-relaxed">
                       Monitor, filter, edit, and export student feedback submissions.
                     </p>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-sm p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">Feedback Page Visibility</p>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-block h-2.5 w-2.5 rounded-full ${feedbackPagePublished ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                        <span className="text-sm font-bold text-slate-800">
+                          {feedbackPagePublished ? 'Published' : 'Unpublished'}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleFeedbackPageStatusToggle(!feedbackPagePublished)}
+                      disabled={isFeedbackPageToggleLoading}
+                      className="px-3 py-2 border border-[#E2E8F0] rounded text-xs font-bold text-slate-700 hover:border-[#FF9900] hover:text-[#FF9900] bg-white transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isFeedbackPageToggleLoading ? 'Updating...' : feedbackPagePublished ? 'Unpublish Page' : 'Publish Page'}
+                    </button>
                   </div>
                 </div>
 

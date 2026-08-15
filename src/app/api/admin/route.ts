@@ -696,6 +696,28 @@ export async function POST(request: Request) {
       }
 
       // Feedback Administrative Actions
+      const isGetVisibilityAction = action === 'get-feedback-page-status' || action === 'get_feedback_page_visibility';
+      const isSetVisibilityAction = action === 'set-feedback-page-status' || action === 'set_feedback_page_visibility';
+
+      if (isGetVisibilityAction) {
+        const published = await db.settings.getFeedbackPagePublished();
+        return NextResponse.json({ published });
+      }
+
+      if (isSetVisibilityAction) {
+        const { published } = body;
+        if (typeof published !== 'boolean') {
+          return NextResponse.json({ error: 'Published flag must be a boolean.' }, { status: 400 });
+        }
+
+        try {
+          await db.settings.setFeedbackPagePublished(published);
+          return NextResponse.json({ success: true, published });
+        } catch (err: any) {
+          return NextResponse.json({ error: err.message }, { status: 500 });
+        }
+      }
+
       if (action === 'get-feedbacks') {
         return NextResponse.json(await db.feedback.getAll());
       }

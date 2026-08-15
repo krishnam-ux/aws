@@ -21,6 +21,17 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const feedbackPagePublished = await db.settings.getFeedbackPagePublished();
+    if (!feedbackPagePublished) {
+      return NextResponse.json({
+        success: false,
+        error: 'Feedback submissions are currently unavailable.'
+      }, {
+        status: 403,
+        headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' }
+      });
+    }
+
     const body = await request.json();
     const {
       name,

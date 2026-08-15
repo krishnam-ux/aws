@@ -612,8 +612,48 @@ const DEFAULT_CONTENT = {
   aboutDescription: 'AWS Student Builder Group at Chandigarh University – Uttar Pradesh is a student-led technology community focused on learning, experimentation, collaboration and project building across cloud computing, artificial intelligence, data, DevOps and emerging technologies.'
 };
 
+async function readSettingsStore(): Promise<Record<string, any>> {
+  if (process.env.DATABASE_URL && !sql) {
+    throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+  }
+  if (sql) {
+    return await readPostgres<Record<string, any>>('settings.json', {});
+  }
+  return await readJsonFile<Record<string, any>>('settings.json', {});
+}
+
+async function writeSettingsStore(data: Record<string, any>): Promise<void> {
+  if (process.env.DATABASE_URL && !sql) {
+    throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+  }
+  if (sql) {
+    await writePostgres('settings.json', data);
+    return;
+  }
+  await writeJsonFile('settings.json', data);
+}
+
 // Database APIs
 export const db = {
+  settings: {
+    getFeedbackPagePublished: async (): Promise<boolean> => {
+      const settings = await readSettingsStore();
+      const value = settings.feedbackPagePublished;
+      return value === undefined ? true : Boolean(value);
+    },
+    setFeedbackPagePublished: async (published: boolean): Promise<void> => {
+      const settings = await readSettingsStore();
+      await writeSettingsStore({ ...settings, feedbackPagePublished: Boolean(published) });
+    },
+    get: async (key: string, defaultValue: any = null): Promise<any> => {
+      const settings = await readSettingsStore();
+      return settings[key] !== undefined ? settings[key] : defaultValue;
+    },
+    set: async (key: string, value: any): Promise<void> => {
+      const settings = await readSettingsStore();
+      await writeSettingsStore({ ...settings, [key]: value });
+    }
+  },
   admins: {
     getAll: async () => {
       let data = await readJsonFile<any[]>('admin_users.json', DEFAULT_ADMINS());

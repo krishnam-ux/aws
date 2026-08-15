@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 
-export default function FeedbackClient() {
+export default function FeedbackClient({ isPublished }: { isPublished: boolean }) {
   // Form State
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -104,6 +104,36 @@ export default function FeedbackClient() {
       setLoading(false);
     }
   };
+
+  if (!isPublished) {
+    return (
+      <div className="min-h-screen bg-[#F6F8FA] flex flex-col font-sans">
+        <main className="flex-grow max-w-2xl w-full mx-auto px-4 py-12 sm:px-6 lg:px-8">
+          <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-sm overflow-hidden p-8 sm:p-10 text-center space-y-6">
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto">
+              <svg className="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.74 3h16.88a2 2 0 001.74-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+            </div>
+            <div className="space-y-2">
+              <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 tracking-tight">
+                Feedback is currently unavailable.
+              </h1>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                The feedback form is temporarily closed by the administrator. Please check back later.
+              </p>
+            </div>
+            <a
+              href="/"
+              className="inline-flex items-center justify-center px-4 py-2.5 border border-[#E2E8F0] hover:border-[#FF9900] rounded-md text-xs font-bold text-slate-700 hover:text-[#FF9900] bg-white transition-colors cursor-pointer"
+            >
+              Back to Home
+            </a>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F6F8FA] flex flex-col font-sans">
