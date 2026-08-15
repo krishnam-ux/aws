@@ -152,40 +152,68 @@ export default function FeedbackClient({ isPublished }: { isPublished: boolean }
           </div>
 
           {submitted ? (
-            /* Success Screen Overlay */
-            <div className="text-center py-10 sm:py-16 space-y-6 animate-fadeIn">
-              <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto border border-emerald-100 text-emerald-600">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
-                </svg>
+            <div className="flex items-center justify-center py-4 sm:py-8 animate-fadeIn">
+              <div className="w-full max-w-xl rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-sm sm:p-8">
+                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 ring-1 ring-emerald-100 text-emerald-600">
+                  <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+
+                <div className="space-y-4 text-center">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#FF9900]">
+                    Feedback received
+                  </p>
+                  <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 tracking-tight">
+                    Thank You!
+                  </h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    Your feedback has been submitted successfully.
+                  </p>
+
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left">
+                    <p className="text-sm leading-relaxed text-slate-600">
+                      We appreciate you taking the time to share your experience. Your feedback helps us improve our community events, workshops, and student experience.
+                    </p>
+                  </div>
+
+                  <div className="pt-1 text-left">
+                    <h4 className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                      What happens next?
+                    </h4>
+                    <p className="text-sm leading-relaxed text-slate-600">
+                      Our team will review your feedback carefully and use it to improve future activities and opportunities for the community.
+                    </p>
+                  </div>
+
+                  <p className="text-xs text-slate-500">
+                    Have additional suggestions? Feel free to reach out to us.
+                  </p>
+                </div>
+
+                <div className="mt-7 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubmitted(false);
+                      setName('');
+                      setEmail('');
+                      setUniversity('');
+                      setEventId('');
+                      setRating(0);
+                      setExperience('Excellent');
+                      setFeedbackText('');
+                      setLiked('');
+                      setImprovements('');
+                      setRecommendation('Yes');
+                      setErrorMsg('');
+                    }}
+                    className="inline-flex items-center justify-center rounded-md border border-[#FF9900] bg-[#FF9900] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#E08800] hover:border-[#E08800] focus:outline-none focus:ring-2 focus:ring-[#FF9900]/30 focus:ring-offset-2 cursor-pointer"
+                  >
+                    Submit another response
+                  </button>
+                </div>
               </div>
-              <div className="space-y-2">
-                <h3 className="font-display font-bold text-xl sm:text-2xl text-slate-900">
-                  Thank you for your feedback!
-                </h3>
-                <p className="text-sm text-slate-500">
-                  Your feedback has been submitted successfully and will help shape future activities.
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setSubmitted(false);
-                  setName('');
-                  setEmail('');
-                  setUniversity('');
-                  setEventId('');
-                  setRating(0);
-                  setExperience('Excellent');
-                  setFeedbackText('');
-                  setLiked('');
-                  setImprovements('');
-                  setRecommendation('Yes');
-                  setErrorMsg('');
-                }}
-                className="mt-6 inline-flex items-center px-4 py-2 border border-[#E2E8F0] hover:border-[#FF9900] rounded-md text-xs font-bold text-slate-700 hover:text-[#FF9900] bg-white transition-colors cursor-pointer"
-              >
-                Submit another response
-              </button>
             </div>
           ) : (
             /* Feedback Form */
