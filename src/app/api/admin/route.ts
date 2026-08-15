@@ -8,32 +8,43 @@ const SECURE_TOKEN = 'awssbg-admin-session-token-secure-hash';
 const ALLOWED_EVENT_STATUSES = ['Draft', 'Planned', 'Upcoming', 'Ongoing', 'Completed', 'Cancelled', 'Unpublished'];
 const ALLOWED_REGISTRATION_STATUSES = ['Open', 'Not Open', 'Closed', 'Full'];
 
+function mergeEventUpdate(existingEvent: any, incomingEvent: any): any {
+  const merged: Record<string, any> = { ...(existingEvent || {}) };
+  for (const [key, value] of Object.entries(incomingEvent || {})) {
+    if (value !== undefined) {
+      merged[key] = value;
+    }
+  }
+  return merged;
+}
+
 function normalizeEventPayload(event: any): any {
   if (!event || typeof event !== 'object') {
     throw new Error('Event payload is required.');
   }
 
-  const safeTitle = String(event.title || '').trim();
+  const merged = mergeEventUpdate({}, event);
+  const safeTitle = String(merged.title ?? '').trim();
   if (!safeTitle) {
     throw new Error('Title cannot be empty.');
   }
 
-  const normalizedDate = String(event.date || '').trim();
+  const normalizedDate = String(merged.date ?? '').trim();
   if (!normalizedDate || Number.isNaN(new Date(normalizedDate).getTime())) {
     throw new Error('Date must be valid.');
   }
 
-  const normalizedVenue = String(event.venue || '').trim();
+  const normalizedVenue = String(merged.venue ?? '').trim();
   if (!normalizedVenue) {
     throw new Error('Venue should not be empty.');
   }
 
-  const status = String(event.status || 'Draft');
+  const status = String(merged.status ?? 'Draft');
   if (!ALLOWED_EVENT_STATUSES.includes(status)) {
     throw new Error('Event status is invalid.');
   }
 
-  const registrationStatus = String(event.registrationStatus || 'Not Open');
+  const registrationStatus = String(merged.registrationStatus ?? 'Not Open');
   if (!ALLOWED_REGISTRATION_STATUSES.includes(registrationStatus)) {
     throw new Error('Registration status is invalid.');
   }
@@ -302,13 +313,14 @@ export async function POST(request: Request) {
       }
 
       try {
-        const normalizedEvent = normalizeEventPayload(event);
         const events = await db.events.getAll();
-        const idx = events.findIndex(e => e.id === normalizedEvent.id);
+        const idx = events.findIndex(e => e.id === event.id);
         if (idx === -1) {
           return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
         }
 
+        const mergedEvent = mergeEventUpdate(events[idx], event);
+        const normalizedEvent = normalizeEventPayload(mergedEvent);
         const updatedEvent = { ...events[idx], ...normalizedEvent };
         if (!updatedEvent.status) updatedEvent.status = 'Draft';
         if (!updatedEvent.registrationStatus) updatedEvent.registrationStatus = 'Not Open';
@@ -317,7 +329,7 @@ export async function POST(request: Request) {
         await db.events.saveAll(events);
         return NextResponse.json({ success: true, event: updatedEvent });
       } catch (err: any) {
-        return NextResponse.json({ error: err.message || 'Unable to update event.' }, { status: 400 });
+        return NextResponse.json({ success: false, error: err.message || 'Unable to update event.' }, { status: 400 });
       }
     }
     if (action === 'delete-event') {

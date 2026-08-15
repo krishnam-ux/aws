@@ -269,7 +269,15 @@ export default function AdminDashboard() {
         },
         body: JSON.stringify(body)
       });
-      const data = await response.json();
+
+      const rawText = await response.text();
+      let data: any = { success: false, error: 'Unexpected API response.' };
+      try {
+        data = rawText ? JSON.parse(rawText) : { success: false, error: 'Empty API response.' };
+      } catch {
+        data = { success: false, error: rawText || 'Unexpected API response.' };
+      }
+
       if (response.status === 401) {
         handleLogout();
         return null;
@@ -461,38 +469,34 @@ export default function AdminDashboard() {
 
   const updateEventStatusField = async (eventId: string, field: string, value: string) => {
     const prevEvents = [...events];
+    const currentEvent = prevEvents.find(e => e.id === eventId) || ({} as CommunityEvent);
     const stateKey = `${eventId}-${field}`;
-    
-    // Optimistic UI state update
-    setEvents(prevEvents.map(e => e.id === eventId ? { ...e, [field]: value } : e));
-    
-    // Set saving indicator
+    const mergedEvent: CommunityEvent = { ...currentEvent, id: eventId, [field]: value } as CommunityEvent;
+
+    setEvents(prevEvents.map((e: CommunityEvent) => e.id === eventId ? mergedEvent : e));
     setStatusSaveState(prev => ({ ...prev, [stateKey]: 'saving' }));
     setActionError('');
     setActionSuccess('');
 
     try {
-      const res = await apiCall({ action: 'update-event', event: { id: eventId, [field]: value } });
+      const res = await apiCall({ action: 'update-event', event: mergedEvent });
       if (res && res.success) {
         await fetchTabItems();
         await fetchStats();
-        
+
         setStatusSaveState(prev => ({ ...prev, [stateKey]: 'saved' }));
-        // Clear saved status after 2 seconds
         setTimeout(() => {
           setStatusSaveState(prev => ({ ...prev, [stateKey]: null }));
         }, 2000);
       } else {
-        // Rollback state on failure
         setEvents(prevEvents);
         setStatusSaveState(prev => ({ ...prev, [stateKey]: 'failed' }));
-        setActionError('Update failed. Please try again.');
+        setActionError(res?.error || 'Update failed. Please try again.');
         setTimeout(() => {
           setStatusSaveState(prev => ({ ...prev, [stateKey]: null }));
         }, 4000);
       }
     } catch (err) {
-      // Rollback state on error
       setEvents(prevEvents);
       setStatusSaveState(prev => ({ ...prev, [stateKey]: 'failed' }));
       setActionError('Update failed. Please try again.');
