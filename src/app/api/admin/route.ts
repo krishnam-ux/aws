@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { siteConfig } from '@/data/siteConfig';
 import { db, hashPassword, generateSalt } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -836,78 +837,178 @@ export async function POST(request: Request) {
       if (action === 'export-pdf' || action === 'export_pdf') {
         const { jsPDF } = require('jspdf');
         const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 28;
+        const tableWidth = pageWidth - margin * 2;
+        const tableColumns = [
+          { title: 'No.', width: 32 },
+          { title: 'Student Name', width: 92 },
+          { title: 'Email', width: 108 },
+          { title: 'University', width: 94 },
+          { title: 'Program', width: 88 },
+          { title: 'Year', width: 40 },
+          { title: 'Status', width: 52 },
+          { title: 'Registration Date', width: 92 },
+          { title: 'Student Signature', width: 138 }
+        ];
+        const signatureLeaders = [siteConfig.leader.name, 'Vaibhav Sharma'];
+
+        const formatDateLabel = (value?: string) => {
+          if (!value) return '—';
+          const date = new Date(value);
+          if (Number.isNaN(date.getTime())) return value;
+          return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        };
+
+        const safeText = (value: string | undefined, maxLen: number): string => {
+          const str = (value || '').trim();
+          if (!str) return '';
+          return str.length > maxLen ? `${str.slice(0, maxLen - 1)}…` : str;
+        };
+
+        const drawHeader = (y: number) => {
+          doc.setFillColor(241, 245, 249);
+          doc.rect(margin, y - 10, tableWidth, 18, 'F');
+
+          let x = margin;
+          doc.setDrawColor(226, 232, 240);
+          doc.setLineWidth(0.5);
+          tableColumns.forEach((column) => {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(7.5);
+            doc.setTextColor(15, 23, 42);
+            doc.text(column.title, x + 4, y, { maxWidth: column.width - 8 });
+            doc.line(x, y + 10, x + column.width, y + 10);
+            x += column.width;
+          });
+        };
+
+        const drawRegistrationRow = (row: any, idx: number, y: number) => {
+          let x = margin;
+          const rowValues = [
+            String(idx + 1),
+            safeText(row.name, 22),
+            safeText(row.email, 26),
+            safeText(row.university, 20),
+            safeText(row.program, 18),
+            safeText(row.year, 12),
+            safeText(row.status || 'New', 12),
+            formatDateLabel(row.date),
+            ''
+          ];
+
+          doc.setDrawColor(226, 232, 240);
+          doc.setLineWidth(0.35);
+          tableColumns.forEach((column, columnIndex) => {
+            const value = rowValues[columnIndex];
+            const colX = x;
+            const colWidth = column.width;
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7);
+            doc.setTextColor(51, 65, 85);
+
+            if (columnIndex === tableColumns.length - 1) {
+              doc.line(colX + 8, y + 12, colX + colWidth - 12, y + 12);
+            } else {
+              const lines = doc.splitTextToSize(value, colWidth - 8);
+              doc.text(lines.slice(0, 2), colX + 4, y + 8);
+            }
+
+            doc.line(colX, y + 15, colX + colWidth, y + 15);
+            x += colWidth;
+          });
+        };
+
+        const drawSignatureSection = () => {
+          const sectionY = 52;
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(15, 23, 42);
+          doc.setFontSize(13);
+          doc.text('Leadership Approvals & Signatures', margin, sectionY);
+
+          const signatureWidth = 190;
+          const leftX = margin + 10;
+          const rightX = pageWidth / 2 + 30;
+
+          signatureLeaders.forEach((leaderName, index) => {
+            const currentX = index === 0 ? leftX : rightX;
+            const lineY = sectionY + 36;
+            doc.setDrawColor(15, 23, 42);
+            doc.setLineWidth(0.8);
+            doc.line(currentX, lineY, currentX + signatureWidth, lineY);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(30, 41, 59);
+            doc.text(leaderName, currentX, lineY + 18);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            doc.text('AWS Student Builder Group Leader', currentX, lineY + 30);
+          });
+
+          const authX = pageWidth / 2 - 95;
+          const authY = sectionY + 98;
+          doc.setDrawColor(15, 23, 42);
+          doc.setLineWidth(0.8);
+          doc.line(authX, authY, authX + 190, authY);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10);
+          doc.setTextColor(15, 23, 42);
+          doc.text('Authorized Signature', authX + 48, authY + 16);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          doc.text('AWS Student Builder Group', authX + 22, authY + 28);
+          doc.text('Chandigarh University – Uttar Pradesh', authX - 10, authY + 40);
+          doc.text('Date: ______________________', authX + 20, authY + 62);
+          doc.text('Place: _____________________', authX + 18, authY + 78);
+        };
+
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(16);
         doc.setTextColor(15, 23, 42);
-        doc.text('AWS Student Builder Group', 421, 40, { align: 'center' });
+        doc.text('AWS Student Builder Group', pageWidth / 2, 30, { align: 'center' });
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
         doc.setTextColor(100, 116, 139);
-        doc.text('Chandigarh University – Uttar Pradesh', 421, 55, { align: 'center' });
+        doc.text('Chandigarh University – Uttar Pradesh', pageWidth / 2, 45, { align: 'center' });
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(13);
         doc.setTextColor(255, 153, 0);
-        doc.text('Event Registration Report', 421, 75, { align: 'center' });
+        doc.text('Official Event Registration Record', pageWidth / 2, 62, { align: 'center' });
+
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(9);
         doc.setTextColor(30, 41, 59);
-        doc.text(`Event Name: ${event.title}`, 30, 105);
-        doc.text(`Event Date: ${event.date || 'TBA'} | Time: ${event.time || 'TBA'}`, 30, 120);
-        doc.text(`Venue: ${event.venue || 'TBA'} | Status: ${event.registrationStatus || 'Closed'}`, 30, 135);
-        doc.text(`Total Registrations: ${eventRegs.length}`, 30, 150);
-        doc.text(`Report Generated: ${new Date().toLocaleString()}`, 30, 165);
+        doc.text(`Event Name: ${event.title}`, margin, 90);
+        doc.text(`Date: ${event.date || 'TBA'} | Time: ${event.time || 'TBA'}`, margin, 105);
+        doc.text(`Venue: ${event.venue || 'TBA'} | Status: ${event.registrationStatus || 'Closed'}`, margin, 120);
+        doc.text(`Total Registrations: ${eventRegs.length}`, margin, 135);
+        doc.text(`Report Generated: ${new Date().toLocaleString()}`, margin, 150);
 
-        const drawHeaders = (y: number) => {
-          doc.setFillColor(241, 245, 249);
-          doc.rect(30, y - 10, 782, 18, 'F');
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(8);
-          doc.setTextColor(15, 23, 42);
-          doc.text('No.', 35, y, { maxWidth: 25 });
-          doc.text('Student Name', 65, y, { maxWidth: 110 });
-          doc.text('Email', 180, y, { maxWidth: 155 });
-          doc.text('University', 340, y, { maxWidth: 145 });
-          doc.text('Program', 490, y, { maxWidth: 115 });
-          doc.text('Year', 610, y, { maxWidth: 50 });
-          doc.text('Status', 665, y, { maxWidth: 45 });
-          doc.text('Registration Date', 715, y, { maxWidth: 90 });
-          doc.setDrawColor(226, 232, 240);
-          doc.setLineWidth(0.5);
-          doc.line(30, y + 10, 812, y + 10);
-        };
-
-        let currentY = 195;
-        drawHeaders(currentY);
-        currentY += 18;
+        let currentY = 180;
+        drawHeader(currentY);
+        currentY += 20;
 
         eventRegs.forEach((r, idx) => {
-          if (currentY > 530) {
+          if (currentY > pageHeight - 140) {
             doc.addPage();
             currentY = 40;
-            drawHeaders(currentY);
-            currentY += 18;
+            drawHeader(currentY);
+            currentY += 20;
           }
 
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(7.5);
-          doc.setTextColor(51, 65, 85);
-          doc.text(`${idx + 1}`, 35, currentY);
-          const safeText = (txt: string, maxLen: number) => {
-            const str = txt || '';
-            return str.length > maxLen ? str.slice(0, maxLen) + '...' : str;
-          };
-          doc.text(safeText(r.name, 25), 65, currentY);
-          doc.text(safeText(r.email, 35), 180, currentY);
-          doc.text(safeText(r.university, 30), 340, currentY);
-          doc.text(safeText(r.program, 25), 490, currentY);
-          doc.text(safeText(r.year, 15), 610, currentY);
-          doc.text(safeText(r.status || 'New', 10), 665, currentY);
-          doc.text(r.date ? new Date(r.date).toLocaleDateString() : '', 715, currentY);
-          doc.setDrawColor(241, 245, 249);
-          doc.setLineWidth(0.5);
-          doc.line(30, currentY + 8, 812, currentY + 8);
-          currentY += 15;
+          drawRegistrationRow(r, idx, currentY);
+          currentY += 18;
         });
+
+        doc.addPage();
+        drawSignatureSection();
+
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(8);
+        doc.setTextColor(100, 116, 139);
+        doc.text('Generated by AWS Student Builder Group | Confidential Attendance Record', margin, pageHeight - 16);
 
         const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
         return new NextResponse(pdfBuffer as any, {
