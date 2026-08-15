@@ -589,6 +589,7 @@ export default function AdminDashboard() {
     setExportingStates(prev => ({ ...prev, [key]: true }));
 
     try {
+      const canonicalAction = `export_feedbacks_${format}`;
       const res = await fetch('/api/admin', {
         method: 'POST',
         headers: {
@@ -596,7 +597,7 @@ export default function AdminDashboard() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          action: `export-feedbacks-${format}`,
+          action: canonicalAction,
           eventId: feedbackEventFilter || null
         })
       });

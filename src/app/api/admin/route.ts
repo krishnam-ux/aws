@@ -493,261 +493,16 @@ export async function POST(request: Request) {
     }
 
     // 13. Data Export Management
-    if (action === 'export-csv' || action === 'export-excel' || action === 'export-pdf') {
-      const { eventId } = body;
-      if (!eventId) {
-        return NextResponse.json({ error: 'Missing parameter: eventId.' }, { status: 400 });
-      }
+    const isLegacyEventExportAction = action === 'export-csv' || action === 'export-excel' || action === 'export-pdf';
+    const isLegacyFeedbackExportAction = action === 'export-feedbacks-csv' || action === 'export-feedbacks-excel' || action === 'export-feedbacks-pdf';
+    const isCanonicalFeedbackExportAction = action === 'export_feedbacks_csv' || action === 'export_feedbacks_excel' || action === 'export_feedbacks_pdf';
 
-      const events = await db.events.getAll();
-      const event = events.find(e => e.id === eventId);
-      if (!event) {
-        return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
-      }
-
-      const registrations = await db.eventRegistrations.getAll();
-      const eventRegs = registrations.filter(r => r.eventId === eventId);
-
-      if (eventRegs.length === 0) {
-        return NextResponse.json({ error: 'No registrations available to export.' }, { status: 400 });
-      }
-
-      if (action === 'export-csv') {
-        const rows = eventRegs.map((r, index) => {
-          return [
-            r.id,
-            r.name,
-            r.email,
-            r.phone || '',
-            r.university,
-            r.program,
-            r.year,
-            r.studentId || '',
-            Array.isArray(r.interests) ? r.interests.join('; ') : r.interests,
-            r.experienceLevel || 'Beginner',
-            r.linkedin || '',
-            r.github || '',
-            r.motivation || '',
-            r.consent ? 'Yes' : 'No',
-            r.status || 'New',
-            r.date ? new Date(r.date).toLocaleDateString() : '',
-            r.date ? new Date(r.date).toLocaleTimeString() : ''
-          ].map(val => {
-            const str = String(val);
-            return `"${str.replace(/"/g, '""')}"`;
-          }).join(',');
-        });
-
-        const headers = [
-          'Registration ID',
-          'Student Name',
-          'Email',
-          'Phone',
-          'University',
-          'Program',
-          'Year',
-          'Student ID',
-          'Technical Interests',
-          'Experience Level',
-          'LinkedIn',
-          'GitHub',
-          'Motivation',
-          'Consent',
-          'Status',
-          'Registration Date',
-          'Registration Time'
-        ].join(',');
-
-        const csvContent = [headers, ...rows].join('\n');
-        
-        return new NextResponse(csvContent, {
-          status: 200,
-          headers: {
-            'Content-Type': 'text/csv;charset=utf-8',
-            'Content-Disposition': `attachment; filename="${encodeURIComponent(event.title)}-registrations.csv"`,
-            'Cache-Control': 'no-store'
-          }
-        });
-      }
-
-      if (action === 'export-excel') {
-        const XLSX = require('xlsx');
-        
-        const rows = eventRegs.map((r, index) => ({
-          'Registration ID': r.id,
-          'Student Name': r.name,
-          'Email': r.email,
-          'Phone': r.phone || '',
-          'University': r.university,
-          'Program': r.program,
-          'Year': r.year,
-          'Student ID': r.studentId || '',
-          'Technical Interests': Array.isArray(r.interests) ? r.interests.join(', ') : r.interests,
-          'Experience Level': r.experienceLevel || 'Beginner',
-          'LinkedIn': r.linkedin || '',
-          'GitHub': r.github || '',
-          'Motivation': r.motivation || '',
-          'Consent': r.consent ? 'Yes' : 'No',
-          'Status': r.status || 'New',
-          'Registration Date': r.date ? new Date(r.date).toLocaleDateString() : '',
-          'Registration Time': r.date ? new Date(r.date).toLocaleTimeString() : ''
-        }));
-
-        const worksheet = XLSX.utils.json_to_sheet(rows);
-        
-        // Auto column sizing
-        const colWidths = [
-          { wch: 25 }, // Reg ID
-          { wch: 20 }, // Name
-          { wch: 25 }, // Email
-          { wch: 15 }, // Phone
-          { wch: 30 }, // University
-          { wch: 25 }, // Program
-          { wch: 10 }, // Year
-          { wch: 12 }, // Student ID
-          { wch: 30 }, // Interests
-          { wch: 15 }, // Experience
-          { wch: 30 }, // LinkedIn
-          { wch: 30 }, // GitHub
-          { wch: 45 }, // Motivation
-          { wch: 8 },  // Consent
-          { wch: 10 }, // Status
-          { wch: 15 }, // Date
-          { wch: 15 }  // Time
-        ];
-        worksheet['!cols'] = colWidths;
-
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Registrations');
-        
-        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
-        
-        return new NextResponse(excelBuffer as any, {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition': `attachment; filename="${encodeURIComponent(event.title)}-registrations.xlsx"`,
-            'Cache-Control': 'no-store'
-          }
-        });
-      }
-
-      if (action === 'export-pdf') {
-        const { jsPDF } = require('jspdf');
-        const doc = new jsPDF({
-          orientation: 'landscape',
-          unit: 'pt',
-          format: 'a4'
-        });
-
-        // Report Header
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(16);
-        doc.setTextColor(15, 23, 42); // #0F172A
-        doc.text('AWS Student Builder Group', 421, 40, { align: 'center' });
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(100, 116, 139); // #64748B
-        doc.text('Chandigarh University – Uttar Pradesh', 421, 55, { align: 'center' });
-
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(13);
-        doc.setTextColor(255, 153, 0); // #FF9900
-        doc.text('Event Registration Report', 421, 75, { align: 'center' });
-
-        // Meta Info Box
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
-        doc.setTextColor(30, 41, 59); // #1E293B
-        doc.text(`Event Name: ${event.title}`, 30, 105);
-        doc.text(`Event Date: ${event.date || 'TBA'} | Time: ${event.time || 'TBA'}`, 30, 120);
-        doc.text(`Venue: ${event.venue || 'TBA'} | Status: ${event.registrationStatus || 'Closed'}`, 30, 135);
-        doc.text(`Total Registrations: ${eventRegs.length}`, 30, 150);
-        doc.text(`Report Generated: ${new Date().toLocaleString()}`, 30, 165);
-
-        // Table Headers drawer
-        const drawHeaders = (y: number) => {
-          doc.setFillColor(241, 245, 249); // #F1F5F9
-          doc.rect(30, y - 10, 782, 18, 'F');
-          
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(8);
-          doc.setTextColor(15, 23, 42); // #0F172A
-          
-          doc.text('No.', 35, y, { maxWidth: 25 });
-          doc.text('Student Name', 65, y, { maxWidth: 110 });
-          doc.text('Email', 180, y, { maxWidth: 155 });
-          doc.text('University', 340, y, { maxWidth: 145 });
-          doc.text('Program', 490, y, { maxWidth: 115 });
-          doc.text('Year', 610, y, { maxWidth: 50 });
-          doc.text('Status', 665, y, { maxWidth: 45 });
-          doc.text('Registration Date', 715, y, { maxWidth: 90 });
-          
-          // Draw bottom line
-          doc.setDrawColor(226, 232, 240); // #E2E8F0
-          doc.setLineWidth(0.5);
-          doc.line(30, y + 10, 812, y + 10);
-        };
-
-        let currentY = 195;
-        drawHeaders(currentY);
-        currentY += 18;
-
-        eventRegs.forEach((r, idx) => {
-          if (currentY > 530) {
-            doc.addPage();
-            currentY = 40;
-            drawHeaders(currentY);
-            currentY += 18;
-          }
-
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(7.5);
-          doc.setTextColor(51, 65, 85); // #334155
-
-          doc.text(`${idx + 1}`, 35, currentY);
-          
-          // Helper to truncate text to prevent overflow
-          const safeText = (txt: string, maxLen: number) => {
-            const str = txt || '';
-            return str.length > maxLen ? str.slice(0, maxLen) + '...' : str;
-          };
-
-          doc.text(safeText(r.name, 25), 65, currentY);
-          doc.text(safeText(r.email, 35), 180, currentY);
-          doc.text(safeText(r.university, 30), 340, currentY);
-          doc.text(safeText(r.program, 25), 490, currentY);
-          doc.text(safeText(r.year, 15), 610, currentY);
-          doc.text(safeText(r.status || 'New', 10), 665, currentY);
-          doc.text(r.date ? new Date(r.date).toLocaleDateString() : '', 715, currentY);
-
-          // Draw row bottom line
-          doc.setDrawColor(241, 245, 249); // #F1F5F9
-          doc.setLineWidth(0.5);
-          doc.line(30, currentY + 8, 812, currentY + 8);
-          
-          currentY += 15;
-        });
-
-        const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
-
-        return new NextResponse(pdfBuffer as any, {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename="${encodeURIComponent(event.title)}-registrations.pdf"`,
-            'Cache-Control': 'no-store'
-          }
-        });
-      }
-
-      // Feedback Exports
-      if (action === 'export-feedbacks-csv' || action === 'export-feedbacks-excel' || action === 'export-feedbacks-pdf') {
+    if (isLegacyEventExportAction || isLegacyFeedbackExportAction || isCanonicalFeedbackExportAction) {
+      if (isLegacyFeedbackExportAction || isCanonicalFeedbackExportAction) {
         const { eventId } = body;
         const allEvents = await db.events.getAll();
         const allFeedbacks = await db.feedback.getAll();
-        
+
         let filtered = allFeedbacks;
         let eventTitle = 'All-Events';
         if (eventId) {
@@ -764,8 +519,9 @@ export async function POST(request: Request) {
         }
 
         const formattedTitle = eventTitle.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+        const actionKey = action.includes('excel') ? 'excel' : action.includes('pdf') ? 'pdf' : 'csv';
 
-        if (action === 'export-feedbacks-csv') {
+        if (actionKey === 'csv') {
           const headers = [
             'Feedback ID',
             'Student Name',
@@ -818,7 +574,7 @@ export async function POST(request: Request) {
           });
         }
 
-        if (action === 'export-feedbacks-excel') {
+        if (actionKey === 'excel') {
           const XLSX = require('xlsx');
           const sheetData = filtered.map(f => {
             const e = allEvents.find(ev => ev.id === f.eventId);
@@ -843,6 +599,12 @@ export async function POST(request: Request) {
 
           const wb = XLSX.utils.book_new();
           const ws = XLSX.utils.json_to_sheet(sheetData);
+          const colWidths = [
+            { wch: 18 }, { wch: 24 }, { wch: 28 }, { wch: 24 }, { wch: 42 }, { wch: 10 },
+            { wch: 18 }, { wch: 52 }, { wch: 30 }, { wch: 30 }, { wch: 20 }, { wch: 16 },
+            { wch: 28 }, { wch: 22 }
+          ];
+          ws['!cols'] = colWidths;
           XLSX.utils.book_append_sheet(wb, ws, 'Feedback');
 
           const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
@@ -856,47 +618,38 @@ export async function POST(request: Request) {
           });
         }
 
-        if (action === 'export-feedbacks-pdf') {
+        if (actionKey === 'pdf') {
           const { jsPDF } = require('jspdf');
-          const doc = new jsPDF({
-            orientation: 'landscape',
-            unit: 'pt',
-            format: 'a4'
-          });
+          const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
 
-          // Report Header
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(16);
-          doc.setTextColor(15, 23, 42); // #0F172A
+          doc.setTextColor(15, 23, 42);
           doc.text('AWS Student Builder Group', 421, 40, { align: 'center' });
 
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(10);
-          doc.setTextColor(100, 116, 139); // #64748B
+          doc.setTextColor(100, 116, 139);
           doc.text('Chandigarh University – Uttar Pradesh', 421, 55, { align: 'center' });
 
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(13);
-          doc.setTextColor(255, 153, 0); // #FF9900
+          doc.setTextColor(255, 153, 0);
           doc.text('Feedback Report', 421, 75, { align: 'center' });
 
-          // Meta Info Box
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(9);
-          doc.setTextColor(30, 41, 59); // #1E293B
+          doc.setTextColor(30, 41, 59);
           doc.text(`Event/Target: ${eventTitle}`, 30, 105);
           doc.text(`Total Feedbacks: ${filtered.length}`, 30, 120);
           doc.text(`Report Generated: ${new Date().toLocaleString()}`, 30, 135);
 
-          // Table Headers drawer
           const drawHeaders = (y: number) => {
-            doc.setFillColor(241, 245, 249); // #F1F5F9
+            doc.setFillColor(241, 245, 249);
             doc.rect(30, y - 10, 782, 18, 'F');
-            
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(8);
-            doc.setTextColor(15, 23, 42); // #0F172A
-            
+            doc.setTextColor(15, 23, 42);
             doc.text('No.', 35, y, { maxWidth: 25 });
             doc.text('Student Name', 65, y, { maxWidth: 100 });
             doc.text('Email', 170, y, { maxWidth: 110 });
@@ -906,9 +659,7 @@ export async function POST(request: Request) {
             doc.text('Feedback Comments', 515, y, { maxWidth: 165 });
             doc.text('Status', 685, y, { maxWidth: 45 });
             doc.text('Date', 735, y, { maxWidth: 70 });
-            
-            // Draw bottom line
-            doc.setDrawColor(226, 232, 240); // #E2E8F0
+            doc.setDrawColor(226, 232, 240);
             doc.setLineWidth(0.5);
             doc.line(30, y + 10, 812, y + 10);
           };
@@ -927,10 +678,9 @@ export async function POST(request: Request) {
 
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(7.5);
-            doc.setTextColor(51, 65, 85); // #334155
-
+            doc.setTextColor(51, 65, 85);
             doc.text(`${idx + 1}`, 35, currentY);
-            
+
             const safeText = (txt: string, maxLen: number) => {
               const str = txt || '';
               return str.length > maxLen ? str.slice(0, maxLen) + '...' : str;
@@ -947,12 +697,9 @@ export async function POST(request: Request) {
             doc.text(safeText(f.feedback, 45), 515, currentY);
             doc.text(safeText(f.status || 'New', 12), 685, currentY);
             doc.text(f.createdAt ? new Date(f.createdAt).toLocaleDateString() : '', 735, currentY);
-
-            // Draw row bottom line
-            doc.setDrawColor(241, 245, 249); // #F1F5F9
+            doc.setDrawColor(241, 245, 249);
             doc.setLineWidth(0.5);
             doc.line(30, currentY + 8, 812, currentY + 8);
-            
             currentY += 15;
           });
 
@@ -966,6 +713,211 @@ export async function POST(request: Request) {
             }
           });
         }
+      }
+
+      const { eventId } = body;
+      if (!eventId) {
+        return NextResponse.json({ error: 'Missing parameter: eventId.' }, { status: 400 });
+      }
+
+      const events = await db.events.getAll();
+      const event = events.find(e => e.id === eventId);
+      if (!event) {
+        return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
+      }
+
+      const registrations = await db.eventRegistrations.getAll();
+      const eventRegs = registrations.filter(r => r.eventId === eventId);
+
+      if (eventRegs.length === 0) {
+        return NextResponse.json({ error: 'No registrations available to export.' }, { status: 400 });
+      }
+
+      if (action === 'export-csv' || action === 'export_csv') {
+        const rows = eventRegs.map((r, index) => {
+          return [
+            r.id,
+            r.name,
+            r.email,
+            r.phone || '',
+            r.university,
+            r.program,
+            r.year,
+            r.studentId || '',
+            Array.isArray(r.interests) ? r.interests.join('; ') : r.interests,
+            r.experienceLevel || 'Beginner',
+            r.linkedin || '',
+            r.github || '',
+            r.motivation || '',
+            r.consent ? 'Yes' : 'No',
+            r.status || 'New',
+            r.date ? new Date(r.date).toLocaleDateString() : '',
+            r.date ? new Date(r.date).toLocaleTimeString() : ''
+          ].map(val => {
+            const str = String(val);
+            return `"${str.replace(/"/g, '""')}"`;
+          }).join(',');
+        });
+
+        const headers = [
+          'Registration ID',
+          'Student Name',
+          'Email',
+          'Phone',
+          'University',
+          'Program',
+          'Year',
+          'Student ID',
+          'Technical Interests',
+          'Experience Level',
+          'LinkedIn',
+          'GitHub',
+          'Motivation',
+          'Consent',
+          'Status',
+          'Registration Date',
+          'Registration Time'
+        ].join(',');
+
+        const csvContent = [headers, ...rows].join('\n');
+        return new NextResponse(csvContent, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/csv;charset=utf-8',
+            'Content-Disposition': `attachment; filename="${encodeURIComponent(event.title)}-registrations.csv"`,
+            'Cache-Control': 'no-store'
+          }
+        });
+      }
+
+      if (action === 'export-excel' || action === 'export_excel') {
+        const XLSX = require('xlsx');
+        const rows = eventRegs.map((r, index) => ({
+          'Registration ID': r.id,
+          'Student Name': r.name,
+          'Email': r.email,
+          'Phone': r.phone || '',
+          'University': r.university,
+          'Program': r.program,
+          'Year': r.year,
+          'Student ID': r.studentId || '',
+          'Technical Interests': Array.isArray(r.interests) ? r.interests.join(', ') : r.interests,
+          'Experience Level': r.experienceLevel || 'Beginner',
+          'LinkedIn': r.linkedin || '',
+          'GitHub': r.github || '',
+          'Motivation': r.motivation || '',
+          'Consent': r.consent ? 'Yes' : 'No',
+          'Status': r.status || 'New',
+          'Registration Date': r.date ? new Date(r.date).toLocaleDateString() : '',
+          'Registration Time': r.date ? new Date(r.date).toLocaleTimeString() : ''
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(rows);
+        const colWidths = [
+          { wch: 25 }, { wch: 20 }, { wch: 25 }, { wch: 15 }, { wch: 30 }, { wch: 25 },
+          { wch: 10 }, { wch: 12 }, { wch: 30 }, { wch: 15 }, { wch: 30 }, { wch: 30 },
+          { wch: 45 }, { wch: 8 }, { wch: 10 }, { wch: 15 }, { wch: 15 }
+        ];
+        worksheet['!cols'] = colWidths;
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Registrations');
+        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+
+        return new NextResponse(excelBuffer as any, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition': `attachment; filename="${encodeURIComponent(event.title)}-registrations.xlsx"`,
+            'Cache-Control': 'no-store'
+          }
+        });
+      }
+
+      if (action === 'export-pdf' || action === 'export_pdf') {
+        const { jsPDF } = require('jspdf');
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(15, 23, 42);
+        doc.text('AWS Student Builder Group', 421, 40, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(100, 116, 139);
+        doc.text('Chandigarh University – Uttar Pradesh', 421, 55, { align: 'center' });
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(13);
+        doc.setTextColor(255, 153, 0);
+        doc.text('Event Registration Report', 421, 75, { align: 'center' });
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(30, 41, 59);
+        doc.text(`Event Name: ${event.title}`, 30, 105);
+        doc.text(`Event Date: ${event.date || 'TBA'} | Time: ${event.time || 'TBA'}`, 30, 120);
+        doc.text(`Venue: ${event.venue || 'TBA'} | Status: ${event.registrationStatus || 'Closed'}`, 30, 135);
+        doc.text(`Total Registrations: ${eventRegs.length}`, 30, 150);
+        doc.text(`Report Generated: ${new Date().toLocaleString()}`, 30, 165);
+
+        const drawHeaders = (y: number) => {
+          doc.setFillColor(241, 245, 249);
+          doc.rect(30, y - 10, 782, 18, 'F');
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8);
+          doc.setTextColor(15, 23, 42);
+          doc.text('No.', 35, y, { maxWidth: 25 });
+          doc.text('Student Name', 65, y, { maxWidth: 110 });
+          doc.text('Email', 180, y, { maxWidth: 155 });
+          doc.text('University', 340, y, { maxWidth: 145 });
+          doc.text('Program', 490, y, { maxWidth: 115 });
+          doc.text('Year', 610, y, { maxWidth: 50 });
+          doc.text('Status', 665, y, { maxWidth: 45 });
+          doc.text('Registration Date', 715, y, { maxWidth: 90 });
+          doc.setDrawColor(226, 232, 240);
+          doc.setLineWidth(0.5);
+          doc.line(30, y + 10, 812, y + 10);
+        };
+
+        let currentY = 195;
+        drawHeaders(currentY);
+        currentY += 18;
+
+        eventRegs.forEach((r, idx) => {
+          if (currentY > 530) {
+            doc.addPage();
+            currentY = 40;
+            drawHeaders(currentY);
+            currentY += 18;
+          }
+
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7.5);
+          doc.setTextColor(51, 65, 85);
+          doc.text(`${idx + 1}`, 35, currentY);
+          const safeText = (txt: string, maxLen: number) => {
+            const str = txt || '';
+            return str.length > maxLen ? str.slice(0, maxLen) + '...' : str;
+          };
+          doc.text(safeText(r.name, 25), 65, currentY);
+          doc.text(safeText(r.email, 35), 180, currentY);
+          doc.text(safeText(r.university, 30), 340, currentY);
+          doc.text(safeText(r.program, 25), 490, currentY);
+          doc.text(safeText(r.year, 15), 610, currentY);
+          doc.text(safeText(r.status || 'New', 10), 665, currentY);
+          doc.text(r.date ? new Date(r.date).toLocaleDateString() : '', 715, currentY);
+          doc.setDrawColor(241, 245, 249);
+          doc.setLineWidth(0.5);
+          doc.line(30, currentY + 8, 812, currentY + 8);
+          currentY += 15;
+        });
+
+        const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+        return new NextResponse(pdfBuffer as any, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="${encodeURIComponent(event.title)}-registrations.pdf"`,
+            'Cache-Control': 'no-store'
+          }
+        });
       }
     }
 
