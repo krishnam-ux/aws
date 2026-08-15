@@ -94,7 +94,7 @@ export default function AdminDashboard() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   // Tabs structure matching user specifications
-  const [activeTab, setActiveTab] = useState<'Dashboard' | 'Registrations' | 'EventRegistrations' | 'Verification' | 'Collaborations' | 'Events' | 'Announcements' | 'Resources' | 'CoreTeam' | 'Content' | 'Settings' | 'ContactMessages' | 'Feedback'>('Dashboard');
+  const [activeTab, setActiveTab] = useState<'Dashboard' | 'Registrations' | 'EventRegistrations' | 'Verification' | 'Collaborations' | 'Events' | 'Announcements' | 'Resources' | 'Opportunities' | 'CoreTeam' | 'Content' | 'Settings' | 'ContactMessages' | 'Feedback'>('Dashboard');
 
   // Stats / Dashboard data
   const [stats, setStats] = useState<any>({
@@ -128,6 +128,8 @@ export default function AdminDashboard() {
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [resources, setResources] = useState<any[]>([]);
+  const [opportunities, setOpportunities] = useState<any[]>([]);
+  const [opportunityApplications, setOpportunityApplications] = useState<any[]>([]);
   const [verifications, setVerifications] = useState<any[]>([]);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [collaborations, setCollaborations] = useState<any[]>([]);
@@ -163,6 +165,11 @@ export default function AdminDashboard() {
 
   // Crud/View Modals
   const [viewItem, setViewItem] = useState<any | null>(null);
+  // Event edit is now isolated to its own state to avoid accidental cross-opening when other entities use editItem
+  const [editEvent, setEditEvent] = useState<any | null>(null);
+  // Opportunity-specific edit state (separate from events)
+  const [editOpportunity, setEditOpportunity] = useState<any | null>(null);
+  // Generic editItem remains for smaller entities (announcements, resources, team members) where used
   const [editItem, setEditItem] = useState<any | null>(null);
   const [createType, setCreateType] = useState<'Event' | 'Announcement' | 'Resource' | 'TeamMember' | null>(null);
 
@@ -175,6 +182,9 @@ export default function AdminDashboard() {
   });
   const [resourceForm, setResourceForm] = useState<any>({
     title: '', description: '', category: 'AWS Cloud', difficulty: 'Beginner', officialSource: '', url: '', status: 'Published'
+  });
+  const [opportunityForm, setOpportunityForm] = useState<any>({
+    title: '', organizationName: 'AWS Student Builder Group', organizationLogo: '', opportunityType: 'Leadership', location: 'Chandigarh University – Uttar Pradesh', workMode: 'Hybrid', shortDescription: '', description: '', responsibilities: '', requiredSkills: '', preferredSkills: '', eligibility: '', benefits: '', additionalInformation: '', applicationDeadline: '', status: 'Draft', published: false, internalApplications: true, applicationLink: '', maxApplications: ''
   });
   const [teamForm, setTeamForm] = useState<any>({
     name: '', role: '', bio: '', initials: '', status: 'Published'
@@ -355,6 +365,11 @@ export default function AdminDashboard() {
     } else if (activeTab === 'Resources') {
       const data = await apiCall({ action: 'get-resources' });
       if (Array.isArray(data)) setResources(data);
+    } else if (activeTab === 'Opportunities') {
+      const data = await apiCall({ action: 'get-careers' });
+      if (Array.isArray(data)) setOpportunities(data);
+      const apps = await apiCall({ action: 'get-career-applications-all' });
+      if (Array.isArray(apps)) setOpportunityApplications(apps);
     } else if (activeTab === 'Verification') {
       const data = await apiCall({ action: 'get-verifications' });
       if (Array.isArray(data)) setVerifications(data);
@@ -700,7 +715,7 @@ export default function AdminDashboard() {
         const data = await response.json();
         if (response.ok && data.success) {
           if (isEdit) {
-            setEditItem({ ...editItem, customCollabLogo: data.url });
+            setEditEvent({ ...editEvent, customCollabLogo: data.url });
           } else {
             setEventForm({ ...eventForm, customCollabLogo: data.url });
           }
@@ -732,7 +747,7 @@ export default function AdminDashboard() {
       }
     });
 
-    setEditItem({
+    setEditEvent({
       ...event,
       title: event.title || '',
       description: event.description || event.overview || '',
@@ -813,49 +828,49 @@ export default function AdminDashboard() {
 
   const handleUpdateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editItem) return;
+    if (!editEvent) return;
 
-    const validationError = validateEventForm(editItem);
+    const validationError = validateEventForm(editEvent);
     if (validationError) {
       setEventEditError(validationError);
       return;
     }
 
-    const collabs = (editItem.collaborations || []).filter((c: string) => c !== 'Other');
-    if ((editItem.collaborations || []).includes('Other') && editItem.customCollab) {
-      collabs.push(editItem.customCollab);
+    const collabs = (editEvent.collaborations || []).filter((c: string) => c !== 'Other');
+    if ((editEvent.collaborations || []).includes('Other') && editEvent.customCollab) {
+      collabs.push(editEvent.customCollab);
     }
-    const hasOther = (editItem.collaborations || []).includes('Other');
+    const hasOther = (editEvent.collaborations || []).includes('Other');
     const formatted = {
-      ...editItem,
-      id: editItem.id,
-      title: editItem.title.trim(),
-      description: editItem.description || editItem.overview || '',
-      overview: editItem.overview || editItem.description || '',
-      focus: editItem.focus || '',
-      date: editItem.date || '',
-      time: editItem.time || '',
-      endTime: editItem.endTime || '',
-      venue: editItem.venue || '',
-      fullVenueAddress: editItem.fullVenueAddress || '',
-      city: editItem.city || '',
-      format: editItem.format || editItem.eventFormat || '',
-      eventFormat: editItem.eventFormat || editItem.format || '',
-      status: editItem.status || 'Draft',
-      registrationStatus: editItem.registrationStatus || 'Not Open',
-      maxRegistrations: editItem.maxRegistrations ?? -1,
-      registrationDeadline: editItem.registrationDeadline || '',
-      aboutTheEvent: editItem.aboutTheEvent || editItem.description || '',
-      requirements: editItem.requirements || '',
-      additionalInfo: editItem.additionalInfo || '',
-      collaborationName: editItem.collaborationName || editItem.customCollab || '',
-      collaborationDescription: editItem.collaborationDescription || '',
-      collaborationWebsite: editItem.collaborationWebsite || '',
+      ...editEvent,
+      id: editEvent.id,
+      title: editEvent.title.trim(),
+      description: editEvent.description || editEvent.overview || '',
+      overview: editEvent.overview || editEvent.description || '',
+      focus: editEvent.focus || '',
+      date: editEvent.date || '',
+      time: editEvent.time || '',
+      endTime: editEvent.endTime || '',
+      venue: editEvent.venue || '',
+      fullVenueAddress: editEvent.fullVenueAddress || '',
+      city: editEvent.city || '',
+      format: editEvent.format || editEvent.eventFormat || '',
+      eventFormat: editEvent.eventFormat || editEvent.format || '',
+      status: editEvent.status || 'Draft',
+      registrationStatus: editEvent.registrationStatus || 'Not Open',
+      maxRegistrations: editEvent.maxRegistrations ?? -1,
+      registrationDeadline: editEvent.registrationDeadline || '',
+      aboutTheEvent: editEvent.aboutTheEvent || editEvent.description || '',
+      requirements: editEvent.requirements || '',
+      additionalInfo: editEvent.additionalInfo || '',
+      collaborationName: editEvent.collaborationName || editEvent.customCollab || '',
+      collaborationDescription: editEvent.collaborationDescription || '',
+      collaborationWebsite: editEvent.collaborationWebsite || '',
       collaborations: collabs,
-      customCollabLogo: hasOther ? editItem.customCollabLogo : '',
-      whatYouWillLearn: Array.isArray(editItem.whatYouWillLearn)
-        ? editItem.whatYouWillLearn
-        : (editItem.whatYouWillLearn || '').split('\n').map((l: string) => l.trim()).filter(Boolean)
+      customCollabLogo: hasOther ? editEvent.customCollabLogo : '',
+      whatYouWillLearn: Array.isArray(editEvent.whatYouWillLearn)
+        ? editEvent.whatYouWillLearn
+        : (editEvent.whatYouWillLearn || '').split('\n').map((l: string) => l.trim()).filter(Boolean)
     };
     delete formatted.customCollab;
     setIsSavingEvent(true);
@@ -869,7 +884,7 @@ export default function AdminDashboard() {
         setActionSuccess('Event updated successfully.');
         setTimeout(() => setActionSuccess(''), 3000);
         await fetchTabItems();
-        setEditItem(null);
+        setEditEvent(null);
       } else {
         setEventEditError(res?.error || 'Unable to update event. Please try again.');
       }
@@ -922,6 +937,73 @@ export default function AdminDashboard() {
     if (res && res.success) {
       fetchTabItems();
       setEditItem(null);
+    }
+  };
+
+  const handleCreateOpportunity = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      ...opportunityForm,
+      published: Boolean(opportunityForm.published),
+      internalApplications: Boolean(opportunityForm.internalApplications),
+      applicationDeadline: opportunityForm.applicationDeadline || '',
+      maxApplications: opportunityForm.maxApplications === '' ? null : Number(opportunityForm.maxApplications) || null,
+      status: opportunityForm.status || 'Draft'
+    };
+    const res = await apiCall({ action: 'create-career', career: payload });
+    if (res && res.success) {
+      fetchTabItems();
+      setOpportunityForm({
+        title: '', organizationName: 'AWS Student Builder Group', organizationLogo: '', opportunityType: 'Leadership', location: 'Chandigarh University – Uttar Pradesh', workMode: 'Hybrid', shortDescription: '', description: '', responsibilities: '', requiredSkills: '', preferredSkills: '', eligibility: '', benefits: '', additionalInformation: '', applicationDeadline: '', status: 'Draft', published: false, internalApplications: true, applicationLink: '', maxApplications: ''
+      });
+      setActionSuccess('Opportunity created successfully.');
+      setTimeout(() => setActionSuccess(''), 3000);
+    } else {
+      setActionError(res?.error || 'Failed to create opportunity.');
+    }
+  };
+
+  const handleUpdateOpportunity = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editOpportunity) return;
+    const payload = {
+      ...editOpportunity,
+      published: Boolean(editOpportunity.published),
+      internalApplications: Boolean(editOpportunity.internalApplications),
+      maxApplications: editOpportunity.maxApplications === '' || editOpportunity.maxApplications == null ? null : Number(editOpportunity.maxApplications) || null,
+      applicationDeadline: editOpportunity.applicationDeadline || ''
+    };
+    const res = await apiCall({ action: 'update-career', career: payload });
+    if (res && res.success) {
+      fetchTabItems();
+      setEditOpportunity(null);
+      setActionSuccess('Opportunity updated successfully.');
+      setTimeout(() => setActionSuccess(''), 3000);
+    } else {
+      setActionError(res?.error || 'Failed to update opportunity.');
+    }
+  };
+
+  const toggleOpportunityPublish = async (opportunity: any, nextPublished: boolean) => {
+    const res = await apiCall({ action: 'update-career', career: { ...opportunity, published: nextPublished, updatedAt: new Date().toISOString() } });
+    if (res && res.success) {
+      fetchTabItems();
+      setActionSuccess(`Opportunity ${nextPublished ? 'published' : 'unpublished'} successfully.`);
+      setTimeout(() => setActionSuccess(''), 3000);
+    } else {
+      setActionError(res?.error || 'Failed to update opportunity visibility.');
+    }
+  };
+
+  const deleteOpportunity = async (id: string) => {
+    if (!confirm('Delete this opportunity?')) return;
+    const res = await apiCall({ action: 'delete-career', id });
+    if (res && res.success) {
+      fetchTabItems();
+      setActionSuccess('Opportunity deleted successfully.');
+      setTimeout(() => setActionSuccess(''), 3000);
+    } else {
+      setActionError(res?.error || 'Failed to delete opportunity.');
     }
   };
 
@@ -1360,6 +1442,12 @@ export default function AdminDashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                   {!isSidebarCollapsed && <span>Resources</span>}
+                </button>
+                <button onClick={() => setActiveTab('Opportunities')} className={getNavClass('Opportunities')}>
+                  <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m10 0H4a2 2 0 00-2 2v7a2 2 0 002 2h16a2 2 0 002-2v-7a2 2 0 00-2-2z" />
+                  </svg>
+                  {!isSidebarCollapsed && <span>Opportunities</span>}
                 </button>
                 <button onClick={() => setActiveTab('Feedback')} className={getNavClass('Feedback')}>
                   <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2233,7 +2321,201 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* TAB 8: VERIFICATION REQUESTS */}
+          {/* TAB 8: OPPORTUNITIES */}
+          {activeTab === 'Opportunities' && (
+            <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-sm p-6 space-y-6">
+              <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
+                <div className="space-y-1">
+                  <h2 className="font-display font-extrabold text-lg text-[#111827]">Opportunities</h2>
+                  <p className="text-xs text-[#64748B] font-sans">Create, publish, and manage community opportunities for students.</p>
+                </div>
+                <button
+                  onClick={() => setEditOpportunity(null)}
+                  className="px-3.5 py-1.5 bg-[#FF9900] hover:bg-[#E08800] text-white text-xs font-bold rounded shadow-sm transition-colors cursor-pointer"
+                >
+                  + Add Opportunity
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-6">
+                <div className="space-y-4">
+                  <form onSubmit={editOpportunity ? handleUpdateOpportunity : handleCreateOpportunity} className="space-y-4 border border-[#E2E8F0] rounded-lg p-4 bg-slate-50">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-sans">
+                      <div className="space-y-1 md:col-span-2">
+                        <label className="font-bold text-slate-700 uppercase tracking-wider block">Role Title</label>
+                        <input
+                          value={editOpportunity ? editOpportunity.title : opportunityForm.title}
+                          onChange={(e) => editOpportunity ? setEditOpportunity({ ...editOpportunity, title: e.target.value }) : setOpportunityForm({ ...opportunityForm, title: e.target.value })}
+                          className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 uppercase tracking-wider block">Organization</label>
+                        <input
+                          value={editOpportunity ? editOpportunity.organizationName : opportunityForm.organizationName}
+                          onChange={(e) => editOpportunity ? setEditOpportunity({ ...editOpportunity, organizationName: e.target.value }) : setOpportunityForm({ ...opportunityForm, organizationName: e.target.value })}
+                          className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 uppercase tracking-wider block">Type</label>
+                        <select
+                          value={editOpportunity ? editOpportunity.opportunityType : opportunityForm.opportunityType}
+                          onChange={(e) => editOpportunity ? setEditOpportunity({ ...editOpportunity, opportunityType: e.target.value }) : setOpportunityForm({ ...opportunityForm, opportunityType: e.target.value })}
+                          className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                        >
+                          <option>Leadership</option>
+                          <option>Internship</option>
+                          <option>Volunteer</option>
+                          <option>Job</option>
+                          <option>Project</option>
+                          <option>Community</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 uppercase tracking-wider block">Location</label>
+                        <input
+                          value={editOpportunity ? editOpportunity.location : opportunityForm.location}
+                          onChange={(e) => editOpportunity ? setEditOpportunity({ ...editOpportunity, location: e.target.value }) : setOpportunityForm({ ...opportunityForm, location: e.target.value })}
+                          className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 uppercase tracking-wider block">Work Mode</label>
+                        <select
+                          value={editOpportunity ? editOpportunity.workMode : opportunityForm.workMode}
+                          onChange={(e) => editOpportunity ? setEditOpportunity({ ...editOpportunity, workMode: e.target.value }) : setOpportunityForm({ ...opportunityForm, workMode: e.target.value })}
+                          className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                        >
+                          <option>Hybrid</option>
+                          <option>Remote</option>
+                          <option>On-site</option>
+                          <option>Flexible</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 uppercase tracking-wider block">Application Deadline</label>
+                        <input
+                          type="date"
+                          value={editOpportunity ? (editOpportunity.applicationDeadline || '').slice(0,10) : (opportunityForm.applicationDeadline || '').slice(0,10)}
+                          onChange={(e) => editOpportunity ? setEditOpportunity({ ...editOpportunity, applicationDeadline: e.target.value }) : setOpportunityForm({ ...opportunityForm, applicationDeadline: e.target.value })}
+                          className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 uppercase tracking-wider block">Status</label>
+                        <select
+                          value={editOpportunity ? editOpportunity.status : opportunityForm.status}
+                          onChange={(e) => editOpportunity ? setEditOpportunity({ ...editOpportunity, status: e.target.value }) : setOpportunityForm({ ...opportunityForm, status: e.target.value })}
+                          className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                        >
+                          <option>Draft</option>
+                          <option>Open</option>
+                          <option>Closed</option>
+                          <option>Unpublished</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 uppercase tracking-wider block">Published</label>
+                        <select
+                          value={String(editOpportunity ? Boolean(editOpportunity.published) : Boolean(opportunityForm.published))}
+                          onChange={(e) => editOpportunity ? setEditOpportunity({ ...editOpportunity, published: e.target.value === 'true' }) : setOpportunityForm({ ...opportunityForm, published: e.target.value === 'true' })}
+                          className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                        >
+                          <option value="false">No</option>
+                          <option value="true">Yes</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <label className="font-bold text-slate-700 uppercase tracking-wider block">Short Description</label>
+                        <textarea
+                          rows={2}
+                          value={editOpportunity ? editOpportunity.shortDescription : opportunityForm.shortDescription}
+                          onChange={(e) => editOpportunity ? setEditOpportunity({ ...editOpportunity, shortDescription: e.target.value }) : setOpportunityForm({ ...opportunityForm, shortDescription: e.target.value })}
+                          className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                        />
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <label className="font-bold text-slate-700 uppercase tracking-wider block">Description</label>
+                        <textarea
+                          rows={4}
+                          value={editOpportunity ? editOpportunity.description : opportunityForm.description}
+                          onChange={(e) => editOpportunity ? setEditOpportunity({ ...editOpportunity, description: e.target.value }) : setOpportunityForm({ ...opportunityForm, description: e.target.value })}
+                          className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                        />
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <label className="font-bold text-slate-700 uppercase tracking-wider block">Responsibilities</label>
+                        <textarea
+                          rows={3}
+                          value={editOpportunity ? editOpportunity.responsibilities : opportunityForm.responsibilities}
+                          onChange={(e) => editOpportunity ? setEditOpportunity({ ...editOpportunity, responsibilities: e.target.value }) : setOpportunityForm({ ...opportunityForm, responsibilities: e.target.value })}
+                          className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                        />
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <label className="font-bold text-slate-700 uppercase tracking-wider block">Required Skills</label>
+                        <textarea
+                          rows={2}
+                          value={editOpportunity ? editOpportunity.requiredSkills : opportunityForm.requiredSkills}
+                          onChange={(e) => editOpportunity ? setEditOpportunity({ ...editOpportunity, requiredSkills: e.target.value }) : setOpportunityForm({ ...opportunityForm, requiredSkills: e.target.value })}
+                          className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                        />
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <label className="font-bold text-slate-700 uppercase tracking-wider block">Eligibility / Who Can Apply</label>
+                        <textarea
+                          rows={2}
+                          value={editOpportunity ? editOpportunity.eligibility : opportunityForm.eligibility}
+                          onChange={(e) => editOpportunity ? setEditOpportunity({ ...editOpportunity, eligibility: e.target.value }) : setOpportunityForm({ ...opportunityForm, eligibility: e.target.value })}
+                          className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <button type="submit" className="px-4 py-2 bg-[#FF9900] hover:bg-[#E08800] text-white text-xs font-bold rounded shadow-sm cursor-pointer transition-colors">
+                        {editOpportunity ? 'Update Opportunity' : 'Create Opportunity'}
+                      </button>
+                      {editOpportunity && (
+                        <button type="button" onClick={() => setEditOpportunity(null)} className="px-4 py-2 border border-[#E2E8F0] text-slate-700 text-xs font-bold rounded shadow-sm cursor-pointer transition-colors">
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                </div>
+
+                <div className="space-y-4 border border-[#E2E8F0] rounded-lg p-4 bg-slate-50">
+                  <h3 className="font-display font-extrabold text-sm text-[#111827]">Existing Opportunities</h3>
+                  <div className="space-y-3 max-h-[760px] overflow-y-auto pr-1">
+                    {opportunities.length === 0 ? (
+                      <div className="text-xs text-slate-500">No opportunities yet.</div>
+                    ) : opportunities.map((item: any) => (
+                      <div key={item.id} className="border border-[#E2E8F0] rounded bg-white p-3 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div>
+                            <p className="font-bold text-[#111827] text-xs">{item.title}</p>
+                            <p className="text-[10px] text-slate-500">{item.organizationName}</p>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${item.published ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                            {item.published ? 'Published' : 'Draft'}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-[10px]">
+                          <button onClick={() => setEditOpportunity(item)} className="text-brand-navy hover:text-[#FF9900] font-bold cursor-pointer">Edit</button>
+                          <button onClick={() => toggleOpportunityPublish(item, !Boolean(item.published))} className="text-emerald-600 hover:text-emerald-700 font-bold cursor-pointer">{item.published ? 'Unpublish' : 'Publish'}</button>
+                          <button onClick={() => deleteOpportunity(item.id)} className="text-red-500 hover:text-red-700 font-bold cursor-pointer">Delete</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 9: VERIFICATION REQUESTS */}
           {activeTab === 'Verification' && (
             <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-sm p-6 space-y-6">
               <div className="space-y-1">
@@ -3775,12 +4057,12 @@ export default function AdminDashboard() {
       )}
 
       {/* EDIT EVENT MODAL */}
-      {editItem && (
+      {editEvent && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm">
           <form onSubmit={handleUpdateEvent} className="bg-white rounded-lg border border-[#E2E8F0] shadow-2xl max-w-lg w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto font-sans text-xs">
             <div className="flex items-start justify-between border-b border-[#E2E8F0] pb-3">
               <h3 className="font-display font-bold text-sm text-[#111827]">Edit Event</h3>
-              <button type="button" onClick={() => setEditItem(null)} className="text-[#64748B] hover:text-[#111827] cursor-pointer">
+              <button type="button" onClick={() => setEditEvent(null)} className="text-[#64748B] hover:text-[#111827] cursor-pointer">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -3793,8 +4075,8 @@ export default function AdminDashboard() {
                 <input
                   type="text"
                   required
-                  value={editItem.title}
-                  onChange={(e) => setEditItem({ ...editItem, title: e.target.value })}
+                  value={editEvent.title}
+                  onChange={(e) => setEditEvent({ ...editEvent, title: e.target.value })}
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                 />
               </div>
@@ -3803,8 +4085,8 @@ export default function AdminDashboard() {
                 <div className="space-y-1">
                   <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Month</label>
                   <select
-                    value={editItem.month}
-                    onChange={(e) => setEditItem({ ...editItem, month: e.target.value })}
+                    value={editEvent.month}
+                      onChange={(e) => setEditEvent({ ...editEvent, month: e.target.value })}
                     className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none bg-white font-medium"
                   >
                     {['August', 'September', 'October', 'November', 'December', 'January', 'February', 'March', 'April', 'May', 'June', 'July'].map(m => (
@@ -3816,8 +4098,8 @@ export default function AdminDashboard() {
                   <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Format</label>
                   <input
                     type="text"
-                    value={editItem.format}
-                    onChange={(e) => setEditItem({ ...editItem, format: e.target.value })}
+                    value={editEvent.format}
+                    onChange={(e) => setEditEvent({ ...editEvent, format: e.target.value })}
                     className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                   />
                 </div>
@@ -3828,8 +4110,8 @@ export default function AdminDashboard() {
                 <textarea
                   rows={2}
                   required
-                  value={editItem.description || editItem.overview}
-                  onChange={(e) => setEditItem({ ...editItem, description: e.target.value, overview: e.target.value })}
+                  value={editEvent.description || editEvent.overview}
+                  onChange={(e) => setEditEvent({ ...editEvent, description: e.target.value, overview: e.target.value })}
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                 />
               </div>
@@ -3839,8 +4121,8 @@ export default function AdminDashboard() {
                 <input
                   type="text"
                   required
-                  value={editItem.focus}
-                  onChange={(e) => setEditItem({ ...editItem, focus: e.target.value })}
+                  value={editEvent.focus}
+                  onChange={(e) => setEditEvent({ ...editEvent, focus: e.target.value })}
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                 />
               </div>
@@ -3850,8 +4132,8 @@ export default function AdminDashboard() {
                 <input
                   type="text"
                   required
-                  value={editItem.outcome}
-                  onChange={(e) => setEditItem({ ...editItem, outcome: e.target.value })}
+                  value={editEvent.outcome}
+                  onChange={(e) => setEditEvent({ ...editEvent, outcome: e.target.value })}
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                 />
               </div>
@@ -3860,8 +4142,8 @@ export default function AdminDashboard() {
                 <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">What You Will Learn (One per line)</label>
                 <textarea
                   rows={3}
-                  value={Array.isArray(editItem.whatYouWillLearn) ? editItem.whatYouWillLearn.join('\n') : editItem.whatYouWillLearn}
-                  onChange={(e) => setEditItem({ ...editItem, whatYouWillLearn: e.target.value })}
+                  value={Array.isArray(editEvent.whatYouWillLearn) ? editEvent.whatYouWillLearn.join('\n') : editEvent.whatYouWillLearn}
+                  onChange={(e) => setEditEvent({ ...editEvent, whatYouWillLearn: e.target.value })}
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                 />
               </div>
@@ -3871,8 +4153,8 @@ export default function AdminDashboard() {
                   <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Date</label>
                   <input
                     type="date"
-                    value={editItem.date || ''}
-                    onChange={(e) => setEditItem({ ...editItem, date: e.target.value })}
+                    value={editEvent.date || ''}
+                    onChange={(e) => setEditEvent({ ...editEvent, date: e.target.value })}
                     className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                   />
                 </div>
@@ -3880,8 +4162,8 @@ export default function AdminDashboard() {
                   <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Start Time</label>
                   <input
                     type="text"
-                    value={editItem.time || ''}
-                    onChange={(e) => setEditItem({ ...editItem, time: e.target.value })}
+                    value={editEvent.time || ''}
+                    onChange={(e) => setEditEvent({ ...editEvent, time: e.target.value })}
                     placeholder="10:00 AM"
                     className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                   />
@@ -3893,8 +4175,8 @@ export default function AdminDashboard() {
                   <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">End Time</label>
                   <input
                     type="text"
-                    value={editItem.endTime || ''}
-                    onChange={(e) => setEditItem({ ...editItem, endTime: e.target.value })}
+                    value={editEvent.endTime || ''}
+                    onChange={(e) => setEditEvent({ ...editEvent, endTime: e.target.value })}
                     placeholder="1:00 PM"
                     className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                   />
@@ -3903,8 +4185,8 @@ export default function AdminDashboard() {
                   <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">City / Location</label>
                   <input
                     type="text"
-                    value={editItem.city || ''}
-                    onChange={(e) => setEditItem({ ...editItem, city: e.target.value })}
+                    value={editEvent.city || ''}
+                    onChange={(e) => setEditEvent({ ...editEvent, city: e.target.value })}
                     className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                   />
                 </div>
@@ -3914,18 +4196,18 @@ export default function AdminDashboard() {
                 <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Venue</label>
                 <input
                   type="text"
-                  value={editItem.venue || ''}
-                  onChange={(e) => setEditItem({ ...editItem, venue: e.target.value })}
+                  value={editEvent.venue || ''}
+                  onChange={(e) => setEditEvent({ ...editEvent, venue: e.target.value })}
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                 />
               </div>
 
-              <div className="space-y-1">
+                <div className="space-y-1">
                 <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Full Venue Address</label>
                 <input
                   type="text"
-                  value={editItem.fullVenueAddress || ''}
-                  onChange={(e) => setEditItem({ ...editItem, fullVenueAddress: e.target.value })}
+                  value={editEvent?.fullVenueAddress || ''}
+                  onChange={(e) => setEditEvent({ ...editEvent, fullVenueAddress: e.target.value })}
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                 />
               </div>
@@ -3934,8 +4216,8 @@ export default function AdminDashboard() {
                 <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">About the Event</label>
                 <textarea
                   rows={3}
-                  value={editItem.aboutTheEvent || editItem.description || ''}
-                  onChange={(e) => setEditItem({ ...editItem, aboutTheEvent: e.target.value, description: e.target.value, overview: e.target.value })}
+                  value={editEvent?.aboutTheEvent || editEvent?.description || ''}
+                  onChange={(e) => setEditEvent({ ...editEvent, aboutTheEvent: e.target.value, description: e.target.value, overview: e.target.value })}
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                 />
               </div>
@@ -3944,8 +4226,8 @@ export default function AdminDashboard() {
                 <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Requirements / Eligibility</label>
                 <textarea
                   rows={2}
-                  value={editItem.requirements || ''}
-                  onChange={(e) => setEditItem({ ...editItem, requirements: e.target.value })}
+                  value={editEvent?.requirements || ''}
+                  onChange={(e) => setEditEvent({ ...editEvent, requirements: e.target.value })}
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                 />
               </div>
@@ -3954,8 +4236,8 @@ export default function AdminDashboard() {
                 <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Additional Event Information</label>
                 <textarea
                   rows={2}
-                  value={editItem.additionalInfo || ''}
-                  onChange={(e) => setEditItem({ ...editItem, additionalInfo: e.target.value })}
+                  value={editEvent?.additionalInfo || ''}
+                  onChange={(e) => setEditEvent({ ...editEvent, additionalInfo: e.target.value })}
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                 />
               </div>
@@ -3964,8 +4246,8 @@ export default function AdminDashboard() {
                 <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Collaborating Organization</label>
                 <input
                   type="text"
-                  value={editItem.collaborationName || editItem.customCollab || ''}
-                  onChange={(e) => setEditItem({ ...editItem, collaborationName: e.target.value, customCollab: e.target.value })}
+                  value={editEvent?.collaborationName || editEvent?.customCollab || ''}
+                  onChange={(e) => setEditEvent({ ...editEvent, collaborationName: e.target.value, customCollab: e.target.value })}
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                 />
               </div>
@@ -3974,8 +4256,8 @@ export default function AdminDashboard() {
                 <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Collaboration Details</label>
                 <textarea
                   rows={2}
-                  value={editItem.collaborationDescription || ''}
-                  onChange={(e) => setEditItem({ ...editItem, collaborationDescription: e.target.value })}
+                  value={editEvent?.collaborationDescription || ''}
+                  onChange={(e) => setEditEvent({ ...editEvent, collaborationDescription: e.target.value })}
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                 />
               </div>
@@ -3984,8 +4266,8 @@ export default function AdminDashboard() {
                 <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Collaboration Website / Link</label>
                 <input
                   type="url"
-                  value={editItem.collaborationWebsite || ''}
-                  onChange={(e) => setEditItem({ ...editItem, collaborationWebsite: e.target.value })}
+                  value={editEvent?.collaborationWebsite || ''}
+                  onChange={(e) => setEditEvent({ ...editEvent, collaborationWebsite: e.target.value })}
                   placeholder="https://example.com"
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                 />
@@ -3995,8 +4277,8 @@ export default function AdminDashboard() {
                 <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Registration Deadline</label>
                 <input
                   type="date"
-                  value={editItem.registrationDeadline || ''}
-                  onChange={(e) => setEditItem({ ...editItem, registrationDeadline: e.target.value })}
+                  value={editEvent?.registrationDeadline || ''}
+                  onChange={(e) => setEditEvent({ ...editEvent, registrationDeadline: e.target.value })}
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                 />
               </div>
@@ -4005,8 +4287,8 @@ export default function AdminDashboard() {
                 <div className="space-y-1">
                   <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Event Status</label>
                   <select
-                    value={editItem.status || 'Draft'}
-                    onChange={(e) => setEditItem({ ...editItem, status: e.target.value })}
+                    value={editEvent?.status || 'Draft'}
+                      onChange={(e) => setEditEvent({ ...editEvent, status: e.target.value })}
                     className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none bg-white font-medium"
                   >
                     <option value="Draft">Draft</option>
@@ -4020,8 +4302,8 @@ export default function AdminDashboard() {
                 <div className="space-y-1">
                   <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Registration Status</label>
                   <select
-                    value={editItem.registrationStatus || 'Not Open'}
-                    onChange={(e) => setEditItem({ ...editItem, registrationStatus: e.target.value })}
+                    value={editEvent?.registrationStatus || 'Not Open'}
+                    onChange={(e) => setEditEvent({ ...editEvent, registrationStatus: e.target.value })}
                     className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none bg-white font-medium"
                   >
                     <option value="Not Open">Not Open</option>
@@ -4034,8 +4316,8 @@ export default function AdminDashboard() {
                   <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Max Registrations Limit</label>
                   <input
                     type="number"
-                    value={editItem.maxRegistrations || -1}
-                    onChange={(e) => setEditItem({ ...editItem, maxRegistrations: parseInt(e.target.value) || -1 })}
+                    value={editEvent?.maxRegistrations || -1}
+                    onChange={(e) => setEditEvent({ ...editEvent, maxRegistrations: parseInt(e.target.value) || -1 })}
                     className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none font-medium"
                   />
                 </div>
@@ -4045,7 +4327,7 @@ export default function AdminDashboard() {
                 <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Event Collaboration</label>
                 <div className="flex flex-wrap gap-4 mt-2">
                   {['GitHub', 'DataCamp', 'AI/ML Club', 'Other'].map(org => {
-                    const current = editItem.collaborations || [];
+                    const current = editEvent?.collaborations || [];
                     const isChecked = current.includes(org);
                     return (
                       <label key={org} className="inline-flex items-center space-x-2 font-medium cursor-pointer">
@@ -4054,27 +4336,27 @@ export default function AdminDashboard() {
                           checked={isChecked}
                           onChange={() => {
                             const updated = isChecked ? current.filter((c: string) => c !== org) : [...current, org];
-                            setEditItem({ ...editItem, collaborations: updated });
+                            setEditEvent({ ...editEvent, collaborations: updated });
                           }}
                           className="rounded text-aws-orange focus:ring-aws-orange h-3.5 w-3.5 border-slate-350"
                         />
                         <span className="inline-flex items-center space-x-1.5">
-                          {renderCollabLogo(org, org === 'Other' ? editItem.customCollabLogo : undefined, "h-3.5 w-3.5 object-contain flex-shrink-0")}
+                          {renderCollabLogo(org, org === 'Other' ? editEvent?.customCollabLogo : undefined, "h-3.5 w-3.5 object-contain flex-shrink-0")}
                           <span>{org}</span>
                         </span>
                       </label>
                     );
                   })}
                 </div>
-                {(editItem.collaborations || []).includes('Other') && (
+                {(editEvent?.collaborations || []).includes('Other') && (
                   <div className="mt-3 space-y-2.5">
                     <div className="space-y-1">
                       <label className="block font-bold text-slate-600 text-[9px] uppercase tracking-wider">Organization / Company Name</label>
                       <input
                         type="text"
                         required
-                        value={editItem.customCollab || ''}
-                        onChange={(e) => setEditItem({ ...editItem, customCollab: e.target.value })}
+                        value={editEvent?.customCollab || ''}
+                        onChange={(e) => setEditEvent({ ...editEvent, customCollab: e.target.value })}
                         placeholder="Enter custom organization name"
                         className="w-full px-3 py-1.5 border border-[#E2E8F0] rounded focus:outline-none font-medium"
                       />
@@ -4092,8 +4374,8 @@ export default function AdminDashboard() {
                           className="w-full text-[10px] text-slate-550 file:mr-3 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-aws-orange/10 file:text-aws-orange hover:file:bg-aws-orange/20 cursor-pointer"
                         />
                         {isUploading && <span className="text-[10px] text-slate-400 animate-pulse font-medium">Uploading...</span>}
-                        {editItem.customCollabLogo && (
-                          <img src={editItem.customCollabLogo} alt="Preview" className="h-6 w-auto max-h-6 object-contain rounded border border-slate-100 bg-white" />
+                        {editEvent?.customCollabLogo && (
+                          <img src={editEvent.customCollabLogo} alt="Preview" className="h-6 w-auto max-h-6 object-contain rounded border border-slate-100 bg-white" />
                         )}
                       </div>
                     </div>
@@ -4109,11 +4391,159 @@ export default function AdminDashboard() {
             )}
 
             <div className="pt-4 border-t border-[#E2E8F0] flex justify-end space-x-3">
-              <button type="button" onClick={() => setEditItem(null)} className="px-4 py-1.5 bg-[#F6F8FA] border border-[#E2E8F0] rounded font-semibold cursor-pointer hover:bg-slate-100">
+              <button type="button" onClick={() => setEditEvent(null)} className="px-4 py-1.5 bg-[#F6F8FA] border border-[#E2E8F0] rounded font-semibold cursor-pointer hover:bg-slate-100">
                 Cancel
               </button>
               <button type="submit" disabled={isSavingEvent} className="px-4 py-1.5 bg-[#FF9900] hover:bg-[#E08800] text-white font-bold rounded cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
                 {isSavingEvent ? 'Saving...' : 'Update'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* EDIT OPPORTUNITY MODAL */}
+      {editOpportunity && (
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm">
+          <form onSubmit={handleUpdateOpportunity} className="bg-white rounded-lg border border-[#E2E8F0] shadow-2xl max-w-lg w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto font-sans text-xs">
+            <div className="flex items-start justify-between border-b border-[#E2E8F0] pb-3">
+              <h3 className="font-display font-bold text-sm text-[#111827]">Edit Opportunity</h3>
+              <button type="button" onClick={() => setEditOpportunity(null)} className="text-[#64748B] hover:text-[#111827] cursor-pointer">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-3 font-sans">
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Role Title</label>
+                <input
+                  type="text"
+                  required
+                  value={editOpportunity.title}
+                  onChange={(e) => setEditOpportunity({ ...editOpportunity, title: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Organization</label>
+                  <input
+                    type="text"
+                    value={editOpportunity.organizationName || ''}
+                    onChange={(e) => setEditOpportunity({ ...editOpportunity, organizationName: e.target.value })}
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Type</label>
+                  <select
+                    value={editOpportunity.opportunityType || 'Leadership'}
+                    onChange={(e) => setEditOpportunity({ ...editOpportunity, opportunityType: e.target.value })}
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none bg-white font-medium"
+                  >
+                    {['Leadership','Internship','Volunteer','Job','Project','Community'].map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Location</label>
+                  <input
+                    type="text"
+                    value={editOpportunity.location || ''}
+                    onChange={(e) => setEditOpportunity({ ...editOpportunity, location: e.target.value })}
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Work Mode</label>
+                  <select
+                    value={editOpportunity.workMode || 'Hybrid'}
+                    onChange={(e) => setEditOpportunity({ ...editOpportunity, workMode: e.target.value })}
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none bg-white font-medium"
+                  >
+                    {['Hybrid','Remote','On-site','Flexible'].map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Application Deadline</label>
+                <input
+                  type="date"
+                  value={(editOpportunity.applicationDeadline || '').slice(0,10)}
+                  onChange={(e) => setEditOpportunity({ ...editOpportunity, applicationDeadline: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Status</label>
+                  <select
+                    value={editOpportunity.status || 'Draft'}
+                    onChange={(e) => setEditOpportunity({ ...editOpportunity, status: e.target.value })}
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none bg-white font-medium"
+                  >
+                    <option value="Draft">Draft</option>
+                    <option value="Open">Open</option>
+                    <option value="Closed">Closed</option>
+                    <option value="Unpublished">Unpublished</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Published</label>
+                  <select
+                    value={String(Boolean(editOpportunity.published))}
+                    onChange={(e) => setEditOpportunity({ ...editOpportunity, published: e.target.value === 'true' })}
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none bg-white font-medium"
+                  >
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Short Description</label>
+                <textarea rows={2} value={editOpportunity.shortDescription || ''} onChange={(e) => setEditOpportunity({ ...editOpportunity, shortDescription: e.target.value })} className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none" />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Description</label>
+                <textarea rows={4} value={editOpportunity.description || ''} onChange={(e) => setEditOpportunity({ ...editOpportunity, description: e.target.value })} className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none" />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Responsibilities</label>
+                  <textarea rows={3} value={editOpportunity.responsibilities || ''} onChange={(e) => setEditOpportunity({ ...editOpportunity, responsibilities: e.target.value })} className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none" />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Required Skills</label>
+                  <textarea rows={2} value={editOpportunity.requiredSkills || ''} onChange={(e) => setEditOpportunity({ ...editOpportunity, requiredSkills: e.target.value })} className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none" />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Eligibility / Who Can Apply</label>
+                <textarea rows={2} value={editOpportunity.eligibility || ''} onChange={(e) => setEditOpportunity({ ...editOpportunity, eligibility: e.target.value })} className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none" />
+              </div>
+
+            </div>
+
+            <div className="pt-4 border-t border-[#E2E8F0] flex justify-end space-x-3">
+              <button type="button" onClick={() => setEditOpportunity(null)} className="px-4 py-1.5 bg-[#F6F8FA] border border-[#E2E8F0] rounded font-semibold cursor-pointer hover:bg-slate-100">
+                Cancel
+              </button>
+              <button type="submit" className="px-4 py-1.5 bg-[#FF9900] hover:bg-[#E08800] text-white font-bold rounded cursor-pointer transition-colors">
+                Update Opportunity
               </button>
             </div>
           </form>

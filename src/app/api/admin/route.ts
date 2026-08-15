@@ -409,7 +409,65 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    // 7. Verification Requests Management
+    // 7. Careers Management
+    if (action === 'get-careers') {
+      return NextResponse.json(await db.careers.getAll());
+    }
+    if (action === 'create-career') {
+      const { career } = body;
+      const careers = await db.careers.getAll();
+      const newCareer = {
+        ...career,
+        id: `career-${Date.now()}`,
+        slug: career.slug || `career-${Date.now()}`,
+        published: Boolean(career.published),
+        internalApplications: Boolean(career.internalApplications),
+        status: career.status || 'Draft',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      careers.unshift(newCareer);
+      await db.careers.saveAll(careers);
+      return NextResponse.json({ success: true, career: newCareer });
+    }
+    if (action === 'update-career') {
+      const { career } = body;
+      if (!career || !career.id) {
+        return NextResponse.json({ error: 'Career ID is required.' }, { status: 400 });
+      }
+      const careers = await db.careers.getAll();
+      const idx = careers.findIndex((c: any) => c.id === career.id);
+      if (idx === -1) {
+        return NextResponse.json({ error: 'Career not found.' }, { status: 404 });
+      }
+      careers[idx] = { ...careers[idx], ...career, updatedAt: new Date().toISOString() };
+      await db.careers.saveAll(careers);
+      return NextResponse.json({ success: true, career: careers[idx] });
+    }
+    if (action === 'delete-career') {
+      const { id } = body;
+      const careers = await db.careers.getAll();
+      const filtered = careers.filter((c: any) => c.id !== id);
+      await db.careers.saveAll(filtered);
+      return NextResponse.json({ success: true });
+    }
+    if (action === 'get-career-applications') {
+      const { opportunityId } = body;
+      if (!opportunityId) {
+        return NextResponse.json({ error: 'Opportunity ID is required.' }, { status: 400 });
+      }
+      return NextResponse.json(await db.careerApplications.getByOpportunityId(opportunityId));
+    }
+    if (action === 'get-career-applications-all') {
+      return NextResponse.json(await db.careerApplications.getAll());
+    }
+    if (action === 'update-career-application') {
+      const { id, status, adminNotes } = body;
+      await db.careerApplications.updateOne(id, { status, adminNotes });
+      return NextResponse.json({ success: true });
+    }
+
+    // 8. Verification Requests Management
     if (action === 'get-verifications') {
       return NextResponse.json(await db.verificationRequests.getAll());
     }

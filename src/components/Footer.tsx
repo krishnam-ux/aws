@@ -86,6 +86,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/opportunities" className="hover:text-aws-orange transition-colors">
+                  Opportunities
+                </Link>
+              </li>
+              <li>
                 <Link href="/leadership" className="hover:text-aws-orange transition-colors">
                   Leadership
                 </Link>

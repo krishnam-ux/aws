@@ -89,6 +89,7 @@ export const siteConfig = {
     { label: 'About', href: '/about' },
     { label: 'Activities', href: '/activities' },
     { label: 'Events', href: '/events' },
+    { label: 'Opportunities', href: '/opportunities' },
     { label: 'Resources', href: '/resources' },
     { label: 'Verification', href: '/verification' },
     { label: 'Leadership', href: '/leadership' },
@@ -101,6 +102,7 @@ export const siteConfig = {
   footerLinks: [
     { label: 'About Us', href: '/about' },
     { label: 'Events', href: '/events' },
+    { label: 'Opportunities', href: '/opportunities' },
     { label: 'Resources', href: '/resources' },
     { label: 'Verification', href: '/verification' },
     { label: 'Leadership', href: '/leadership' },

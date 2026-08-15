@@ -134,6 +134,87 @@ async function ensureFeedbackTable() {
   }
 }
 
+async function ensureCareersTable() {
+  if (!sql) return;
+  try {
+    await ensurePostgresTable();
+    await sql`
+      CREATE TABLE IF NOT EXISTS careers (
+        id VARCHAR(255) PRIMARY KEY,
+        slug VARCHAR(255) NOT NULL UNIQUE,
+        title VARCHAR(255) NOT NULL,
+        organization_name VARCHAR(255) NOT NULL,
+        organization_logo TEXT,
+        opportunity_type VARCHAR(80) NOT NULL,
+        location VARCHAR(255) NOT NULL,
+        work_mode VARCHAR(50) NOT NULL,
+        short_description TEXT NOT NULL,
+        description TEXT NOT NULL,
+        responsibilities TEXT,
+        required_skills TEXT,
+        preferred_skills TEXT,
+        eligibility TEXT,
+        benefits TEXT,
+        additional_information TEXT,
+        application_deadline TIMESTAMP WITH TIME ZONE,
+        status VARCHAR(50) NOT NULL DEFAULT 'Draft',
+        published BOOLEAN NOT NULL DEFAULT false,
+        internal_applications BOOLEAN NOT NULL DEFAULT true,
+        application_link TEXT,
+        max_applications INTEGER,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_careers_slug ON careers(slug)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_careers_status ON careers(status)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_careers_published ON careers(published)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_careers_deadline ON careers(application_deadline)`;
+  } catch (err) {
+    console.error('Failed to ensure careers table exists in PostgreSQL:', err);
+  }
+}
+
+async function ensureCareerApplicationsTable() {
+  if (!sql) return;
+  try {
+    await ensurePostgresTable();
+    await sql`
+      CREATE TABLE IF NOT EXISTS career_applications (
+        id VARCHAR(255) PRIMARY KEY,
+        opportunity_id VARCHAR(255) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(255),
+        university VARCHAR(255),
+        program VARCHAR(255),
+        graduation_year VARCHAR(50),
+        student_id VARCHAR(255),
+        resume_url TEXT,
+        linkedin VARCHAR(255),
+        github VARCHAR(255),
+        portfolio VARCHAR(255),
+        skills TEXT,
+        experience TEXT,
+        motivation TEXT,
+        cover_letter TEXT,
+        additional_information TEXT,
+        consent BOOLEAN NOT NULL DEFAULT false,
+        status VARCHAR(50) NOT NULL DEFAULT 'New',
+        admin_notes TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_career_applications_opportunity_id ON career_applications(opportunity_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_career_applications_email ON career_applications(email)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_career_applications_status ON career_applications(status)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_career_applications_created_at ON career_applications(created_at)`;
+  } catch (err) {
+    console.error('Failed to ensure career applications table exists in PostgreSQL:', err);
+  }
+}
+
 async function migrateRegistrationsToPostgres() {
   if (!sql) return;
   try {
@@ -553,6 +634,35 @@ const DEFAULT_EVENTS = [
     image: '',
     registrationStatus: 'Open',
     maxRegistrations: -1
+  }
+];
+
+const DEFAULT_OPPORTUNITIES = [
+  {
+    id: 'opp-core-members',
+    slug: 'founding-core-members-aws-student-builder-group',
+    title: 'Founding Core Members — AWS Student Builder Group',
+    organizationName: 'AWS Student Builder Group',
+    organizationLogo: '',
+    opportunityType: 'Leadership',
+    location: 'Chandigarh University – Uttar Pradesh',
+    workMode: 'Hybrid',
+    shortDescription: 'Students who want to contribute to and help build the campus cloud and technology community can apply to become founding core members.',
+    description: 'Due to an overwhelming number of requests from students who missed the initial deadline, the application opportunity for Founding Core Members of the AWS Student Builder Group is being reopened. Encourage students who want to contribute to and help build the campus cloud and technology community to apply.',
+    responsibilities: 'Support event planning and execution\nCoordinate student outreach and onboarding\nHelp build community initiatives and collaboration opportunities\nAssist with technical workshops and volunteer operations',
+    requiredSkills: 'Leadership potential\nCommunication and teamwork\nInterest in cloud, AI, and student community building\nWillingness to contribute time and ideas',
+    preferredSkills: 'Event coordination\nDesign, content, or technical support\nPublic speaking and community engagement',
+    eligibility: 'Open to current students of Chandigarh University – Uttar Pradesh\nStrong interest in cloud, technology, and community building\nMust be willing to contribute actively',
+    benefits: 'Leadership experience\nCommunity-building exposure\nNetworking and skill development\nOpportunity to shape the AWS Student Builder Group',
+    additionalInformation: 'This opportunity is designed for students eager to contribute to a growing student-led technology community. Applications are open for a limited time and will be reviewed by the organizing team.',
+    applicationDeadline: '2026-08-25T23:59:59.000Z',
+    status: 'Open',
+    published: true,
+    internalApplications: true,
+    applicationLink: '',
+    maxApplications: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   }
 ];
 
@@ -1087,6 +1197,266 @@ export const db = {
         }
       }
       await writeJsonFile('feedback.json', data);
+    }
+  },
+  careers: {
+    getAll: async (): Promise<any[]> => {
+      if (process.env.DATABASE_URL && !sql) {
+        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      }
+      if (sql) {
+        await ensureCareersTable();
+        const rows = await sql`SELECT * FROM careers ORDER BY created_at DESC`;
+        const data = rows.map((r: any) => ({
+          id: r.id,
+          slug: r.slug,
+          title: r.title,
+          organizationName: r.organization_name,
+          organizationLogo: r.organization_logo || '',
+          opportunityType: r.opportunity_type,
+          location: r.location,
+          workMode: r.work_mode,
+          shortDescription: r.short_description,
+          description: r.description,
+          responsibilities: r.responsibilities || '',
+          requiredSkills: r.required_skills || '',
+          preferredSkills: r.preferred_skills || '',
+          eligibility: r.eligibility || '',
+          benefits: r.benefits || '',
+          additionalInformation: r.additional_information || '',
+          applicationDeadline: r.application_deadline ? new Date(r.application_deadline).toISOString() : '',
+          status: r.status || 'Draft',
+          published: Boolean(r.published),
+          internalApplications: Boolean(r.internal_applications),
+          applicationLink: r.application_link || '',
+          maxApplications: r.max_applications ?? null,
+          createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+          updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString()
+        }));
+        if (data.length === 0) {
+          await db.careers.saveAll(DEFAULT_OPPORTUNITIES);
+          return DEFAULT_OPPORTUNITIES;
+        }
+        return data;
+      }
+      const data = await readJsonFile<any[]>('careers.json', DEFAULT_OPPORTUNITIES);
+      if (data.length === 0) {
+        await writeJsonFile('careers.json', DEFAULT_OPPORTUNITIES);
+        return DEFAULT_OPPORTUNITIES;
+      }
+      return data;
+    },
+    getBySlug: async (slug: string): Promise<any | null> => {
+      const careers = await db.careers.getAll();
+      return careers.find((career: any) => career.slug === slug) || null;
+    },
+    insertOne: async (career: any): Promise<void> => {
+      if (process.env.DATABASE_URL && !sql) {
+        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      }
+      if (sql) {
+        await ensureCareersTable();
+        await sql`
+          INSERT INTO careers (
+            id, slug, title, organization_name, organization_logo, opportunity_type, location, work_mode,
+            short_description, description, responsibilities, required_skills, preferred_skills,
+            eligibility, benefits, additional_information, application_deadline, status, published,
+            internal_applications, application_link, max_applications, created_at, updated_at
+          ) VALUES (
+            ${career.id}, ${career.slug}, ${career.title}, ${career.organizationName}, ${career.organizationLogo || ''}, ${career.opportunityType}, ${career.location}, ${career.workMode},
+            ${career.shortDescription}, ${career.description}, ${career.responsibilities || ''}, ${career.requiredSkills || ''}, ${career.preferredSkills || ''},
+            ${career.eligibility || ''}, ${career.benefits || ''}, ${career.additionalInformation || ''}, ${career.applicationDeadline || null}, ${career.status || 'Draft'}, ${Boolean(career.published)},
+            ${Boolean(career.internalApplications)}, ${career.applicationLink || ''}, ${career.maxApplications ?? null}, ${career.createdAt || new Date().toISOString()}, ${career.updatedAt || new Date().toISOString()}
+          )
+        `;
+        return;
+      }
+      const data = await readJsonFile<any[]>('careers.json', []);
+      data.unshift(career);
+      await writeJsonFile('careers.json', data);
+    },
+    updateOne: async (id: string, fields: Partial<any>): Promise<void> => {
+      if (process.env.DATABASE_URL && !sql) {
+        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      }
+      if (sql) {
+        await ensureCareersTable();
+        await sql`
+          UPDATE careers
+          SET
+            slug = ${fields.slug !== undefined ? fields.slug : sql`slug`},
+            title = ${fields.title !== undefined ? fields.title : sql`title`},
+            organization_name = ${fields.organizationName !== undefined ? fields.organizationName : sql`organization_name`},
+            organization_logo = ${fields.organizationLogo !== undefined ? (fields.organizationLogo || '') : sql`organization_logo`},
+            opportunity_type = ${fields.opportunityType !== undefined ? fields.opportunityType : sql`opportunity_type`},
+            location = ${fields.location !== undefined ? fields.location : sql`location`},
+            work_mode = ${fields.workMode !== undefined ? fields.workMode : sql`work_mode`},
+            short_description = ${fields.shortDescription !== undefined ? fields.shortDescription : sql`short_description`},
+            description = ${fields.description !== undefined ? fields.description : sql`description`},
+            responsibilities = ${fields.responsibilities !== undefined ? fields.responsibilities : sql`responsibilities`},
+            required_skills = ${fields.requiredSkills !== undefined ? fields.requiredSkills : sql`required_skills`},
+            preferred_skills = ${fields.preferredSkills !== undefined ? fields.preferredSkills : sql`preferred_skills`},
+            eligibility = ${fields.eligibility !== undefined ? fields.eligibility : sql`eligibility`},
+            benefits = ${fields.benefits !== undefined ? fields.benefits : sql`benefits`},
+            additional_information = ${fields.additionalInformation !== undefined ? fields.additionalInformation : sql`additional_information`},
+            application_deadline = ${fields.applicationDeadline !== undefined ? (fields.applicationDeadline || null) : sql`application_deadline`},
+            status = ${fields.status !== undefined ? fields.status : sql`status`},
+            published = ${fields.published !== undefined ? Boolean(fields.published) : sql`published`},
+            internal_applications = ${fields.internalApplications !== undefined ? Boolean(fields.internalApplications) : sql`internal_applications`},
+            application_link = ${fields.applicationLink !== undefined ? (fields.applicationLink || '') : sql`application_link`},
+            max_applications = ${fields.maxApplications !== undefined ? (fields.maxApplications ?? null) : sql`max_applications`},
+            updated_at = ${new Date().toISOString()}
+          WHERE id = ${id}
+        `;
+        return;
+      }
+      const data = await readJsonFile<any[]>('careers.json', []);
+      const idx = data.findIndex((career: any) => career.id === id);
+      if (idx !== -1) {
+        data[idx] = { ...data[idx], ...fields, updatedAt: new Date().toISOString() };
+        await writeJsonFile('careers.json', data);
+      }
+    },
+    deleteOne: async (id: string): Promise<void> => {
+      if (process.env.DATABASE_URL && !sql) {
+        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      }
+      if (sql) {
+        await ensureCareersTable();
+        await sql`DELETE FROM careers WHERE id = ${id}`;
+        return;
+      }
+      let data = await readJsonFile<any[]>('careers.json', []);
+      data = data.filter((career: any) => career.id !== id);
+      await writeJsonFile('careers.json', data);
+    },
+    saveAll: async (data: any[]): Promise<void> => {
+      if (process.env.DATABASE_URL && !sql) {
+        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      }
+      if (sql) {
+        await ensureCareersTable();
+        await sql`DELETE FROM careers`;
+        for (const career of data) {
+          await db.careers.insertOne(career);
+        }
+        return;
+      }
+      await writeJsonFile('careers.json', data);
+    }
+  },
+  careerApplications: {
+    getAll: async (): Promise<any[]> => {
+      if (process.env.DATABASE_URL && !sql) {
+        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      }
+      if (sql) {
+        await ensureCareerApplicationsTable();
+        const rows = await sql`SELECT * FROM career_applications ORDER BY created_at DESC`;
+        return rows.map((r: any) => ({
+          id: r.id,
+          opportunityId: r.opportunity_id,
+          name: r.name,
+          email: r.email,
+          phone: r.phone || '',
+          university: r.university || '',
+          program: r.program || '',
+          graduationYear: r.graduation_year || '',
+          studentId: r.student_id || '',
+          resumeUrl: r.resume_url || '',
+          linkedin: r.linkedin || '',
+          github: r.github || '',
+          portfolio: r.portfolio || '',
+          skills: r.skills || '',
+          experience: r.experience || '',
+          motivation: r.motivation || '',
+          coverLetter: r.cover_letter || '',
+          additionalInformation: r.additional_information || '',
+          consent: Boolean(r.consent),
+          status: r.status || 'New',
+          adminNotes: r.admin_notes || '',
+          createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+          updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString()
+        }));
+      }
+      return await readJsonFile<any[]>('career_applications.json', []);
+    },
+    getByOpportunityId: async (opportunityId: string): Promise<any[]> => {
+      const rows = await db.careerApplications.getAll();
+      return rows.filter((application: any) => application.opportunityId === opportunityId);
+    },
+    insertOne: async (application: any): Promise<void> => {
+      if (process.env.DATABASE_URL && !sql) {
+        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      }
+      if (sql) {
+        await ensureCareerApplicationsTable();
+        await sql`
+          INSERT INTO career_applications (
+            id, opportunity_id, name, email, phone, university, program, graduation_year, student_id,
+            resume_url, linkedin, github, portfolio, skills, experience, motivation, cover_letter,
+            additional_information, consent, status, admin_notes, created_at, updated_at
+          ) VALUES (
+            ${application.id}, ${application.opportunityId}, ${application.name}, ${application.email}, ${application.phone || ''}, ${application.university || ''}, ${application.program || ''}, ${application.graduationYear || ''}, ${application.studentId || ''},
+            ${application.resumeUrl || ''}, ${application.linkedin || ''}, ${application.github || ''}, ${application.portfolio || ''}, ${application.skills || ''}, ${application.experience || ''}, ${application.motivation || ''}, ${application.coverLetter || ''}, ${application.additionalInformation || ''},
+            ${Boolean(application.consent)}, ${application.status || 'New'}, ${application.adminNotes || ''}, ${application.createdAt || new Date().toISOString()}, ${application.updatedAt || new Date().toISOString()}
+          )
+        `;
+        return;
+      }
+      const data = await readJsonFile<any[]>('career_applications.json', []);
+      data.unshift(application);
+      await writeJsonFile('career_applications.json', data);
+    },
+    updateOne: async (id: string, fields: Partial<any>): Promise<void> => {
+      if (process.env.DATABASE_URL && !sql) {
+        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      }
+      if (sql) {
+        await ensureCareerApplicationsTable();
+        await sql`
+          UPDATE career_applications
+          SET
+            status = ${fields.status !== undefined ? fields.status : sql`status`},
+            admin_notes = ${fields.adminNotes !== undefined ? fields.adminNotes : sql`admin_notes`},
+            updated_at = ${new Date().toISOString()}
+          WHERE id = ${id}
+        `;
+        return;
+      }
+      const data = await readJsonFile<any[]>('career_applications.json', []);
+      const idx = data.findIndex((application: any) => application.id === id);
+      if (idx !== -1) {
+        data[idx] = { ...data[idx], ...fields, updatedAt: new Date().toISOString() };
+        await writeJsonFile('career_applications.json', data);
+      }
+    },
+    deleteOne: async (id: string): Promise<void> => {
+      if (process.env.DATABASE_URL && !sql) {
+        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      }
+      if (sql) {
+        await ensureCareerApplicationsTable();
+        await sql`DELETE FROM career_applications WHERE id = ${id}`;
+        return;
+      }
+      let data = await readJsonFile<any[]>('career_applications.json', []);
+      data = data.filter((application: any) => application.id !== id);
+      await writeJsonFile('career_applications.json', data);
+    },
+    saveAll: async (data: any[]): Promise<void> => {
+      if (process.env.DATABASE_URL && !sql) {
+        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      }
+      if (sql) {
+        await ensureCareerApplicationsTable();
+        await sql`DELETE FROM career_applications`;
+        for (const application of data) {
+          await db.careerApplications.insertOne(application);
+        }
+        return;
+      }
+      await writeJsonFile('career_applications.json', data);
     }
   }
 };
