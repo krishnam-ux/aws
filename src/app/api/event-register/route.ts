@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { validateEventRegistrationInput } from '@/lib/eventRegistrationValidation';
 
 export async function POST(request: Request) {
   try {
@@ -10,6 +11,7 @@ export async function POST(request: Request) {
       email,
       phone,
       university,
+      customUniversity,
       program,
       year,
       studentId,
@@ -21,8 +23,31 @@ export async function POST(request: Request) {
       consent
     } = body;
 
-    // Required fields check
-    if (!eventId || !fullName || !email || !phone || !university || !program || !year || !linkedin || !github || !motivation || !consent) {
+    const validation = validateEventRegistrationInput({
+      eventId,
+      fullName,
+      email,
+      phone,
+      university,
+      customUniversity,
+      program,
+      year,
+      studentId,
+      interests,
+      experienceLevel,
+      linkedin,
+      github,
+      motivation,
+      consent,
+    });
+
+    if (!validation.valid) {
+      return NextResponse.json({
+        error: Object.values(validation.errors)[0] || 'Missing required registration parameters.'
+      }, { status: 400 });
+    }
+
+    if (!eventId || !year) {
       return NextResponse.json({ error: 'Missing required registration parameters.' }, { status: 400 });
     }
 
@@ -35,18 +60,6 @@ export async function POST(request: Request) {
     const phoneRegex = /^\+?[0-9\s\-()]{10,15}$/;
     if (!phoneRegex.test(phone)) {
       return NextResponse.json({ error: 'Invalid mobile number format.' }, { status: 400 });
-    }
-
-    // LinkedIn validation
-    const linkedinRegex = /^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+\/?$/;
-    if (!linkedinRegex.test(linkedin)) {
-      return NextResponse.json({ error: 'Invalid LinkedIn profile URL.' }, { status: 400 });
-    }
-
-    // GitHub validation
-    const githubRegex = /^(https?:\/\/)?(www\.)?github\.com\/[a-zA-Z0-9_-]+\/?$/;
-    if (!githubRegex.test(github)) {
-      return NextResponse.json({ error: 'Invalid GitHub profile URL.' }, { status: 400 });
     }
 
     // Find the event
@@ -108,7 +121,7 @@ export async function POST(request: Request) {
 
     try {
       await db.eventRegistrations.insertOne(newReg);
-    } catch (dbErr: any) {
+    } catch (dbErr: unknown) {
       console.error('API Event Register DB Insert Error:', dbErr);
       return NextResponse.json({
         success: false,
@@ -130,7 +143,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       registrationId: regId,
-      eventName: event.title
+      eventName: event.title,
+      studentId: studentId || ''
     });
   } catch (err) {
     console.error('API Event Register POST Error:', err);

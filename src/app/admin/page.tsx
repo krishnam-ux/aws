@@ -1930,6 +1930,7 @@ export default function AdminDashboard() {
                           />
                         </th>
                         <th className="px-4 py-3 text-left">Student</th>
+                        <th className="px-4 py-3 text-left">Student ID / UID</th>
                         <th className="px-4 py-3 text-left">Event</th>
                         <th className="px-4 py-3 text-left">Email</th>
                         <th className="px-4 py-3 text-left">University</th>
@@ -1958,6 +1959,7 @@ export default function AdminDashboard() {
                             />
                           </td>
                           <td className="px-4 py-3 font-semibold text-[#111827]">{reg.name}</td>
+                          <td className="px-4 py-3 font-mono text-[10px] text-slate-700">{reg.studentId || '—'}</td>
                           <td className="px-4 py-3 font-medium text-slate-700 max-w-[150px] truncate">{reg.eventName}</td>
                           <td className="px-4 py-3 font-mono text-[11px] select-all">{reg.email}</td>
                           <td className="px-4 py-3 max-w-xs truncate">{reg.university}</td>
@@ -3763,7 +3765,7 @@ export default function AdminDashboard() {
                     <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Academic Details</span>
                     <p className="font-semibold text-slate-800 mt-0.5">{viewItem.university}</p>
                     <p className="text-slate-600 mt-0.5">{viewItem.program} - {viewItem.year}</p>
-                    <p className="text-[10px] text-slate-450 font-mono mt-0.5">UID: {viewItem.studentId || 'N/A'}</p>
+                    <p className="text-[10px] text-slate-450 font-mono mt-0.5">Student ID / UID: {viewItem.studentId || '—'}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -4650,6 +4652,7 @@ export default function AdminDashboard() {
                       />
                     </th>
                     <th className="px-4 py-3 text-left">Student</th>
+                    <th className="px-4 py-3 text-left">Student ID / UID</th>
                     <th className="px-4 py-3 text-left">Email</th>
                     <th className="px-4 py-3 text-left">University</th>
                     <th className="px-4 py-3 text-left">Program</th>
@@ -4678,6 +4681,7 @@ export default function AdminDashboard() {
                           />
                         </td>
                         <td className="px-4 py-3 font-semibold text-[#111827]">{reg.name}</td>
+                        <td className="px-4 py-3 font-mono text-[10px] text-slate-700">{reg.studentId || '—'}</td>
                         <td className="px-4 py-3 font-mono text-[11px] select-all">{reg.email}</td>
                         <td className="px-4 py-3 truncate max-w-[150px]">{reg.university}</td>
                         <td className="px-4 py-3">{reg.program}</td>

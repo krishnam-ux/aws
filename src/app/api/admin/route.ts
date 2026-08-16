@@ -1007,15 +1007,16 @@ export async function POST(request: Request) {
         const margin = 28;
         const tableWidth = pageWidth - margin * 2;
         const tableColumns = [
-          { title: 'No.', width: 32 },
-          { title: 'Student Name', width: 92 },
-          { title: 'Email', width: 108 },
-          { title: 'University', width: 94 },
-          { title: 'Program', width: 88 },
-          { title: 'Year', width: 40 },
+          { title: 'No.', width: 30 },
+          { title: 'Student Name', width: 88 },
+          { title: 'Student ID / UID', width: 92 },
+          { title: 'Email', width: 104 },
+          { title: 'University', width: 92 },
+          { title: 'Program', width: 84 },
+          { title: 'Year', width: 42 },
           { title: 'Status', width: 52 },
-          { title: 'Registration Date', width: 92 },
-          { title: 'Student Signature', width: 138 }
+          { title: 'Registration Date', width: 82 },
+          { title: 'Student Signature', width: 120 }
         ];
         const leaderNames = [siteConfig.leader.name, 'Vaibhav Sharma'];
 
@@ -1068,6 +1069,7 @@ export async function POST(request: Request) {
           const values = [
             String(idx + 1),
             safeText(row.name, 22),
+            row.studentId?.trim() ? safeText(row.studentId, 18) : '—',
             safeText(row.email, 26),
             safeText(row.university, 20),
             safeText(row.program, 18),
@@ -1089,9 +1091,9 @@ export async function POST(request: Request) {
             doc.setTextColor(51, 65, 85);
 
             if (columnIndex === tableColumns.length - 1) {
-              doc.line(colX + 8, y + 11, colX + colWidth - 12, y + 11);
+              doc.line(colX + 10, y + 12, colX + colWidth - 10, y + 12);
             } else {
-              const lines = doc.splitTextToSize(value, colWidth - 8);
+              const lines = doc.splitTextToSize(value || '—', colWidth - 8);
               doc.text(lines.slice(0, 2), colX + 4, y + 8);
             }
 
@@ -1102,45 +1104,64 @@ export async function POST(request: Request) {
 
         const drawSignatureSection = (startY: number) => {
           let currentY = startY;
+          
+          // Section title
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(12);
           doc.setTextColor(15, 23, 42);
           doc.text('Leadership & Authorization', margin, currentY);
-          currentY += 18;
+          currentY += 20;
 
-          const signatureWidth = 190;
-          const leftX = margin + 12;
-          const rightX = pageWidth / 2 + 30;
-
-          leaderNames.forEach((leaderName, index) => {
-            const currentX = index === 0 ? leftX : rightX;
-            const lineY = currentY + 20;
-            doc.setDrawColor(15, 23, 42);
-            doc.setLineWidth(0.8);
-            doc.line(currentX, lineY, currentX + signatureWidth, lineY);
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(9);
-            doc.setTextColor(30, 41, 59);
-            doc.text(leaderName, currentX, lineY + 18);
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(8.5);
-            doc.text('AWS Student Builder Group Leader', currentX, lineY + 30);
-          });
-
-          const authX = pageWidth / 2 - 94;
-          const authY = currentY + 76;
+          // Signature line properties
+          const signatureLineWidth = 130;
+          const signatureLineY = currentY + 8;
+          
+          // Calculate 3-column positions
+          const usableWidth = pageWidth - margin * 2;
+          const columnWidth = usableWidth / 3;
+          
+          const leftSignX = margin + (columnWidth / 2) - (signatureLineWidth / 2);
+          const centerSignX = margin + columnWidth + (columnWidth / 2) - (signatureLineWidth / 2);
+          const rightSignX = margin + columnWidth * 2 + (columnWidth / 2) - (signatureLineWidth / 2);
+          
+          // Draw all three signature lines at same height
           doc.setDrawColor(15, 23, 42);
           doc.setLineWidth(0.8);
-          doc.line(authX, authY, authX + 188, authY);
+          doc.line(leftSignX, signatureLineY, leftSignX + signatureLineWidth, signatureLineY);
+          doc.line(centerSignX, signatureLineY, centerSignX + signatureLineWidth, signatureLineY);
+          doc.line(rightSignX, signatureLineY, rightSignX + signatureLineWidth, signatureLineY);
+          
+          // Left: Abhay Shukla
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          doc.setTextColor(30, 41, 59);
+          doc.text('Abhay Shukla', leftSignX + (signatureLineWidth / 2), signatureLineY + 16, { align: 'center' });
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8.5);
+          doc.text('AWS Student Builder Group Leader', leftSignX + (signatureLineWidth / 2), signatureLineY + 28, { align: 'center', maxWidth: columnWidth - 8 });
+          
+          // Center: Authorized Signature
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(10);
           doc.setTextColor(15, 23, 42);
-          doc.text('Authorized Signature', authX + 36, authY + 16);
+          doc.text('Authorized Signature', centerSignX + (signatureLineWidth / 2), signatureLineY + 16, { align: 'center' });
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(9);
-          doc.text('AWS Student Builder Group', authX + 18, authY + 30);
-          doc.text('Chandigarh University – Uttar Pradesh', authX - 8, authY + 42);
-          doc.text('Date: ______________________________', authX + 10, authY + 62);
+          doc.setTextColor(30, 41, 59);
+          doc.text('AWS Student Builder Group', centerSignX + (signatureLineWidth / 2), signatureLineY + 28, { align: 'center' });
+          doc.text('Chandigarh University – Uttar Pradesh', centerSignX + (signatureLineWidth / 2), signatureLineY + 40, { align: 'center', maxWidth: columnWidth - 8 });
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8.5);
+          doc.text('Date: ________________', centerSignX + (signatureLineWidth / 2), signatureLineY + 52, { align: 'center' });
+          
+          // Right: Vaibhav Sharma
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          doc.setTextColor(30, 41, 59);
+          doc.text('Vaibhav Sharma', rightSignX + (signatureLineWidth / 2), signatureLineY + 16, { align: 'center' });
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8.5);
+          doc.text('AWS Student Builder Group Leader', rightSignX + (signatureLineWidth / 2), signatureLineY + 28, { align: 'center', maxWidth: columnWidth - 8 });
         };
 
         addPageHeader('EVENT REGISTRATION REPORT');
@@ -1158,14 +1179,21 @@ export async function POST(request: Request) {
         const rowsPerPage = 18;
 
         const finalizeSignatureSection = () => {
-          const signatureStartY = currentY + 18;
-          if (signatureStartY > pageHeight - 170) {
+          // Signature section needs approximately 80pt of space
+          const signatureSectionHeight = 80;
+          const bottomMargin = 40; // Space reserved at bottom of page
+          const availableSpace = pageHeight - currentY - bottomMargin;
+          
+          // If signature section won't fit on current page, move it to next page
+          if (availableSpace < signatureSectionHeight) {
             doc.addPage();
             activePage += 1;
             addPageHeader('LEADERSHIP & AUTHORIZATION');
             currentY = 76;
           }
-          drawSignatureSection(currentY + 8);
+          
+          // Draw signature section immediately after current position
+          drawSignatureSection(currentY + 12);
         };
 
         drawTableHeader(currentY);

@@ -2,6 +2,7 @@
 
 import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
+import { validateEventRegistrationInput } from '@/lib/eventRegistrationValidation';
 
 interface CommunityEvent {
   id: string;
@@ -141,57 +142,25 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   };
 
   const validateForm = () => {
-    const errors: Record<string, string> = {};
+    const result = validateEventRegistrationInput({
+      fullName,
+      email,
+      phone,
+      university,
+      customUniversity,
+      program,
+      year,
+      studentId,
+      interests,
+      experienceLevel,
+      linkedin,
+      github,
+      motivation,
+      consent,
+    });
 
-    if (!fullName.trim()) errors.fullName = 'Full Name is required';
-    
-    if (!email.trim()) {
-      errors.email = 'Email Address is required';
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      errors.email = 'Please enter a valid email address';
-    }
-
-    if (!phone.trim()) {
-      errors.phone = 'Mobile Number is required';
-    } else if (!/^\+?[0-9\s\-()]{10,15}$/.test(phone)) {
-      errors.phone = 'Please enter a valid phone number (10 to 15 digits)';
-    }
-
-    if (university === 'Other') {
-      if (!customUniversity.trim()) {
-        errors.customUniversity = 'Please specify your university';
-      }
-    } else {
-      if (!university.trim()) errors.university = 'University name is required';
-    }
-    if (!program.trim()) errors.program = 'Program or course is required';
-    
-    if (interests.length === 0) {
-      errors.interests = 'Please select at least one technical interest';
-    }
-
-    if (!linkedin.trim()) {
-      errors.linkedin = 'LinkedIn Profile URL is required';
-    } else if (!/^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+\/?$/.test(linkedin)) {
-      errors.linkedin = 'Please enter a valid LinkedIn profile URL (e.g., linkedin.com/in/username)';
-    }
-
-    if (!github.trim()) {
-      errors.github = 'GitHub Profile URL is required';
-    } else if (!/^(https?:\/\/)?(www\.)?github\.com\/[a-zA-Z0-9_-]+\/?$/.test(github)) {
-      errors.github = 'Please enter a valid GitHub profile URL (e.g., github.com/username)';
-    }
-
-    if (!motivation.trim()) {
-      errors.motivation = 'Please tell us why you want to attend';
-    }
-
-    if (!consent) {
-      errors.consent = 'You must consent to sharing registration details';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    setFormErrors(result.errors);
+    return result.valid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -658,7 +627,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
             {/* Student ID */}
             <div className="space-y-1.5">
               <label htmlFor="studentId" className="block font-bold text-slate-700 uppercase tracking-wider text-[10px]">
-                Student ID (UID)
+                Student ID / UID <span className="text-red-500">*</span>
               </label>
               <input
                 id="studentId"
@@ -666,9 +635,12 @@ export default function RegisterPage({ params }: RegisterPageProps) {
                 type="text"
                 value={studentId}
                 onChange={(e) => setStudentId(e.target.value)}
-                placeholder="Enter Student ID / UID (optional)"
-                className="w-full p-2 border border-[#E2E8F0] rounded font-sans text-xs focus:outline-none focus:ring-1 focus:ring-aws-orange bg-[#F6F8FA]"
+                placeholder="Enter Student ID / UID"
+                className={`w-full p-2 border rounded font-sans text-xs focus:outline-none focus:ring-1 focus:ring-aws-orange bg-[#F6F8FA] ${
+                  formErrors.studentId ? 'border-red-500 focus:ring-red-500' : 'border-[#E2E8F0]'
+                }`}
               />
+              {formErrors.studentId && <p className="text-red-500 text-[10px] font-semibold mt-0.5">{formErrors.studentId}</p>}
             </div>
 
             {/* Experience Level */}
@@ -692,7 +664,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
             {/* LinkedIn Profile URL */}
             <div className="space-y-1.5">
               <label htmlFor="linkedin" className="block font-bold text-slate-700 uppercase tracking-wider text-[10px]">
-                LinkedIn Profile URL <span className="text-red-500">*</span>
+                LinkedIn Profile URL
               </label>
               <input
                 id="linkedin"
@@ -711,7 +683,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
             {/* GitHub Profile URL */}
             <div className="space-y-1.5">
               <label htmlFor="github" className="block font-bold text-slate-700 uppercase tracking-wider text-[10px]">
-                GitHub Profile URL <span className="text-red-500">*</span>
+                GitHub Profile URL
               </label>
               <input
                 id="github"
