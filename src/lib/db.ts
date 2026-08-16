@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import postgres from 'postgres';
 
 const DB_DIR = path.join(process.cwd(), 'src', 'data', 'db');
 
@@ -33,20 +34,42 @@ async function getBlobStore() {
   return null;
 }
 
+export function getPostgresCandidates(): string[] {
+  return [
+    process.env.DATABASE_URL,
+    process.env.POSTGRES_URL,
+    process.env.POSTGRES_PRISMA_URL,
+    process.env.DATABASE_URL_UNPOOLED,
+    process.env.POSTGRES_URL_NON_POOLING,
+    process.env.POSTGRES_URL_NO_SSL,
+  ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+}
+
+export function hasConfiguredDatabase(): boolean {
+  return getPostgresCandidates().length > 0;
+}
+
 // PostgreSQL integration
 let sql: any = null;
-if (process.env.DATABASE_URL) {
+const postgresCandidates = getPostgresCandidates();
+
+for (const connectionString of postgresCandidates) {
   try {
-    const postgres = require('postgres');
-    sql = postgres(process.env.DATABASE_URL, {
+    sql = postgres(connectionString, {
       ssl: 'require',
       max: 10,
       idle_timeout: 20,
       connect_timeout: 30
     });
+    break;
   } catch (err) {
-    console.error('Failed to initialize postgres client:', err);
+    console.error(`Failed to initialize postgres client with candidate ${connectionString.slice(0, 24)}...:`, err);
+    sql = null;
   }
+}
+
+if (!sql && postgresCandidates.length > 0) {
+  console.warn('No valid PostgreSQL connection string could be initialized. Falling back to JSON storage.');
 }
 
 async function ensurePostgresTable() {
@@ -85,13 +108,22 @@ async function ensureRegistrationsTable() {
         motivation TEXT NOT NULL,
         consent BOOLEAN NOT NULL,
         status VARCHAR(255) NOT NULL DEFAULT 'New',
+        attendance VARCHAR(50) NOT NULL DEFAULT 'Registered',
+        certificate_id VARCHAR(255),
         notes TEXT NOT NULL DEFAULT '',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `;
+
+    await sql`ALTER TABLE registrations ADD COLUMN IF NOT EXISTS attendance VARCHAR(50) NOT NULL DEFAULT 'Registered'`;
+    await sql`ALTER TABLE registrations ADD COLUMN IF NOT EXISTS certificate_id VARCHAR(255)`;
+    await sql`ALTER TABLE registrations ADD COLUMN IF NOT EXISTS notes TEXT NOT NULL DEFAULT ''`;
+
     await sql`CREATE INDEX IF NOT EXISTS idx_registrations_event_id ON registrations(event_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_registrations_email ON registrations(email)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_registrations_status ON registrations(status)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_registrations_attendance ON registrations(attendance)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_registrations_certificate_id ON registrations(certificate_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_registrations_created_at ON registrations(created_at)`;
     
     // Run migration checks
@@ -212,6 +244,36 @@ async function ensureCareerApplicationsTable() {
     await sql`CREATE INDEX IF NOT EXISTS idx_career_applications_created_at ON career_applications(created_at)`;
   } catch (err) {
     console.error('Failed to ensure career applications table exists in PostgreSQL:', err);
+  }
+}
+
+async function ensureCertificatesTable() {
+  if (!sql) return;
+  try {
+    await ensurePostgresTable();
+    await sql`
+      CREATE TABLE IF NOT EXISTS certificates (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        certificate_id VARCHAR(255) NOT NULL UNIQUE,
+        event_id VARCHAR(255) NOT NULL,
+        registration_id VARCHAR(255) NOT NULL,
+        student_name VARCHAR(255) NOT NULL,
+        event_name VARCHAR(255) NOT NULL,
+        event_date VARCHAR(255),
+        venue VARCHAR(255),
+        issue_date DATE NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'Valid',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_certificates_event_id ON certificates(event_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_certificates_registration_id ON certificates(registration_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_certificates_certificate_id ON certificates(certificate_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_certificates_status ON certificates(status)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_certificates_created_at ON certificates(created_at)`;
+  } catch (err) {
+    console.error('Failed to ensure certificates table exists in PostgreSQL:', err);
   }
 }
 
@@ -358,6 +420,10 @@ async function writeKv<T>(filename: string, data: T): Promise<void> {
 const memoryDbCache: Record<string, { data: any; expiresAt: number }> = {};
 const CACHE_TTL_MS = 5000; // 5 seconds cache TTL
 
+function invalidateMemoryCache(filename: string): void {
+  delete memoryDbCache[filename];
+}
+
 // Generic read/write functions
 async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
   const cached = memoryDbCache[filename];
@@ -376,13 +442,21 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
   }
 
   // 2. Try PostgreSQL
-  if (process.env.DATABASE_URL) {
-    const val = await readPostgres(filename, defaultValue);
-    memoryDbCache[filename] = {
-      data: val,
-      expiresAt: Date.now() + CACHE_TTL_MS
-    };
-    return val;
+  if (hasConfiguredDatabase()) {
+    if (!sql) {
+      console.warn(`A PostgreSQL connection string is configured but the PG client is unavailable for ${filename}; falling back to local JSON storage.`);
+    } else {
+      try {
+        const val = await readPostgres(filename, defaultValue);
+        memoryDbCache[filename] = {
+          data: val,
+          expiresAt: Date.now() + CACHE_TTL_MS
+        };
+        return val;
+      } catch (err) {
+        console.error(`PostgreSQL read failed for ${filename}:`, err);
+      }
+    }
   }
 
   // 3. Try Netlify Blobs
@@ -426,7 +500,8 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
 }
 
 async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
-  // Update memory cache immediately
+  // Always invalidate stale snapshot before writing, then update cache to the new value.
+  invalidateMemoryCache(filename);
   memoryDbCache[filename] = {
     data,
     expiresAt: Date.now() + CACHE_TTL_MS
@@ -439,13 +514,16 @@ async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
   }
 
   // 2. Try PostgreSQL
-  if (process.env.DATABASE_URL) {
-    try {
-      await writePostgres(filename, data);
-      return;
-    } catch (err) {
-      console.error(`PostgreSQL write failed for ${filename}:`, err);
-      throw err;
+  if (hasConfiguredDatabase()) {
+    if (!sql) {
+      console.warn(`A PostgreSQL connection string is configured but the PG client is unavailable for ${filename}; falling back to local JSON storage.`);
+    } else {
+      try {
+        await writePostgres(filename, data);
+        return;
+      } catch (err) {
+        console.error(`PostgreSQL write failed for ${filename}:`, err);
+      }
     }
   }
 
@@ -723,8 +801,8 @@ const DEFAULT_CONTENT = {
 };
 
 async function readSettingsStore(): Promise<Record<string, any>> {
-  if (process.env.DATABASE_URL && !sql) {
-    throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+  if (hasConfiguredDatabase() && !sql) {
+    throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
   }
   if (sql) {
     return await readPostgres<Record<string, any>>('settings.json', {});
@@ -733,8 +811,8 @@ async function readSettingsStore(): Promise<Record<string, any>> {
 }
 
 async function writeSettingsStore(data: Record<string, any>): Promise<void> {
-  if (process.env.DATABASE_URL && !sql) {
-    throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+  if (hasConfiguredDatabase() && !sql) {
+    throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
   }
   if (sql) {
     await writePostgres('settings.json', data);
@@ -817,18 +895,21 @@ export const db = {
             motivation: r.motivation,
             consent: r.consent,
             status: r.status,
+            attendance: r.attendance || 'Registered',
+            certificateId: r.certificate_id || null,
             notes: r.notes,
             date: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString()
           }));
         } catch (err) {
           console.error('Postgres error in eventRegistrations.getAll:', err);
-          throw err;
+          return await readJsonFile<any[]>('event_registrations.json', []);
         }
       }
       return await readJsonFile<any[]>('event_registrations.json', []);
     },
 
     insertOne: async (reg: any): Promise<void> => {
+      invalidateMemoryCache('event_registrations.json');
       if (sql) {
         await ensureRegistrationsTable();
         const interestsStr = Array.isArray(reg.interests) ? JSON.stringify(reg.interests) : JSON.stringify([reg.interests]);
@@ -837,46 +918,43 @@ export const db = {
             INSERT INTO registrations (
               id, event_id, name, email, phone, university, program, year, student_id,
               interests, experience_level, linkedin, github, motivation, consent,
-              status, notes, created_at
+              status, attendance, certificate_id, notes, created_at
             ) VALUES (
               ${reg.id}, ${reg.eventId}, ${reg.name}, ${reg.email}, ${reg.phone || ''},
               ${reg.university}, ${reg.program}, ${reg.year}, ${reg.studentId || ''},
               ${interestsStr}, ${reg.experienceLevel || 'Beginner'}, ${reg.linkedin || ''},
               ${reg.github || ''}, ${reg.motivation || ''}, ${!!reg.consent},
-              ${reg.status || 'New'}, ${reg.notes || ''}, ${reg.date || new Date().toISOString()}
+              ${reg.status || 'New'}, ${reg.attendance || 'Registered'}, ${reg.certificateId || null}, ${reg.notes || ''}, ${reg.date || new Date().toISOString()}
             )
           `;
           return;
         } catch (err) {
           console.error('Postgres error in eventRegistrations.insertOne:', err);
-          throw err;
         }
       }
       const data = await readJsonFile<any[]>('event_registrations.json', []);
-      data.push(reg);
+      data.push({ ...reg, attendance: reg.attendance || 'Registered', certificateId: reg.certificateId || null });
       await writeJsonFile('event_registrations.json', data);
     },
 
     updateOne: async (id: string, fields: Partial<any>): Promise<void> => {
+      invalidateMemoryCache('event_registrations.json');
       if (sql) {
         await ensureRegistrationsTable();
         try {
-          if (fields.status !== undefined && fields.notes !== undefined) {
+          const hasStatus = fields.status !== undefined;
+          const hasNotes = fields.notes !== undefined;
+          const hasAttendance = fields.attendance !== undefined;
+          const hasCertificateId = fields.certificateId !== undefined;
+
+          if (hasStatus || hasNotes || hasAttendance || hasCertificateId) {
             await sql`
               UPDATE registrations
-              SET status = ${fields.status}, notes = ${fields.notes}
-              WHERE id = ${id}
-            `;
-          } else if (fields.status !== undefined) {
-            await sql`
-              UPDATE registrations
-              SET status = ${fields.status}
-              WHERE id = ${id}
-            `;
-          } else if (fields.notes !== undefined) {
-            await sql`
-              UPDATE registrations
-              SET notes = ${fields.notes}
+              SET
+                status = ${hasStatus ? fields.status : sql`status`},
+                notes = ${hasNotes ? fields.notes : sql`notes`},
+                attendance = ${hasAttendance ? fields.attendance : sql`attendance`},
+                certificate_id = ${hasCertificateId ? (fields.certificateId ?? null) : sql`certificate_id`}
               WHERE id = ${id}
             `;
           }
@@ -891,11 +969,14 @@ export const db = {
       if (idx !== -1) {
         data[idx] = { ...data[idx], ...fields };
         if (fields.eventId) data[idx].eventId = fields.eventId;
+        if (fields.attendance) data[idx].attendance = fields.attendance;
+        if (fields.certificateId !== undefined) data[idx].certificateId = fields.certificateId;
         await writeJsonFile('event_registrations.json', data);
       }
     },
 
     deleteOne: async (id: string): Promise<void> => {
+      invalidateMemoryCache('event_registrations.json');
       if (sql) {
         await ensureRegistrationsTable();
         try {
@@ -914,6 +995,7 @@ export const db = {
     },
 
     deleteByEventId: async (eventId: string): Promise<void> => {
+      invalidateMemoryCache('event_registrations.json');
       if (sql) {
         await ensureRegistrationsTable();
         try {
@@ -932,6 +1014,7 @@ export const db = {
     },
 
     deleteBulk: async (ids: string[]): Promise<void> => {
+      invalidateMemoryCache('event_registrations.json');
       if (sql) {
         await ensureRegistrationsTable();
         try {
@@ -950,6 +1033,7 @@ export const db = {
     },
 
     saveAll: async (data: any[]): Promise<void> => {
+      invalidateMemoryCache('event_registrations.json');
       if (sql) {
         await ensureRegistrationsTable();
         try {
@@ -960,13 +1044,13 @@ export const db = {
               INSERT INTO registrations (
                 id, event_id, name, email, phone, university, program, year, student_id,
                 interests, experience_level, linkedin, github, motivation, consent,
-                status, notes, created_at
+                status, attendance, certificate_id, notes, created_at
               ) VALUES (
                 ${reg.id}, ${reg.eventId || reg.event_id}, ${reg.name}, ${reg.email}, ${reg.phone || ''},
                 ${reg.university}, ${reg.program}, ${reg.year}, ${reg.studentId || reg.student_id || ''},
                 ${interestsStr}, ${reg.experienceLevel || 'Beginner'}, ${reg.linkedin || ''},
                 ${reg.github || ''}, ${reg.motivation || ''}, ${!!reg.consent},
-                ${reg.status || 'New'}, ${reg.notes || ''}, ${reg.date || reg.created_at || new Date().toISOString()}
+                ${reg.status || 'New'}, ${reg.attendance || 'Registered'}, ${reg.certificateId || null}, ${reg.notes || ''}, ${reg.date || reg.created_at || new Date().toISOString()}
               )
             `;
           }
@@ -976,7 +1060,152 @@ export const db = {
           throw err;
         }
       }
-      await writeJsonFile('event_registrations.json', data);
+      await writeJsonFile('event_registrations.json', data.map((reg: any) => ({ ...reg, attendance: reg.attendance || 'Registered', certificateId: reg.certificateId || null })));
+    }
+  },
+  certificates: {
+    getAll: async (): Promise<any[]> => {
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
+      }
+      if (sql) {
+        await ensureCertificatesTable();
+        const rows = await sql`SELECT * FROM certificates ORDER BY created_at DESC`;
+        return rows.map((row: any) => ({
+          id: row.id,
+          certificateId: row.certificate_id,
+          eventId: row.event_id,
+          registrationId: row.registration_id,
+          studentName: row.student_name,
+          eventName: row.event_name,
+          eventDate: row.event_date,
+          venue: row.venue,
+          issueDate: row.issue_date ? new Date(row.issue_date).toISOString().slice(0, 10) : null,
+          status: row.status,
+          createdAt: row.created_at ? new Date(row.created_at).toISOString() : null
+        }));
+      }
+      return await readJsonFile<any[]>('certificates.json', []);
+    },
+
+    getByCertificateId: async (certificateId: string): Promise<any | null> => {
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
+      }
+      if (sql) {
+        await ensureCertificatesTable();
+        const rows = await sql`SELECT * FROM certificates WHERE certificate_id = ${certificateId} LIMIT 1`;
+        if (!rows || rows.length === 0) {
+          return null;
+        }
+        const row = rows[0];
+        return {
+          id: row.id,
+          certificateId: row.certificate_id,
+          eventId: row.event_id,
+          registrationId: row.registration_id,
+          studentName: row.student_name,
+          eventName: row.event_name,
+          eventDate: row.event_date,
+          venue: row.venue,
+          issueDate: row.issue_date ? new Date(row.issue_date).toISOString().slice(0, 10) : null,
+          status: row.status,
+          createdAt: row.created_at ? new Date(row.created_at).toISOString() : null
+        };
+      }
+      const all = await readJsonFile<any[]>('certificates.json', []);
+      return all.find((item: any) => item.certificateId === certificateId) || null;
+    },
+
+    getByRegistrationId: async (registrationId: string): Promise<any | null> => {
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
+      }
+      if (sql) {
+        await ensureCertificatesTable();
+        const rows = await sql`SELECT * FROM certificates WHERE registration_id = ${registrationId} LIMIT 1`;
+        return rows && rows.length > 0 ? rows[0] : null;
+      }
+      const all = await readJsonFile<any[]>('certificates.json', []);
+      return all.find((item: any) => item.registrationId === registrationId) || null;
+    },
+
+    insertOne: async (record: any): Promise<any> => {
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
+      }
+      if (sql) {
+        await ensureCertificatesTable();
+        const result = await sql`
+          INSERT INTO certificates (
+            certificate_id, event_id, registration_id, student_name, event_name, event_date, venue, issue_date, status, created_at, updated_at
+          ) VALUES (
+            ${record.certificateId}, ${record.eventId}, ${record.registrationId}, ${record.studentName}, ${record.eventName}, ${record.eventDate || null}, ${record.venue || null}, ${record.issueDate || new Date().toISOString().slice(0, 10)}, ${record.status || 'Valid'}, ${record.createdAt || new Date().toISOString()}, ${record.updatedAt || new Date().toISOString()}
+          ) RETURNING *
+        `;
+        return result[0];
+      }
+      const all = await readJsonFile<any[]>('certificates.json', []);
+      all.push({
+        id: record.id || `cert-${Date.now()}`,
+        certificateId: record.certificateId,
+        eventId: record.eventId,
+        registrationId: record.registrationId,
+        studentName: record.studentName,
+        eventName: record.eventName,
+        eventDate: record.eventDate,
+        venue: record.venue,
+        issueDate: record.issueDate || new Date().toISOString().slice(0, 10),
+        status: record.status || 'Valid',
+        createdAt: record.createdAt || new Date().toISOString()
+      });
+      await writeJsonFile('certificates.json', all);
+      return all[all.length - 1];
+    },
+
+    updateOne: async (certificateId: string, fields: Partial<any>): Promise<void> => {
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
+      }
+      if (sql) {
+        await ensureCertificatesTable();
+        if (fields.status !== undefined) {
+          await sql`UPDATE certificates SET status = ${fields.status}, updated_at = ${new Date().toISOString()} WHERE certificate_id = ${certificateId}`;
+        }
+        if (fields.eventId !== undefined) {
+          await sql`UPDATE certificates SET event_id = ${fields.eventId}, updated_at = ${new Date().toISOString()} WHERE certificate_id = ${certificateId}`;
+        }
+        if (fields.studentName !== undefined) {
+          await sql`UPDATE certificates SET student_name = ${fields.studentName}, updated_at = ${new Date().toISOString()} WHERE certificate_id = ${certificateId}`;
+        }
+        if (fields.eventName !== undefined) {
+          await sql`UPDATE certificates SET event_name = ${fields.eventName}, updated_at = ${new Date().toISOString()} WHERE certificate_id = ${certificateId}`;
+        }
+        if (fields.eventDate !== undefined) {
+          await sql`UPDATE certificates SET event_date = ${fields.eventDate}, updated_at = ${new Date().toISOString()} WHERE certificate_id = ${certificateId}`;
+        }
+        if (fields.venue !== undefined) {
+          await sql`UPDATE certificates SET venue = ${fields.venue}, updated_at = ${new Date().toISOString()} WHERE certificate_id = ${certificateId}`;
+        }
+        if (fields.issueDate !== undefined) {
+          await sql`UPDATE certificates SET issue_date = ${fields.issueDate}, updated_at = ${new Date().toISOString()} WHERE certificate_id = ${certificateId}`;
+        }
+        return;
+      }
+      const all = await readJsonFile<any[]>('certificates.json', []);
+      const idx = all.findIndex((item: any) => item.certificateId === certificateId);
+      if (idx !== -1) {
+        all[idx] = { ...all[idx], ...fields };
+        await writeJsonFile('certificates.json', all);
+      }
+    },
+
+    revoke: async (certificateId: string): Promise<void> => {
+      await db.certificates.updateOne(certificateId, { status: 'Revoked' });
+    },
+
+    restore: async (certificateId: string): Promise<void> => {
+      await db.certificates.updateOne(certificateId, { status: 'Valid' });
     }
   },
   events: {
@@ -1042,8 +1271,8 @@ export const db = {
   },
   feedback: {
     getAll: async (): Promise<any[]> => {
-      if (process.env.DATABASE_URL && !sql) {
-        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
       }
       if (sql) {
         await ensureFeedbackTable();
@@ -1077,8 +1306,8 @@ export const db = {
     },
 
     insertOne: async (f: any): Promise<void> => {
-      if (process.env.DATABASE_URL && !sql) {
-        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
       }
       if (sql) {
         await ensureFeedbackTable();
@@ -1108,8 +1337,8 @@ export const db = {
     },
 
     updateOne: async (id: string, fields: Partial<any>): Promise<void> => {
-      if (process.env.DATABASE_URL && !sql) {
-        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
       }
       if (sql) {
         await ensureFeedbackTable();
@@ -1147,8 +1376,8 @@ export const db = {
     },
 
     deleteOne: async (id: string): Promise<void> => {
-      if (process.env.DATABASE_URL && !sql) {
-        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
       }
       if (sql) {
         await ensureFeedbackTable();
@@ -1168,8 +1397,8 @@ export const db = {
     },
 
     saveAll: async (data: any[]): Promise<void> => {
-      if (process.env.DATABASE_URL && !sql) {
-        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
       }
       if (sql) {
         await ensureFeedbackTable();
@@ -1201,8 +1430,8 @@ export const db = {
   },
   careers: {
     getAll: async (): Promise<any[]> => {
-      if (process.env.DATABASE_URL && !sql) {
-        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
       }
       if (sql) {
         await ensureCareersTable();
@@ -1251,8 +1480,8 @@ export const db = {
       return careers.find((career: any) => career.slug === slug) || null;
     },
     insertOne: async (career: any): Promise<void> => {
-      if (process.env.DATABASE_URL && !sql) {
-        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
       }
       if (sql) {
         await ensureCareersTable();
@@ -1276,8 +1505,8 @@ export const db = {
       await writeJsonFile('careers.json', data);
     },
     updateOne: async (id: string, fields: Partial<any>): Promise<void> => {
-      if (process.env.DATABASE_URL && !sql) {
-        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
       }
       if (sql) {
         await ensureCareersTable();
@@ -1318,8 +1547,8 @@ export const db = {
       }
     },
     deleteOne: async (id: string): Promise<void> => {
-      if (process.env.DATABASE_URL && !sql) {
-        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
       }
       if (sql) {
         await ensureCareersTable();
@@ -1331,8 +1560,8 @@ export const db = {
       await writeJsonFile('careers.json', data);
     },
     saveAll: async (data: any[]): Promise<void> => {
-      if (process.env.DATABASE_URL && !sql) {
-        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
       }
       if (sql) {
         await ensureCareersTable();
@@ -1347,8 +1576,8 @@ export const db = {
   },
   careerApplications: {
     getAll: async (): Promise<any[]> => {
-      if (process.env.DATABASE_URL && !sql) {
-        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
       }
       if (sql) {
         await ensureCareerApplicationsTable();
@@ -1386,8 +1615,8 @@ export const db = {
       return rows.filter((application: any) => application.opportunityId === opportunityId);
     },
     insertOne: async (application: any): Promise<void> => {
-      if (process.env.DATABASE_URL && !sql) {
-        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
       }
       if (sql) {
         await ensureCareerApplicationsTable();
@@ -1409,8 +1638,8 @@ export const db = {
       await writeJsonFile('career_applications.json', data);
     },
     updateOne: async (id: string, fields: Partial<any>): Promise<void> => {
-      if (process.env.DATABASE_URL && !sql) {
-        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
       }
       if (sql) {
         await ensureCareerApplicationsTable();
@@ -1432,8 +1661,8 @@ export const db = {
       }
     },
     deleteOne: async (id: string): Promise<void> => {
-      if (process.env.DATABASE_URL && !sql) {
-        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
       }
       if (sql) {
         await ensureCareerApplicationsTable();
@@ -1445,8 +1674,8 @@ export const db = {
       await writeJsonFile('career_applications.json', data);
     },
     saveAll: async (data: any[]): Promise<void> => {
-      if (process.env.DATABASE_URL && !sql) {
-        throw new Error('DATABASE_URL is configured but PostgreSQL client failed to initialize.');
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
       }
       if (sql) {
         await ensureCareerApplicationsTable();

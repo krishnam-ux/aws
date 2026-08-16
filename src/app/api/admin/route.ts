@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server';
 import { siteConfig } from '@/data/siteConfig';
 import { db, hashPassword, generateSalt } from '@/lib/db';
+import {
+  ATTENDANCE_OPTIONS,
+  createCertificateRecord,
+  generateCertificateId,
+  generateCertificatePdfBuffer,
+  getCertificateFileName,
+  isCertificateEligible,
+  normalizeAttendanceStatus
+} from '@/lib/certificates';
 
 export const dynamic = 'force-dynamic';
 
@@ -256,11 +265,21 @@ export async function POST(request: Request) {
     }
     if (action === 'delete-event-registration') {
       const { id } = body;
+      if (!id || typeof id !== 'string' || !id.trim()) {
+        return NextResponse.json({ error: 'Registration ID is required.' }, { status: 400 });
+      }
+
       try {
+        const registrations = await db.eventRegistrations.getAll();
+        const registration = registrations.find((entry: any) => entry.id === id);
+        if (!registration) {
+          return NextResponse.json({ error: 'Registration not found or already deleted.' }, { status: 404 });
+        }
+
         await db.eventRegistrations.deleteOne(id);
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, deletedId: id, deletedName: registration.name || 'Student' });
       } catch (err: any) {
-        return NextResponse.json({ error: err.message }, { status: 500 });
+        return NextResponse.json({ error: err.message || 'Failed to delete registration.' }, { status: 500 });
       }
     }
     if (action === 'delete-event-registrations-bulk') {
@@ -286,6 +305,117 @@ export async function POST(request: Request) {
       } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
       }
+    }
+    if (action === 'set-attendance') {
+      const { id, attendance } = body;
+      if (!id || !ATTENDANCE_OPTIONS.includes(attendance)) {
+        return NextResponse.json({ error: 'Valid registration ID and attendance status are required.' }, { status: 400 });
+      }
+      await db.eventRegistrations.updateOne(id, { attendance: normalizeAttendanceStatus(attendance), status: normalizeAttendanceStatus(attendance) === 'Attended' ? 'Attended' : normalizeAttendanceStatus(attendance) === 'Absent' ? 'Cancelled' : 'New' });
+      return NextResponse.json({ success: true });
+    }
+    if (action === 'set-all-attendance') {
+      const { eventId, attendance } = body;
+      if (!eventId || !ATTENDANCE_OPTIONS.includes(attendance)) {
+        return NextResponse.json({ error: 'Event ID and valid attendance status are required.' }, { status: 400 });
+      }
+      const regs = await db.eventRegistrations.getAll();
+      const updates = regs.filter((registration: any) => registration.eventId === eventId);
+      for (const reg of updates) {
+        await db.eventRegistrations.updateOne(reg.id, { attendance: normalizeAttendanceStatus(attendance), status: normalizeAttendanceStatus(attendance) === 'Attended' ? 'Attended' : normalizeAttendanceStatus(attendance) === 'Absent' ? 'Cancelled' : 'New' });
+      }
+      return NextResponse.json({ success: true, updated: updates.length });
+    }
+    if (action === 'generate-certificate') {
+      const { registrationId } = body;
+      if (!registrationId) {
+        return NextResponse.json({ error: 'Registration ID is required.' }, { status: 400 });
+      }
+
+      const registrations = await db.eventRegistrations.getAll();
+      const registration = registrations.find((entry: any) => entry.id === registrationId);
+      if (!registration) {
+        return NextResponse.json({ error: 'Registration not found.' }, { status: 404 });
+      }
+      if (!isCertificateEligible(registration)) {
+        return NextResponse.json({ error: 'Only students marked as Attended are eligible for a certificate.' }, { status: 400 });
+      }
+
+      const existingCertificate = await db.certificates.getByRegistrationId(registrationId);
+      if (existingCertificate && existingCertificate.status !== 'Revoked') {
+        return NextResponse.json({ success: true, certificate: existingCertificate, alreadyExists: true });
+      }
+
+      const event = (await db.events.getAll()).find((entry: any) => entry.id === registration.eventId) || {};
+      const certificateId = existingCertificate?.certificateId || (await generateCertificateId(registrationId, registration.eventId, registration.name));
+      const record = await createCertificateRecord(registration, event, certificateId);
+      const certificate = await db.certificates.insertOne({
+        ...record,
+        certificateId,
+        registrationId,
+        studentName: registration.name,
+        eventName: event.title || registration.eventName || 'AWS Event',
+        eventDate: event.date || registration.date || new Date().toISOString().slice(0, 10),
+        venue: event.venue || registration.venue || 'Chandigarh University – Uttar Pradesh',
+        issueDate: new Date().toISOString().slice(0, 10),
+        status: 'Valid'
+      });
+      await db.eventRegistrations.updateOne(registrationId, { certificateId, attendance: 'Attended', status: 'Attended' });
+      return NextResponse.json({ success: true, certificate, alreadyExists: false });
+    }
+    if (action === 'download-certificate') {
+      const { registrationId } = body;
+      if (!registrationId) {
+        return NextResponse.json({ error: 'Registration ID is required.' }, { status: 400 });
+      }
+      const registration = (await db.eventRegistrations.getAll()).find((entry: any) => entry.id === registrationId);
+      if (!registration) {
+        return NextResponse.json({ error: 'Registration not found.' }, { status: 404 });
+      }
+
+      const certificate = await db.certificates.getByRegistrationId(registrationId);
+      if (!certificate) {
+        return NextResponse.json({ error: 'No certificate exists for this registration.' }, { status: 404 });
+      }
+
+      const event = (await db.events.getAll()).find((entry: any) => entry.id === registration.eventId) || {};
+      const pdf = await generateCertificatePdfBuffer({
+        studentName: certificate.studentName || registration.name,
+        eventName: certificate.eventName || event.title || registration.eventName || 'AWS Event',
+        eventDate: certificate.eventDate || event.date || registration.date || new Date().toISOString().slice(0, 10),
+        venue: certificate.venue || event.venue || 'Chandigarh University – Uttar Pradesh',
+        certificateId: certificate.certificateId,
+        description: `For outstanding achievement in ${certificate.eventName || event.title || registration.eventName || 'the AWS Student Builder Group'}`
+      });
+
+      return new NextResponse(new Uint8Array(pdf), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="${encodeURIComponent(getCertificateFileName(certificate.studentName || registration.name, certificate.certificateId))}"`,
+          'Cache-Control': 'no-store'
+        }
+      });
+    }
+    if (action === 'revoke-certificate') {
+      const { certificateId } = body;
+      if (!certificateId) {
+        return NextResponse.json({ error: 'Certificate ID is required.' }, { status: 400 });
+      }
+      await db.certificates.revoke(certificateId);
+      return NextResponse.json({ success: true });
+    }
+    if (action === 'restore-certificate') {
+      const { certificateId } = body;
+      if (!certificateId) {
+        return NextResponse.json({ error: 'Certificate ID is required.' }, { status: 400 });
+      }
+      await db.certificates.restore(certificateId);
+      return NextResponse.json({ success: true });
+    }
+    if (action === 'get-certificates') {
+      const certificates = await db.certificates.getAll();
+      return NextResponse.json(certificates);
     }
 
     // 4. Events Management

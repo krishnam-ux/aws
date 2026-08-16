@@ -422,6 +422,90 @@ export default function AdminDashboard() {
     }
   };
 
+  const generateCertificateForRegistration = async (registrationId: string) => {
+    const res = await apiCall({ action: 'generate-certificate', registrationId });
+    if (res && res.success) {
+      fetchTabItems();
+      fetchStats();
+      return res.certificate;
+    }
+    setActionError(res?.error || 'Failed to generate certificate.');
+    return null;
+  };
+
+  const downloadCertificateForRegistration = async (registrationId: string) => {
+    const response = await fetch('/api/admin', {
+      method: 'POST',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ action: 'download-certificate', registrationId })
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Unable to download certificate.' }));
+      setActionError(error.error || 'Unable to download certificate.');
+      return;
+    }
+
+    const blob = await response.blob();
+    const disposition = response.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename\*=UTF-8''(.+)|filename="?([^";]+)"?/i);
+    let filename = 'certificate.pdf';
+    if (match) {
+      filename = decodeURIComponent(match[1] || match[2] || 'certificate.pdf');
+    }
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const generateSelectedCertificates = async () => {
+    const attendedIds = selectedRegIds.filter((id) => eventRegistrations.find((reg) => reg.id === id)?.status === 'Attended');
+    if (attendedIds.length === 0) {
+      setActionError('Select at least one student marked as Attended.');
+      return;
+    }
+
+    for (const id of attendedIds) {
+      await generateCertificateForRegistration(id);
+    }
+
+    setSelectedRegIds([]);
+    fetchTabItems();
+    fetchStats();
+  };
+
+  const downloadSelectedCertificates = async () => {
+    const attendedIds = selectedRegIds.filter((id) => eventRegistrations.find((reg) => reg.id === id)?.status === 'Attended');
+    if (attendedIds.length === 0) {
+      setActionError('Select at least one student marked as Attended.');
+      return;
+    }
+
+    for (const id of attendedIds) {
+      const reg = eventRegistrations.find((item) => item.id === id);
+      if (reg && reg.certificateId) {
+        await downloadCertificateForRegistration(id);
+      } else {
+        const generated = await generateCertificateForRegistration(id);
+        if (generated) {
+          await downloadCertificateForRegistration(id);
+        }
+      }
+    }
+
+    setSelectedRegIds([]);
+  };
+
   const addEventRegNote = async (id: string, notes: string) => {
     const res = await apiCall({ action: 'update-event-registration', id, notes });
     if (res && res.success) {
@@ -461,6 +545,9 @@ export default function AdminDashboard() {
   const executeDelete = async () => {
     if (!deleteConfirmation) return;
     setLoading(true);
+    setActionError('');
+    setActionSuccess('');
+
     let res = null;
     if (deleteConfirmation.type === 'single') {
       res = await apiCall({ action: 'delete-event-registration', id: deleteConfirmation.targetId });
@@ -474,10 +561,13 @@ export default function AdminDashboard() {
       setDeleteConfirmation(null);
       setSelectedRegIds([]);
       setViewItem(null);
-      fetchTabItems();
-      fetchStats();
+      setActionSuccess('Registration deleted successfully.');
+      setTimeout(() => setActionSuccess(''), 3000);
+      await fetchTabItems();
+      await fetchStats();
     } else {
-      setActionError('Failed to delete registration data.');
+      setActionError(res?.error || 'Failed to delete registration data.');
+      setTimeout(() => setActionError(''), 4000);
     }
     setLoading(false);
   };
@@ -1868,6 +1958,22 @@ export default function AdminDashboard() {
                     <p className="text-xs text-[#64748B] font-sans">Manage student workshop and bootcamp enrollment sheets.</p>
                   </div>
                   <div className="flex items-center space-x-2">
+                    {selectedRegIds.filter((id) => eventRegistrations.find((reg) => reg.id === id)?.status === 'Attended').length > 0 && (
+                      <>
+                        <button
+                          onClick={generateSelectedCertificates}
+                          className="px-3.5 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded transition-colors cursor-pointer"
+                        >
+                          Generate Selected Certificates
+                        </button>
+                        <button
+                          onClick={downloadSelectedCertificates}
+                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded transition-colors cursor-pointer"
+                        >
+                          Download Selected Certificates
+                        </button>
+                      </>
+                    )}
                     {selectedRegIds.length > 0 && (
                       <button
                         onClick={confirmDeleteBulk}
@@ -1993,6 +2099,16 @@ export default function AdminDashboard() {
                             <button onClick={() => updateEventRegStatus(reg.id, 'Cancelled')} className="text-slate-400 hover:text-slate-655 font-bold cursor-pointer">
                               Cancel
                             </button>
+                            {reg.status === 'Attended' && !reg.certificateId && (
+                              <button onClick={() => generateCertificateForRegistration(reg.id)} className="text-violet-600 hover:text-violet-700 font-bold cursor-pointer">
+                                Generate Certificate
+                              </button>
+                            )}
+                            {reg.status === 'Attended' && reg.certificateId && (
+                              <button onClick={() => downloadCertificateForRegistration(reg.id)} className="text-emerald-600 hover:text-emerald-700 font-bold cursor-pointer">
+                                Download Certificate
+                              </button>
+                            )}
                             <button onClick={() => confirmDeleteIndividual(reg)} className="text-red-600 hover:text-red-700 font-bold cursor-pointer">
                               Delete
                             </button>
@@ -4760,7 +4876,7 @@ export default function AdminDashboard() {
                 <h3 className="font-display font-extrabold text-sm text-red-650">
                   {deleteConfirmation.type === 'all-event'
                     ? `Delete all registrations for ${deleteConfirmation.targetName}?`
-                    : 'Delete Registration Data?'}
+                    : 'Delete this registration permanently? This action cannot be undone.'}
                 </h3>
               </div>
               <button
@@ -4776,7 +4892,7 @@ export default function AdminDashboard() {
 
             <div className="space-y-4">
               <p className="text-slate-700 leading-relaxed font-medium">
-                This action will permanently delete the selected student registration data. This action cannot be undone.
+                Delete this registration permanently? This action cannot be undone.
               </p>
 
               {/* Record Count Audit Statistics */}

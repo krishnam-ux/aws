@@ -1,0 +1,15 @@
+[
+  {
+    "id": "cert-1786875207455",
+    "certificateId": "AWS-SBG-CUUP-2026-177871",
+    "eventId": "event-01",
+    "registrationId": "reg-local-verify-001",
+    "studentName": "Local Verification Student",
+    "eventName": "AWS Student Builder Group Inauguration & Cloud Kickstart",
+    "eventDate": "2026-08-22",
+    "venue": "Online",
+    "issueDate": "2026-08-16",
+    "status": "Valid",
+    "createdAt": "2026-08-16T10:13:27.455Z"
+  }
+]

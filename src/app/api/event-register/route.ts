@@ -116,6 +116,8 @@ export async function POST(request: Request) {
       consent: !!consent,
       date: new Date().toISOString(),
       status: 'New',
+      attendance: 'Registered',
+      certificateId: null,
       notes: ''
     };
 
