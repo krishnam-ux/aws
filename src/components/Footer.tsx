@@ -174,7 +174,7 @@ export default function Footer() {
 
           <div className="flex flex-col md:items-end gap-1.5 md:text-right">
             <span className="font-semibold text-slate-400">
-              The AWS Student Builder Group at Chandigarh University – Uttar Pradesh is managed by the AWS team at Chandigarh University – Uttar Pradesh.
+              A student-led AWS Student Builder Group at Chandigarh University – Uttar Pradesh.
             </span>
           </div>
         </div>

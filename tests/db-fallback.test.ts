@@ -2,8 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 
+const require = createRequire(import.meta.url);
 const filePath = path.join(process.cwd(), 'src', 'data', 'db', 'event_registrations.json');
+
+function clearDbCache() {
+  try {
+    const dbPath = require.resolve('../src/lib/db.ts');
+    delete require.cache[dbPath];
+  } catch (e) {
+    // Ignore
+  }
+}
 const originalDatabaseUrl = process.env.DATABASE_URL;
 const originalKvUrl = process.env.KV_REST_API_URL;
 const originalKvToken = process.env.KV_REST_API_TOKEN;
@@ -17,6 +28,7 @@ test('detects configured postgres candidate names even when DATABASE_URL is abse
     delete process.env.DATABASE_URL;
     process.env.POSTGRES_URL = fakePostgresUrl;
 
+    clearDbCache();
     const dbModule = await import(`../src/lib/db.ts?test=${Date.now()}`);
     const { hasConfiguredDatabase, getPostgresCandidates } = dbModule;
 
@@ -36,6 +48,7 @@ test('persists attendance and status together when updating a registration', asy
     delete process.env.KV_REST_API_URL;
     delete process.env.KV_REST_API_TOKEN;
 
+    clearDbCache();
     const dbModule = await import(`../src/lib/db.ts?test=${Date.now()}`);
     const { db } = dbModule;
 
@@ -95,6 +108,7 @@ test('invalidates cached registrations after delete so fresh reads reflect the l
     delete process.env.KV_REST_API_URL;
     delete process.env.KV_REST_API_TOKEN;
 
+    clearDbCache();
     const dbModule = await import(`../src/lib/db.ts?test=${Date.now()}`);
     const { db } = dbModule;
 
@@ -139,7 +153,7 @@ test('invalidates cached registrations after delete so fresh reads reflect the l
   }
 });
 
-test('falls back to local JSON when DATABASE_URL is present but postgres is unavailable', async () => {
+test('fails fast instead of silently falling back to local JSON when a database is configured but postgres is unavailable', async () => {
   const originalBackup = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : null;
 
   try {
@@ -147,6 +161,7 @@ test('falls back to local JSON when DATABASE_URL is present but postgres is unav
     delete process.env.KV_REST_API_URL;
     delete process.env.KV_REST_API_TOKEN;
 
+    clearDbCache();
     const dbModule = await import(`../src/lib/db.ts?test=${Date.now()}`);
     const { db } = dbModule;
 
@@ -165,7 +180,7 @@ test('falls back to local JSON when DATABASE_URL is present but postgres is unav
       experienceLevel: 'Beginner',
       linkedin: '',
       github: '',
-      motivation: 'Testing the JSON fallback path.',
+      motivation: 'Testing the database integrity guard.',
       consent: true,
       date: new Date().toISOString(),
       status: 'New',
@@ -174,13 +189,8 @@ test('falls back to local JSON when DATABASE_URL is present but postgres is unav
       notes: ''
     };
 
-    await db.eventRegistrations.insertOne(reg);
-    const records = await db.eventRegistrations.getAll();
-
-    assert.equal(records.some((entry: any) => entry.id === reg.id), true);
-
-    const saved = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-    assert.equal(saved.some((entry: any) => entry.id === reg.id), true);
+    await assert.rejects(() => db.eventRegistrations.insertOne(reg), /configured.*PostgreSQL.*failed to initialize/i);
+    assert.equal(fs.existsSync(filePath), originalBackup !== null || false);
   } finally {
     if (originalBackup === null) {
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);

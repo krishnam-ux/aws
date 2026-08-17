@@ -277,6 +277,14 @@ export async function POST(request: Request) {
         }
 
         await db.eventRegistrations.deleteOne(id);
+        const remaining = await db.eventRegistrations.getAll();
+        if (remaining.some((entry: any) => entry.id === id)) {
+          return NextResponse.json({
+            error: 'Delete did not remove the row from the backing storage. The production record still exists.',
+            deletedId: id
+          }, { status: 409 });
+        }
+
         return NextResponse.json({ success: true, deletedId: id, deletedName: registration.name || 'Student' });
       } catch (err: any) {
         return NextResponse.json({ error: err.message || 'Failed to delete registration.' }, { status: 500 });

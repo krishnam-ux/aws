@@ -42,11 +42,21 @@ export function getPostgresCandidates(): string[] {
     process.env.DATABASE_URL_UNPOOLED,
     process.env.POSTGRES_URL_NON_POOLING,
     process.env.POSTGRES_URL_NO_SSL,
-  ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+  ].filter((value): value is string => 
+    typeof value === 'string' && 
+    value.trim().length > 0 && 
+    value.trim() !== '[SENSITIVE]'
+  );
 }
 
 export function hasConfiguredDatabase(): boolean {
   return getPostgresCandidates().length > 0;
+}
+
+function requireDatabaseAvailability(): void {
+  if (hasConfiguredDatabase() && !sql) {
+    throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
+  }
 }
 
 // PostgreSQL integration
@@ -426,6 +436,10 @@ function invalidateMemoryCache(filename: string): void {
 
 // Generic read/write functions
 async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
+  if (hasConfiguredDatabase() && !sql) {
+    throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
+  }
+
   const cached = memoryDbCache[filename];
   if (cached !== undefined && Date.now() < cached.expiresAt) {
     return cached.data as T;
@@ -500,6 +514,10 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
 }
 
 async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
+  if (hasConfiguredDatabase() && !sql) {
+    throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
+  }
+
   // Always invalidate stale snapshot before writing, then update cache to the new value.
   invalidateMemoryCache(filename);
   memoryDbCache[filename] = {
@@ -801,9 +819,7 @@ const DEFAULT_CONTENT = {
 };
 
 async function readSettingsStore(): Promise<Record<string, any>> {
-  if (hasConfiguredDatabase() && !sql) {
-    throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
-  }
+  requireDatabaseAvailability();
   if (sql) {
     return await readPostgres<Record<string, any>>('settings.json', {});
   }
@@ -811,9 +827,7 @@ async function readSettingsStore(): Promise<Record<string, any>> {
 }
 
 async function writeSettingsStore(data: Record<string, any>): Promise<void> {
-  if (hasConfiguredDatabase() && !sql) {
-    throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
-  }
+  requireDatabaseAvailability();
   if (sql) {
     await writePostgres('settings.json', data);
     return;
@@ -980,9 +994,14 @@ export const db = {
       if (sql) {
         await ensureRegistrationsTable();
         try {
-          await sql`
-            DELETE FROM registrations WHERE id = ${id}
+          const deleted = await sql`
+            DELETE FROM registrations
+            WHERE id = ${id}
+            RETURNING id
           `;
+          if (!deleted || deleted.length === 0) {
+            throw new Error(`Registration ${id} was not found in the production database.`);
+          }
           return;
         } catch (err) {
           console.error('Postgres error in eventRegistrations.deleteOne:', err);
@@ -990,8 +1009,12 @@ export const db = {
         }
       }
       let data = await readJsonFile<any[]>('event_registrations.json', []);
+      const hadMatch = data.some(r => r.id === id);
       data = data.filter(r => r.id !== id);
       await writeJsonFile('event_registrations.json', data);
+      if (!hadMatch) {
+        throw new Error(`Registration ${id} was not found in the local storage.`);
+      }
     },
 
     deleteByEventId: async (eventId: string): Promise<void> => {
