@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { buildOpportunitySuccessUrl, hasDuplicateOpportunityApplication } from '@/lib/opportunityApplication';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,8 +46,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Applications Closed — Maximum applications reached.' }, { status: 403 });
     }
 
-    const emailExists = currentApplications.some((app: any) => app.email.toLowerCase() === email.toLowerCase());
-    if (emailExists) {
+    if (hasDuplicateOpportunityApplication(currentApplications, opportunityId, email)) {
       return NextResponse.json({ success: false, error: 'You have already applied to this opportunity.' }, { status: 409 });
     }
 
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
 
     await db.careerApplications.insertOne(submission);
 
-    return NextResponse.redirect(new URL(`/careers/${opportunity.slug}?submitted=1`, process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'));
+    return NextResponse.redirect(buildOpportunitySuccessUrl(request.url, opportunity.slug));
   } catch (error) {
     console.error('Career application insert failed:', error);
     return NextResponse.json({ success: false, error: 'Database transaction failed. Your application was not submitted.' }, { status: 500 });

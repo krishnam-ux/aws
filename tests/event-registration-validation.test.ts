@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { validateEventRegistrationInput } from '../src/lib/eventRegistrationValidation';
+import { validateEventRegistrationInput } from '../src/lib/eventRegistrationValidation.ts';
 
 test('allows registration with empty LinkedIn and GitHub when student ID is provided', () => {
   const result = validateEventRegistrationInput({
