@@ -31,11 +31,14 @@ export function buildOpportunitySuccessUrl(
     return null;
   })();
 
-  const forwardedProto = requestHeaders?.get('x-forwarded-proto');
+  const productionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+  const productionOrigin = normalizeOrigin(productionUrl) || normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL);
+
+  const forwardedProto = requestHeaders?.get('x-forwarded-proto') || 'https';
   const forwardedHost = requestHeaders?.get('x-forwarded-host') || requestHeaders?.get('host');
-  const forwardedOrigin = forwardedProto && forwardedHost ? `${forwardedProto}://${forwardedHost}` : null;
-  const siteOrigin = normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL);
-  const origin = forwardedOrigin || requestOrigin || siteOrigin || 'http://localhost:3000';
+  const forwardedOrigin = forwardedHost ? `${forwardedProto}://${forwardedHost}` : null;
+  const requestHostOrigin = requestOrigin && !requestOrigin.includes('localhost') ? requestOrigin : null;
+  const origin = forwardedOrigin || requestHostOrigin || productionOrigin || 'http://localhost:3000';
 
   return new URL(`/careers/${slug}?submitted=1`, origin).toString();
 }

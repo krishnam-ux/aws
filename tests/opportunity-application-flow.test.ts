@@ -34,6 +34,14 @@ test('uses the current request origin when building the success redirect URL', (
       buildOpportunitySuccessUrl('http://localhost:3000/api/career-applications', 'demo-opportunity'),
       'http://localhost:3000/careers/demo-opportunity?submitted=1',
     );
+    assert.equal(
+      buildOpportunitySuccessUrl(
+        'http://localhost:3000/api/career-applications',
+        'prod-opportunity',
+        new Headers({ host: 'www.awssbgcuup.tech', 'x-forwarded-proto': 'https' }),
+      ),
+      'https://www.awssbgcuup.tech/careers/prod-opportunity?submitted=1',
+    );
   } finally {
     if (previous === undefined) delete process.env.NEXT_PUBLIC_SITE_URL; else process.env.NEXT_PUBLIC_SITE_URL = previous;
   }
