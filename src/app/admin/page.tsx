@@ -109,6 +109,9 @@ export default function AdminDashboard() {
   // DB Data
   const [eventRegistrations, setEventRegistrations] = useState<any[]>([]);
   const [selectedEventRegs, setSelectedEventRegs] = useState<CommunityEvent | null>(null);
+  const [selectedOpportunityRegs, setSelectedOpportunityRegs] = useState<any | null>(null);
+  const [opportunityApplicationSearch, setOpportunityApplicationSearch] = useState('');
+  const [opportunityApplicationStatusFilter, setOpportunityApplicationStatusFilter] = useState('All');
 
   // Registration data deletion selection & confirmation states
   const [selectedRegIds, setSelectedRegIds] = useState<string[]>([]);
@@ -157,7 +160,12 @@ export default function AdminDashboard() {
   // Reset bulk selection when layout state changes to prevent unintended operations on hidden records
   useEffect(() => {
     setSelectedRegIds([]);
-  }, [activeTab, selectedEventRegs, searchQuery, filterStatus]);
+  }, [activeTab, selectedEventRegs, selectedOpportunityRegs, searchQuery, filterStatus]);
+
+  useEffect(() => {
+    setOpportunityApplicationSearch('');
+    setOpportunityApplicationStatusFilter('All');
+  }, [selectedOpportunityRegs]);
 
   useEffect(() => {
     setContactCurrentPage(1);
@@ -708,6 +716,86 @@ export default function AdminDashboard() {
   const exportEventCSV = (event: CommunityEvent) => exportEventData(event, 'csv');
   const exportEventExcel = (event: CommunityEvent) => exportEventData(event, 'excel');
   const exportEventPDF = (event: CommunityEvent) => exportEventData(event, 'pdf');
+
+  const openOpportunityRegistrations = async (opportunity: any) => {
+    setActionError('');
+    const data = await apiCall({ action: 'get-career-applications', opportunityId: opportunity.id });
+    if (Array.isArray(data)) {
+      setOpportunityApplications((prev) => {
+        const otherApplications = prev.filter((app) => app.opportunityId !== opportunity.id);
+        return [...data, ...otherApplications];
+      });
+      setSelectedOpportunityRegs(opportunity);
+      return;
+    }
+    setActionError(data?.error || 'Failed to load applications for this opportunity.');
+  };
+
+  const updateOpportunityApplication = async (id: string, fields: { status?: string; adminNotes?: string }) => {
+    const res = await apiCall({ action: 'update-career-application', id, ...fields });
+    if (res && res.success) {
+      setOpportunityApplications((prev) => prev.map((app) =>
+        app.id === id
+          ? {
+              ...app,
+              ...(fields.status !== undefined ? { status: fields.status } : {}),
+              ...(fields.adminNotes !== undefined ? { adminNotes: fields.adminNotes } : {}),
+              updatedAt: new Date().toISOString()
+            }
+          : app
+      ));
+      return;
+    }
+    if (res) {
+      setActionError(res.error || 'Failed to update application.');
+      setTimeout(() => setActionError(''), 3000);
+    }
+  };
+
+  const exportOpportunityApplicationsCSV = async (opportunity: any) => {
+    const key = `${opportunity.id}-applications-csv`;
+    if (exportingStates[key]) return;
+
+    setExportingStates(prev => ({ ...prev, [key]: true }));
+
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ action: 'export-career-applications-csv', opportunityId: opportunity.id })
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        let errMsg = 'Unable to export applications. Please try again.';
+        try {
+          const errData = JSON.parse(errText);
+          if (errData.error) errMsg = errData.error;
+        } catch (_) {}
+        alert(errMsg);
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeTitle = String(opportunity.title || 'opportunity').replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+      a.download = `${safeTitle}-applications.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Opportunity application export error:', err);
+      alert('Unable to export applications. Please try again.');
+    } finally {
+      setExportingStates(prev => ({ ...prev, [key]: false }));
+    }
+  };
 
   const exportFeedbackData = async (format: 'csv' | 'excel' | 'pdf') => {
     const key = `feedback-${format}`;
@@ -2621,6 +2709,16 @@ export default function AdminDashboard() {
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-2 text-[10px]">
+                          <button onClick={() => openOpportunityRegistrations(item)} className="text-[#FF9900] hover:text-[#E08800] font-bold cursor-pointer">
+                            View Registrations ({opportunityApplications.filter((app) => app.opportunityId === item.id).length})
+                          </button>
+                          <button
+                            disabled={exportingStates[`${item.id}-applications-csv`]}
+                            onClick={() => exportOpportunityApplicationsCSV(item)}
+                            className="text-slate-600 hover:text-[#FF9900] font-semibold cursor-pointer disabled:opacity-50"
+                          >
+                            {exportingStates[`${item.id}-applications-csv`] ? 'Preparing...' : 'Export CSV'}
+                          </button>
                           <button onClick={() => setEditOpportunity(item)} className="text-brand-navy hover:text-[#FF9900] font-bold cursor-pointer">Edit</button>
                           <button onClick={() => toggleOpportunityPublish(item, !Boolean(item.published))} className="text-emerald-600 hover:text-emerald-700 font-bold cursor-pointer">{item.published ? 'Unpublish' : 'Publish'}</button>
                           <button onClick={() => deleteOpportunity(item.id)} className="text-red-500 hover:text-red-700 font-bold cursor-pointer">Delete</button>
@@ -3917,6 +4015,66 @@ export default function AdminDashboard() {
               </div>
             )}
 
+            {/* If Opportunity Application details */}
+            {viewItem._recordType === 'opportunityApplication' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Student Name</span>
+                    <p className="font-semibold text-slate-800 text-sm mt-0.5">{viewItem.name}</p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Email / Phone</span>
+                    <p className="font-mono text-slate-800 mt-0.5 select-all">{viewItem.email}</p>
+                    <p className="text-slate-600 mt-0.5">{viewItem.phone || 'N/A'}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Academic Details</span>
+                    <p className="font-semibold text-slate-800 mt-0.5">{viewItem.university || 'N/A'}</p>
+                    <p className="text-slate-600 mt-0.5">{viewItem.program || 'N/A'}{viewItem.graduationYear ? ` - ${viewItem.graduationYear}` : ''}</p>
+                    <p className="text-[10px] text-slate-450 font-mono mt-0.5">Student ID: {viewItem.studentId || '—'}</p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Profiles</span>
+                    {viewItem.linkedin && <p className="text-slate-600 mt-0.5 truncate"><a href={viewItem.linkedin} target="_blank" rel="noopener noreferrer" className="underline text-brand-navy font-medium hover:text-aws-orange">LinkedIn Profile</a></p>}
+                    {viewItem.github && <p className="text-slate-600 mt-0.5 truncate"><a href={viewItem.github} target="_blank" rel="noopener noreferrer" className="underline text-brand-navy font-medium hover:text-aws-orange">GitHub Profile</a></p>}
+                    {viewItem.portfolio && <p className="text-slate-600 mt-0.5 truncate"><a href={viewItem.portfolio} target="_blank" rel="noopener noreferrer" className="underline text-brand-navy font-medium hover:text-aws-orange">Portfolio Website</a></p>}
+                  </div>
+                </div>
+                <div>
+                  <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Skills</span>
+                  <p className="text-slate-650 leading-relaxed font-sans bg-slate-50 p-3 rounded border border-slate-100 whitespace-pre-wrap">{viewItem.skills || 'No skills provided.'}</p>
+                </div>
+                <div>
+                  <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Experience</span>
+                  <p className="text-slate-650 leading-relaxed font-sans bg-slate-50 p-3 rounded border border-slate-100 whitespace-pre-wrap">{viewItem.experience || 'No experience details provided.'}</p>
+                </div>
+                <div>
+                  <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Motivation</span>
+                  <p className="text-slate-650 leading-relaxed font-sans bg-slate-50 p-3 rounded border border-slate-100 whitespace-pre-wrap">{viewItem.motivation || 'No motivation provided.'}</p>
+                </div>
+                <div>
+                  <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Additional Information</span>
+                  <p className="text-slate-650 leading-relaxed font-sans bg-slate-50 p-3 rounded border border-slate-100 whitespace-pre-wrap">{viewItem.additionalInformation || 'No additional information provided.'}</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Admin Notes</span>
+                  <textarea
+                    rows={3}
+                    defaultValue={viewItem.adminNotes || ''}
+                    onBlur={async (e) => {
+                      await updateOpportunityApplication(viewItem.id, { adminNotes: e.target.value });
+                      setViewItem({ ...viewItem, adminNotes: e.target.value });
+                    }}
+                    placeholder="Add internal notes (saves on blur)..."
+                    className="w-full p-2 border border-[#E2E8F0] rounded font-sans text-xs focus:outline-none"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* If Verification details */}
             {viewItem.reason && (
               <div className="space-y-4">
@@ -4860,6 +5018,156 @@ export default function AdminDashboard() {
 
             <div className="pt-4 border-t border-[#E2E8F0] flex justify-end">
               <button onClick={() => setSelectedEventRegs(null)} className="px-4 py-1.5 bg-[#F6F8FA] border border-[#E2E8F0] rounded font-semibold cursor-pointer hover:bg-slate-100">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* OPPORTUNITY APPLICATIONS SUB-PANEL MODAL */}
+      {selectedOpportunityRegs && (
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm font-sans text-xs">
+          <div className="bg-white rounded-lg border border-[#E2E8F0] shadow-2xl max-w-6xl w-full p-6 space-y-6 max-h-[90vh] overflow-y-auto font-sans text-xs">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-display font-bold text-sm text-[#111827]">Opportunity Applications</h3>
+                <p className="text-xs text-[#64748B] mt-0.5">{selectedOpportunityRegs.title}</p>
+              </div>
+              <button onClick={() => setSelectedOpportunityRegs(null)} className="text-slate-400 hover:text-slate-650 cursor-pointer">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {[
+                { label: 'Total', value: opportunityApplications.filter((a) => a.opportunityId === selectedOpportunityRegs.id).length, bg: 'bg-slate-50 text-slate-800' },
+                { label: 'New', value: opportunityApplications.filter((a) => a.opportunityId === selectedOpportunityRegs.id && (a.status || 'New') === 'New').length, bg: 'bg-orange-50 text-[#FF9900]' },
+                { label: 'Reviewed', value: opportunityApplications.filter((a) => a.opportunityId === selectedOpportunityRegs.id && (a.status || 'New') === 'Reviewed').length, bg: 'bg-blue-50 text-blue-700' },
+                { label: 'Shortlisted', value: opportunityApplications.filter((a) => a.opportunityId === selectedOpportunityRegs.id && (a.status || 'New') === 'Shortlisted').length, bg: 'bg-emerald-50 text-emerald-700' }
+              ].map((c, i) => (
+                <div key={i} className={`p-3 rounded border border-slate-100 text-center font-display font-bold ${c.bg}`}>
+                  <span className="text-[9px] uppercase tracking-wider block opacity-75">{c.label}</span>
+                  <span className="text-lg block mt-0.5">{c.value}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white border border-[#E2E8F0] p-4 rounded-lg shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-3 flex-grow max-w-4xl">
+                <div className="relative min-w-[220px] flex-grow">
+                  <input
+                    type="text"
+                    placeholder="Search by name, email, university, program or student ID..."
+                    value={opportunityApplicationSearch}
+                    onChange={(e) => setOpportunityApplicationSearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 border border-[#E2E8F0] rounded text-xs focus:outline-none focus:ring-1 focus:ring-[#FF9900] bg-[#F6F8FA] font-medium font-sans"
+                  />
+                  <svg className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <div className="flex items-center space-x-1.5 flex-shrink-0">
+                  <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider font-display">Status:</span>
+                  <select
+                    value={opportunityApplicationStatusFilter}
+                    onChange={(e) => setOpportunityApplicationStatusFilter(e.target.value)}
+                    className="px-2.5 py-1.5 border border-[#E2E8F0] rounded bg-white text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#FF9900] font-sans"
+                  >
+                    <option value="All">All Statuses</option>
+                    <option value="New">New</option>
+                    <option value="Reviewed">Reviewed</option>
+                    <option value="Shortlisted">Shortlisted</option>
+                    <option value="Accepted">Accepted</option>
+                    <option value="Rejected">Rejected</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                disabled={exportingStates[`${selectedOpportunityRegs.id}-applications-csv`]}
+                onClick={() => exportOpportunityApplicationsCSV(selectedOpportunityRegs)}
+                className="px-3 py-1.5 bg-[#F6F8FA] border border-[#E2E8F0] text-slate-800 hover:border-[#FF9900] hover:text-[#FF9900] rounded font-bold transition-colors cursor-pointer text-[10px] disabled:opacity-50"
+              >
+                {exportingStates[`${selectedOpportunityRegs.id}-applications-csv`] ? 'Preparing...' : 'Export CSV'}
+              </button>
+            </div>
+
+            <div className="overflow-x-auto border border-[#E2E8F0] rounded">
+              <table className="min-w-full divide-y divide-[#E2E8F0] text-xs font-sans">
+                <thead className="bg-[#F6F8FA] font-display font-bold text-[#64748B]">
+                  <tr>
+                    <th className="px-4 py-3 text-left">Student Name</th>
+                    <th className="px-4 py-3 text-left">Email</th>
+                    <th className="px-4 py-3 text-left">University</th>
+                    <th className="px-4 py-3 text-left">Program</th>
+                    <th className="px-4 py-3 text-left">Applied At</th>
+                    <th className="px-4 py-3 text-left">Status</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-650 bg-white">
+                  {(() => {
+                    const filteredApplications = opportunityApplications
+                      .filter((app) => app.opportunityId === selectedOpportunityRegs.id)
+                      .filter((app) => {
+                        const query = opportunityApplicationSearch.trim().toLowerCase();
+                        const haystack = `${app.name || ''} ${app.email || ''} ${app.university || ''} ${app.program || ''} ${app.studentId || ''}`.toLowerCase();
+                        const matchesSearch = !query || haystack.includes(query);
+                        const status = app.status || 'New';
+                        const matchesStatus = opportunityApplicationStatusFilter === 'All' || status === opportunityApplicationStatusFilter;
+                        return matchesSearch && matchesStatus;
+                      });
+
+                    if (filteredApplications.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan={7} className="px-4 py-8 text-center text-[#64748B]">
+                            No applications match the selected filters.
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return filteredApplications.map((app) => (
+                      <tr key={app.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-semibold text-[#111827]">{app.name}</td>
+                        <td className="px-4 py-3 font-mono text-[11px] select-all">{app.email}</td>
+                        <td className="px-4 py-3">{app.university || '—'}</td>
+                        <td className="px-4 py-3">{app.program ? `${app.program}${app.graduationYear ? ` (${app.graduationYear})` : ''}` : '—'}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">{app.createdAt ? new Date(app.createdAt).toLocaleString() : '—'}</td>
+                        <td className="px-4 py-3">
+                          <select
+                            value={app.status || 'New'}
+                            onChange={(e) => updateOpportunityApplication(app.id, { status: e.target.value })}
+                            className="px-2 py-1 border border-[#E2E8F0] rounded bg-white font-medium text-xs focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                          >
+                            <option value="New">New</option>
+                            <option value="Reviewed">Reviewed</option>
+                            <option value="Shortlisted">Shortlisted</option>
+                            <option value="Accepted">Accepted</option>
+                            <option value="Rejected">Rejected</option>
+                          </select>
+                        </td>
+                        <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                          <button
+                            onClick={() => setViewItem({ ...app, _recordType: 'opportunityApplication' })}
+                            className="text-brand-navy hover:text-[#FF9900] font-bold cursor-pointer"
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ));
+                  })()}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="pt-4 border-t border-[#E2E8F0] flex justify-end">
+              <button onClick={() => setSelectedOpportunityRegs(null)} className="px-4 py-1.5 bg-[#F6F8FA] border border-[#E2E8F0] rounded font-semibold cursor-pointer hover:bg-slate-100">
                 Close
               </button>
             </div>

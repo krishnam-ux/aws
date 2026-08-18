@@ -604,6 +604,89 @@ export async function POST(request: Request) {
       await db.careerApplications.updateOne(id, { status, adminNotes });
       return NextResponse.json({ success: true });
     }
+    if (action === 'export-career-applications-csv') {
+      const { opportunityId } = body;
+      if (!opportunityId) {
+        return NextResponse.json({ error: 'Opportunity ID is required.' }, { status: 400 });
+      }
+
+      const careers = await db.careers.getAll();
+      const opportunity = careers.find((item: any) => item.id === opportunityId);
+      if (!opportunity) {
+        return NextResponse.json({ error: 'Opportunity not found.' }, { status: 404 });
+      }
+
+      const applications = await db.careerApplications.getByOpportunityId(opportunityId);
+      if (applications.length === 0) {
+        return NextResponse.json({ error: 'No applications available to export.' }, { status: 400 });
+      }
+
+      const headers = [
+        'Application ID',
+        'Opportunity ID',
+        'Opportunity Title',
+        'Student Name',
+        'Email',
+        'Phone',
+        'University',
+        'Program',
+        'Graduation Year',
+        'Student ID',
+        'LinkedIn',
+        'GitHub',
+        'Portfolio',
+        'Skills',
+        'Experience',
+        'Motivation',
+        'Additional Information',
+        'Consent',
+        'Status',
+        'Admin Notes',
+        'Registration Date',
+        'Registration Time'
+      ].join(',');
+
+      const rows = applications.map((application: any) => (
+        [
+          application.id,
+          application.opportunityId,
+          opportunity.title || '',
+          application.name || '',
+          application.email || '',
+          application.phone || '',
+          application.university || '',
+          application.program || '',
+          application.graduationYear || '',
+          application.studentId || '',
+          application.linkedin || '',
+          application.github || '',
+          application.portfolio || '',
+          application.skills || '',
+          application.experience || '',
+          application.motivation || '',
+          application.additionalInformation || '',
+          application.consent ? 'Yes' : 'No',
+          application.status || 'New',
+          application.adminNotes || '',
+          application.createdAt ? new Date(application.createdAt).toLocaleDateString() : '',
+          application.createdAt ? new Date(application.createdAt).toLocaleTimeString() : ''
+        ]
+          .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+          .join(',')
+      ));
+
+      const csv = [headers, ...rows].join('\n');
+      const filename = `${String(opportunity.title || 'opportunity').replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '') || 'opportunity'}-applications.csv`;
+
+      return new NextResponse(csv, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/csv;charset=utf-8',
+          'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+          'Cache-Control': 'no-store'
+        }
+      });
+    }
 
     // 8. Verification Requests Management
     if (action === 'get-verifications') {
