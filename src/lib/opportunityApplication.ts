@@ -2,9 +2,42 @@ export function normalizeEmail(value?: string | null): string {
   return String(value ?? '').trim().toLowerCase();
 }
 
-export function buildOpportunitySuccessUrl(requestUrl: string | URL, slug: string): string {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(requestUrl.toString()).origin;
-  return new URL(`/careers/${slug}?submitted=1`, siteUrl).toString();
+function normalizeOrigin(value?: string | null): string | null {
+  if (!value) return null;
+  try {
+    const normalized = value.trim();
+    if (!normalized) return null;
+    const parsed = new URL(normalized.includes('://') ? normalized : `https://${normalized}`);
+    return parsed.origin;
+  } catch {
+    return null;
+  }
+}
+
+export function buildOpportunitySuccessUrl(
+  requestUrl: string | URL,
+  slug: string,
+  requestHeaders?: Headers,
+): string {
+  const requestOrigin = (() => {
+    try {
+      const url = new URL(requestUrl.toString());
+      if (url.origin && url.origin !== 'null') {
+        return url.origin;
+      }
+    } catch {
+      // ignored
+    }
+    return null;
+  })();
+
+  const forwardedProto = requestHeaders?.get('x-forwarded-proto');
+  const forwardedHost = requestHeaders?.get('x-forwarded-host') || requestHeaders?.get('host');
+  const forwardedOrigin = forwardedProto && forwardedHost ? `${forwardedProto}://${forwardedHost}` : null;
+  const siteOrigin = normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL);
+  const origin = forwardedOrigin || requestOrigin || siteOrigin || 'http://localhost:3000';
+
+  return new URL(`/careers/${slug}?submitted=1`, origin).toString();
 }
 
 export function hasDuplicateOpportunityApplication(

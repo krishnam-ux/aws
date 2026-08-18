@@ -80,7 +80,7 @@ export async function POST(request: Request) {
 
     await db.careerApplications.insertOne(submission);
 
-    return NextResponse.redirect(buildOpportunitySuccessUrl(request.url, opportunity.slug));
+    return NextResponse.redirect(buildOpportunitySuccessUrl(request.url, opportunity.slug, request.headers));
   } catch (error) {
     console.error('Career application insert failed:', error);
     return NextResponse.json({ success: false, error: 'Database transaction failed. Your application was not submitted.' }, { status: 500 });
