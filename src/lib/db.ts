@@ -1292,6 +1292,10 @@ export const db = {
     getMap: async () => await readJsonFile<Record<string, string>>('collaboration_logos.json', {}),
     saveMap: async (data: Record<string, string>) => await writeJsonFile('collaboration_logos.json', data)
   },
+  resumeFiles: {
+    getMap: async () => await readJsonFile<Record<string, { data: string; mimeType: string; fileName: string; size: number }>>('career_resume_files.json', {}),
+    saveMap: async (data: Record<string, { data: string; mimeType: string; fileName: string; size: number }>) => await writeJsonFile('career_resume_files.json', data)
+  },
   feedback: {
     getAll: async (): Promise<any[]> => {
       if (hasConfiguredDatabase() && !sql) {

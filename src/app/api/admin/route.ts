@@ -604,6 +604,19 @@ export async function POST(request: Request) {
       await db.careerApplications.updateOne(id, { status, adminNotes });
       return NextResponse.json({ success: true });
     }
+    if (action === 'delete-career-application') {
+      const { id } = body;
+      if (!id) {
+        return NextResponse.json({ error: 'Application ID is required.' }, { status: 400 });
+      }
+      await db.careerApplications.deleteOne(id);
+      const resumeFiles = await db.resumeFiles.getMap();
+      if (resumeFiles[id]) {
+        delete resumeFiles[id];
+        await db.resumeFiles.saveMap(resumeFiles);
+      }
+      return NextResponse.json({ success: true });
+    }
     if (action === 'export-career-applications-csv') {
       const { opportunityId } = body;
       if (!opportunityId) {

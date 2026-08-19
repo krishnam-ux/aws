@@ -116,7 +116,7 @@ export default function AdminDashboard() {
   // Registration data deletion selection & confirmation states
   const [selectedRegIds, setSelectedRegIds] = useState<string[]>([]);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
-    type: 'single' | 'bulk' | 'all-event';
+    type: 'single' | 'bulk' | 'all-event' | 'opportunity-application';
     count: number;
     targetId?: string;
     targetName?: string;
@@ -550,6 +550,15 @@ export default function AdminDashboard() {
     });
   };
 
+  const confirmDeleteOpportunityApplication = (app: any) => {
+    setDeleteConfirmation({
+      type: 'opportunity-application',
+      count: 1,
+      targetId: app.id,
+      targetName: app.name
+    });
+  };
+
   const executeDelete = async () => {
     if (!deleteConfirmation) return;
     setLoading(true);
@@ -563,16 +572,27 @@ export default function AdminDashboard() {
       res = await apiCall({ action: 'delete-event-registrations-bulk', ids: deleteConfirmation.selectedIds });
     } else if (deleteConfirmation.type === 'all-event') {
       res = await apiCall({ action: 'delete-event-registrations-all', eventId: deleteConfirmation.targetId });
+    } else if (deleteConfirmation.type === 'opportunity-application') {
+      res = await apiCall({ action: 'delete-career-application', id: deleteConfirmation.targetId });
     }
 
     if (res && res.success) {
-      setDeleteConfirmation(null);
-      setSelectedRegIds([]);
-      setViewItem(null);
-      setActionSuccess('Registration deleted successfully.');
-      setTimeout(() => setActionSuccess(''), 3000);
-      await fetchTabItems();
-      await fetchStats();
+      if (deleteConfirmation.type === 'opportunity-application') {
+        const deletedId = deleteConfirmation.targetId;
+        setOpportunityApplications((prev) => prev.filter((app) => app.id !== deletedId));
+        setActionSuccess('Application deleted successfully.');
+        setTimeout(() => setActionSuccess(''), 3000);
+        setDeleteConfirmation(null);
+        await fetchStats();
+      } else {
+        setDeleteConfirmation(null);
+        setSelectedRegIds([]);
+        setViewItem(null);
+        setActionSuccess('Registration deleted successfully.');
+        setTimeout(() => setActionSuccess(''), 3000);
+        await fetchTabItems();
+        await fetchStats();
+      }
     } else {
       setActionError(res?.error || 'Failed to delete registration data.');
       setTimeout(() => setActionError(''), 4000);
@@ -749,6 +769,40 @@ export default function AdminDashboard() {
     if (res) {
       setActionError(res.error || 'Failed to update application.');
       setTimeout(() => setActionError(''), 3000);
+    }
+  };
+
+  const getResumeFile = async (application: any, download: boolean) => {
+    const previewWindow = download ? null : window.open('about:blank', '_blank', 'noopener,noreferrer');
+    try {
+      const response = await fetch(`/api/admin/career-applications/${encodeURIComponent(application.id)}/resume${download ? '?download=1' : ''}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        previewWindow?.close();
+        alert('Unable to access this resume. Please try again.');
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      if (download) {
+        const contentDisposition = response.headers.get('content-disposition') || '';
+        const fileName = contentDisposition.match(/filename="([^"]+)"/)?.[1] || 'resume';
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+      } else if (previewWindow) {
+        previewWindow.location.href = url;
+        window.setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+      }
+    } catch (error) {
+      previewWindow?.close();
+      alert('Unable to access this resume. Please try again.');
     }
   };
 
@@ -4059,6 +4113,29 @@ export default function AdminDashboard() {
                   <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Additional Information</span>
                   <p className="text-slate-650 leading-relaxed font-sans bg-slate-50 p-3 rounded border border-slate-100 whitespace-pre-wrap">{viewItem.additionalInformation || 'No additional information provided.'}</p>
                 </div>
+                <div className="space-y-2 rounded border border-slate-200 bg-slate-50 p-3">
+                  <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Resume</span>
+                  {viewItem.resumeUrl ? (
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => getResumeFile(viewItem, false)}
+                        className="rounded bg-brand-navy px-3 py-1.5 text-[11px] font-bold text-white hover:bg-slate-800"
+                      >
+                        View Resume
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => getResumeFile(viewItem, true)}
+                        className="rounded border border-slate-300 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-100"
+                      >
+                        Download Resume
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-slate-600">No resume uploaded</p>
+                  )}
+                </div>
                 <div className="space-y-1">
                   <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Admin Notes</span>
                   <textarea
@@ -5041,6 +5118,18 @@ export default function AdminDashboard() {
               </button>
             </div>
 
+            {/* Modal-specific action alerts */}
+            {actionSuccess && (
+              <div className="p-3 bg-emerald-50 border border-emerald-250 rounded text-emerald-800 text-xs font-semibold text-center shadow-sm">
+                {actionSuccess}
+              </div>
+            )}
+            {actionError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded text-red-650 text-xs font-semibold text-center shadow-sm">
+                {actionError}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
                 { label: 'Total', value: opportunityApplications.filter((a) => a.opportunityId === selectedOpportunityRegs.id).length, bg: 'bg-slate-50 text-slate-800' },
@@ -5158,6 +5247,12 @@ export default function AdminDashboard() {
                           >
                             View
                           </button>
+                          <button
+                            onClick={() => confirmDeleteOpportunityApplication(app)}
+                            className="text-red-650 hover:text-red-805 font-bold cursor-pointer ml-2"
+                          >
+                            Delete
+                          </button>
                         </td>
                       </tr>
                     ));
@@ -5181,9 +5276,11 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-lg border border-[#E2E8F0] shadow-2xl max-w-md w-full p-6 space-y-5 font-sans">
             <div className="flex items-start justify-between border-b border-slate-100 pb-3">
               <div className="space-y-0.5">
-                <h3 className="font-display font-extrabold text-sm text-red-650">
+                <h3 className="font-display font-extrabold text-sm text-red-655">
                   {deleteConfirmation.type === 'all-event'
                     ? `Delete all registrations for ${deleteConfirmation.targetName}?`
+                    : deleteConfirmation.type === 'opportunity-application'
+                    ? 'Delete Application'
                     : 'Delete this registration permanently? This action cannot be undone.'}
                 </h3>
               </div>
@@ -5200,26 +5297,32 @@ export default function AdminDashboard() {
 
             <div className="space-y-4">
               <p className="text-slate-700 leading-relaxed font-medium">
-                Delete this registration permanently? This action cannot be undone.
+                {deleteConfirmation.type === 'opportunity-application'
+                  ? 'Are you sure you want to delete this application? This action cannot be undone.'
+                  : 'Delete this registration permanently? This action cannot be undone.'}
               </p>
 
-              {/* Record Count Audit Statistics */}
-              <div className="p-3 bg-red-50 border border-red-100 text-red-750 font-semibold rounded flex items-center space-x-2">
-                <svg className="h-4 w-4 text-red-655 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                </svg>
-                <span>
-                  You are about to permanently delete <strong className="underline decoration-wavy decoration-red-650">{deleteConfirmation.count}</strong> registration record{deleteConfirmation.count === 1 ? '' : 's'}.
-                </span>
-              </div>
+              {deleteConfirmation.type !== 'opportunity-application' && (
+                <>
+                  {/* Record Count Audit Statistics */}
+                  <div className="p-3 bg-red-50 border border-red-100 text-red-750 font-semibold rounded flex items-center space-x-2">
+                    <svg className="h-4 w-4 text-red-655 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                    </svg>
+                    <span>
+                      You are about to permanently delete <strong className="underline decoration-wavy decoration-red-650">{deleteConfirmation.count}</strong> registration record{deleteConfirmation.count === 1 ? '' : 's'}.
+                    </span>
+                  </div>
 
-              {/* Mandatory Privacy Rule Warning */}
-              <div className="p-3.5 bg-amber-50 border border-amber-250 text-amber-850 rounded space-y-1">
-                <span className="font-bold text-[9px] uppercase tracking-wider block text-amber-750 font-sans">Important Privacy Rule</span>
-                <p className="text-[10px] leading-relaxed font-sans font-medium">
-                  Delete registration data only when it is no longer required for legitimate community/event administration purposes.
-                </p>
-              </div>
+                  {/* Mandatory Privacy Rule Warning */}
+                  <div className="p-3.5 bg-amber-50 border border-amber-250 text-amber-850 rounded space-y-1">
+                    <span className="font-bold text-[9px] uppercase tracking-wider block text-amber-750 font-sans">Important Privacy Rule</span>
+                    <p className="text-[10px] leading-relaxed font-sans font-medium">
+                      Delete registration data only when it is no longer required for legitimate community/event administration purposes.
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex justify-end space-x-3">
@@ -5235,7 +5338,7 @@ export default function AdminDashboard() {
                 onClick={executeDelete}
                 className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded cursor-pointer transition-colors font-sans"
               >
-                Delete Permanently
+                {deleteConfirmation.type === 'opportunity-application' ? 'Delete' : 'Delete Permanently'}
               </button>
             </div>
           </div>

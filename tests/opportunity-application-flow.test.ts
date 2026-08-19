@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
   buildOpportunitySuccessUrl,
   hasDuplicateOpportunityApplication,
-} from '../src/lib/opportunityApplication.ts';
+} from '../src/lib/opportunityApplication';
 
 test('blocks duplicate submissions only for the same opportunity and normalized email', () => {
   const applications = [

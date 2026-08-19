@@ -3,6 +3,16 @@ import { db } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
+type SearchParamsValue = string | string[] | undefined;
+
+function isSubmittedState(value: SearchParamsValue): boolean {
+  if (Array.isArray(value)) {
+    return value.some((item) => item === '1');
+  }
+
+  return value === '1';
+}
+
 function formatDate(dateValue?: string) {
   if (!dateValue) return 'No deadline';
   const date = new Date(dateValue);
@@ -18,8 +28,55 @@ function toList(value?: string) {
     .filter(Boolean);
 }
 
-export default async function OpportunityDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function OpportunityDetailsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<Record<string, SearchParamsValue>>;
+}) {
   const { slug } = await params;
+  const submitted = isSubmittedState((await searchParams)?.submitted);
+
+  if (submitted) {
+    return (
+      <main className="min-h-screen bg-slate-50 px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.08)] sm:p-10">
+            <div className="mb-6 flex justify-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl text-emerald-600 shadow-inner">
+                ✓
+              </div>
+            </div>
+
+            <div className="space-y-5 text-center">
+              <h1 className="text-3xl font-black tracking-tight text-brand-navy sm:text-4xl">
+                Application Submitted Successfully
+              </h1>
+
+              <p className="text-lg font-medium text-slate-700">
+                Thank you for your interest in this opportunity.
+              </p>
+
+              <p className="text-base leading-8 text-slate-600">
+                Your application has been successfully submitted and is now under review by our recruitment team. If your profile is shortlisted, our team will contact you with the next steps.
+              </p>
+
+              <p className="text-base leading-8 text-slate-600">
+                Please keep an eye on your registered email for further updates.
+              </p>
+
+              <div className="pt-4">
+                <p className="text-lg font-bold tracking-[0.14em] text-aws-blue uppercase">AWS Student Builder Group</p>
+                <p className="mt-2 text-base italic text-slate-600">Chandigarh University – Uttar Pradesh</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   const career = await db.careers.getBySlug(slug);
 
   if (!career || !career.published || (career.status || '').toLowerCase() === 'draft' || (career.status || '').toLowerCase() === 'unpublished') {
