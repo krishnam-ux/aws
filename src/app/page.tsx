@@ -151,9 +151,12 @@ export default async function Home() {
       <section className="bg-[#F5F7FA] border-b border-border-gray py-8">
         <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-xs font-sans text-slate-500 divide-y md:divide-y-0 lg:divide-x divide-slate-200">
-            <div className="space-y-1">
-              <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400 font-display">COMMUNITY</span>
-              <p className="font-bold text-slate-800 text-xs">{siteConfig.orgShortName}</p>
+            <div className="flex items-center">
+              <img 
+                src="/aws-sbg-logo.png" 
+                alt="AWS Student Builder Group" 
+                className="h-10 md:h-11 w-auto object-contain shrink-0" 
+              />
             </div>
             <div className="pt-4 md:pt-0 lg:pl-6 space-y-1">
               <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400 font-display">UNIVERSITY</span>
