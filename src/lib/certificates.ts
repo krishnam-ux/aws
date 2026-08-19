@@ -115,8 +115,8 @@ function drawWrappedTextBlock(
     align?: 'left' | 'center' | 'right';
   }
 ) {
-  const minSize = options.minSize ?? 12;
-  const maxSize = options.maxSize ?? 32;
+  const minSize = Math.max(1, Math.round(options.minSize ?? 12));
+  const maxSize = Math.max(minSize, Math.round(options.maxSize ?? 32));
   const lineHeight = options.lineHeight ?? 1.2;
   const textValue = String(text || '').trim() || ' ';
 
@@ -164,6 +164,21 @@ export async function generateCertificatePdfBuffer(payload: any): Promise<Buffer
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
+  // Define virtual canvas dimensions matching original design coordinates
+  const V_WIDTH = 1050;
+  const V_HEIGHT = 750;
+  const scale = Math.min(pageWidth / V_WIDTH, pageHeight / V_HEIGHT);
+  
+  // Offset to center the virtual coordinate canvas on the A4 sheet
+  const offsetX = (pageWidth - V_WIDTH * scale) / 2;
+  const offsetY = (pageHeight - V_HEIGHT * scale) / 2;
+
+  const scaleX = (x: number) => offsetX + x * scale;
+  const scaleY = (y: number) => offsetY + y * scale;
+  const scaleW = (w: number) => w * scale;
+  const scaleH = (h: number) => h * scale;
+  const scaleFont = (s: number) => s * scale;
+
   const purple = [164, 78, 216];
   const lightGray = [243, 243, 243];
   const dark = [25, 20, 40];
@@ -180,6 +195,7 @@ export async function generateCertificatePdfBuffer(payload: any): Promise<Buffer
     doc.line(0, y, pageWidth, y);
   }
 
+  // Draw corner purple blocks directly relative to actual page limits
   doc.setFillColor(...purple);
   doc.rect(0, 0, 28, 28, 'F');
   doc.rect(0, pageHeight - 28, 28, 28, 'F');
@@ -192,43 +208,46 @@ export async function generateCertificatePdfBuffer(payload: any): Promise<Buffer
   doc.rect(0, pageHeight - 12, 12, 12, 'F');
   doc.rect(pageWidth - 12, pageHeight - 12, 12, 12, 'F');
 
+  // Left purple panel
   doc.setFillColor(...purple);
-  doc.rect(28, 28, 548, 332, 'F');
+  doc.rect(scaleX(28), scaleY(28), scaleW(548), scaleH(332), 'F');
 
   doc.setTextColor(dark[0], dark[1], dark[2]);
   doc.setFont('times', 'bolditalic');
-  doc.setFontSize(70);
-  doc.text('Certificate', 80, 170);
+  doc.setFontSize(scaleFont(70));
+  doc.text('Certificate', scaleX(80), scaleY(170));
 
   doc.setFont('times', 'normal');
-  doc.setFontSize(20);
-  doc.text('AWS Student Builder Group at', 82, 232);
+  doc.setFontSize(scaleFont(20));
+  doc.text('AWS Student Builder Group at', scaleX(82), scaleY(232));
 
   doc.setFont('times', 'bold');
-  doc.setFontSize(23);
-  doc.text('Chandigarh University – Uttar Pradesh', 82, 270);
+  doc.setFontSize(scaleFont(23));
+  doc.text('Chandigarh University – Uttar Pradesh', scaleX(82), scaleY(270));
 
   const cuLogoPath = path.join(process.cwd(), 'public', 'chandigarh-university-logo.jpg');
   if (fs.existsSync(cuLogoPath)) {
     const cuLogo = fs.readFileSync(cuLogoPath);
-    doc.addImage(cuLogo, 'JPEG', 570, 42, 170, 70);
+    doc.addImage(cuLogo, 'JPEG', scaleX(570), scaleY(42), scaleW(170), scaleH(70));
   } else {
     doc.setFillColor(220, 32, 34);
-    doc.rect(570, 42, 170, 70, 'F');
+    doc.rect(scaleX(570), scaleY(42), scaleW(170), scaleH(70), 'F');
     doc.setFillColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
-    doc.text('CHANDIGARH', 588, 62);
-    doc.text('UNIVERSITY', 597, 82);
+    doc.setFontSize(scaleFont(18));
+    doc.text('CHANDIGARH', scaleX(588), scaleY(62));
+    doc.text('UNIVERSITY', scaleX(597), scaleY(82));
   }
 
+  // AWS logo block
   doc.setFillColor(11, 16, 21);
-  doc.rect(890, 42, 112, 70, 'F');
+  doc.rect(scaleX(890), scaleY(42), scaleW(112), scaleH(70), 'F');
   doc.setFillColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(27);
-  doc.text('aws', 946, 82, { align: 'center' });
+  doc.setFontSize(scaleFont(27));
+  doc.text('aws', scaleX(946), scaleY(82), { align: 'center' });
 
+  // Pixel trophy
   const trophyX = 155;
   const trophyY = 410;
   const trophyCells = [
@@ -237,81 +256,92 @@ export async function generateCertificatePdfBuffer(payload: any): Promise<Buffer
     [79, 166, 32, 18], [71, 184, 48, 12]
   ];
   doc.setFillColor(...purple);
-  trophyCells.forEach(([x, y, w, h]) => doc.rect(trophyX + x, trophyY + y, w, h, 'F'));
+  trophyCells.forEach(([x, y, w, h]) => doc.rect(scaleX(trophyX + x), scaleY(trophyY + y), scaleW(w), scaleH(h), 'F'));
 
+  // Purple chip graphic
   doc.setFillColor(...purple);
-  doc.rect(760, 150, 134, 126, 'F');
+  doc.rect(scaleX(760), scaleY(150), scaleW(134), scaleH(126), 'F');
   doc.setFillColor(245, 245, 245);
-  doc.rect(778, 170, 98, 22, 'F');
-  doc.rect(774, 206, 106, 18, 'F');
-  doc.rect(782, 232, 90, 18, 'F');
+  doc.rect(scaleX(778), scaleY(170), scaleW(98), scaleH(22), 'F');
+  doc.rect(scaleX(774), scaleY(206), scaleW(106), scaleH(18), 'F');
+  doc.rect(scaleX(782), scaleY(232), scaleW(90), scaleH(18), 'F');
 
   const rightX = 640;
   const rightY = 440;
 
-  drawWrappedTextBlock(doc, 'Proudly present to', rightX, rightY - 8, 196, 34, {
+  drawWrappedTextBlock(doc, 'Proudly present to', scaleX(rightX), scaleY(rightY - 8), scaleW(196), scaleH(34), {
     font: 'times',
     style: 'italic',
-    minSize: 16,
-    maxSize: 26,
+    minSize: scaleFont(16),
+    maxSize: scaleFont(26),
     color: [25, 20, 40],
     align: 'center'
   });
 
   const studentName = String(payload.studentName || payload.name || 'Student Name').trim() || 'Student Name';
-  drawWrappedTextBlock(doc, studentName, rightX, rightY + 24, 196, 70, {
+  drawWrappedTextBlock(doc, studentName, scaleX(rightX), scaleY(rightY + 24), scaleW(196), scaleH(70), {
     font: 'times',
     style: 'bold',
-    minSize: 18,
-    maxSize: 34,
+    minSize: scaleFont(18),
+    maxSize: scaleFont(34),
     color: [25, 20, 40],
     lineHeight: 1.08,
     align: 'center'
   });
 
-  drawWrappedTextBlock(doc, 'For outstanding achievement in a local AWS Student Builder Group', rightX - 18, rightY + 108, 232, 88, {
+  const descriptionText = String(payload.description || 'For outstanding achievement in a local AWS Student Builder Group').trim();
+  drawWrappedTextBlock(doc, descriptionText, scaleX(rightX - 18), scaleY(rightY + 108), scaleW(232), scaleH(88), {
     font: 'times',
     style: 'normal',
-    minSize: 12,
-    maxSize: 18,
+    minSize: scaleFont(12),
+    maxSize: scaleFont(18),
     color: [25, 20, 40],
     lineHeight: 1.22,
     align: 'center'
   });
 
   doc.setDrawColor(25, 20, 40);
-  doc.setLineWidth(1.2);
-  doc.line(650, 610, 860, 610);
+  doc.setLineWidth(scaleH(1.2));
+  doc.line(scaleX(650), scaleY(610), scaleX(860), scaleY(610));
 
-  drawWrappedTextBlock(doc, 'Tracey Wang', 660, 635, 170, 36, {
+  drawWrappedTextBlock(doc, 'Tracey Wang', scaleX(660), scaleY(635), scaleW(170), scaleH(36), {
     font: 'times',
     style: 'italic',
-    minSize: 18,
-    maxSize: 28,
+    minSize: scaleFont(18),
+    maxSize: scaleFont(28),
     color: [25, 20, 40],
     lineHeight: 1.08,
     align: 'center'
   });
 
-  drawWrappedTextBlock(doc, 'Community Program Manager', 650, 680, 190, 16, {
+  drawWrappedTextBlock(doc, 'Community Program Manager', scaleX(650), scaleY(680), scaleW(190), scaleH(16), {
     font: 'times',
     style: 'normal',
-    minSize: 10,
-    maxSize: 12,
+    minSize: scaleFont(10),
+    maxSize: scaleFont(12),
     color: [25, 20, 40],
     lineHeight: 1.0,
     align: 'center'
   });
 
-  drawWrappedTextBlock(doc, 'AWS Student Builder Groups', 650, 700, 190, 16, {
+  drawWrappedTextBlock(doc, 'AWS Student Builder Groups', scaleX(650), scaleY(700), scaleW(190), scaleH(16), {
     font: 'times',
     style: 'normal',
-    minSize: 10,
-    maxSize: 12,
+    minSize: scaleFont(10),
+    maxSize: scaleFont(12),
     color: [25, 20, 40],
     lineHeight: 1.0,
     align: 'center'
   });
+
+  // Small, professional verification details footer along the bottom edge
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(scaleFont(8));
+  doc.setTextColor(120, 120, 120);
+  const certId = payload.certificateId || 'AWS-SBG-CUUP-2026-000000';
+  const qrUrl = payload.qrUrl || payload.verificationUrl || `https://www.awssbgcuup.tech/verify-certificate/${certId}`;
+  doc.text(`Certificate ID: ${certId}`, scaleX(80), scaleY(722));
+  doc.text(`Verify authenticity at: ${qrUrl}`, scaleX(970), scaleY(722), { align: 'right' });
 
   return Buffer.from(doc.output('arraybuffer'));
 }
