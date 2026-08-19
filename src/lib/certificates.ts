@@ -270,29 +270,30 @@ export async function generateCertificatePdfBuffer(payload: any): Promise<Buffer
   ]);
   doc.fill();
 
-  // Rebuilt pixel cup trophy with handles in lower-left section
+  // Rebuilt pixel cup trophy with hollow handles in lower-left section
   const trophyX = 175;
-  const trophyY = 410;
+  const trophyY = 430; // Move down slightly
   doc.setFillColor(...purple);
-  // Left handle
-  doc.rect(scaleX(trophyX + 0), scaleY(trophyY + 16), scaleW(16), scaleH(32), 'F');
-  doc.rect(scaleX(trophyX + 0), scaleY(trophyY + 48), scaleW(32), scaleH(16), 'F');
-  // Right handle
-  doc.rect(scaleX(trophyX + 112), scaleY(trophyY + 16), scaleW(16), scaleH(32), 'F');
-  doc.rect(scaleX(trophyX + 96), scaleY(trophyY + 48), scaleW(32), scaleH(16), 'F');
+  // Left handle (hollow)
+  doc.rect(scaleX(trophyX + 0), scaleY(trophyY + 16), scaleW(24), scaleH(8), 'F'); // top connector
+  doc.rect(scaleX(trophyX + 0), scaleY(trophyY + 24), scaleW(8), scaleH(24), 'F'); // vertical bar
+  doc.rect(scaleX(trophyX + 0), scaleY(trophyY + 48), scaleW(24), scaleH(8), 'F'); // bottom connector
+  // Right handle (hollow)
+  doc.rect(scaleX(trophyX + 104), scaleY(trophyY + 16), scaleW(24), scaleH(8), 'F'); // top connector
+  doc.rect(scaleX(trophyX + 120), scaleY(trophyY + 24), scaleW(8), scaleH(24), 'F'); // vertical bar
+  doc.rect(scaleX(trophyX + 104), scaleY(trophyY + 48), scaleW(24), scaleH(8), 'F'); // bottom connector
   // Cup main body
-  doc.rect(scaleX(trophyX + 24), scaleY(trophyY + 0), scaleW(96), scaleH(16), 'F'); // lip
-  doc.rect(scaleX(trophyX + 16), scaleY(trophyY + 16), scaleW(112), scaleH(32), 'F'); // upper cup
-  doc.rect(scaleX(trophyX + 24), scaleY(trophyY + 48), scaleW(96), scaleH(16), 'F'); // lower cup
-  doc.rect(scaleX(trophyX + 32), scaleY(trophyY + 64), scaleW(80), scaleH(16), 'F');
-  doc.rect(scaleX(trophyX + 48), scaleY(trophyY + 80), scaleW(48), scaleH(16), 'F');
-  doc.rect(scaleX(trophyX + 56), scaleY(trophyY + 96), scaleW(32), scaleH(16), 'F');
+  doc.rect(scaleX(trophyX + 24), scaleY(trophyY + 8), scaleW(80), scaleH(8), 'F'); // lip
+  doc.rect(scaleX(trophyX + 24), scaleY(trophyY + 16), scaleW(80), scaleH(32), 'F'); // upper body
+  doc.rect(scaleX(trophyX + 32), scaleY(trophyY + 48), scaleW(64), scaleH(8), 'F'); // lower body 1
+  doc.rect(scaleX(trophyX + 40), scaleY(trophyY + 56), scaleW(48), scaleH(8), 'F'); // lower body 2
+  doc.rect(scaleX(trophyX + 48), scaleY(trophyY + 64), scaleW(32), scaleH(8), 'F'); // lower body 3
   // Cup stem
-  doc.rect(scaleX(trophyX + 64), scaleY(trophyY + 112), scaleW(16), scaleH(48), 'F');
+  doc.rect(scaleX(trophyX + 56), scaleY(trophyY + 72), scaleW(16), scaleH(40), 'F');
   // Cup base
-  doc.rect(scaleX(trophyX + 48), scaleY(trophyY + 160), scaleW(48), scaleH(16), 'F');
-  doc.rect(scaleX(trophyX + 32), scaleY(trophyY + 176), scaleW(80), scaleH(16), 'F');
-  doc.rect(scaleX(trophyX + 16), scaleY(trophyY + 192), scaleW(112), scaleH(16), 'F');
+  doc.rect(scaleX(trophyX + 40), scaleY(trophyY + 112), scaleW(48), scaleH(8), 'F');
+  doc.rect(scaleX(trophyX + 24), scaleY(trophyY + 120), scaleW(80), scaleH(8), 'F');
+  doc.rect(scaleX(trophyX + 16), scaleY(trophyY + 128), scaleW(96), scaleH(8), 'F');
 
   // CPU Chip Logo block below the AWS Logo (112 x 112 square at X=760, Y=150)
   doc.setFillColor(11, 16, 21);
@@ -326,7 +327,7 @@ export async function generateCertificatePdfBuffer(payload: any): Promise<Buffer
   const rightX = 640;
   const rightY = 440;
 
-  drawWrappedTextBlock(doc, 'Proudly present to', scaleX(rightX), scaleY(rightY - 8), scaleW(196), scaleH(34), {
+  drawWrappedTextBlock(doc, 'Proudly present to', scaleX(rightX), scaleY(rightY - 20), scaleW(196), scaleH(34), {
     font: 'helvetica',
     style: 'normal',
     minSize: scaleFont(16),
@@ -336,10 +337,10 @@ export async function generateCertificatePdfBuffer(payload: any): Promise<Buffer
   });
 
   const studentName = String(payload.studentName || payload.name || 'Student Name').trim() || 'Student Name';
-  drawWrappedTextBlock(doc, studentName, scaleX(rightX), scaleY(rightY + 24), scaleW(196), scaleH(70), {
+  drawWrappedTextBlock(doc, studentName, scaleX(rightX), scaleY(rightY + 12), scaleW(196), scaleH(50), {
     font: 'helvetica',
     style: 'bold',
-    minSize: scaleFont(18),
+    minSize: scaleFont(12),
     maxSize: scaleFont(34),
     color: [25, 20, 40],
     lineHeight: 1.08,
@@ -347,7 +348,7 @@ export async function generateCertificatePdfBuffer(payload: any): Promise<Buffer
   });
 
   const descriptionText = String(payload.description || 'For outstanding achievement in a local AWS Student Builder Group').trim();
-  drawWrappedTextBlock(doc, descriptionText, scaleX(rightX - 18), scaleY(rightY + 108), scaleW(232), scaleH(88), {
+  drawWrappedTextBlock(doc, descriptionText, scaleX(rightX - 18), scaleY(rightY + 65), scaleW(232), scaleH(65), {
     font: 'helvetica',
     style: 'normal',
     minSize: scaleFont(12),
@@ -362,7 +363,7 @@ export async function generateCertificatePdfBuffer(payload: any): Promise<Buffer
   doc.setDrawColor(25, 20, 40);
   doc.setLineWidth(scaleH(1.6));
   const sx = (x: number) => scaleX(660 + x);
-  const sy = (y: number) => scaleY(540 + y);
+  const sy = (y: number) => scaleY(580 + y);
   doc.path([
     // T
     { op: 'm', c: [sx(20), sy(35)] },
@@ -395,10 +396,10 @@ export async function generateCertificatePdfBuffer(payload: any): Promise<Buffer
   // Signature Line
   doc.setDrawColor(25, 20, 40);
   doc.setLineWidth(scaleH(1.2));
-  doc.line(scaleX(650), scaleY(610), scaleX(860), scaleY(610));
+  doc.line(scaleX(650), scaleY(675), scaleX(860), scaleY(675));
 
   // Designation labels below the line (Tracey Wang text omitted below line as per IMAGE 2)
-  drawWrappedTextBlock(doc, 'Community Program Manager', scaleX(640), scaleY(625), scaleW(220), scaleH(16), {
+  drawWrappedTextBlock(doc, 'Community Program Manager', scaleX(640), scaleY(690), scaleW(220), scaleH(16), {
     font: 'helvetica',
     style: 'normal',
     minSize: scaleFont(10),
@@ -408,7 +409,7 @@ export async function generateCertificatePdfBuffer(payload: any): Promise<Buffer
     align: 'center'
   });
 
-  drawWrappedTextBlock(doc, 'AWS Student Builder Groups', scaleX(640), scaleY(645), scaleW(220), scaleH(16), {
+  drawWrappedTextBlock(doc, 'AWS Student Builder Groups', scaleX(640), scaleY(710), scaleW(220), scaleH(16), {
     font: 'helvetica',
     style: 'normal',
     minSize: scaleFont(10),
