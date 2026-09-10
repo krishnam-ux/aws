@@ -19,7 +19,7 @@ export default async function EventsPage() {
         ).length;
         return {
           ...event,
-          registrationCount: count
+          registrationCount: event.attendees !== undefined ? event.attendees : count
         };
       });
 

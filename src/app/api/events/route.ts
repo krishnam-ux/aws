@@ -17,7 +17,7 @@ export async function GET() {
         const count = registrations.filter(r => r.eventId === event.id && r.status !== 'Rejected' && r.status !== 'Cancelled').length;
         return {
           ...event,
-          registrationCount: count
+          registrationCount: event.attendees !== undefined ? event.attendees : count
         };
       });
 

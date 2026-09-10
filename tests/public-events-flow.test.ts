@@ -106,6 +106,8 @@ test('Completed event detail retrieval and gallery integrity', async () => {
   assert.ok(firstEvent.month || firstEvent.date, 'Date or Month must exist');
   assert.ok(firstEvent.focus, 'Focus must exist');
   assert.ok(firstEvent.outcome, 'Outcome must exist');
+  assert.equal(firstEvent.speaker, 'Vishnu Rachapudi', 'Speaker should be Vishnu Rachapudi');
+  assert.equal(firstEvent.attendees, 80, 'Attendees should be 80');
 
   // Test setting status to Completed and saving/retrieving
   const originalStatus = firstEvent.status;

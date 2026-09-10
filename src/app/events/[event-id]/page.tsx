@@ -71,9 +71,10 @@ export default async function EventDetailPage({ params }: PageProps) {
   }
 
   const registrations = await db.eventRegistrations.getAll();
-  const registrationCount = registrations.filter(
+  const dbRegistrationCount = registrations.filter(
     (r: any) => r.eventId === event.id && r.status !== 'Rejected' && r.status !== 'Cancelled'
   ).length;
+  const registrationCount = event.attendees !== undefined ? event.attendees : dbRegistrationCount;
 
   const regStatus = (event.registrationStatus || 'Not Open').toUpperCase();
   const isCapacityFull = event.maxRegistrations && event.maxRegistrations > 0 && registrationCount >= event.maxRegistrations;
