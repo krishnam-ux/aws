@@ -1292,6 +1292,26 @@ export const db = {
     getMap: async () => await readJsonFile<Record<string, string>>('collaboration_logos.json', {}),
     saveMap: async (data: Record<string, string>) => await writeJsonFile('collaboration_logos.json', data)
   },
+  eventPhotos: {
+    getMap: async () => await readJsonFile<Record<string, { id: string; data: string; mimeType: string; fileName?: string; caption?: string; uploadedAt?: string; size?: number }>>('event_photos.json', {}),
+    saveMap: async (data: Record<string, any>) => await writeJsonFile('event_photos.json', data),
+    get: async (id: string) => {
+      const map = await db.eventPhotos.getMap();
+      return map[id] || null;
+    },
+    save: async (id: string, photo: any) => {
+      const map = await db.eventPhotos.getMap();
+      map[id] = photo;
+      await db.eventPhotos.saveMap(map);
+    },
+    delete: async (id: string) => {
+      const map = await db.eventPhotos.getMap();
+      if (map[id]) {
+        delete map[id];
+        await db.eventPhotos.saveMap(map);
+      }
+    }
+  },
   resumeFiles: {
     getMap: async () => await readJsonFile<Record<string, { data: string; mimeType: string; fileName: string; size: number }>>('career_resume_files.json', {}),
     saveMap: async (data: Record<string, { data: string; mimeType: string; fileName: string; size: number }>) => await writeJsonFile('career_resume_files.json', data)

@@ -94,6 +94,27 @@ function normalizeEventPayload(event: any): any {
     additionalInfo: String(event.additionalInfo ?? '').trim(),
     whatYouWillLearn,
     collaborations,
+    gallery: Array.isArray(event.gallery)
+      ? event.gallery
+          .filter((item: any) => item !== null && item !== undefined)
+          .map((item: any) => {
+            if (typeof item === 'string') {
+              return {
+                id: item.includes('id=') ? item.split('id=')[1] : `photo-${Date.now()}`,
+                url: item,
+                caption: '',
+                uploadedAt: new Date().toISOString()
+              };
+            }
+            return {
+              id: String(item.id || `photo-${Date.now()}`).trim(),
+              url: String(item.url || '').trim(),
+              caption: String(item.caption || '').trim(),
+              uploadedAt: item.uploadedAt || new Date().toISOString()
+            };
+          })
+          .filter((item: any) => item.url.length > 0)
+      : [],
     maxRegistrations: event.maxRegistrations !== undefined && event.maxRegistrations !== null && event.maxRegistrations !== ''
       ? Number(event.maxRegistrations)
       : undefined,
@@ -180,6 +201,84 @@ export async function POST(request: Request) {
       await db.logos.saveMap(logosMap);
       
       return NextResponse.json({ success: true, url: `/api/collaboration-logos?id=${id}` });
+    }
+
+    // Event Gallery Photo Upload handler
+    if (action === 'upload-event-photo') {
+      const { base64Data, caption, fileName, eventId } = body;
+      if (!base64Data) {
+        return NextResponse.json({ error: 'Missing photo data.' }, { status: 400 });
+      }
+      
+      const matches = base64Data.match(/^data:([a-zA-Z0-9\/\-+.]+);base64,(.+)$/);
+      if (!matches) {
+        return NextResponse.json({ error: 'Invalid photo format.' }, { status: 400 });
+      }
+      
+      const mimeType = matches[1];
+      if (!['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml', 'image/gif'].includes(mimeType)) {
+        return NextResponse.json({ error: 'Invalid image format. Allowed formats: JPEG, PNG, WebP, SVG, GIF.' }, { status: 400 });
+      }
+      
+      const approxBytes = Math.round((base64Data.length * 3) / 4);
+      if (approxBytes > 5 * 1024 * 1024) {
+        return NextResponse.json({ error: 'Photo too large. Maximum size allowed: 5MB.' }, { status: 400 });
+      }
+      
+      const id = `photo-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+      const photoRecord = {
+        id,
+        data: base64Data,
+        mimeType,
+        fileName: fileName || `${id}.${mimeType.split('/')[1] || 'jpg'}`,
+        caption: caption || '',
+        uploadedAt: new Date().toISOString(),
+        size: approxBytes
+      };
+      
+      await db.eventPhotos.save(id, photoRecord);
+      
+      const photoMeta = {
+        id,
+        url: `/api/event-photos?id=${id}`,
+        caption: caption || '',
+        uploadedAt: photoRecord.uploadedAt
+      };
+      
+      if (eventId) {
+        const events = await db.events.getAll();
+        const eventIdx = events.findIndex(e => e.id === eventId);
+        if (eventIdx !== -1) {
+          const currentGallery = Array.isArray(events[eventIdx].gallery) ? events[eventIdx].gallery : [];
+          events[eventIdx].gallery = [...currentGallery, photoMeta];
+          await db.events.saveAll(events);
+        }
+      }
+      
+      return NextResponse.json({ success: true, photo: photoMeta });
+    }
+
+    if (action === 'delete-event-photo') {
+      const { id, eventId } = body;
+      if (!id) {
+        return NextResponse.json({ error: 'Photo ID is required.' }, { status: 400 });
+      }
+
+      await db.eventPhotos.delete(id);
+
+      if (eventId) {
+        const events = await db.events.getAll();
+        const eventIdx = events.findIndex(e => e.id === eventId);
+        if (eventIdx !== -1 && Array.isArray(events[eventIdx].gallery)) {
+          events[eventIdx].gallery = events[eventIdx].gallery.filter((p: any) => {
+            if (typeof p === 'string') return !p.includes(id);
+            return p.id !== id && !p.url?.includes(id);
+          });
+          await db.events.saveAll(events);
+        }
+      }
+
+      return NextResponse.json({ success: true });
     }
 
     // 2. Dashboard Stats

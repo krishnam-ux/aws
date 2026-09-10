@@ -40,7 +40,8 @@
     "collaborations": [],
     "customCollabLogo": "",
     "customCollab": "AWS",
-    "collaborationLogo": ""
+    "collaborationLogo": "",
+    "gallery": []
   },
   {
     "id": "event-02",
@@ -65,7 +66,8 @@
     "registrationLink": "",
     "image": "",
     "isRegistrationOpen": true,
-    "registrationStatus": "Not Open"
+    "registrationStatus": "Not Open",
+    "gallery": []
   },
   {
     "id": "event-03",

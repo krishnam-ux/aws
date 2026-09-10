@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import EventGallery, { EventPhoto } from '@/components/EventGallery';
 
 interface CommunityEvent {
   id: string;
@@ -25,6 +26,7 @@ interface CommunityEvent {
   registrationCount?: number;
   collaborations?: string[];
   customCollabLogo?: string;
+  gallery?: EventPhoto[];
 }
 
 const renderCollabLogo = (orgName: string, customLogoUrl?: string, className: string = "h-4 w-4 object-contain inline-block") => {
@@ -518,6 +520,17 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
                 </div>
               )}
 
+              {/* Event Gallery */}
+              {selectedEvent.gallery && selectedEvent.gallery.length > 0 && (
+                <div className="pt-2 border-t border-slate-100">
+                  <EventGallery
+                    photos={selectedEvent.gallery}
+                    eventTitle={selectedEvent.title}
+                    showSectionHeader={true}
+                  />
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
                 <div className="space-y-1">
                   <h4 className="font-semibold text-slate-900">Event Format</h4>
@@ -536,9 +549,15 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
 
             {/* Modal Actions */}
             <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-4">
-              <span className="text-[10px] text-slate-400 font-sans italic">
-                Schedule subject to department approvals.
-              </span>
+              <Link
+                href={`/events/${selectedEvent.id}`}
+                className="text-[11px] text-brand-navy hover:text-aws-orange font-bold transition-colors font-sans inline-flex items-center space-x-1"
+              >
+                <span>View Full Page</span>
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </Link>
               <div className="flex space-x-2">
                 {selectedEvent.registrationStatus?.toUpperCase() === 'OPEN' && 
                  !(selectedEvent.maxRegistrations && selectedEvent.maxRegistrations > 0 && selectedEvent.registrationCount && selectedEvent.registrationCount >= selectedEvent.maxRegistrations) && (

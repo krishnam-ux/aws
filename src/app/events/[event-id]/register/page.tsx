@@ -19,6 +19,7 @@ interface CommunityEvent {
   customCollabLogo?: string;
   date?: string;
   venue?: string;
+  gallery?: any[];
 }
 
 const renderCollabLogo = (orgName: string, customLogoUrl?: string, className: string = "h-4 w-4 object-contain inline-block") => {

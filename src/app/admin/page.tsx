@@ -3,6 +3,13 @@
 import { useState, useEffect } from 'react';
 import { siteConfig } from '@/data/siteConfig';
 
+interface EventPhoto {
+  id: string;
+  url: string;
+  caption?: string;
+  uploadedAt?: string;
+}
+
 interface CommunityEvent {
   id: string;
   number: string;
@@ -39,6 +46,7 @@ interface CommunityEvent {
   collaborations?: string[];
   customCollab?: string;
   customCollabLogo?: string;
+  gallery?: EventPhoto[];
 }
 
 const renderCollabLogo = (orgName: string, customLogoUrl?: string, className: string = "h-4 w-4 object-contain inline-block") => {
@@ -183,7 +191,7 @@ export default function AdminDashboard() {
 
   // Form Fields
   const [eventForm, setEventForm] = useState<any>({
-    title: '', month: 'August', date: '', time: 'TBA', venue: 'TBA', description: '', focus: '', outcome: '', speaker: 'TBA', registrationLink: '', status: 'Draft', registrationStatus: 'Not Open', image: '', format: 'Hands-on Technical Workshop', whatYouWillLearn: '', collaborations: [], customCollab: '', customCollabLogo: ''
+    title: '', month: 'August', date: '', time: 'TBA', venue: 'TBA', description: '', focus: '', outcome: '', speaker: 'TBA', registrationLink: '', status: 'Draft', registrationStatus: 'Not Open', image: '', format: 'Hands-on Technical Workshop', whatYouWillLearn: '', collaborations: [], customCollab: '', customCollabLogo: '', gallery: []
   });
   const [announcementForm, setAnnouncementForm] = useState<any>({
     title: '', category: 'General', description: '', status: 'Published', image: ''
@@ -221,6 +229,9 @@ export default function AdminDashboard() {
   const [actionError, setActionError] = useState('');
   const [eventEditError, setEventEditError] = useState('');
   const [isSavingEvent, setIsSavingEvent] = useState(false);
+  const [isUploadingGallery, setIsUploadingGallery] = useState(false);
+  const [galleryUploadError, setGalleryUploadError] = useState('');
+  const [galleryUploadProgress, setGalleryUploadProgress] = useState('');
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [exportingStates, setExportingStates] = useState<Record<string, boolean>>({});
 
@@ -963,6 +974,169 @@ export default function AdminDashboard() {
     reader.readAsDataURL(file);
   };
 
+  // Client-side image optimization helper using HTML5 Canvas
+  const optimizeImageFile = (file: File, maxWidth = 1920, maxHeight = 1080, quality = 0.85): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth || height > maxHeight) {
+            if (width / height > maxWidth / maxHeight) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            } else {
+              width = Math.round((width * maxHeight) / height);
+              maxHeight = maxHeight;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(e.target?.result as string);
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+          const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+          const optimizedDataUrl = canvas.toDataURL(mimeType, quality);
+          resolve(optimizedDataUrl);
+        };
+        img.onerror = () => resolve(e.target?.result as string);
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleEventPhotosUpload = async (files: FileList | File[], isEdit: boolean) => {
+    if (!files || files.length === 0) return;
+
+    const fileList = Array.from(files);
+    const validImages = fileList.filter(f => 
+      ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml', 'image/gif'].includes(f.type)
+    );
+
+    if (validImages.length === 0) {
+      setGalleryUploadError('Please select valid image files (JPEG, PNG, WebP, SVG, GIF).');
+      return;
+    }
+
+    setIsUploadingGallery(true);
+    setGalleryUploadError('');
+    setGalleryUploadProgress(`Optimizing and uploading ${validImages.length} photo${validImages.length > 1 ? 's' : ''}...`);
+
+    try {
+      const uploadedPhotos: EventPhoto[] = [];
+
+      for (let i = 0; i < validImages.length; i++) {
+        const file = validImages[i];
+        setGalleryUploadProgress(`Uploading ${i + 1} of ${validImages.length}...`);
+
+        let base64Data: string;
+        try {
+          base64Data = await optimizeImageFile(file);
+        } catch (_) {
+          base64Data = await new Promise((resolve) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result as string);
+            r.readAsDataURL(file);
+          });
+        }
+
+        const response = await fetch('/api/admin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            action: 'upload-event-photo',
+            base64Data,
+            fileName: file.name,
+            eventId: isEdit && editEvent?.id ? editEvent.id : undefined
+          })
+        });
+
+        const data = await response.json();
+        if (response.ok && data.success && data.photo) {
+          uploadedPhotos.push(data.photo);
+        } else {
+          console.error('Failed to upload a photo:', data.error);
+        }
+      }
+
+      if (uploadedPhotos.length > 0) {
+        if (isEdit) {
+          const currentGallery = Array.isArray(editEvent?.gallery) ? editEvent.gallery : [];
+          setEditEvent({ ...editEvent, gallery: [...currentGallery, ...uploadedPhotos] });
+        } else {
+          const currentGallery = Array.isArray(eventForm?.gallery) ? eventForm.gallery : [];
+          setEventForm({ ...eventForm, gallery: [...currentGallery, ...uploadedPhotos] });
+        }
+        setGalleryUploadProgress(`Successfully uploaded ${uploadedPhotos.length} photo${uploadedPhotos.length > 1 ? 's' : ''}!`);
+        setTimeout(() => setGalleryUploadProgress(''), 3000);
+      } else {
+        setGalleryUploadError('Failed to upload selected photos. Please try again.');
+      }
+    } catch (err) {
+      console.error('Photo upload error:', err);
+      setGalleryUploadError('Network error while uploading photos.');
+    } finally {
+      setIsUploadingGallery(false);
+    }
+  };
+
+  const handleDeleteGalleryPhoto = async (photoId: string, isEdit: boolean) => {
+    if (isEdit) {
+      const currentGallery = Array.isArray(editEvent?.gallery) ? editEvent.gallery : [];
+      setEditEvent({ ...editEvent, gallery: currentGallery.filter((p: EventPhoto) => p.id !== photoId) });
+    } else {
+      const currentGallery = Array.isArray(eventForm?.gallery) ? eventForm.gallery : [];
+      setEventForm({ ...eventForm, gallery: currentGallery.filter((p: EventPhoto) => p.id !== photoId) });
+    }
+
+    try {
+      await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          action: 'delete-event-photo',
+          id: photoId,
+          eventId: isEdit && editEvent?.id ? editEvent.id : undefined
+        })
+      });
+    } catch (err) {
+      console.error('Error deleting photo on server:', err);
+    }
+  };
+
+  const handleUpdatePhotoCaption = (photoId: string, caption: string, isEdit: boolean) => {
+    if (isEdit) {
+      const currentGallery = Array.isArray(editEvent?.gallery) ? editEvent.gallery : [];
+      setEditEvent({
+        ...editEvent,
+        gallery: currentGallery.map((p: EventPhoto) => p.id === photoId ? { ...p, caption } : p)
+      });
+    } else {
+      const currentGallery = Array.isArray(eventForm?.gallery) ? eventForm.gallery : [];
+      setEventForm({
+        ...eventForm,
+        gallery: currentGallery.map((p: EventPhoto) => p.id === photoId ? { ...p, caption } : p)
+      });
+    }
+  };
+
   const openEditModal = (event: any) => {
     const dbCollabs = event.collaborations || [];
     const uiCollabs: string[] = [];
@@ -1006,7 +1180,8 @@ export default function AdminDashboard() {
       collaborationWebsite: event.collaborationWebsite || '',
       collaborations: uiCollabs,
       customCollab,
-      customCollabLogo: event.customCollabLogo || event.collaborationLogo || ''
+      customCollabLogo: event.customCollabLogo || event.collaborationLogo || '',
+      gallery: Array.isArray(event.gallery) ? event.gallery : []
     });
     setEventEditError('');
   };
@@ -1047,14 +1222,15 @@ export default function AdminDashboard() {
       customCollabLogo: hasOther ? eventForm.customCollabLogo : '',
       whatYouWillLearn: typeof eventForm.whatYouWillLearn === 'string'
         ? eventForm.whatYouWillLearn.split('\n').filter((l: string) => l.trim().length > 0)
-        : eventForm.whatYouWillLearn
+        : eventForm.whatYouWillLearn,
+      gallery: Array.isArray(eventForm.gallery) ? eventForm.gallery : []
     };
     delete formatted.customCollab;
     const res = await apiCall({ action: 'create-event', event: formatted });
     if (res && res.success) {
       fetchTabItems();
       setCreateType(null);
-      setEventForm({ title: '', month: 'August', date: '', time: 'TBA', venue: 'TBA', description: '', focus: '', outcome: '', speaker: 'TBA', registrationLink: '', status: 'Draft', registrationStatus: 'Not Open', image: '', format: 'Hands-on Technical Workshop', whatYouWillLearn: '', collaborations: [], customCollab: '', customCollabLogo: '' });
+      setEventForm({ title: '', month: 'August', date: '', time: 'TBA', venue: 'TBA', description: '', focus: '', outcome: '', speaker: 'TBA', registrationLink: '', status: 'Draft', registrationStatus: 'Not Open', image: '', format: 'Hands-on Technical Workshop', whatYouWillLearn: '', collaborations: [], customCollab: '', customCollabLogo: '', gallery: [] });
     }
   };
 
@@ -1102,7 +1278,8 @@ export default function AdminDashboard() {
       customCollabLogo: hasOther ? editEvent.customCollabLogo : '',
       whatYouWillLearn: Array.isArray(editEvent.whatYouWillLearn)
         ? editEvent.whatYouWillLearn
-        : (editEvent.whatYouWillLearn || '').split('\n').map((l: string) => l.trim()).filter(Boolean)
+        : (editEvent.whatYouWillLearn || '').split('\n').map((l: string) => l.trim()).filter(Boolean),
+      gallery: Array.isArray(editEvent.gallery) ? editEvent.gallery : []
     };
     delete formatted.customCollab;
     setIsSavingEvent(true);
@@ -4395,6 +4572,105 @@ export default function AdminDashboard() {
                   </div>
                 )}
               </div>
+
+              {/* Event Gallery / Photos Upload Section */}
+              <div className="space-y-2 border-t border-slate-100 pt-3">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">
+                    Event Gallery / Photos
+                  </label>
+                  <span className="text-[10px] font-mono text-slate-500 font-semibold">
+                    {(eventForm.gallery || []).length} Photos
+                  </span>
+                </div>
+
+                {/* Dropzone & Upload Button */}
+                <div className="border-2 border-dashed border-slate-200 hover:border-aws-orange rounded-lg p-3 sm:p-4 text-center transition-colors bg-slate-50/50">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/png, image/jpeg, image/jpg, image/webp, image/svg+xml, image/gif"
+                    id="create-event-photos-input"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        handleEventPhotosUpload(e.target.files, false);
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor="create-event-photos-input"
+                    className="cursor-pointer flex flex-col items-center justify-center space-y-1"
+                  >
+                    <svg className="h-6 w-6 text-aws-orange" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                    </svg>
+                    <span className="text-xs font-semibold text-slate-700">
+                      Click to choose event photos (multiple allowed)
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      Supports JPEG, PNG, WebP (optimized automatically for web)
+                    </span>
+                  </label>
+                </div>
+
+                {/* Progress & Error States */}
+                {isUploadingGallery && (
+                  <div className="flex items-center space-x-2 p-2 bg-orange-50 border border-orange-200 rounded text-aws-orange text-[11px] font-medium animate-pulse">
+                    <div className="h-3.5 w-3.5 border-2 border-aws-orange border-t-transparent rounded-full animate-spin"></div>
+                    <span>{galleryUploadProgress || 'Uploading photos...'}</span>
+                  </div>
+                )}
+                {!isUploadingGallery && galleryUploadProgress && (
+                  <div className="p-2 bg-emerald-50 border border-emerald-200 rounded text-emerald-700 text-[11px] font-medium">
+                    {galleryUploadProgress}
+                  </div>
+                )}
+                {galleryUploadError && (
+                  <div className="p-2 bg-red-50 border border-red-200 rounded text-red-700 text-[11px] font-medium">
+                    {galleryUploadError}
+                  </div>
+                )}
+
+                {/* Thumbnail Grid */}
+                {(eventForm.gallery || []).length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2">
+                    {eventForm.gallery.map((photo: EventPhoto, pIdx: number) => (
+                      <div
+                        key={photo.id || pIdx}
+                        className="group relative rounded-md border border-slate-200 overflow-hidden bg-slate-100 flex flex-col justify-between"
+                      >
+                        <div className="aspect-[4/3] relative w-full overflow-hidden">
+                          <img src={photo.url} alt="" className="h-full w-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteGalleryPhoto(photo.id, false)}
+                            className="absolute top-1 right-1 p-1 rounded bg-black/70 hover:bg-red-600 text-white transition-colors cursor-pointer"
+                            title="Remove photo"
+                          >
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                          <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/60 text-white text-[8px] font-mono">
+                            #{pIdx + 1}
+                          </span>
+                        </div>
+                        <div className="p-1.5 bg-white border-t border-slate-100">
+                          <input
+                            type="text"
+                            placeholder="Caption (optional)"
+                            value={photo.caption || ''}
+                            onChange={(e) => handleUpdatePhotoCaption(photo.id, e.target.value, false)}
+                            className="w-full text-[10px] px-1.5 py-0.5 border border-slate-200 rounded focus:outline-none focus:border-aws-orange"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="pt-4 border-t border-[#E2E8F0] flex justify-end space-x-3">
@@ -4732,6 +5008,105 @@ export default function AdminDashboard() {
                         )}
                       </div>
                     </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Event Gallery / Photos Upload Section */}
+              <div className="space-y-2 border-t border-slate-100 pt-3">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">
+                    Event Gallery / Photos
+                  </label>
+                  <span className="text-[10px] font-mono text-slate-500 font-semibold">
+                    {(editEvent?.gallery || []).length} Photos
+                  </span>
+                </div>
+
+                {/* Dropzone & Upload Button */}
+                <div className="border-2 border-dashed border-slate-200 hover:border-aws-orange rounded-lg p-3 sm:p-4 text-center transition-colors bg-slate-50/50">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/png, image/jpeg, image/jpg, image/webp, image/svg+xml, image/gif"
+                    id="edit-event-photos-input"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        handleEventPhotosUpload(e.target.files, true);
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor="edit-event-photos-input"
+                    className="cursor-pointer flex flex-col items-center justify-center space-y-1"
+                  >
+                    <svg className="h-6 w-6 text-aws-orange" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                    </svg>
+                    <span className="text-xs font-semibold text-slate-700">
+                      Click to choose event photos (multiple allowed)
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      Supports JPEG, PNG, WebP (optimized automatically for web)
+                    </span>
+                  </label>
+                </div>
+
+                {/* Progress & Error States */}
+                {isUploadingGallery && (
+                  <div className="flex items-center space-x-2 p-2 bg-orange-50 border border-orange-200 rounded text-aws-orange text-[11px] font-medium animate-pulse">
+                    <div className="h-3.5 w-3.5 border-2 border-aws-orange border-t-transparent rounded-full animate-spin"></div>
+                    <span>{galleryUploadProgress || 'Uploading photos...'}</span>
+                  </div>
+                )}
+                {!isUploadingGallery && galleryUploadProgress && (
+                  <div className="p-2 bg-emerald-50 border border-emerald-200 rounded text-emerald-700 text-[11px] font-medium">
+                    {galleryUploadProgress}
+                  </div>
+                )}
+                {galleryUploadError && (
+                  <div className="p-2 bg-red-50 border border-red-200 rounded text-red-700 text-[11px] font-medium">
+                    {galleryUploadError}
+                  </div>
+                )}
+
+                {/* Thumbnail Grid */}
+                {(editEvent?.gallery || []).length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2">
+                    {editEvent.gallery.map((photo: EventPhoto, pIdx: number) => (
+                      <div
+                        key={photo.id || pIdx}
+                        className="group relative rounded-md border border-slate-200 overflow-hidden bg-slate-100 flex flex-col justify-between"
+                      >
+                        <div className="aspect-[4/3] relative w-full overflow-hidden">
+                          <img src={photo.url} alt="" className="h-full w-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteGalleryPhoto(photo.id, true)}
+                            className="absolute top-1 right-1 p-1 rounded bg-black/70 hover:bg-red-600 text-white transition-colors cursor-pointer"
+                            title="Remove photo"
+                          >
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                          <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/60 text-white text-[8px] font-mono">
+                            #{pIdx + 1}
+                          </span>
+                        </div>
+                        <div className="p-1.5 bg-white border-t border-slate-100">
+                          <input
+                            type="text"
+                            placeholder="Caption (optional)"
+                            value={photo.caption || ''}
+                            onChange={(e) => handleUpdatePhotoCaption(photo.id, e.target.value, true)}
+                            className="w-full text-[10px] px-1.5 py-0.5 border border-slate-200 rounded focus:outline-none focus:border-aws-orange"
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
