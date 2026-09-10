@@ -208,10 +208,7 @@ export async function generateCertificatePdfBuffer(payload: any): Promise<Buffer
   doc.rect(0, pageHeight - 12, 12, 12, 'F');
   doc.rect(pageWidth - 12, pageHeight - 12, 12, 12, 'F');
 
-  // Left purple panel (width reduced to 510 to prevent overlap with Chandigarh University logo)
-  doc.setFillColor(...purple);
-  doc.rect(scaleX(28), scaleY(28), scaleW(510), scaleH(332), 'F');
-
+  // Header text (rendered cleanly without purple background box)
   doc.setTextColor(dark[0], dark[1], dark[2]);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(scaleFont(64));
