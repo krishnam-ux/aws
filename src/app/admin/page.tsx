@@ -1832,6 +1832,27 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
+              {/* Group: Assessments & Exams */}
+              <div className="space-y-1">
+                {!isSidebarCollapsed && (
+                  <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest px-3 flex items-center justify-between">
+                    <span>Certifications</span>
+                    <span className="text-[8px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono font-bold">PROCTOR</span>
+                  </span>
+                )}
+                <button onClick={() => setActiveTab('Exams')} className={getNavClass('Exams')}>
+                  <svg className="h-4 w-4 flex-shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  {!isSidebarCollapsed && (
+                    <span className="flex items-center justify-between w-full">
+                      <span>Exams & Live Control</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    </span>
+                  )}
+                </button>
+              </div>
+
               {/* Group: Content */}
               <div className="space-y-1">
                 {!isSidebarCollapsed && <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 block">Content</span>}
@@ -1840,12 +1861,6 @@ export default function AdminDashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   {!isSidebarCollapsed && <span>Events</span>}
-                </button>
-                <button onClick={() => setActiveTab('Exams')} className={getNavClass('Exams')}>
-                  <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                  {!isSidebarCollapsed && <span>Exams & Live Control</span>}
                 </button>
                 <button onClick={() => setActiveTab('Announcements')} className={getNavClass('Announcements')}>
                   <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1947,7 +1962,7 @@ export default function AdminDashboard() {
                     Dashboard
                   </h1>
                   <p className="text-xs text-[#64748B] font-sans leading-relaxed">
-                    Manage community activity, registrations and website content.
+                    Manage community activity, registrations, certification exams, and website content.
                   </p>
                 </div>
                 <div className="text-[10px] font-mono text-[#64748B] bg-white border border-[#E2E8F0] px-2.5 py-1 rounded shadow-sm">
@@ -1956,27 +1971,36 @@ export default function AdminDashboard() {
               </div>
 
               {/* 5. STATISTICS METRICS GRID */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                 {[
                   { label: 'Total Students Registered', value: stats.counts.registrations, desc: 'Total event enrollment logs', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1z' },
                   { label: 'Upcoming Events', value: stats.counts.upcomingEvents, desc: 'Planned calendar schedules', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+                  { label: 'Exam Live Control', value: 'Live', desc: 'Secure assessment engine', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', isExam: true },
                   { label: 'Open Registrations', value: stats.counts.openRegistrations, desc: 'Active student intakes open', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04z' },
                   { label: 'Pending Registrations', value: stats.counts.pendingRegistrations, desc: 'New submissions to review', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253z' },
                   { label: 'New Contact Messages', value: stats.counts.contactMessages, desc: 'New submissions from visitors', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' }
                 ].map((card, idx) => (
-                  <div key={idx} className="bg-white border border-[#E2E8F0] p-5 rounded-lg shadow-sm space-y-3 relative overflow-hidden flex items-center justify-between">
+                  <div
+                    key={idx}
+                    onClick={() => {
+                      if (card.isExam) setActiveTab('Exams');
+                    }}
+                    className={`bg-white border border-[#E2E8F0] p-5 rounded-lg shadow-sm space-y-3 relative overflow-hidden flex items-center justify-between ${
+                      card.isExam ? 'cursor-pointer hover:border-amber-400 hover:shadow-md transition-all' : ''
+                    }`}
+                  >
                     <div className="space-y-1">
                       <span className="text-[10px] uppercase font-bold tracking-wider text-[#64748B] font-display block">
                         {card.label}
                       </span>
-                      <p className="text-3xl font-extrabold text-[#111827] leading-none">
+                      <p className={`text-3xl font-extrabold leading-none ${card.isExam ? 'text-amber-600' : 'text-[#111827]'}`}>
                         {card.value || 0}
                       </p>
                       <span className="text-[10px] text-[#64748B] block font-sans">
                         {card.desc}
                       </span>
                     </div>
-                    <div className="p-2.5 bg-slate-50 border border-[#E2E8F0] rounded-md text-[#64748B]">
+                    <div className={`p-2.5 rounded-md ${card.isExam ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-slate-50 border border-[#E2E8F0] text-[#64748B]'}`}>
                       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={card.icon} />
                       </svg>
@@ -1991,6 +2015,12 @@ export default function AdminDashboard() {
                   Quick Actions
                 </h3>
                 <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={() => setActiveTab('Exams')}
+                    className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded shadow-sm transition-all cursor-pointer flex items-center space-x-1.5"
+                  >
+                    <span>🔒 Exam Control Center</span>
+                  </button>
                   <button
                     onClick={() => { setActiveTab('Events'); setCreateType('Event'); }}
                     className="px-3.5 py-1.5 bg-white border border-[#E2E8F0] hover:border-[#FF9900] text-slate-800 hover:text-[#FF9900] text-xs font-bold rounded shadow-sm transition-all cursor-pointer"

@@ -8,6 +8,7 @@ interface AdminExamsManagerProps {
 }
 
 export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
+  const effectiveToken = token || (typeof window !== 'undefined' ? sessionStorage.getItem('adminToken') : null) || 'awssbg-admin-session-token-secure-hash';
   const [exams, setExams] = useState<Exam[]>([]);
   const [selectedExamId, setSelectedExamId] = useState<string>('');
   const [liveData, setLiveData] = useState<{
@@ -41,10 +42,10 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
 
   // Fetch Exams List
   const fetchExams = useCallback(async () => {
-    if (!token) return;
+    if (!effectiveToken) return;
     try {
       const res = await fetch('/api/admin/exams', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${effectiveToken}` }
       });
       const data = await res.json();
       if (res.ok && data.exams) {
@@ -56,17 +57,17 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
     } catch (e) {
       console.error('Fetch exams error:', e);
     }
-  }, [token, selectedExamId]);
+  }, [effectiveToken, selectedExamId]);
 
   // Fetch Live Exam Control Feed
   const fetchLiveData = useCallback(async () => {
-    if (!token) return;
+    if (!effectiveToken) return;
     try {
       const url = selectedExamId
         ? `/api/admin/exams/live?examId=${encodeURIComponent(selectedExamId)}`
         : '/api/admin/exams/live';
       const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${effectiveToken}` }
       });
       const data = await res.json();
       if (res.ok) {
@@ -77,7 +78,7 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
     } finally {
       setLoading(false);
     }
-  }, [token, selectedExamId]);
+  }, [effectiveToken, selectedExamId]);
 
   useEffect(() => {
     fetchExams();
@@ -89,19 +90,19 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
 
   // Live polling interval
   useEffect(() => {
-    if (!autoRefresh || !token) return;
+    if (!autoRefresh || !effectiveToken) return;
     const interval = setInterval(() => {
       fetchLiveData();
     }, 2500);
     return () => clearInterval(interval);
-  }, [autoRefresh, fetchLiveData, token]);
+  }, [autoRefresh, fetchLiveData, effectiveToken]);
 
   // Execute Control Action
   const handleControlAction = async (
     action: string,
     payload: { candidateId?: string; candidateIds?: string[]; minutes?: number; notes?: string } = {}
   ) => {
-    if (!token) return;
+    if (!effectiveToken) return;
     setActionLoading(true);
 
     try {
@@ -109,7 +110,7 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${effectiveToken}`
         },
         body: JSON.stringify({
           action,
@@ -133,13 +134,13 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
 
   // Inspect Attempt Details
   const handleInspectAttempt = async (attemptId: string) => {
-    if (!token) return;
+    if (!effectiveToken) return;
     setInspectAttemptId(attemptId);
     setInspectLoading(true);
 
     try {
       const res = await fetch(`/api/admin/exams/attempt-details?attemptId=${encodeURIComponent(attemptId)}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${effectiveToken}` }
       });
       const data = await res.json();
       if (res.ok) {
@@ -155,7 +156,7 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
   // Save Exam (Create / Update)
   const handleSaveExam = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token || !editingExam) return;
+    if (!effectiveToken || !editingExam) return;
     setActionLoading(true);
 
     try {
@@ -163,7 +164,7 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${effectiveToken}`
         },
         body: JSON.stringify({
           action: editingExam.id ? 'update' : 'create',
@@ -189,14 +190,14 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
   // Delete Exam
   const handleDeleteExam = async (examId: string) => {
     if (!confirm('Are you sure you want to delete this exam? All associated questions will be removed.')) return;
-    if (!token) return;
+    if (!effectiveToken) return;
 
     try {
       const res = await fetch('/api/admin/exams', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${effectiveToken}`
         },
         body: JSON.stringify({ action: 'delete', examId })
       });

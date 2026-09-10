@@ -110,6 +110,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/exam" className="hover:text-aws-orange transition-colors">
+                  Certification Exams
+                </Link>
+              </li>
+              <li>
                 <Link href="/verification" className="hover:text-aws-orange transition-colors">
                   Verification
                 </Link>
