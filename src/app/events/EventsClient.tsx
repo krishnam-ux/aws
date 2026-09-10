@@ -72,9 +72,6 @@ interface EventsClientProps {
 }
 
 export default function EventsClient({ initialEvents }: EventsClientProps) {
-  const [activeTab, setActiveTab] = useState<'Upcoming' | 'Ongoing' | 'Completed'>('Upcoming');
-  const [selectedEvent, setSelectedEvent] = useState<CommunityEvent | null>(null);
-
   const upcomingFiltered = initialEvents.filter(e => {
     const s = (e.status || '').toUpperCase();
     return s === 'PLANNED' || s === 'UPCOMING';
@@ -85,8 +82,17 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
   });
   const completedFiltered = initialEvents.filter(e => {
     const s = (e.status || '').toUpperCase();
-    return s === 'COMPLETED' || s === 'CANCELLED';
+    return s === 'COMPLETED';
   });
+
+  const [activeTab, setActiveTab] = useState<'Upcoming' | 'Ongoing' | 'Completed'>(() => {
+    if (upcomingFiltered.length > 0) return 'Upcoming';
+    if (ongoingFiltered.length > 0) return 'Ongoing';
+    if (completedFiltered.length > 0) return 'Completed';
+    return 'Upcoming';
+  });
+
+  const [selectedEvent, setSelectedEvent] = useState<CommunityEvent | null>(null);
 
   const renderRegStatusBadge = (status: string | undefined) => {
     const s = (status || 'Not Open').toUpperCase();
@@ -162,7 +168,7 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
           Community Events
         </h1>
         <p className="mt-4 text-xs sm:text-sm text-slate-505 font-sans leading-relaxed">
-          Track upcoming workshops, builder bootcamps, and cloud learning cohorts.
+          Track upcoming workshops, builder bootcamps, active cohorts, and archived sessions.
         </p>
         <div className="h-[2px] w-12 bg-aws-orange mt-4"></div>
       </section>
@@ -170,20 +176,28 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
       {/* Tabs */}
       <section className="space-y-6">
         <div className="border-b border-slate-200">
-          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+          <nav className="-mb-px flex space-x-4 sm:space-x-8" aria-label="Tabs">
             {(['Upcoming', 'Ongoing', 'Completed'] as const).map((tab) => {
               const isActive = activeTab === tab;
+              const count = tab === 'Upcoming' ? upcomingFiltered.length : tab === 'Ongoing' ? ongoingFiltered.length : completedFiltered.length;
               return (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`py-4 px-1 border-b-2 font-display font-bold text-xs uppercase tracking-wider cursor-pointer transition-colors ${
+                  className={`py-4 px-1 border-b-2 font-display font-bold text-xs uppercase tracking-wider cursor-pointer transition-colors flex items-center space-x-2 ${
                     isActive
                       ? 'border-aws-orange text-aws-orange'
                       : 'border-transparent text-slate-505 hover:text-slate-700 hover:border-slate-300'
                   }`}
                 >
-                  {tab}
+                  <span>{tab}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold transition-colors ${
+                    isActive
+                      ? 'bg-orange-100 text-aws-orange'
+                      : 'bg-slate-100 text-slate-500'
+                  }`}>
+                    {count}
+                  </span>
                 </button>
               );
             })}
@@ -213,7 +227,7 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
 
                       <div className="space-y-1">
                         <span className="text-[10px] font-bold text-slate-550 uppercase tracking-widest block font-display">
-                          {event.month}
+                          {event.date || event.month}
                         </span>
                         <h3 className="font-display font-bold text-base text-slate-900 leading-snug group-hover:text-brand-navy transition-colors">
                           {event.title}
@@ -282,7 +296,7 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
                     <div className="space-y-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex flex-wrap gap-1.5">
-                          <span className="inline-flex px-2 py-0.5 rounded text-[8px] font-bold font-sans uppercase tracking-wider bg-orange-50 border border-orange-200 text-aws-orange">
+                          <span className="inline-flex px-2 py-0.5 rounded text-[8px] font-bold font-sans uppercase tracking-wider bg-blue-50 border border-blue-200 text-blue-700">
                             {event.status || 'Ongoing'}
                           </span>
                           {renderRegStatusBadge(event.registrationStatus)}
@@ -292,7 +306,7 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
 
                       <div className="space-y-1">
                         <span className="text-[10px] font-bold text-slate-550 uppercase tracking-widest block font-display">
-                          {event.month}
+                          {event.date || event.month}
                         </span>
                         <h3 className="font-display font-bold text-base text-slate-900 leading-snug group-hover:text-brand-navy transition-colors">
                           {event.title}
@@ -360,18 +374,30 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
                   >
                     <div className="space-y-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex flex-wrap gap-1.5">
-                          <span className="inline-flex px-2 py-0.5 rounded text-[8px] font-bold font-sans uppercase tracking-wider bg-slate-100 border border-slate-200 text-slate-500">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="inline-flex px-2 py-0.5 rounded text-[8px] font-bold font-sans uppercase tracking-wider bg-slate-100 border border-slate-200 text-slate-600">
                             {event.status || 'Completed'}
                           </span>
-                          {renderRegStatusBadge(event.registrationStatus)}
+                          {event.gallery && event.gallery.length > 0 && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold font-sans uppercase tracking-wider bg-blue-50 border border-blue-200 text-blue-700">
+                              <svg className="w-2.5 h-2.5 mr-1" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                              </svg>
+                              {event.gallery.length} Photos
+                            </span>
+                          )}
+                          {event.registrationCount !== undefined && event.registrationCount > 0 && (
+                            <span className="inline-flex px-1.5 py-0.5 rounded text-[8px] font-bold font-sans uppercase tracking-wider bg-slate-50 border border-slate-200 text-slate-500">
+                              {event.registrationCount} Attendees
+                            </span>
+                          )}
                         </div>
                         <span className="text-[10px] font-mono text-slate-400 font-bold">{event.number}</span>
                       </div>
 
                       <div className="space-y-1">
                         <span className="text-[10px] font-bold text-slate-550 uppercase tracking-widest block font-display">
-                          {event.month}
+                          {event.date || event.month}
                         </span>
                         <h3 className="font-display font-bold text-base text-slate-900 leading-snug group-hover:text-brand-navy transition-colors">
                           {event.title}
@@ -402,12 +428,6 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
                           <strong className="text-slate-900 font-medium not-italic">Learning Outcome:</strong> {event.outcome}
                         </p>
                       </div>
-
-                      {event.registrationStatus?.toUpperCase() === 'NOT OPEN' && (
-                        <p className="text-[11px] text-slate-505 italic font-sans font-medium mt-1">
-                          Registration will open soon.
-                        </p>
-                      )}
                     </div>
 
                     <div className="mt-6 pt-4 border-t border-slate-100 flex gap-3 text-xs">
@@ -415,16 +435,24 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
                         onClick={() => setSelectedEvent(event)}
                         className="flex-grow text-center py-2 font-semibold rounded border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors cursor-pointer font-sans"
                       >
-                        View Details
+                        View Overview
                       </button>
-                      {renderRegisterButton(event)}
+                      <Link
+                        href={`/events/${event.id}`}
+                        className="flex-grow text-center py-2 font-bold rounded bg-brand-navy hover:bg-slate-800 text-white transition-colors cursor-pointer font-sans flex items-center justify-center space-x-1"
+                      >
+                        <span>{event.gallery && event.gallery.length > 0 ? 'View Gallery' : 'View Full Page'}</span>
+                        <svg className="h-3 w-3 inline-block" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                        </svg>
+                      </Link>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="rounded-lg p-8 text-center bg-slate-50 border border-slate-200 max-w-md mx-auto">
-                <p className="text-xs text-slate-555 font-sans">Completed session logs will populate our community archive post-launch.</p>
+                <p className="text-xs text-slate-555 font-sans">Completed session logs will populate our community archive.</p>
               </div>
             )
           )}
@@ -439,14 +467,20 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
             <div className="flex items-start justify-between">
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="inline-flex px-2 py-0.5 rounded text-[8px] font-bold font-sans uppercase tracking-wider bg-orange-50 border border-orange-200 text-aws-orange">
+                  <span className={`inline-flex px-2 py-0.5 rounded text-[8px] font-bold font-sans uppercase tracking-wider border ${
+                    (selectedEvent.status || '').toUpperCase() === 'COMPLETED'
+                      ? 'bg-slate-100 text-slate-600 border-slate-200'
+                      : (selectedEvent.status || '').toUpperCase() === 'ONGOING'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : 'bg-orange-50 text-aws-orange border-orange-200'
+                  }`}>
                     {selectedEvent.status || 'Upcoming'}
                   </span>
-                  {renderRegStatusBadge(selectedEvent.registrationStatus)}
+                  {(selectedEvent.status || '').toUpperCase() !== 'COMPLETED' && renderRegStatusBadge(selectedEvent.registrationStatus)}
                   <span className="text-[10px] font-mono text-slate-400 font-bold">{selectedEvent.number}</span>
                 </div>
                 <span className="text-[10px] font-bold text-slate-550 uppercase tracking-widest block font-display">
-                  {selectedEvent.month} Schedule
+                  {selectedEvent.date || selectedEvent.month} Schedule
                 </span>
                 <h3 className="font-display font-bold text-lg text-slate-900 leading-snug">
                   {selectedEvent.title}
@@ -469,7 +503,7 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
             <div className="space-y-4 text-xs font-sans">
               <div className="space-y-1">
                 <h4 className="font-semibold text-slate-900">Event Overview</h4>
-                <p className="text-slate-600 leading-relaxed">{selectedEvent.overview || 'Details will be announced soon.'}</p>
+                <p className="text-slate-600 leading-relaxed">{selectedEvent.overview || selectedEvent.focus || 'Details will be announced soon.'}</p>
               </div>
 
               {selectedEvent.collaborations && selectedEvent.collaborations.length > 0 && (
@@ -493,7 +527,7 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
                 </div>
               )}
 
-              {selectedEvent.registrationStatus?.toUpperCase() === 'NOT OPEN' && (
+              {(selectedEvent.status || '').toUpperCase() !== 'COMPLETED' && selectedEvent.registrationStatus?.toUpperCase() === 'NOT OPEN' && (
                 <div className="p-3 bg-amber-50 border border-amber-100 rounded text-amber-800 text-center font-sans text-xs italic font-medium">
                   Registration will open soon.
                 </div>
@@ -558,25 +592,36 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                 </svg>
               </Link>
-              <div className="flex space-x-2">
-                {selectedEvent.registrationStatus?.toUpperCase() === 'OPEN' && 
-                 !(selectedEvent.maxRegistrations && selectedEvent.maxRegistrations > 0 && selectedEvent.registrationCount && selectedEvent.registrationCount >= selectedEvent.maxRegistrations) && (
+              <div className="flex items-center space-x-2">
+                {(selectedEvent.status || '').toUpperCase() === 'COMPLETED' ? (
                   <Link
-                    href={`/events/${selectedEvent.id}/register`}
-                    className="px-4 py-1.5 text-xs bg-aws-orange hover:bg-orange-600 text-white font-bold rounded cursor-pointer transition-colors font-sans text-center flex items-center justify-center"
+                    href={`/events/${selectedEvent.id}`}
+                    className="px-4 py-1.5 text-xs bg-brand-navy hover:bg-slate-800 text-white font-bold rounded cursor-pointer transition-colors font-sans text-center flex items-center justify-center"
                   >
-                    Register for Event
+                    View Archive & Gallery
                   </Link>
-                )}
-                {selectedEvent.registrationStatus?.toUpperCase() === 'CLOSED' && (
-                  <span className="px-3 py-1.5 text-xs border border-slate-200 text-slate-500 bg-slate-50 rounded font-semibold font-sans">
-                    REGISTRATION CLOSED
-                  </span>
-                )}
-                {selectedEvent.registrationStatus?.toUpperCase() === 'FULL' && (
-                  <span className="px-3 py-1.5 text-xs border border-red-200 text-red-500 bg-red-50 rounded font-bold font-sans">
-                    REGISTRATION FULL
-                  </span>
+                ) : (
+                  <>
+                    {selectedEvent.registrationStatus?.toUpperCase() === 'OPEN' && 
+                     !(selectedEvent.maxRegistrations && selectedEvent.maxRegistrations > 0 && selectedEvent.registrationCount && selectedEvent.registrationCount >= selectedEvent.maxRegistrations) && (
+                      <Link
+                        href={`/events/${selectedEvent.id}/register`}
+                        className="px-4 py-1.5 text-xs bg-aws-orange hover:bg-orange-600 text-white font-bold rounded cursor-pointer transition-colors font-sans text-center flex items-center justify-center"
+                      >
+                        Register for Event
+                      </Link>
+                    )}
+                    {selectedEvent.registrationStatus?.toUpperCase() === 'CLOSED' && (
+                      <span className="px-3 py-1.5 text-xs border border-slate-200 text-slate-500 bg-slate-50 rounded font-semibold font-sans">
+                        REGISTRATION CLOSED
+                      </span>
+                    )}
+                    {selectedEvent.registrationStatus?.toUpperCase() === 'FULL' && (
+                      <span className="px-3 py-1.5 text-xs border border-red-200 text-red-500 bg-red-50 rounded font-bold font-sans">
+                        REGISTRATION FULL
+                      </span>
+                    )}
+                  </>
                 )}
                 <button
                   onClick={() => setSelectedEvent(null)}
@@ -594,7 +639,7 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
       <section className="bg-slate-50 border border-slate-200 rounded-lg p-6 sm:p-8 max-w-3xl mx-auto space-y-4">
         <h4 className="font-display font-bold text-slate-900 text-xs uppercase tracking-wider">Event Archive Integration</h4>
         <p className="text-[11px] text-slate-505 font-sans leading-relaxed">
-          The event registry supports dynamic metadata fields. Confirmed details will populate for:
+          The event registry dynamically syncs with the administrative repository. Confirmed details populate for:
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[10px] font-mono text-slate-655 bg-white p-4 border border-slate-100 rounded">
           <div>&bull; Event Name</div>

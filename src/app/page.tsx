@@ -51,7 +51,7 @@ export default async function Home() {
   const upcomingEvents = events
     .filter(event => {
       const s = (event.status || '').toUpperCase();
-      return s === 'UPCOMING';
+      return s === 'UPCOMING' || s === 'PLANNED';
     })
     .map(event => {
       const count = registrations.filter(r => r.eventId === event.id && r.status !== 'Rejected' && r.status !== 'Cancelled').length;

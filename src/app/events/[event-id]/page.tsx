@@ -95,18 +95,31 @@ export default async function EventDetailPage({ params }: PageProps) {
       <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-10 shadow-xs space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex px-2.5 py-1 rounded text-[9px] font-bold font-sans uppercase tracking-wider bg-orange-50 border border-orange-200 text-aws-orange">
+            <span className={`inline-flex px-2.5 py-1 rounded text-[9px] font-bold font-sans uppercase tracking-wider border ${
+              (event.status || '').toUpperCase() === 'COMPLETED'
+                ? 'bg-slate-100 text-slate-700 border-slate-200'
+                : (event.status || '').toUpperCase() === 'ONGOING'
+                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                : 'bg-orange-50 text-aws-orange border-orange-200'
+            }`}>
               {event.status || 'Upcoming'}
             </span>
-            <span className={`inline-flex px-2.5 py-1 rounded text-[9px] font-bold font-sans uppercase tracking-wider border ${
-              regStatus === 'OPEN'
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                : regStatus === 'FULL'
-                ? 'bg-red-50 text-red-700 border-red-200'
-                : 'bg-amber-50 text-amber-700 border-amber-200'
-            }`}>
-              REGISTRATION {regStatus}
-            </span>
+            {(event.status || '').toUpperCase() !== 'COMPLETED' && (
+              <span className={`inline-flex px-2.5 py-1 rounded text-[9px] font-bold font-sans uppercase tracking-wider border ${
+                regStatus === 'OPEN'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : regStatus === 'FULL'
+                  ? 'bg-red-50 text-red-700 border-red-200'
+                  : 'bg-amber-50 text-amber-700 border-amber-200'
+              }`}>
+                REGISTRATION {regStatus}
+              </span>
+            )}
+            {registrationCount > 0 && (
+              <span className="inline-flex px-2.5 py-1 rounded text-[9px] font-bold font-sans uppercase tracking-wider bg-slate-50 border border-slate-200 text-slate-600">
+                {registrationCount} Attendees
+              </span>
+            )}
             <span className="text-xs font-mono font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
               {event.number}
             </span>
@@ -312,7 +325,14 @@ export default async function EventDetailPage({ params }: PageProps) {
 
             {/* Registration CTA Button */}
             <div className="pt-4 border-t border-slate-100 space-y-3">
-              {regStatus === 'OPEN' && !isCapacityFull ? (
+              {(event.status || '').toUpperCase() === 'COMPLETED' ? (
+                <div className="w-full text-center py-3 px-4 font-bold rounded-lg border border-slate-200 text-slate-700 bg-slate-50 font-sans text-xs flex items-center justify-center space-x-1.5">
+                  <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Event Successfully Concluded</span>
+                </div>
+              ) : regStatus === 'OPEN' && !isCapacityFull ? (
                 <Link
                   href={`/events/${event.id}/register`}
                   className="w-full text-center py-3 px-4 font-bold rounded-lg bg-aws-orange hover:bg-orange-600 text-white transition-colors cursor-pointer font-sans text-xs flex items-center justify-center shadow-sm"

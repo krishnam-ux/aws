@@ -11,7 +11,7 @@ export default async function EventsPage() {
     const publicEvents = events
       .filter(event => {
         const s = (event.status || '').toUpperCase();
-        return s !== 'DRAFT' && s !== 'UNPUBLISHED';
+        return s !== 'DRAFT' && s !== 'UNPUBLISHED' && s !== 'CANCELLED';
       })
       .map(event => {
         const count = registrations.filter(
