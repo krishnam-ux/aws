@@ -26,6 +26,19 @@ export async function GET(request: Request) {
 
     const remainingSeconds = calculateRemainingSeconds(attempt, exam);
 
+    // If attempt is submitted or review required, do not leak score/verdict
+    if (attempt.status === 'SUBMITTED' || attempt.status === 'REVIEW_REQUIRED') {
+      return NextResponse.json({
+        status: 'SUBMITTED',
+        studentName: attempt.studentName,
+        rollNumber: attempt.rollNumber,
+        examId: exam.id,
+        examTitle: exam.title,
+        examCode: exam.examCode,
+        message: 'Exam Submitted Successfully. Your response has been recorded. Your result will be communicated by email.'
+      });
+    }
+
     return NextResponse.json({
       status: attempt.status,
       verifiedAt: attempt.verifiedAt,
@@ -37,11 +50,7 @@ export async function GET(request: Request) {
       examTitle: exam.title,
       examCode: exam.examCode,
       durationMinutes: exam.durationMinutes + (attempt.extendedMinutes || 0),
-      remainingSeconds,
-      passed: attempt.passed,
-      score: attempt.score,
-      percentage: attempt.percentage,
-      certificateId: attempt.certificateId
+      remainingSeconds
     });
   } catch (error: any) {
     console.error('Lobby status error:', error);

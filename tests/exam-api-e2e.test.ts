@@ -20,6 +20,13 @@ import { GET as adminExportGet } from '../src/app/api/admin/exams/export/route';
 const ADMIN_HEADER = { Authorization: 'Bearer awssbg-admin-session-token-secure-hash' };
 
 test('E2E Exam API: Full Student and Admin Flow', async () => {
+  // Pre-cleanup in case of prior test runs
+  const existingAttempts = await db.examAttempts.getByExamId('exam-e2e-live-test');
+  for (const a of existingAttempts) {
+    await db.examAttempts.deleteById(a.id);
+  }
+  await db.exams.deleteOne('exam-e2e-live-test');
+
   // 1. Admin creates / verifies exam
   const createExamReq = new Request('http://localhost/api/admin/exams', {
     method: 'POST',
@@ -192,7 +199,7 @@ test('E2E Exam API: Full Student and Admin Flow', async () => {
   assert.equal(secData.violationCount, 1);
   assert.equal(secData.autoSubmitted, false);
 
-  // 12. Student Submits Exam
+  // 12. Student Submits Exam (Response must NEVER expose score, percentage, passed, or certificates)
   const submitReq = new Request('http://localhost/api/exam/submit', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -207,24 +214,27 @@ test('E2E Exam API: Full Student and Admin Flow', async () => {
   const submitData = await submitRes.json();
   assert.equal(submitRes.status, 200);
   assert.equal(submitData.status, 'SUBMITTED');
-  assert.equal(submitData.score, 100);
-  assert.equal(submitData.percentage, 100);
-  assert.equal(submitData.passed, true);
-  assert.ok(submitData.certificateId);
+  assert.equal(submitData.message, 'Exam Submitted Successfully. Your response has been recorded. Your result will be communicated by email.');
+  assert.equal(submitData.score, undefined, 'Score must NEVER be exposed in student submit response');
+  assert.equal(submitData.percentage, undefined, 'Percentage must NEVER be exposed in student submit response');
+  assert.equal(submitData.passed, undefined, 'Pass/Fail must NEVER be exposed in student submit response');
+  assert.equal(submitData.certificateId, undefined, 'Certificate ID must NEVER be exposed in student submit response');
 
-  // 13. Student checks Result endpoint
+  // 13. Student attempts to access Result endpoint -> Must be strictly blocked (403 Forbidden)
   const resultReq = new Request(`http://localhost/api/exam/result?attemptId=${attemptId}&token=${token}`);
   const resultRes = await resultGet(resultReq);
   const resultData = await resultRes.json();
-  assert.equal(resultRes.status, 200);
-  assert.equal(resultData.passed, true);
-  assert.equal(resultData.certificateId, submitData.certificateId);
+  assert.equal(resultRes.status, 403);
+  assert.ok(resultData.error.includes('email'));
+  assert.equal(resultData.score, undefined);
+  assert.equal(resultData.percentage, undefined);
 
-  // 14. Student downloads Certificate PDF
+  // 14. Student attempts to download Certificate PDF -> Must be strictly blocked (403 Forbidden)
   const pdfReq = new Request(`http://localhost/api/exam/certificate-pdf?attemptId=${attemptId}&token=${token}`);
   const pdfRes = await certPdfGet(pdfReq);
-  assert.equal(pdfRes.status, 200);
-  assert.equal(pdfRes.headers.get('Content-Type'), 'application/pdf');
+  const pdfData = await pdfRes.json();
+  assert.equal(pdfRes.status, 403);
+  assert.ok(pdfData.error.includes('disabled'));
 
   // 15. SEB Config download endpoint
   const sebReq = new Request(`http://localhost/api/exam/seb-config?examId=exam-e2e-live-test`);
@@ -232,7 +242,7 @@ test('E2E Exam API: Full Student and Admin Flow', async () => {
   assert.equal(sebRes.status, 200);
   assert.equal(sebRes.headers.get('Content-Type'), 'application/seb');
 
-  // 16. Admin Inspects Candidate Detailed Report
+  // 16. Admin Inspects Candidate Detailed Report (Admin receives full scores and evaluation)
   const inspectReq = new Request(`http://localhost/api/admin/exams/attempt-details?attemptId=${attemptId}`, {
     headers: ADMIN_HEADER
   });
@@ -240,11 +250,35 @@ test('E2E Exam API: Full Student and Admin Flow', async () => {
   const inspectData = await inspectRes.json();
   assert.equal(inspectRes.status, 200);
   assert.equal(inspectData.attempt.studentName, 'Priyanka Sharma');
+  assert.equal(inspectData.attempt.score, 100);
+  assert.equal(inspectData.attempt.percentage, 100);
+  assert.equal(inspectData.attempt.passed, true);
   assert.equal(inspectData.questionsBreakdown.length, 2);
   assert.equal(inspectData.questionsBreakdown[0].isCorrect, true);
   assert.equal(inspectData.securityEvents.length, 1);
 
-  // 17. Admin Exports CSV Results
+  // 17. Admin Marks Candidate as Selected / Qualified
+  const selectReq = new Request('http://localhost/api/admin/exams/control', {
+    method: 'POST',
+    headers: { ...ADMIN_HEADER, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'mark-selected',
+      candidateId: attemptId,
+      notes: 'Outstanding technical performance'
+    })
+  });
+  const selectRes = await adminControlPost(selectReq);
+  const selectData = await selectRes.json();
+  assert.equal(selectRes.status, 200);
+  assert.equal(selectData.success, true);
+
+  // Verify candidate selection email was recorded in notifications
+  const allNotifs = await db.notifications.getAll();
+  const selectionEmail = allNotifs.find((n: any) => n.recipientEmail === 'priyanka@cumail.in' && n.title.includes('Selection'));
+  assert.ok(selectionEmail, 'Selection email should be sent upon admin mark-selected action');
+  assert.ok(selectionEmail.message.includes('Outstanding technical performance'));
+
+  // 18. Admin Exports CSV Results
   const exportReq = new Request(`http://localhost/api/admin/exams/export?examId=exam-e2e-live-test`, {
     headers: ADMIN_HEADER
   });
@@ -254,7 +288,7 @@ test('E2E Exam API: Full Student and Admin Flow', async () => {
   assert.ok(csvText.includes('Priyanka Sharma'));
   assert.ok(csvText.includes('PASSED'));
 
-  // 18. Cleanup
+  // 19. Cleanup
   await db.examAttempts.deleteById(attemptId);
   await db.exams.deleteOne('exam-e2e-live-test');
 });

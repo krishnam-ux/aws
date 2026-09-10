@@ -761,6 +761,21 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
                             </>
                           )}
 
+                          {(isSubmitted || isReviewRequired) && (
+                            <button
+                              onClick={() => {
+                                const note = prompt('Enter selection notes (optional):', 'Selected & Qualified by Proctor');
+                                if (note !== null) {
+                                  handleControlAction('mark-selected', { candidateId: candidate.id, notes: note });
+                                }
+                              }}
+                              className="px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded text-[11px] font-semibold border border-purple-200"
+                              title="Mark candidate as Selected/Qualified and send selection email"
+                            >
+                              Select & Notify
+                            </button>
+                          )}
+
                           <button
                             onClick={() => handleInspectAttempt(candidate.id)}
                             className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-semibold border border-slate-300"
@@ -887,6 +902,40 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
                     </div>
                   </div>
                 </div>
+
+                {/* Candidate Selection & Qualification Notification Action */}
+                {(inspectData.attempt.status === 'SUBMITTED' || inspectData.attempt.status === 'REVIEW_REQUIRED') && (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-purple-50 border border-purple-200">
+                    <div>
+                      <div className="font-bold text-purple-900 text-xs flex items-center gap-1.5">
+                        <span>🌟</span> Candidate Qualification & Selection Email
+                      </div>
+                      <div className="text-[11px] text-purple-700 mt-0.5">
+                        {inspectData.attempt.adminNotes
+                          ? `Recorded Note: "${inspectData.attempt.adminNotes}"`
+                          : 'Candidate has completed server-side evaluation. Send an official qualification email.'}
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        const note = prompt(
+                          'Enter selection notes or next steps for candidate email:',
+                          inspectData.attempt.adminNotes || 'Selected & Qualified by AWS SBG Evaluation Committee'
+                        );
+                        if (note !== null) {
+                          await handleControlAction('mark-selected', {
+                            candidateId: inspectData.attempt.id,
+                            notes: note
+                          });
+                          await handleInspectAttempt(inspectData.attempt.id);
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold text-xs shadow-sm transition whitespace-nowrap"
+                    >
+                      ✉️ Send Selection Email
+                    </button>
+                  </div>
+                )}
 
                 {/* Question-by-Question Breakdown */}
                 <div className="space-y-3">

@@ -20,18 +20,12 @@ export async function POST(request: Request) {
     }
 
     if (attempt.status === 'SUBMITTED' || attempt.status === 'REVIEW_REQUIRED') {
-      // Prevent duplicate submission replay
+      // Replay / duplicate submission response: strictly no score or pass/fail
       return NextResponse.json({
         success: true,
         alreadySubmitted: true,
-        status: attempt.status,
-        score: attempt.score,
-        totalMarks: attempt.totalMarks,
-        percentage: attempt.percentage,
-        passed: attempt.passed,
-        certificateId: attempt.certificateId,
-        submissionReason: attempt.submissionReason,
-        submittedAt: attempt.submittedAt
+        status: 'SUBMITTED',
+        message: 'Exam Submitted Successfully. Your response has been recorded. Your result will be communicated by email.'
       });
     }
 
@@ -65,6 +59,7 @@ export async function POST(request: Request) {
       ? reason
       : 'MANUAL';
 
+    // Server-side scoring for Admin & result email dispatch
     const result = await evaluateExamSubmission(exam, attemptWithFinalAnswers, validReason);
 
     const submissionStatus = validReason === 'SECURITY_VIOLATION' || validReason === 'LOCKDOWN_VIOLATION'
@@ -79,20 +74,14 @@ export async function POST(request: Request) {
       score: result.score,
       totalMarks: result.totalMarks,
       percentage: result.percentage,
-      passed: result.passed,
-      certificateId: result.certificateId
+      passed: result.passed
     });
 
+    // Student response MUST NOT expose score, percentage, or pass/fail verdict
     return NextResponse.json({
       success: true,
-      status: submissionStatus,
-      score: result.score,
-      totalMarks: result.totalMarks,
-      percentage: result.percentage,
-      passed: result.passed,
-      certificateId: result.certificateId,
-      submissionReason: validReason,
-      submittedAt: new Date().toISOString()
+      status: 'SUBMITTED',
+      message: 'Exam Submitted Successfully. Your response has been recorded. Your result will be communicated by email.'
     });
   } catch (error: any) {
     console.error('Exam submit error:', error);

@@ -40,8 +40,7 @@ export async function POST(request: Request) {
         score: result.score,
         totalMarks: result.totalMarks,
         percentage: result.percentage,
-        passed: result.passed,
-        certificateId: result.certificateId
+        passed: result.passed
       });
 
       return NextResponse.json({

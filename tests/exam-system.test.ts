@@ -159,7 +159,7 @@ test('3. Authoritative Server-Side Timer & Concurrency', async () => {
   await db.examAttempts.deleteById(attemptId);
 });
 
-test('4. Server-Side Scoring, Pass/Fail Threshold, and Certificate Generation', async () => {
+test('4. Server-Side Scoring, Pass/Fail Threshold, Email Notification & No Certificate Generation', async () => {
   const attemptId = generateAttemptId();
   const token = generateSessionToken();
 
@@ -192,19 +192,21 @@ test('4. Server-Side Scoring, Pass/Fail Threshold, and Certificate Generation', 
   assert.equal(evalResult.totalMarks, 20);
   assert.equal(evalResult.percentage, 100);
   assert.equal(evalResult.passed, true);
-  assert.ok(evalResult.certificateId, 'Passing student must be issued a certificateId');
-  assert.match(evalResult.certificateId, /^AWS-SBG-CUUP-\d{4}-\d{6}$/);
+  // Certificate must NOT be generated
+  assert.equal((evalResult as any).certificateId, undefined, 'Certificate must NEVER be generated automatically');
 
-  // Verify certificate record is created in certificates collection
-  const cert = await db.certificates.getByCertificateId(evalResult.certificateId!);
-  assert.ok(cert);
-  assert.equal(cert.studentName, 'Abhay Kumar');
-  assert.equal(cert.status, 'Valid');
+  // Verify notifications table contains the dispatched result email
+  const notifs = await db.notifications.getAll();
+  const resultEmailNotif = notifs.find((n: any) => n.recipientEmail === 'abhay@cumail.in' && n.title.includes('Result'));
+  assert.ok(resultEmailNotif, 'Result email must be queued and sent to candidate');
+  assert.ok(resultEmailNotif.message.includes('100%'));
+  assert.ok(resultEmailNotif.message.includes('PASSED'));
 
   // Test Failing Submission: Q1 -> Option 0 (Wrong, EC2), Q2 -> Option 0 (Wrong, EC2) = 0%
   const failingAttempt: ExamAttempt = {
     ...passingAttempt,
     id: generateAttemptId(),
+    email: 'fail.test@cumail.in',
     answers: {
       'tq-1': 0,
       'tq-2': 0
@@ -215,7 +217,7 @@ test('4. Server-Side Scoring, Pass/Fail Threshold, and Certificate Generation', 
   assert.equal(failResult.score, 0);
   assert.equal(failResult.percentage, 0);
   assert.equal(failResult.passed, false);
-  assert.equal(failResult.certificateId, undefined, 'Failing student must not receive a certificate');
+  assert.equal((failResult as any).certificateId, undefined, 'Failing student must not receive a certificate');
 
   // Clean up
   await db.examAttempts.deleteById(attemptId);

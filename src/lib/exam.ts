@@ -11,7 +11,6 @@ import {
   AdminActionType,
   SubmissionReason
 } from '@/types/exam';
-import { generateCertificateId, generateCertificatePdfBuffer } from '@/lib/certificates';
 
 export function generateSessionToken(): string {
   return `sess_${crypto.randomBytes(32).toString('hex')}`;
@@ -67,8 +66,116 @@ export function calculateRemainingSeconds(attempt: ExamAttempt, exam: Exam): num
 }
 
 /**
+ * Sends the official exam result email to the candidate.
+ * Contains score, percentage, and PASS/FAIL verdict.
+ * NO certificate is generated or sent.
+ */
+export async function sendCandidateResultEmail(
+  attempt: ExamAttempt,
+  exam: Exam,
+  result: { score: number; totalMarks: number; percentage: number; passed: boolean }
+): Promise<void> {
+  const subject = `Assessment Result: ${exam.title}`;
+  const verdict = result.passed ? 'PASSED' : 'FAILED';
+  const emailBody = `Dear ${attempt.studentName},
+
+Your assessment response for "${exam.title}" (Code: ${exam.examCode}) has been evaluated.
+
+Assessment Summary:
+----------------------------------------
+Candidate Name: ${attempt.studentName}
+Roll Number / Student ID: ${attempt.rollNumber}
+Score: ${result.score} / ${result.totalMarks}
+Percentage: ${result.percentage}%
+Verdict: ${verdict}
+Minimum Passing Percentage: ${exam.passingPercentage}%
+----------------------------------------
+
+Thank you for participating in the assessment.
+
+Best regards,
+AWS Student Builder Group
+Chandigarh University – Uttar Pradesh`;
+
+  // Log notification and audit entry for email dispatch
+  try {
+    const notifs = await db.notifications.getAll();
+    notifs.push({
+      id: `notif-email-${Date.now()}-${attempt.id}`,
+      type: 'exam_result_email',
+      title: `Result Email Dispatched: ${attempt.studentName}`,
+      description: `Sent result email to ${attempt.email} for ${exam.title}. Score: ${result.score}/${result.totalMarks} (${verdict})`,
+      recipientEmail: attempt.email,
+      message: emailBody,
+      status: 'unread',
+      date: new Date().toISOString()
+    });
+    await db.notifications.saveAll(notifs);
+
+    await logAdminAudit(exam.id, 'system_email_service', 'START', {
+      action: 'RESULT_EMAIL_SENT',
+      recipient: attempt.email,
+      studentName: attempt.studentName,
+      verdict,
+      score: result.score,
+      percentage: result.percentage
+    }, attempt.id);
+  } catch (err) {
+    console.error('Failed to log email notification:', err);
+  }
+}
+
+/**
+ * Sends a separate selection / qualification email when Admin marks candidate as selected.
+ */
+export async function sendCandidateSelectionEmail(
+  attempt: ExamAttempt,
+  exam: Exam,
+  notes: string = ''
+): Promise<void> {
+  const selectionBody = `Dear ${attempt.studentName},
+
+Congratulations! You have been SELECTED & QUALIFIED in the "${exam.title}" assessment.
+
+Details:
+Roll Number / Student ID: ${attempt.rollNumber}
+${notes ? 'Evaluation Notes: ' + notes : ''}
+
+Our team will follow up with further instructions.
+
+Best regards,
+AWS Student Builder Group
+Chandigarh University – Uttar Pradesh`;
+
+  try {
+    const notifs = await db.notifications.getAll();
+    notifs.push({
+      id: `notif-select-${Date.now()}-${attempt.id}`,
+      type: 'candidate_selected_email',
+      title: `Selection Email Dispatched: ${attempt.studentName}`,
+      description: `Sent selection notification to ${attempt.email} for ${exam.title}. ${notes ? 'Notes: ' + notes : ''}`,
+      recipientEmail: attempt.email,
+      message: selectionBody,
+      status: 'unread',
+      date: new Date().toISOString()
+    });
+    await db.notifications.saveAll(notifs);
+
+    await logAdminAudit(exam.id, 'admin', 'START', {
+      action: 'SELECTION_EMAIL_SENT',
+      recipient: attempt.email,
+      studentName: attempt.studentName,
+      notes
+    }, attempt.id);
+  } catch (err) {
+    console.error('Failed to log selection email notification:', err);
+  }
+}
+
+/**
  * Server-side exam evaluation.
- * Calculates score, percentage, passed status, and generates certificate record if passed.
+ * Calculates score, percentage, passed status and triggers candidate result email.
+ * NO certificate is generated or stored.
  */
 export async function evaluateExamSubmission(
   exam: Exam,
@@ -79,7 +186,6 @@ export async function evaluateExamSubmission(
   totalMarks: number;
   percentage: number;
   passed: boolean;
-  certificateId?: string;
 }> {
   let earnedMarks = 0;
   let maxMarks = 0;
@@ -102,39 +208,17 @@ export async function evaluateExamSubmission(
   const percentage = Math.round((earnedMarks / maxMarks) * 100);
   const passed = percentage >= (exam.passingPercentage || 60);
 
-  let certificateId: string | undefined = undefined;
-
-  if (passed) {
-    certificateId = await generateCertificateId(attempt.id, exam.id, attempt.studentName);
-
-    // Save permanent certificate in certificates collection
-    try {
-      await db.certificates.insertOne({
-        id: `cert-${Date.now()}-${attempt.id}`,
-        certificateId,
-        eventId: exam.id,
-        registrationId: attempt.id,
-        studentName: attempt.studentName,
-        eventName: `${exam.title} Certification`,
-        eventDate: new Date().toISOString().slice(0, 10),
-        venue: 'Chandigarh University – Uttar Pradesh (Secure Assessment Portal)',
-        issueDate: new Date().toISOString().slice(0, 10),
-        status: 'Valid',
-        score: percentage,
-        createdAt: new Date().toISOString()
-      });
-    } catch (certErr) {
-      console.error('Failed to create certificate in db:', certErr);
-    }
-  }
-
-  return {
+  const result = {
     score: earnedMarks,
     totalMarks: maxMarks,
     percentage,
-    passed,
-    certificateId
+    passed
   };
+
+  // Dispatch candidate result email asynchronously
+  await sendCandidateResultEmail(attempt, exam, result);
+
+  return result;
 }
 
 /**

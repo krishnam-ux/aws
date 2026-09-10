@@ -1,1 +1,415 @@
-[]
+[
+  {
+    "id": "audit_1789067322591_a509e2",
+    "examId": "exam-e2e-live-test",
+    "attemptId": "att_1789067322373_9c50f43c",
+    "adminUser": "admin",
+    "action": "START",
+    "details": {
+      "action": "SELECTION_EMAIL_SENT",
+      "recipient": "priyanka@cumail.in",
+      "studentName": "Priyanka Sharma",
+      "notes": "Outstanding technical performance"
+    },
+    "timestamp": "2026-09-10T19:08:42.591Z"
+  },
+  {
+    "id": "audit_1789067322488_eebb2a",
+    "examId": "exam-e2e-live-test",
+    "attemptId": "att_1789067322373_9c50f43c",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "priyanka@cumail.in",
+      "studentName": "Priyanka Sharma",
+      "verdict": "PASSED",
+      "score": 100,
+      "percentage": 100
+    },
+    "timestamp": "2026-09-10T19:08:42.488Z"
+  },
+  {
+    "id": "audit_1789067322414_323c52",
+    "examId": "exam-e2e-live-test",
+    "attemptId": "att_1789067322373_9c50f43c",
+    "adminUser": "admin",
+    "action": "UNLOCK",
+    "details": {
+      "candidateId": "att_1789067322373_9c50f43c"
+    },
+    "timestamp": "2026-09-10T19:08:42.415Z"
+  },
+  {
+    "id": "audit_1789067322404_1a4e36",
+    "examId": "exam-e2e-live-test",
+    "attemptId": "att_1789067322373_9c50f43c",
+    "adminUser": "admin",
+    "action": "VERIFY",
+    "details": {
+      "candidateId": "att_1789067322373_9c50f43c"
+    },
+    "timestamp": "2026-09-10T19:08:42.405Z"
+  },
+  {
+    "id": "audit_1789067322353_73524f",
+    "examId": "exam-e2e-live-test",
+    "adminUser": "admin",
+    "action": "CREATE_EXAM",
+    "details": {
+      "title": "AWS Certified Developer Assessment",
+      "questionsCount": 2
+    },
+    "timestamp": "2026-09-10T19:08:42.354Z"
+  },
+  {
+    "id": "audit_1789067321514_536102",
+    "examId": "test-exam-ccp-unit",
+    "adminUser": "admin",
+    "action": "UNLOCK_ALL",
+    "details": {
+      "count": 5
+    },
+    "timestamp": "2026-09-10T19:08:41.516Z"
+  },
+  {
+    "id": "audit_1789067321454_5b0bf9",
+    "examId": "test-exam-ccp-unit",
+    "attemptId": "att_1789067321446_32c855c5",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "fail.test@cumail.in",
+      "studentName": "Abhay Kumar",
+      "verdict": "FAILED",
+      "score": 0,
+      "percentage": 0
+    },
+    "timestamp": "2026-09-10T19:08:41.454Z"
+  },
+  {
+    "id": "audit_1789067321438_d5e8b4",
+    "examId": "test-exam-ccp-unit",
+    "attemptId": "att_1789067321418_0550a2a2",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "abhay@cumail.in",
+      "studentName": "Abhay Kumar",
+      "verdict": "PASSED",
+      "score": 20,
+      "percentage": 100
+    },
+    "timestamp": "2026-09-10T19:08:41.438Z"
+  },
+  {
+    "id": "audit_1789067045043_80c6af",
+    "examId": "exam-e2e-live-test",
+    "attemptId": "att_1789067044804_288141e7",
+    "adminUser": "admin",
+    "action": "START",
+    "details": {
+      "action": "SELECTION_EMAIL_SENT",
+      "recipient": "priyanka@cumail.in",
+      "studentName": "Priyanka Sharma",
+      "notes": "Outstanding technical performance"
+    },
+    "timestamp": "2026-09-10T19:04:05.043Z"
+  },
+  {
+    "id": "audit_1789067044944_91cbfc",
+    "examId": "exam-e2e-live-test",
+    "attemptId": "att_1789067044804_288141e7",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "priyanka@cumail.in",
+      "studentName": "Priyanka Sharma",
+      "verdict": "PASSED",
+      "score": 100,
+      "percentage": 100
+    },
+    "timestamp": "2026-09-10T19:04:04.945Z"
+  },
+  {
+    "id": "audit_1789067044865_ec8afe",
+    "examId": "exam-e2e-live-test",
+    "attemptId": "att_1789067044804_288141e7",
+    "adminUser": "admin",
+    "action": "UNLOCK",
+    "details": {
+      "candidateId": "att_1789067044804_288141e7"
+    },
+    "timestamp": "2026-09-10T19:04:04.868Z"
+  },
+  {
+    "id": "audit_1789067044848_f4f61e",
+    "examId": "exam-e2e-live-test",
+    "attemptId": "att_1789067044804_288141e7",
+    "adminUser": "admin",
+    "action": "VERIFY",
+    "details": {
+      "candidateId": "att_1789067044804_288141e7"
+    },
+    "timestamp": "2026-09-10T19:04:04.848Z"
+  },
+  {
+    "id": "audit_1789067044771_abbfea",
+    "examId": "exam-e2e-live-test",
+    "adminUser": "admin",
+    "action": "CREATE_EXAM",
+    "details": {
+      "title": "AWS Certified Developer Assessment",
+      "questionsCount": 2
+    },
+    "timestamp": "2026-09-10T19:04:04.772Z"
+  },
+  {
+    "id": "audit_1789067043156_a6147f",
+    "examId": "test-exam-ccp-unit",
+    "adminUser": "admin",
+    "action": "UNLOCK_ALL",
+    "details": {
+      "count": 5
+    },
+    "timestamp": "2026-09-10T19:04:03.156Z"
+  },
+  {
+    "id": "audit_1789067043033_18e1af",
+    "examId": "test-exam-ccp-unit",
+    "attemptId": "att_1789067043013_43b5fcaf",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "fail.test@cumail.in",
+      "studentName": "Abhay Kumar",
+      "verdict": "FAILED",
+      "score": 0,
+      "percentage": 0
+    },
+    "timestamp": "2026-09-10T19:04:03.033Z"
+  },
+  {
+    "id": "audit_1789067043000_6452ac",
+    "examId": "test-exam-ccp-unit",
+    "attemptId": "att_1789067042979_e7a8cd75",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "abhay@cumail.in",
+      "studentName": "Abhay Kumar",
+      "verdict": "PASSED",
+      "score": 20,
+      "percentage": 100
+    },
+    "timestamp": "2026-09-10T19:04:03.001Z"
+  },
+  {
+    "id": "audit_1789066517372_785ebe",
+    "examId": "exam-e2e-live-test",
+    "attemptId": "att_1789066517300_a5043e1c",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "priyanka@cumail.in",
+      "studentName": "Priyanka Sharma",
+      "verdict": "PASSED",
+      "score": 100,
+      "percentage": 100
+    },
+    "timestamp": "2026-09-10T18:55:17.372Z"
+  },
+  {
+    "id": "audit_1789066517330_130a9b",
+    "examId": "exam-e2e-live-test",
+    "attemptId": "att_1789066517300_a5043e1c",
+    "adminUser": "admin",
+    "action": "UNLOCK",
+    "details": {
+      "candidateId": "att_1789066517300_a5043e1c"
+    },
+    "timestamp": "2026-09-10T18:55:17.330Z"
+  },
+  {
+    "id": "audit_1789066517321_709bfc",
+    "examId": "exam-e2e-live-test",
+    "attemptId": "att_1789066517300_a5043e1c",
+    "adminUser": "admin",
+    "action": "VERIFY",
+    "details": {
+      "candidateId": "att_1789066517300_a5043e1c"
+    },
+    "timestamp": "2026-09-10T18:55:17.322Z"
+  },
+  {
+    "id": "audit_1789066517289_e623e2",
+    "examId": "exam-e2e-live-test",
+    "adminUser": "admin",
+    "action": "CREATE_EXAM",
+    "details": {
+      "title": "AWS Certified Developer Assessment",
+      "questionsCount": 2
+    },
+    "timestamp": "2026-09-10T18:55:17.289Z"
+  },
+  {
+    "id": "audit_1789066514437_4132f2",
+    "examId": "test-exam-ccp-unit",
+    "adminUser": "admin",
+    "action": "UNLOCK_ALL",
+    "details": {
+      "count": 5
+    },
+    "timestamp": "2026-09-10T18:55:14.437Z"
+  },
+  {
+    "id": "audit_1789066514393_248cbb",
+    "examId": "test-exam-ccp-unit",
+    "attemptId": "att_1789066514386_017eae91",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "fail.test@cumail.in",
+      "studentName": "Abhay Kumar",
+      "verdict": "FAILED",
+      "score": 0,
+      "percentage": 0
+    },
+    "timestamp": "2026-09-10T18:55:14.393Z"
+  },
+  {
+    "id": "audit_1789066514378_e8a021",
+    "examId": "test-exam-ccp-unit",
+    "attemptId": "att_1789066514364_a2a3c45a",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "abhay@cumail.in",
+      "studentName": "Abhay Kumar",
+      "verdict": "PASSED",
+      "score": 20,
+      "percentage": 100
+    },
+    "timestamp": "2026-09-10T18:55:14.379Z"
+  },
+  {
+    "id": "audit_1789065341371_51f8ad",
+    "examId": "exam-e2e-live-test",
+    "adminUser": "admin",
+    "action": "CREATE_EXAM",
+    "details": {
+      "title": "AWS Certified Developer Assessment",
+      "questionsCount": 2
+    },
+    "timestamp": "2026-09-10T18:35:41.371Z"
+  },
+  {
+    "id": "audit_1789065340748_67eaad",
+    "examId": "test-exam-ccp-unit",
+    "adminUser": "admin",
+    "action": "UNLOCK_ALL",
+    "details": {
+      "count": 5
+    },
+    "timestamp": "2026-09-10T18:35:40.748Z"
+  },
+  {
+    "id": "audit_1789065340706_5321d7",
+    "examId": "test-exam-ccp-unit",
+    "attemptId": "att_1789065340695_60ef2218",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "abhay@cumail.in",
+      "studentName": "Abhay Kumar",
+      "verdict": "PASSED",
+      "score": 20,
+      "percentage": 100
+    },
+    "timestamp": "2026-09-10T18:35:40.706Z"
+  },
+  {
+    "id": "audit_1789065276523_b0767b",
+    "examId": "exam-e2e-live-test",
+    "attemptId": "att_1789065276431_94682eaa",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "priyanka@cumail.in",
+      "studentName": "Priyanka Sharma",
+      "verdict": "PASSED",
+      "score": 100,
+      "percentage": 100
+    },
+    "timestamp": "2026-09-10T18:34:36.523Z"
+  },
+  {
+    "id": "audit_1789065276466_d14cd2",
+    "examId": "exam-e2e-live-test",
+    "attemptId": "att_1789065276431_94682eaa",
+    "adminUser": "admin",
+    "action": "UNLOCK",
+    "details": {
+      "candidateId": "att_1789065276431_94682eaa"
+    },
+    "timestamp": "2026-09-10T18:34:36.467Z"
+  },
+  {
+    "id": "audit_1789065276458_37613d",
+    "examId": "exam-e2e-live-test",
+    "attemptId": "att_1789065276431_94682eaa",
+    "adminUser": "admin",
+    "action": "VERIFY",
+    "details": {
+      "candidateId": "att_1789065276431_94682eaa"
+    },
+    "timestamp": "2026-09-10T18:34:36.459Z"
+  },
+  {
+    "id": "audit_1789065276416_b799a6",
+    "examId": "exam-e2e-live-test",
+    "adminUser": "admin",
+    "action": "CREATE_EXAM",
+    "details": {
+      "title": "AWS Certified Developer Assessment",
+      "questionsCount": 2
+    },
+    "timestamp": "2026-09-10T18:34:36.416Z"
+  },
+  {
+    "id": "audit_1789065275409_9f56ea",
+    "examId": "test-exam-ccp-unit",
+    "adminUser": "admin",
+    "action": "UNLOCK_ALL",
+    "details": {
+      "count": 5
+    },
+    "timestamp": "2026-09-10T18:34:35.409Z"
+  },
+  {
+    "id": "audit_1789065275352_fcef0a",
+    "examId": "test-exam-ccp-unit",
+    "attemptId": "att_1789065275341_a0184db8",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "abhay@cumail.in",
+      "studentName": "Abhay Kumar",
+      "verdict": "PASSED",
+      "score": 20,
+      "percentage": 100
+    },
+    "timestamp": "2026-09-10T18:34:35.352Z"
+  }
+]

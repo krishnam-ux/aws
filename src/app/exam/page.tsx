@@ -1,14 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
 
 export default function ExamPortalPage() {
-  const router = useRouter();
-
-  // Phase state
-  const [phase, setPhase] = useState<'AUTH' | 'LOBBY' | 'EXAM' | 'RESULT'>('AUTH');
+  // Phase state: AUTH -> LOBBY -> EXAM -> SUBMITTED
+  const [phase, setPhase] = useState<'AUTH' | 'LOBBY' | 'EXAM' | 'SUBMITTED'>('AUTH');
 
   // Auth Form State
   const [examId, setExamId] = useState('exam-aws-ccp-01');
@@ -37,9 +33,6 @@ export default function ExamPortalPage() {
   const [securityWarning, setSecurityWarning] = useState<string | null>(null);
   const [violationCount, setViolationCount] = useState(0);
 
-  // Result State
-  const [resultData, setResultData] = useState<any>(null);
-
   // Auto-restore session from sessionStorage on mount
   useEffect(() => {
     const savedToken = sessionStorage.getItem('exam_token');
@@ -61,7 +54,7 @@ export default function ExamPortalPage() {
         if (data.status === 'IN_EXAM') {
           loadExamSession(attId, tok);
         } else if (data.status === 'SUBMITTED' || data.status === 'REVIEW_REQUIRED') {
-          loadResult(attId, tok);
+          setPhase('SUBMITTED');
         } else {
           setPhase('LOBBY');
         }
@@ -85,7 +78,7 @@ export default function ExamPortalPage() {
           if (data.status === 'IN_EXAM') {
             loadExamSession(attemptId, sessionToken);
           } else if (data.status === 'SUBMITTED' || data.status === 'REVIEW_REQUIRED') {
-            loadResult(attemptId, sessionToken);
+            setPhase('SUBMITTED');
           }
         }
       } catch (err) {
@@ -149,7 +142,7 @@ export default function ExamPortalPage() {
       if (data.status === 'IN_EXAM') {
         await loadExamSession(data.attemptId, data.token);
       } else if (data.status === 'SUBMITTED' || data.status === 'REVIEW_REQUIRED') {
-        await loadResult(data.attemptId, data.token);
+        setPhase('SUBMITTED');
       } else {
         setPhase('LOBBY');
       }
@@ -175,7 +168,7 @@ export default function ExamPortalPage() {
       setViolationCount(data.attempt.securityViolationsCount || 0);
 
       if (data.attempt.status === 'SUBMITTED' || data.attempt.status === 'REVIEW_REQUIRED') {
-        loadResult(attId, tok);
+        setPhase('SUBMITTED');
       } else {
         setPhase('EXAM');
       }
@@ -189,7 +182,6 @@ export default function ExamPortalPage() {
     if (!attemptId || !sessionToken) return;
 
     try {
-      // Request Fullscreen
       if (document.documentElement.requestFullscreen) {
         document.documentElement.requestFullscreen().catch(() => {});
       }
@@ -235,7 +227,7 @@ export default function ExamPortalPage() {
         if (data.autoSubmitted) {
           setSecurityWarning('Security violation limit exceeded. Your exam has been submitted for review.');
           setTimeout(() => {
-            loadResult(attemptId, sessionToken);
+            setPhase('SUBMITTED');
           }, 2000);
         } else if (data.warningsRemaining !== undefined) {
           setSecurityWarning(`⚠️ Warning: ${eventType.replace(/_/g, ' ')}. Warnings remaining: ${data.warningsRemaining}`);
@@ -252,27 +244,22 @@ export default function ExamPortalPage() {
   useEffect(() => {
     if (phase !== 'EXAM') return;
 
-    // Fullscreen change detection
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement) {
         logClientSecurityEvent('FULLSCREEN_EXIT', 'WARNING', { action: 'exited_fullscreen' });
       }
     };
 
-    // Window blur / Tab switch detection
     const handleBlur = () => {
       logClientSecurityEvent('TAB_BLUR', 'WARNING', { action: 'window_blur_or_tab_switch' });
     };
 
-    // Prevent key combinations
     const handleKeyDown = (e: KeyboardEvent) => {
-      // F12 or DevTools
       if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C'))) {
         e.preventDefault();
         logClientSecurityEvent('DEVTOOLS_ATTEMPT', 'CRITICAL', { key: e.key });
         return false;
       }
-      // Copy, Cut, Paste, Print, Save, Select All
       if (e.ctrlKey && ['c', 'v', 'x', 'u', 'p', 's', 'a'].includes(e.key.toLowerCase())) {
         e.preventDefault();
         logClientSecurityEvent('UNAUTHORIZED_KEY', 'WARNING', { key: e.key });
@@ -280,14 +267,12 @@ export default function ExamPortalPage() {
       }
     };
 
-    // Prevent context menu
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault();
       logClientSecurityEvent('UNAUTHORIZED_KEY', 'INFO', { action: 'context_menu' });
       return false;
     };
 
-    // Beforeunload warning
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
       e.returnValue = 'Exam is in progress. Are you sure you want to leave?';
@@ -369,7 +354,7 @@ export default function ExamPortalPage() {
       if (!res.ok) throw new Error(data.error || 'Submission failed.');
 
       setIsSubmitModalOpen(false);
-      await loadResult(attemptId, sessionToken);
+      setPhase('SUBMITTED');
     } catch (err: any) {
       alert(err.message || 'Failed to submit exam.');
     } finally {
@@ -382,7 +367,7 @@ export default function ExamPortalPage() {
     if (!attemptId || !sessionToken) return;
 
     try {
-      const res = await fetch('/api/exam/submit', {
+      await fetch('/api/exam/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -393,23 +378,10 @@ export default function ExamPortalPage() {
         })
       });
 
-      await loadResult(attemptId, sessionToken);
+      setPhase('SUBMITTED');
     } catch (e) {
       console.error('Auto submit error:', e);
-    }
-  };
-
-  // Load Result Screen
-  const loadResult = async (attId: string, tok: string) => {
-    try {
-      const res = await fetch(`/api/exam/result?attemptId=${encodeURIComponent(attId)}&token=${encodeURIComponent(tok)}`);
-      const data = await res.json();
-      if (res.ok) {
-        setResultData(data);
-        setPhase('RESULT');
-      }
-    } catch (e) {
-      console.error('Failed to load result:', e);
+      setPhase('SUBMITTED');
     }
   };
 
@@ -596,7 +568,6 @@ export default function ExamPortalPage() {
 
           {/* Lobby Status Card */}
           <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
-            {/* Status Visual */}
             <div className="text-center py-6">
               {isLocked && (
                 <div className="space-y-4">
@@ -607,7 +578,7 @@ export default function ExamPortalPage() {
                   </div>
                   <div className="text-xl font-bold text-amber-300">Exam Lobby Locked</div>
                   <p className="text-sm text-slate-400 max-w-sm mx-auto">
-                    You have successfully checked into the lobby. Please wait while the exam proctor verifies your identity.
+                    You have checked into the lobby. Please wait while the exam proctor verifies your identity.
                   </p>
                 </div>
               )}
@@ -708,7 +679,7 @@ export default function ExamPortalPage() {
             </span>
           </div>
 
-          {/* Authoritative Live Countdown Timer */}
+          {/* Live Countdown Timer */}
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-2">
               <span className="text-xs text-slate-400 hidden sm:inline">Time Remaining:</span>
@@ -734,7 +705,7 @@ export default function ExamPortalPage() {
           </div>
         </header>
 
-        {/* Security Warning Toast */}
+        {/* Security Warning Banner */}
         {securityWarning && (
           <div className="bg-rose-600 text-white text-xs font-semibold py-2 px-4 text-center sticky top-[57px] z-30 shadow-lg animate-bounce">
             {securityWarning}
@@ -743,7 +714,7 @@ export default function ExamPortalPage() {
 
         {/* Main Exam Workspace */}
         <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Question Viewer (3 cols) */}
+          {/* Question Viewer */}
           <div className="lg:col-span-3 space-y-6">
             {currentQuestion ? (
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl">
@@ -844,14 +815,13 @@ export default function ExamPortalPage() {
             )}
           </div>
 
-          {/* Question Navigator Sidebar (1 col) */}
+          {/* Question Navigator Sidebar */}
           <div className="space-y-6">
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
               <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-800 pb-3">
                 Question Navigator
               </div>
 
-              {/* Grid */}
               <div className="grid grid-cols-5 gap-2">
                 {questions.map((q: any, idx: number) => {
                   const isAnswered = answers[q.id] !== undefined;
@@ -881,7 +851,6 @@ export default function ExamPortalPage() {
                 })}
               </div>
 
-              {/* Legend */}
               <div className="pt-4 border-t border-slate-800 space-y-2 text-xs text-slate-400">
                 <div className="flex items-center space-x-2">
                   <span className="w-3 h-3 rounded bg-emerald-500/30 border border-emerald-500/50"></span>
@@ -898,7 +867,6 @@ export default function ExamPortalPage() {
               </div>
             </div>
 
-            {/* Candidate Proctor Badge */}
             <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 text-xs space-y-2 text-slate-400">
               <div className="flex justify-between">
                 <span>Candidate:</span>
@@ -970,141 +938,56 @@ export default function ExamPortalPage() {
   }
 
   // --------------------------------------------------------------------------
-  // RENDER PHASE 4: RESULT SCREEN
+  // RENDER PHASE 4: SUBMITTED CONFIRMATION (ONLY CLEAN MESSAGE - NO SCORE/CERTIFICATE)
   // --------------------------------------------------------------------------
-  if (phase === 'RESULT') {
-    const passed = resultData?.passed;
-    const isReview = resultData?.status === 'REVIEW_REQUIRED';
-
+  if (phase === 'SUBMITTED') {
     return (
       <main className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-xl mx-auto w-full">
-          {/* Brand Lockup */}
-          <div className="text-center mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-display">
-              Examination Result
-            </h1>
-            <p className="text-sm text-slate-400 mt-1">
-              {resultData?.examTitle || 'AWS Certification Assessment'}
-            </p>
-          </div>
-
-          {/* Result Card */}
-          <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
-            {/* Pass/Fail Visual */}
-            <div className="text-center py-4 space-y-3">
-              {isReview ? (
-                <>
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-amber-500/10 border-2 border-amber-500/40 text-amber-400 text-3xl">
-                    ⚠️
-                  </div>
-                  <div className="text-2xl font-bold text-amber-300">Submitted — Review Required</div>
-                  <p className="text-sm text-slate-400 max-w-sm mx-auto">
-                    Your assessment has been submitted. Because security events were detected during your attempt, results are pending proctor review.
-                  </p>
-                </>
-              ) : passed ? (
-                <>
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/10 border-2 border-emerald-500/40 text-emerald-400 text-3xl shadow-xl shadow-emerald-500/20">
-                    🏆
-                  </div>
-                  <div className="text-2xl font-bold text-emerald-400">Congratulations! You Passed!</div>
-                  <p className="text-sm text-slate-300">
-                    You have demonstrated proficiency and met the passing criteria for this certification assessment.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-rose-500/10 border-2 border-rose-500/40 text-rose-400 text-3xl">
-                    ✕
-                  </div>
-                  <div className="text-2xl font-bold text-rose-400">Assessment Not Cleared</div>
-                  <p className="text-sm text-slate-400">
-                    You did not meet the minimum required passing percentage of {resultData?.passingPercentage || 70}%.
-                  </p>
-                </>
-              )}
+        <div className="max-w-md mx-auto w-full">
+          {/* Submission Success Card */}
+          <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-6 text-center">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/10 border-2 border-emerald-500/40 text-emerald-400 text-3xl shadow-xl shadow-emerald-500/20 mx-auto">
+              ✓
             </div>
 
-            {/* Score Grid */}
-            <div className="grid grid-cols-3 gap-3 bg-slate-950/80 p-4 rounded-xl border border-slate-800 text-center">
-              <div>
-                <div className="text-xs text-slate-500 uppercase tracking-wider">Score</div>
-                <div className="text-lg font-bold text-white font-mono mt-0.5">
-                  {resultData?.score} / {resultData?.totalMarks}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-slate-500 uppercase tracking-wider">Percentage</div>
-                <div
-                  className={`text-lg font-bold font-mono mt-0.5 ${
-                    passed ? 'text-emerald-400' : 'text-rose-400'
-                  }`}
-                >
-                  {resultData?.percentage}%
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-slate-500 uppercase tracking-wider">Passing Req.</div>
-                <div className="text-lg font-bold text-slate-300 font-mono mt-0.5">
-                  {resultData?.passingPercentage || 70}%
-                </div>
-              </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-white font-display">
+                Exam Submitted Successfully
+              </h2>
+              <p className="text-sm font-medium text-emerald-400">
+                Your response has been recorded.
+              </p>
+              <p className="text-xs text-slate-400 pt-1">
+                Your result will be communicated by email.
+              </p>
             </div>
 
-            {/* Candidate Info */}
-            <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/80 space-y-2 text-xs">
+            {/* Candidate Confirmation Box */}
+            <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-xs space-y-2 text-left">
               <div className="flex justify-between text-slate-400">
                 <span>Candidate Name:</span>
-                <span className="text-white font-medium">{resultData?.studentName}</span>
+                <span className="text-slate-200 font-medium">{studentName || attemptData?.studentName}</span>
               </div>
               <div className="flex justify-between text-slate-400">
-                <span>Roll Number / ID:</span>
-                <span className="text-white font-mono">{resultData?.rollNumber}</span>
+                <span>Roll Number:</span>
+                <span className="text-slate-200 font-mono font-medium">{rollNumber || attemptData?.rollNumber}</span>
               </div>
-              {resultData?.certificateId && (
-                <div className="flex justify-between text-slate-400">
-                  <span>Certificate ID:</span>
-                  <span className="text-indigo-400 font-mono font-bold">{resultData.certificateId}</span>
-                </div>
-              )}
               <div className="flex justify-between text-slate-400">
-                <span>Submission Reason:</span>
-                <span className="text-slate-300 uppercase">{resultData?.submissionReason || 'MANUAL'}</span>
+                <span>Assessment:</span>
+                <span className="text-slate-200">{attemptData?.examTitle || 'AWS Assessment'}</span>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="space-y-3 pt-2">
-              {passed && resultData?.certificateId && (
-                <>
-                  <a
-                    href={`/api/exam/certificate-pdf?attemptId=${encodeURIComponent(attemptId || '')}&token=${encodeURIComponent(sessionToken || '')}`}
-                    download
-                    className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold text-sm shadow-xl shadow-indigo-500/25 transition flex items-center justify-center space-x-2"
-                  >
-                    <span>📜 Download Official Certificate (PDF)</span>
-                  </a>
-
-                  <Link
-                    href={`/verify-certificate/${resultData.certificateId}`}
-                    target="_blank"
-                    className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition flex items-center justify-center space-x-1.5"
-                  >
-                    <span>View Public Certificate Verification Page ↗</span>
-                  </Link>
-                </>
-              )}
-
+            <div className="pt-2">
               <button
                 onClick={() => {
                   sessionStorage.removeItem('exam_token');
                   sessionStorage.removeItem('exam_attempt_id');
                   setPhase('AUTH');
                 }}
-                className="w-full py-2.5 px-4 text-xs text-slate-400 hover:text-slate-200 transition"
+                className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition"
               >
-                Log Out / Exit Assessment
+                Exit Assessment Portal
               </button>
             </div>
           </div>

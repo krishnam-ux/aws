@@ -1,1 +1,241 @@
-[]
+[
+  {
+    "id": "sec_1789067322457_93f01d",
+    "attemptId": "att_1789067322373_9c50f43c",
+    "examId": "exam-e2e-live-test",
+    "studentName": "Priyanka Sharma",
+    "rollNumber": "23BCS5555",
+    "eventType": "FULLSCREEN_EXIT",
+    "severity": "WARNING",
+    "metadata": {},
+    "timestamp": "2026-09-10T19:08:42.457Z"
+  },
+  {
+    "id": "sec_1789067321496_6730ad",
+    "attemptId": "att_1789067321465_cd8b3854",
+    "examId": "test-exam-ccp-unit",
+    "studentName": "Security Test Student",
+    "rollNumber": "23BCS7777",
+    "eventType": "UNAUTHORIZED_KEY",
+    "severity": "WARNING",
+    "metadata": {
+      "key": "Ctrl+C"
+    },
+    "timestamp": "2026-09-10T19:08:41.496Z"
+  },
+  {
+    "id": "sec_1789067321486_78264f",
+    "attemptId": "att_1789067321465_cd8b3854",
+    "examId": "test-exam-ccp-unit",
+    "studentName": "Security Test Student",
+    "rollNumber": "23BCS7777",
+    "eventType": "TAB_BLUR",
+    "severity": "WARNING",
+    "metadata": {
+      "trigger": "tab_switch"
+    },
+    "timestamp": "2026-09-10T19:08:41.486Z"
+  },
+  {
+    "id": "sec_1789067321471_64793c",
+    "attemptId": "att_1789067321465_cd8b3854",
+    "examId": "test-exam-ccp-unit",
+    "studentName": "Security Test Student",
+    "rollNumber": "23BCS7777",
+    "eventType": "FULLSCREEN_EXIT",
+    "severity": "WARNING",
+    "metadata": {
+      "trigger": "esc_key"
+    },
+    "timestamp": "2026-09-10T19:08:41.471Z"
+  },
+  {
+    "id": "sec_1789067044908_761b29",
+    "attemptId": "att_1789067044804_288141e7",
+    "examId": "exam-e2e-live-test",
+    "studentName": "Priyanka Sharma",
+    "rollNumber": "23BCS5555",
+    "eventType": "FULLSCREEN_EXIT",
+    "severity": "WARNING",
+    "metadata": {},
+    "timestamp": "2026-09-10T19:04:04.908Z"
+  },
+  {
+    "id": "sec_1789067043137_e01ea4",
+    "attemptId": "att_1789067043068_5589585e",
+    "examId": "test-exam-ccp-unit",
+    "studentName": "Security Test Student",
+    "rollNumber": "23BCS7777",
+    "eventType": "UNAUTHORIZED_KEY",
+    "severity": "WARNING",
+    "metadata": {
+      "key": "Ctrl+C"
+    },
+    "timestamp": "2026-09-10T19:04:03.137Z"
+  },
+  {
+    "id": "sec_1789067043123_93c8eb",
+    "attemptId": "att_1789067043068_5589585e",
+    "examId": "test-exam-ccp-unit",
+    "studentName": "Security Test Student",
+    "rollNumber": "23BCS7777",
+    "eventType": "TAB_BLUR",
+    "severity": "WARNING",
+    "metadata": {
+      "trigger": "tab_switch"
+    },
+    "timestamp": "2026-09-10T19:04:03.123Z"
+  },
+  {
+    "id": "sec_1789067043095_0c476d",
+    "attemptId": "att_1789067043068_5589585e",
+    "examId": "test-exam-ccp-unit",
+    "studentName": "Security Test Student",
+    "rollNumber": "23BCS7777",
+    "eventType": "FULLSCREEN_EXIT",
+    "severity": "WARNING",
+    "metadata": {
+      "trigger": "esc_key"
+    },
+    "timestamp": "2026-09-10T19:04:03.096Z"
+  },
+  {
+    "id": "sec_1789066517354_14f668",
+    "attemptId": "att_1789066517300_a5043e1c",
+    "examId": "exam-e2e-live-test",
+    "studentName": "Priyanka Sharma",
+    "rollNumber": "23BCS5555",
+    "eventType": "FULLSCREEN_EXIT",
+    "severity": "WARNING",
+    "metadata": {},
+    "timestamp": "2026-09-10T18:55:17.354Z"
+  },
+  {
+    "id": "sec_1789066514426_38f266",
+    "attemptId": "att_1789066514406_093954d9",
+    "examId": "test-exam-ccp-unit",
+    "studentName": "Security Test Student",
+    "rollNumber": "23BCS7777",
+    "eventType": "UNAUTHORIZED_KEY",
+    "severity": "WARNING",
+    "metadata": {
+      "key": "Ctrl+C"
+    },
+    "timestamp": "2026-09-10T18:55:14.427Z"
+  },
+  {
+    "id": "sec_1789066514421_2e000d",
+    "attemptId": "att_1789066514406_093954d9",
+    "examId": "test-exam-ccp-unit",
+    "studentName": "Security Test Student",
+    "rollNumber": "23BCS7777",
+    "eventType": "TAB_BLUR",
+    "severity": "WARNING",
+    "metadata": {
+      "trigger": "tab_switch"
+    },
+    "timestamp": "2026-09-10T18:55:14.421Z"
+  },
+  {
+    "id": "sec_1789066514411_d908d1",
+    "attemptId": "att_1789066514406_093954d9",
+    "examId": "test-exam-ccp-unit",
+    "studentName": "Security Test Student",
+    "rollNumber": "23BCS7777",
+    "eventType": "FULLSCREEN_EXIT",
+    "severity": "WARNING",
+    "metadata": {
+      "trigger": "esc_key"
+    },
+    "timestamp": "2026-09-10T18:55:14.411Z"
+  },
+  {
+    "id": "sec_1789065340735_9b7e8a",
+    "attemptId": "att_1789065340717_9ccf8e57",
+    "examId": "test-exam-ccp-unit",
+    "studentName": "Security Test Student",
+    "rollNumber": "23BCS7777",
+    "eventType": "UNAUTHORIZED_KEY",
+    "severity": "WARNING",
+    "metadata": {
+      "key": "Ctrl+C"
+    },
+    "timestamp": "2026-09-10T18:35:40.735Z"
+  },
+  {
+    "id": "sec_1789065340728_4458eb",
+    "attemptId": "att_1789065340717_9ccf8e57",
+    "examId": "test-exam-ccp-unit",
+    "studentName": "Security Test Student",
+    "rollNumber": "23BCS7777",
+    "eventType": "TAB_BLUR",
+    "severity": "WARNING",
+    "metadata": {
+      "trigger": "tab_switch"
+    },
+    "timestamp": "2026-09-10T18:35:40.728Z"
+  },
+  {
+    "id": "sec_1789065340721_574f5f",
+    "attemptId": "att_1789065340717_9ccf8e57",
+    "examId": "test-exam-ccp-unit",
+    "studentName": "Security Test Student",
+    "rollNumber": "23BCS7777",
+    "eventType": "FULLSCREEN_EXIT",
+    "severity": "WARNING",
+    "metadata": {
+      "trigger": "esc_key"
+    },
+    "timestamp": "2026-09-10T18:35:40.721Z"
+  },
+  {
+    "id": "sec_1789065276499_d93534",
+    "attemptId": "att_1789065276431_94682eaa",
+    "examId": "exam-e2e-live-test",
+    "studentName": "Priyanka Sharma",
+    "rollNumber": "23BCS5555",
+    "eventType": "FULLSCREEN_EXIT",
+    "severity": "WARNING",
+    "metadata": {},
+    "timestamp": "2026-09-10T18:34:36.499Z"
+  },
+  {
+    "id": "sec_1789065275392_3833e9",
+    "attemptId": "att_1789065275368_96f913ee",
+    "examId": "test-exam-ccp-unit",
+    "studentName": "Security Test Student",
+    "rollNumber": "23BCS7777",
+    "eventType": "UNAUTHORIZED_KEY",
+    "severity": "WARNING",
+    "metadata": {
+      "key": "Ctrl+C"
+    },
+    "timestamp": "2026-09-10T18:34:35.392Z"
+  },
+  {
+    "id": "sec_1789065275383_d68c40",
+    "attemptId": "att_1789065275368_96f913ee",
+    "examId": "test-exam-ccp-unit",
+    "studentName": "Security Test Student",
+    "rollNumber": "23BCS7777",
+    "eventType": "TAB_BLUR",
+    "severity": "WARNING",
+    "metadata": {
+      "trigger": "tab_switch"
+    },
+    "timestamp": "2026-09-10T18:34:35.383Z"
+  },
+  {
+    "id": "sec_1789065275375_28aad9",
+    "attemptId": "att_1789065275368_96f913ee",
+    "examId": "test-exam-ccp-unit",
+    "studentName": "Security Test Student",
+    "rollNumber": "23BCS7777",
+    "eventType": "FULLSCREEN_EXIT",
+    "severity": "WARNING",
+    "metadata": {
+      "trigger": "esc_key"
+    },
+    "timestamp": "2026-09-10T18:34:35.375Z"
+  }
+]

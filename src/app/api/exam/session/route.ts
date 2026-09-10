@@ -38,8 +38,7 @@ export async function GET(request: Request) {
         score: result.score,
         totalMarks: result.totalMarks,
         percentage: result.percentage,
-        passed: result.passed,
-        certificateId: result.certificateId
+        passed: result.passed
       });
       currentStatus = 'SUBMITTED';
       remainingSeconds = 0;
@@ -60,13 +59,7 @@ export async function GET(request: Request) {
         remainingSeconds,
         answers: attempt.answers || {},
         markedForReview: attempt.markedForReview || [],
-        securityViolationsCount: attempt.securityViolationsCount || 0,
-        passed: attempt.passed,
-        score: attempt.score,
-        totalMarks: attempt.totalMarks,
-        percentage: attempt.percentage,
-        certificateId: attempt.certificateId,
-        submissionReason: attempt.submissionReason
+        securityViolationsCount: attempt.securityViolationsCount || 0
       }
     });
   } catch (error: any) {

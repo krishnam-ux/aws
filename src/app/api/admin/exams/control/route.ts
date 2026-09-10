@@ -208,7 +208,6 @@ export async function POST(request: Request) {
         totalMarks: result.totalMarks,
         percentage: result.percentage,
         passed: result.passed,
-        certificateId: result.certificateId,
         adminNotes: notes || attempt.adminNotes || ''
       });
 
@@ -216,7 +215,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, action: 'force-submit', result });
     }
 
-    // 13. Delete / Reset Attempt
+    // 13. Mark Selected / Qualified and Send Selection Email
+    if (action === 'mark-selected') {
+      if (!candidateId) return NextResponse.json({ error: 'Candidate ID is required.' }, { status: 400 });
+      const attempt = await db.examAttempts.getById(candidateId);
+      if (!attempt) return NextResponse.json({ error: 'Candidate attempt not found.' }, { status: 404 });
+
+      const exam = await db.exams.getById(attempt.examId);
+      if (!exam) return NextResponse.json({ error: 'Exam not found.' }, { status: 404 });
+
+      const selectionNote = notes || 'Selected & Qualified by Proctor';
+      await db.examAttempts.updateOne(candidateId, {
+        adminNotes: selectionNote
+      });
+
+      const { sendCandidateSelectionEmail } = await import('@/lib/exam');
+      await sendCandidateSelectionEmail(attempt, exam, selectionNote);
+
+      return NextResponse.json({ success: true, action: 'mark-selected' });
+    }
+
+    // 14. Delete / Reset Attempt
     if (action === 'delete-attempt') {
       if (!candidateId) return NextResponse.json({ error: 'Candidate ID is required.' }, { status: 400 });
       await db.examAttempts.deleteById(candidateId);
