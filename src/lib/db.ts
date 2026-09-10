@@ -819,6 +819,157 @@ const DEFAULT_CONTENT = {
   aboutDescription: 'AWS Student Builder Group at Chandigarh University – Uttar Pradesh is a student-led technology community focused on learning, experimentation, collaboration and project building across cloud computing, artificial intelligence, data, DevOps and emerging technologies.'
 };
 
+const DEFAULT_EXAMS = [
+  {
+    id: 'exam-aws-ccp-01',
+    examCode: 'AWS-CCP-01',
+    password: 'builder-cloud-2026',
+    title: 'AWS Certified Cloud Practitioner Assessment',
+    description: 'Comprehensive foundational certification mock examination assessing core AWS cloud architecture, security, billing models, compute, storage, and networking.',
+    category: 'Cloud Foundations',
+    durationMinutes: 30,
+    passingPercentage: 70,
+    maxAttempts: 2,
+    status: 'Live',
+    requireSecureBrowser: true,
+    maxSecurityViolations: 3,
+    questions: [
+      {
+        id: 'q-01',
+        question: 'Under the AWS Shared Responsibility Model, which of the following is the customer responsible for managing?',
+        options: [
+          'Physical security of data center facilities',
+          'Customer data encryption and IAM user access permissions',
+          'Hypervisor patch management',
+          'Decommissioning of failed physical storage drives'
+        ],
+        correctOptionIndex: 1,
+        marks: 10,
+        explanation: 'Customers are responsible for security IN the cloud, including data encryption, identity access management, and OS configurations.'
+      },
+      {
+        id: 'q-02',
+        question: 'Which AWS service provides low-latency content delivery worldwide through a global network of edge locations?',
+        options: [
+          'Amazon CloudFront',
+          'AWS Direct Connect',
+          'Amazon Route 53',
+          'AWS Global Accelerator'
+        ],
+        correctOptionIndex: 0,
+        marks: 10,
+        explanation: 'Amazon CloudFront is a fast Content Delivery Network (CDN) service that securely delivers data, videos, and APIs via edge locations.'
+      },
+      {
+        id: 'q-03',
+        question: 'Which AWS storage service provides object storage with virtually unlimited scalability and 99.999999999% (11 9s) durability?',
+        options: [
+          'Amazon Elastic Block Store (EBS)',
+          'Amazon Elastic File System (EFS)',
+          'Amazon Simple Storage Service (S3)',
+          'AWS Storage Gateway'
+        ],
+        correctOptionIndex: 2,
+        marks: 10,
+        explanation: 'Amazon S3 is an industry-leading object storage service offering 11 9s of data durability.'
+      },
+      {
+        id: 'q-04',
+        question: 'A builder needs to run application code in response to events without provisioning or managing servers. Which service should they choose?',
+        options: [
+          'Amazon EC2',
+          'AWS Lambda',
+          'AWS Elastic Beanstalk',
+          'Amazon ECS'
+        ],
+        correctOptionIndex: 1,
+        marks: 10,
+        explanation: 'AWS Lambda lets you run code serverless in response to triggers without provisioning servers.'
+      },
+      {
+        id: 'q-05',
+        question: 'Which AWS service allows you to provision logically isolated virtual networks where you can launch AWS resources?',
+        options: [
+          'Amazon Virtual Private Cloud (VPC)',
+          'AWS Direct Connect',
+          'Amazon Route 53',
+          'AWS VPN'
+        ],
+        correctOptionIndex: 0,
+        marks: 10,
+        explanation: 'Amazon VPC lets you launch AWS resources into a virtual network that you have defined with total control over IP ranges, subnets, and routing.'
+      },
+      {
+        id: 'q-06',
+        question: 'Which security principle recommends granting users only the minimum permissions necessary to perform their job tasks?',
+        options: [
+          'Principle of Defense in Depth',
+          'Principle of Least Privilege',
+          'Root Account Delegation',
+          'Open Access Security Policy'
+        ],
+        correctOptionIndex: 1,
+        marks: 10,
+        explanation: 'Principle of Least Privilege is granting only the permissions required to complete the required task.'
+      },
+      {
+        id: 'q-07',
+        question: 'Which AWS pricing model offers significant discounts (up to 72%) in exchange for a committed term of 1 or 3 years of steady-state usage?',
+        options: [
+          'On-Demand Instances',
+          'Spot Instances',
+          'Savings Plans & Reserved Instances',
+          'Dedicated Hosts on Demand'
+        ],
+        correctOptionIndex: 2,
+        marks: 10,
+        explanation: 'Savings Plans and Reserved Instances provide significant savings over On-Demand in exchange for a committed usage term.'
+      },
+      {
+        id: 'q-08',
+        question: 'Which AWS service enables developers to build and scale generative AI applications with foundation models from leading AI startups and Amazon?',
+        options: [
+          'Amazon Bedrock',
+          'Amazon SageMaker Canvas',
+          'AWS Rekognition',
+          'Amazon Comprehend'
+        ],
+        correctOptionIndex: 0,
+        marks: 10,
+        explanation: 'Amazon Bedrock is a fully managed service that offers a choice of high-performing foundation models via a unified API.'
+      },
+      {
+        id: 'q-09',
+        question: 'Which monitoring and observability service collects operational metrics, logs, and triggers automated alarms across AWS resources?',
+        options: [
+          'AWS CloudTrail',
+          'Amazon CloudWatch',
+          'AWS Config',
+          'AWS Trusted Advisor'
+        ],
+        correctOptionIndex: 1,
+        marks: 10,
+        explanation: 'Amazon CloudWatch monitors applications, responds to performance changes, and provides actionable insights.'
+      },
+      {
+        id: 'q-10',
+        question: 'Which pillar of the AWS Well-Architected Framework focuses on running workloads effectively, gaining insight into operations, and continuously improving processes?',
+        options: [
+          'Operational Excellence',
+          'Security',
+          'Reliability',
+          'Performance Efficiency'
+        ],
+        correctOptionIndex: 0,
+        marks: 10,
+        explanation: 'The Operational Excellence pillar focuses on running and monitoring systems to deliver business value and continually improving processes.'
+      }
+    ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
+
 async function readSettingsStore(): Promise<Record<string, any>> {
   requireDatabaseAvailability();
   if (sql) {
@@ -1734,6 +1885,128 @@ export const db = {
         return;
       }
       await writeJsonFile('career_applications.json', data);
+    }
+  },
+  exams: {
+    getAll: async (): Promise<any[]> => {
+      return await readJsonFile<any[]>('exams.json', DEFAULT_EXAMS);
+    },
+    getById: async (id: string): Promise<any | null> => {
+      const exams = await db.exams.getAll();
+      return exams.find((e: any) => e.id === id || e.examCode?.toLowerCase() === id?.toLowerCase()) || null;
+    },
+    insertOne: async (exam: any): Promise<void> => {
+      const exams = await db.exams.getAll();
+      const existingIdx = exams.findIndex((e: any) => e.id === exam.id);
+      if (existingIdx >= 0) {
+        exams[existingIdx] = { ...exams[existingIdx], ...exam, updatedAt: new Date().toISOString() };
+      } else {
+        exams.unshift({ ...exam, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+      }
+      await writeJsonFile('exams.json', exams);
+    },
+    updateOne: async (id: string, fields: Partial<any>): Promise<void> => {
+      const exams = await db.exams.getAll();
+      const idx = exams.findIndex((e: any) => e.id === id);
+      if (idx !== -1) {
+        exams[idx] = { ...exams[idx], ...fields, updatedAt: new Date().toISOString() };
+        await writeJsonFile('exams.json', exams);
+      }
+    },
+    deleteOne: async (id: string): Promise<void> => {
+      let exams = await db.exams.getAll();
+      exams = exams.filter((e: any) => e.id !== id);
+      await writeJsonFile('exams.json', exams);
+    },
+    saveAll: async (data: any[]): Promise<void> => {
+      await writeJsonFile('exams.json', data);
+    }
+  },
+  examAttempts: {
+    getAll: async (): Promise<any[]> => {
+      return await readJsonFile<any[]>('exam_attempts.json', []);
+    },
+    getById: async (id: string): Promise<any | null> => {
+      const attempts = await db.examAttempts.getAll();
+      return attempts.find((a: any) => a.id === id) || null;
+    },
+    getByExamId: async (examId: string): Promise<any[]> => {
+      const attempts = await db.examAttempts.getAll();
+      return attempts.filter((a: any) => a.examId === examId);
+    },
+    getBySessionToken: async (token: string): Promise<any | null> => {
+      if (!token) return null;
+      const attempts = await db.examAttempts.getAll();
+      return attempts.find((a: any) => a.sessionToken === token) || null;
+    },
+    getByRollAndExam: async (rollNumber: string, examId: string): Promise<any | null> => {
+      const attempts = await db.examAttempts.getAll();
+      const matching = attempts.filter(
+        (a: any) => a.examId === examId && a.rollNumber?.toLowerCase() === rollNumber?.toLowerCase()
+      );
+      if (matching.length === 0) return null;
+      return matching.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+    },
+    insertOne: async (attempt: any): Promise<void> => {
+      const attempts = await db.examAttempts.getAll();
+      attempts.unshift(attempt);
+      await writeJsonFile('exam_attempts.json', attempts);
+    },
+    updateOne: async (id: string, fields: Partial<any>): Promise<any | null> => {
+      const attempts = await db.examAttempts.getAll();
+      const idx = attempts.findIndex((a: any) => a.id === id);
+      if (idx !== -1) {
+        attempts[idx] = { ...attempts[idx], ...fields, updatedAt: new Date().toISOString() };
+        await writeJsonFile('exam_attempts.json', attempts);
+        return attempts[idx];
+      }
+      return null;
+    },
+    deleteById: async (id: string): Promise<void> => {
+      let attempts = await db.examAttempts.getAll();
+      attempts = attempts.filter((a: any) => a.id !== id);
+      await writeJsonFile('exam_attempts.json', attempts);
+    },
+    saveAll: async (data: any[]): Promise<void> => {
+      await writeJsonFile('exam_attempts.json', data);
+    }
+  },
+  examSecurityLogs: {
+    getAll: async (): Promise<any[]> => {
+      return await readJsonFile<any[]>('exam_security_logs.json', []);
+    },
+    getByAttemptId: async (attemptId: string): Promise<any[]> => {
+      const logs = await db.examSecurityLogs.getAll();
+      return logs.filter((l: any) => l.attemptId === attemptId);
+    },
+    getByExamId: async (examId: string): Promise<any[]> => {
+      const logs = await db.examSecurityLogs.getAll();
+      return logs.filter((l: any) => l.examId === examId);
+    },
+    insertOne: async (log: any): Promise<void> => {
+      const logs = await db.examSecurityLogs.getAll();
+      logs.unshift(log);
+      await writeJsonFile('exam_security_logs.json', logs);
+    },
+    saveAll: async (data: any[]): Promise<void> => {
+      await writeJsonFile('exam_security_logs.json', data);
+    }
+  },
+  examAuditLogs: {
+    getAll: async (): Promise<any[]> => {
+      return await readJsonFile<any[]>('exam_audit_logs.json', []);
+    },
+    getByExamId: async (examId: string): Promise<any[]> => {
+      const logs = await db.examAuditLogs.getAll();
+      return logs.filter((l: any) => l.examId === examId);
+    },
+    insertOne: async (log: any): Promise<void> => {
+      const logs = await db.examAuditLogs.getAll();
+      logs.unshift(log);
+      await writeJsonFile('exam_audit_logs.json', logs);
+    },
+    saveAll: async (data: any[]): Promise<void> => {
+      await writeJsonFile('exam_audit_logs.json', data);
     }
   }
 };

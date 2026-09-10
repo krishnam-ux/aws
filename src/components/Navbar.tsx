@@ -72,6 +72,7 @@ export default function Navbar() {
     { label: 'About', href: '/about' },
     { label: 'Activities', href: '/activities' },
     { label: 'Events', href: '/events' },
+    { label: 'Exams', href: '/exam' },
     { label: 'Resources', href: '/resources' },
     { label: 'Verification', href: '/verification' },
     { label: 'Leadership', href: '/leadership' },
