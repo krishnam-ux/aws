@@ -129,6 +129,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true }, { headers: noStoreHeaders });
     }
 
+    if (action === 'bulk-delete') {
+      const examIds = body.examIds || (examId ? [examId] : []);
+      if (!Array.isArray(examIds) || examIds.length === 0) {
+        return NextResponse.json({ error: 'Exam IDs are required.' }, { status: 400, headers: noStoreHeaders });
+      }
+      for (const id of examIds) {
+        await db.exams.deleteOne(id);
+        await logAdminAudit(id, 'admin', 'DELETE_EXAM', { examId: id });
+      }
+      return NextResponse.json({ success: true, count: examIds.length }, { headers: noStoreHeaders });
+    }
+
+    if (action === 'delete-all') {
+      const deletedCount = await db.exams.deleteAll();
+      await logAdminAudit('all', 'admin', 'DELETE_ALL_EXAMS', { count: deletedCount });
+      return NextResponse.json({ success: true, count: deletedCount }, { headers: noStoreHeaders });
+    }
+
     return NextResponse.json({ error: 'Invalid action.' }, { status: 400, headers: noStoreHeaders });
   } catch (error: any) {
     console.error('Admin exams error:', error);

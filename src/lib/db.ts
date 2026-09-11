@@ -2087,6 +2087,21 @@ export const db = {
         let exams = await db.exams.getAll();
         exams = exams.filter((e: any) => e.id !== id);
         await writeJsonFile('exams.json', exams);
+        try {
+          await db.examAttempts.deleteByExamId(id);
+        } catch (e) {
+          console.error('Error cascading attempt deletion for exam:', e);
+        }
+      });
+    },
+    deleteAll: async (): Promise<number> => {
+      return withCollectionLock('exams.json', async () => {
+        const exams = await db.exams.getAll();
+        const count = exams.length;
+        await writeJsonFile('exams.json', []);
+        await writeJsonFile('exam_attempts.json', []);
+        await writeJsonFile('exam_security_logs.json', []);
+        return count;
       });
     },
     saveAll: async (data: any[]): Promise<void> => {

@@ -130,6 +130,7 @@ export type AdminActionType =
   | 'CREATE_EXAM'
   | 'UPDATE_EXAM'
   | 'DELETE_EXAM'
+  | 'DELETE_ALL_EXAMS'
   | 'RESET_ATTEMPT';
 
 

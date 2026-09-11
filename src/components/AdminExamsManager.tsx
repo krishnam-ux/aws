@@ -35,6 +35,13 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
   const [isExtendingTimeId, setIsExtendingTimeId] = useState<string | null>(null);
   const [extendMinutes, setExtendMinutes] = useState(5);
 
+  // Delete Exam & Directory States
+  const [examToDelete, setExamToDelete] = useState<Exam | null>(null);
+  const [deleteExamConfirmText, setDeleteExamConfirmText] = useState('');
+  const [isDeleteAllExamsModalOpen, setIsDeleteAllExamsModalOpen] = useState(false);
+  const [deleteAllExamsConfirmText, setDeleteAllExamsConfirmText] = useState('');
+  const [isExamsDirectoryOpen, setIsExamsDirectoryOpen] = useState(false);
+
   // Delete Candidate Confirmation Modal State
   const [candidateToDelete, setCandidateToDelete] = useState<{
     id: string;
@@ -204,10 +211,10 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
     }
   };
 
-  // Delete Exam
+  // Delete Single Exam
   const handleDeleteExam = async (examId: string) => {
-    if (!confirm('Are you sure you want to delete this exam? All associated questions will be removed.')) return;
-    if (!effectiveToken) return;
+    if (!effectiveToken || !examId) return;
+    setActionLoading(true);
 
     try {
       const res = await fetch('/api/admin/exams', {
@@ -221,12 +228,49 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Delete failed.');
 
-      showToast('Exam deleted.', 'success');
+      showToast('Exam deleted successfully.', 'success');
+      setExamToDelete(null);
+      setDeleteExamConfirmText('');
+      setIsExamModalOpen(false);
+      setEditingExam(null);
       setSelectedExamId('');
       await fetchExams();
       await fetchLiveData();
     } catch (err: any) {
       showToast(err.message || 'Failed to delete exam.', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Delete All Exams
+  const handleDeleteAllExams = async () => {
+    if (!effectiveToken) return;
+    setActionLoading(true);
+
+    try {
+      const res = await fetch('/api/admin/exams', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${effectiveToken}`
+        },
+        body: JSON.stringify({ action: 'delete-all' })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete all exams.');
+
+      showToast(`All ${data.count || 0} exams deleted successfully.`, 'success');
+      setIsDeleteAllExamsModalOpen(false);
+      setDeleteAllExamsConfirmText('');
+      setIsExamsDirectoryOpen(false);
+      setSelectedExamId('');
+      await fetchExams();
+      await fetchLiveData();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete all exams.', 'error');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -323,6 +367,14 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
             </select>
 
             <button
+              onClick={() => setIsExamsDirectoryOpen(true)}
+              className="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 transition"
+              title="View, manage and delete all examinations"
+            >
+              📋 All Exams ({exams.length})
+            </button>
+
+            <button
               onClick={() => {
                 if (currentExam) {
                   setEditingExam(JSON.parse(JSON.stringify(currentExam)));
@@ -365,6 +417,19 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
             >
               ➕ Create Exam
             </button>
+
+            {currentExam && (
+              <button
+                onClick={() => {
+                  setExamToDelete(currentExam);
+                  setDeleteExamConfirmText('');
+                }}
+                className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-300 transition"
+                title="Delete this examination and all associated candidate attempts"
+              >
+                🗑️ Delete Exam
+              </button>
+            )}
 
             {currentExam && (
               <a
@@ -1489,10 +1554,14 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
                 {editingExam.id ? (
                   <button
                     type="button"
-                    onClick={() => handleDeleteExam(editingExam.id!)}
+                    onClick={() => {
+                      const examObj = exams.find((e) => e.id === editingExam.id) || (editingExam as Exam);
+                      setExamToDelete(examObj);
+                      setDeleteExamConfirmText('');
+                    }}
                     className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold rounded-lg border border-rose-200"
                   >
-                    Delete Exam
+                    🗑️ Delete Exam
                   </button>
                 ) : (
                   <div></div>
@@ -1519,6 +1588,259 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE EXAM CONFIRMATION MODAL */}
+      {examToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 border border-rose-200">
+            <div className="flex items-center space-x-3 text-rose-600">
+              <span className="text-2xl">⚠️</span>
+              <div>
+                <h3 className="text-base font-bold text-slate-900 font-display">
+                  Delete Examination: {examToDelete.title}?
+                </h3>
+                <span className="text-xs font-mono font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                  {examToDelete.examCode}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-rose-50/70 border border-rose-200 rounded-xl p-3.5 text-xs text-rose-900 space-y-2">
+              <p className="font-bold">
+                DANGER: This action is permanent and cannot be undone!
+              </p>
+              <p className="text-slate-600">
+                Deleting this exam will permanently remove:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-slate-700 pl-1">
+                <li>The exam definition and its {examToDelete.questions?.length || 0} question(s)</li>
+                <li>All candidate registrations and live attempts for this exam</li>
+                <li>All student answers, submitted scores, and timer sessions</li>
+                <li>All security incident logs and violation records</li>
+              </ul>
+            </div>
+
+            <div className="flex justify-end space-x-2.5 pt-3 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={() => {
+                  setExamToDelete(null);
+                  setDeleteExamConfirmText('');
+                }}
+                className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={() => handleDeleteExam(examToDelete.id)}
+                className="px-5 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white text-xs font-bold transition shadow-sm"
+              >
+                {actionLoading ? 'Deleting…' : '🗑️ Yes, Permanently Delete Exam'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE ALL EXAMS MODAL */}
+      {isDeleteAllExamsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 border border-rose-300">
+            <div className="flex items-center space-x-3 text-rose-600">
+              <span className="text-2xl">🚨</span>
+              <h3 className="text-base font-bold text-slate-900 font-display">
+                Delete ALL Examinations?
+              </h3>
+            </div>
+
+            <div className="bg-rose-50 border border-rose-200 rounded-xl p-3.5 text-xs text-rose-900 space-y-2">
+              <p className="font-bold">
+                CRITICAL WARNING: This will delete ALL {exams.length} examinations and ALL candidate data in the system!
+              </p>
+              <p className="text-slate-600">
+                To confirm full wipe of all exams, please type <span className="font-mono font-bold text-rose-700">DELETE ALL</span> below:
+              </p>
+              <input
+                type="text"
+                value={deleteAllExamsConfirmText}
+                onChange={(e) => setDeleteAllExamsConfirmText(e.target.value)}
+                placeholder="Type DELETE ALL"
+                className="w-full border border-rose-300 rounded-lg p-2 text-xs font-mono font-bold uppercase bg-white"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2.5 pt-3 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDeleteAllExamsModalOpen(false);
+                  setDeleteAllExamsConfirmText('');
+                }}
+                className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={actionLoading || deleteAllExamsConfirmText.trim().toUpperCase() !== 'DELETE ALL'}
+                onClick={handleDeleteAllExams}
+                className="px-5 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white text-xs font-bold transition shadow-sm"
+              >
+                {actionLoading ? 'Deleting All…' : '🗑️ Wipe All Exams'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ALL EXAMS DIRECTORY MODAL */}
+      {isExamsDirectoryOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl space-y-5 my-8 max-h-[90vh] overflow-y-auto border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 font-display flex items-center gap-2">
+                  <span>📋</span> Examinations Directory ({exams.length})
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Browse all configured certification assessments, launch live proctoring, or delete examinations.
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                {exams.length > 0 && (
+                  <button
+                    onClick={() => setIsDeleteAllExamsModalOpen(true)}
+                    className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 transition"
+                  >
+                    🗑️ Delete All Exams
+                  </button>
+                )}
+                <button
+                  onClick={() => setIsExamsDirectoryOpen(false)}
+                  className="text-slate-400 hover:text-slate-700 text-lg font-bold px-2 py-1"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {exams.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 space-y-3">
+                <div className="text-3xl">📭</div>
+                <div className="text-sm font-semibold text-slate-600">No examinations currently configured.</div>
+                <button
+                  onClick={() => {
+                    setIsExamsDirectoryOpen(false);
+                    setEditingExam({
+                      title: 'New AWS Certification Mock',
+                      examCode: 'AWS-MOCK-01',
+                      password: 'aws-exam-pass',
+                      description: 'Assessment description',
+                      category: 'Cloud Architecture',
+                      durationMinutes: 30,
+                      passingPercentage: 70,
+                      maxAttempts: 1,
+                      status: 'Live',
+                      requireSecureBrowser: true,
+                      maxSecurityViolations: 3,
+                      questions: []
+                    });
+                    setIsExamModalOpen(true);
+                  }}
+                  className="px-4 py-2 bg-[#FF9900] hover:bg-[#E08800] text-white font-bold text-xs rounded-lg shadow-sm"
+                >
+                  ➕ Create First Exam
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {exams.map((exam) => {
+                  const isCurrent = exam.id === selectedExamId;
+                  return (
+                    <div
+                      key={exam.id}
+                      className={`p-4 rounded-xl border transition space-y-3 ${
+                        isCurrent
+                          ? 'border-[#FF9900] bg-amber-50/20 ring-1 ring-[#FF9900]'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-mono text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 uppercase">
+                              {exam.examCode}
+                            </span>
+                            <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-1.5 py-0.5 rounded border border-emerald-200">
+                              {exam.status || 'Live'}
+                            </span>
+                          </div>
+                          <h4 className="text-sm font-bold text-slate-900 mt-1.5">{exam.title}</h4>
+                          <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5">{exam.description || 'No description'}</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-100 text-[11px] text-slate-600">
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Duration:</span>
+                          <span className="font-bold text-slate-800">{exam.durationMinutes} mins</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Questions:</span>
+                          <span className="font-bold text-slate-800">{exam.questions?.length || 0}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Passing:</span>
+                          <span className="font-bold text-slate-800">{exam.passingPercentage}%</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-[11px] text-slate-500">
+                          Password: <span className="font-mono font-bold text-slate-800">{exam.password || 'None'}</span>
+                        </span>
+                        <div className="flex items-center space-x-1.5">
+                          <button
+                            onClick={() => {
+                              setSelectedExamId(exam.id);
+                              setIsExamsDirectoryOpen(false);
+                            }}
+                            className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-[11px] font-bold shadow-sm"
+                          >
+                            👁️ Open Proctor
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingExam(JSON.parse(JSON.stringify(exam)));
+                              setIsExamModalOpen(true);
+                              setIsExamsDirectoryOpen(false);
+                            }}
+                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-semibold border border-slate-300"
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            onClick={() => {
+                              setExamToDelete(exam);
+                              setDeleteExamConfirmText('');
+                            }}
+                            className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded text-[11px] font-semibold border border-rose-200"
+                            title="Delete this exam"
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
