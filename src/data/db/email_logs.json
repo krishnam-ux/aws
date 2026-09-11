@@ -1,5 +1,17 @@
 [
   {
+    "id": "elog_1789150169935_030n93",
+    "recipient": "test.verification@awssbgcuup.tech",
+    "subject": "AWS SBG CU-UP — Production Verification Notification",
+    "type": "system_test_email",
+    "category": "EVENTS",
+    "status": "SIMULATED",
+    "sentAt": "2026-09-11T18:09:29.935Z",
+    "providerId": "sim_1789150169935_olkykg0",
+    "triggeredBy": "PRODUCTION_VERIFICATION",
+    "createdAt": "2026-09-11T18:09:29.935Z"
+  },
+  {
     "id": "elog_1789149584719_q05ri3",
     "recipient": "fail.test@cumail.in",
     "subject": "Official Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
