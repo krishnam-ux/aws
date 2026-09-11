@@ -1,5 +1,17 @@
 [
   {
+    "id": "elog_1789150399458_vwnd8f",
+    "recipient": "awssbgchandigarhuniversity@gmail.com",
+    "subject": "AWS SBG CU-UP — Real Production Email Verification",
+    "type": "system_test_email",
+    "category": "EVENTS",
+    "status": "SENT",
+    "sentAt": "2026-09-11T18:13:19.458Z",
+    "providerId": "04ecc5e5-7b9f-49b6-a744-bfcf2eb9a04e",
+    "triggeredBy": "ADMIN_PRODUCTION_TEST",
+    "createdAt": "2026-09-11T18:13:19.458Z"
+  },
+  {
     "id": "elog_1789150169935_030n93",
     "recipient": "test.verification@awssbgcuup.tech",
     "subject": "AWS SBG CU-UP — Production Verification Notification",
