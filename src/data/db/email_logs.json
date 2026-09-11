@@ -1,91 +1,79 @@
 [
   {
-    "id": "elog_1789150399458_vwnd8f",
+    "id": "elog_1789150593335_nejw6o",
     "recipient": "awssbgchandigarhuniversity@gmail.com",
-    "subject": "AWS SBG CU-UP — Real Production Email Verification",
+    "subject": "AWS SBG CU-UP — API Key Update Verification",
     "type": "system_test_email",
     "category": "EVENTS",
     "status": "SENT",
-    "sentAt": "2026-09-11T18:13:19.458Z",
-    "providerId": "04ecc5e5-7b9f-49b6-a744-bfcf2eb9a04e",
-    "triggeredBy": "ADMIN_PRODUCTION_TEST",
-    "createdAt": "2026-09-11T18:13:19.458Z"
+    "sentAt": "2026-09-11T18:16:33.335Z",
+    "providerId": "c76d7b63-9862-4d7e-8245-28a86a064360",
+    "triggeredBy": "ADMIN_KEY_UPDATE_TEST",
+    "createdAt": "2026-09-11T18:16:33.335Z"
   },
   {
-    "id": "elog_1789150169935_030n93",
-    "recipient": "test.verification@awssbgcuup.tech",
-    "subject": "AWS SBG CU-UP — Production Verification Notification",
-    "type": "system_test_email",
-    "category": "EVENTS",
-    "status": "SIMULATED",
-    "sentAt": "2026-09-11T18:09:29.935Z",
-    "providerId": "sim_1789150169935_olkykg0",
-    "triggeredBy": "PRODUCTION_VERIFICATION",
-    "createdAt": "2026-09-11T18:09:29.935Z"
-  },
-  {
-    "id": "elog_1789149584719_q05ri3",
+    "id": "elog_1789150431403_uu7gg0",
     "recipient": "fail.test@cumail.in",
     "subject": "Official Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
     "type": "exam_result",
     "category": "EXAMS",
     "status": "SIMULATED",
-    "sentAt": "2026-09-11T17:59:44.719Z",
-    "providerId": "sim_1789149584719_g40cv90",
+    "sentAt": "2026-09-11T18:13:51.403Z",
+    "providerId": "sim_1789150431403_8ceoe48",
     "triggeredBy": "SYSTEM_AUTO",
     "templateId": "tpl-exam_result",
-    "createdAt": "2026-09-11T17:59:44.719Z"
+    "createdAt": "2026-09-11T18:13:51.403Z"
   },
   {
-    "id": "elog_1789149584710_j6u0kx",
+    "id": "elog_1789150431394_o9x579",
     "recipient": "abhay@cumail.in",
     "subject": "Official Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
     "type": "exam_result",
     "category": "EXAMS",
     "status": "SIMULATED",
-    "sentAt": "2026-09-11T17:59:44.710Z",
-    "providerId": "sim_1789149584710_a6jr49k",
+    "sentAt": "2026-09-11T18:13:51.394Z",
+    "providerId": "sim_1789150431394_ovxy3h7",
     "triggeredBy": "SYSTEM_AUTO",
     "templateId": "tpl-exam_result",
-    "createdAt": "2026-09-11T17:59:44.710Z"
+    "createdAt": "2026-09-11T18:13:51.394Z"
   },
   {
-    "id": "elog_1789149582809_d323iy",
+    "id": "elog_1789150429824_toem7j",
     "recipient": "priyanka@cumail.in",
     "subject": "Congratulations! Selected & Qualified in AWS Certified Developer Assessment",
     "type": "exam_selected_qualified",
     "category": "EXAMS",
     "status": "SIMULATED",
-    "sentAt": "2026-09-11T17:59:42.809Z",
-    "providerId": "sim_1789149582809_raidn3i",
+    "sentAt": "2026-09-11T18:13:49.824Z",
+    "providerId": "sim_1789150429824_qbi2yu6",
     "triggeredBy": "SYSTEM_AUTO",
     "templateId": "tpl-exam_selected_qualified",
-    "createdAt": "2026-09-11T17:59:42.809Z"
+    "createdAt": "2026-09-11T18:13:49.824Z"
   },
   {
-    "id": "elog_1789149582781_uzsboi",
+    "id": "elog_1789150429799_fnuh7l",
     "recipient": "priyanka@cumail.in",
     "subject": "Official Assessment Result: AWS Certified Developer Assessment",
     "type": "exam_result",
     "category": "EXAMS",
     "status": "SIMULATED",
-    "sentAt": "2026-09-11T17:59:42.781Z",
-    "providerId": "sim_1789149582781_jo9is2c",
+    "sentAt": "2026-09-11T18:13:49.799Z",
+    "providerId": "sim_1789150429798_nsbblyl",
     "triggeredBy": "SYSTEM_AUTO",
     "templateId": "tpl-exam_result",
-    "createdAt": "2026-09-11T17:59:42.781Z"
+    "createdAt": "2026-09-11T18:13:49.799Z"
   },
   {
-    "id": "elog_1789149581450_gkwhqq",
+    "id": "elog_1789150428665_s09s76",
     "recipient": "test.student@example.com",
     "subject": "Registration Confirmed: AWS Student Builder Group Inauguration & Cloud Kickstart",
     "type": "event_registration_confirmation",
     "category": "EVENTS",
     "status": "SIMULATED",
-    "sentAt": "2026-09-11T17:59:41.450Z",
-    "providerId": "sim_1789149581450_zljdft0",
+    "sentAt": "2026-09-11T18:13:48.665Z",
+    "providerId": "sim_1789150428665_qz6n0dd",
     "triggeredBy": "SYSTEM_AUTO",
     "templateId": "tpl-event_registration_confirmation",
-    "createdAt": "2026-09-11T17:59:41.450Z"
+    "createdAt": "2026-09-11T18:13:48.665Z"
   }
 ]
