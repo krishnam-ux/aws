@@ -432,6 +432,41 @@ export async function triggerExamCredentialsEmail(params: {
 }
 
 /**
+ * Trigger: Exam Reminder
+ */
+export async function triggerExamReminderEmail(params: {
+  studentName: string;
+  email: string;
+  exam: {
+    id: string;
+    title: string;
+    examCode: string;
+    durationMinutes: number;
+  };
+}) {
+  const { studentName, email, exam } = params;
+  if (!email || !(await isAutomationEnabled('exam_reminder'))) {
+    return;
+  }
+
+  const variables = {
+    studentName,
+    examName: exam.title,
+    examCode: exam.examCode,
+    durationMinutes: exam.durationMinutes,
+    examUrl: `https://www.awssbgcuup.tech/exam/${exam.id}`
+  };
+
+  return await sendTemplateEmail({
+    type: 'exam_reminder',
+    to: email,
+    variables,
+    ctaText: 'Check Exam Portal',
+    ctaUrl: variables.examUrl
+  });
+}
+
+/**
  * Trigger: Exam Submitted Successfully
  * Strictly acknowledges submission without revealing scores on website.
  */
@@ -459,6 +494,8 @@ export async function triggerExamSubmissionConfirmation(params: {
     variables
   });
 }
+
+export const triggerExamSubmittedEmail = triggerExamSubmissionConfirmation;
 
 /**
  * Trigger: Exam Result Scorecard Delivery (EMAIL ONLY)

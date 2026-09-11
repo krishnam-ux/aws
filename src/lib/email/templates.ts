@@ -451,6 +451,33 @@ Best regards,
 AWS SBG CU-UP Leadership`
   },
 
+  // 7b. Opportunity Rejected / Regret Notice
+  {
+    id: 'tpl-opportunity_rejected',
+    name: 'Opportunity Application Regret',
+    type: 'opportunity_rejected',
+    category: 'OPPORTUNITIES',
+    subject: 'Application Update: {{opportunityTitle}}',
+    description: 'Sent when an application is not moved forward.',
+    variables: ['studentName', 'opportunityTitle', 'notes', 'opportunityUrl'],
+    isActive: true,
+    updatedAt: new Date().toISOString(),
+    bodyHtml: `<p>Dear <strong>{{studentName}}</strong>,</p>
+<p>Thank you for your interest and for taking the time to apply for <strong>{{opportunityTitle}}</strong> with the AWS Student Builder Group at Chandigarh University – Uttar Pradesh.</p>
+<div class="card-box">
+  <div class="card-title">Committee Note</div>
+  <p style="margin:0; font-size:13px; color:#F8FAFC;">We received a large number of outstanding applications. While we are unable to offer you this position at this time, we were impressed by your passion for cloud computing.</p>
+</div>
+<p>We encourage you to participate in our upcoming workshops, hackathons, and future recruitment cycles.</p>`,
+    bodyText: `Dear {{studentName}},
+
+Thank you for applying for "{{opportunityTitle}}".
+While we are unable to offer you this position at this time, we encourage you to stay involved in our upcoming community events and future opportunities.
+
+Best regards,
+AWS SBG CU-UP Recruitment Committee`
+  },
+
   // 8. Exam Credentials & Instructions
   {
     id: 'tpl-exam_instructions',
@@ -487,6 +514,64 @@ Access the lobby at: {{examUrl}}
 
 Best regards,
 AWS SBG CU-UP Examination Board`
+  },
+
+  // 8b. Exam Reminder
+  {
+    id: 'tpl-exam_reminder',
+    name: 'Exam Schedule Reminder',
+    type: 'exam_reminder',
+    category: 'EXAMS',
+    subject: 'Reminder: Assessment Schedule for {{examName}}',
+    description: 'Sent prior to exam start time.',
+    variables: ['studentName', 'examName', 'examCode', 'durationMinutes', 'examUrl'],
+    isActive: true,
+    updatedAt: new Date().toISOString(),
+    bodyHtml: `<p>Dear <strong>{{studentName}}</strong>,</p>
+<p>This is a reminder that your scheduled technical assessment <strong>{{examName}}</strong> is starting soon.</p>
+<div class="card-box">
+  <div class="card-title">Exam Overview</div>
+  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+    <tr><td style="color:#94A3B8; width:140px; padding:4px 0; font-size:13px;">Assessment:</td><td style="color:#F8FAFC; font-weight:700; font-size:13px;">{{examName}}</td></tr>
+    <tr><td style="color:#94A3B8; padding:4px 0; font-size:13px;">Exam Code:</td><td style="color:#FF9900; font-weight:700; font-family:monospace; font-size:13px;">{{examCode}}</td></tr>
+    <tr><td style="color:#94A3B8; padding:4px 0; font-size:13px;">Duration:</td><td style="color:#F8FAFC; font-weight:700; font-size:13px;">{{durationMinutes}} Minutes</td></tr>
+  </table>
+</div>
+<p>Ensure a stable internet connection and have your student ID ready for proctor verification.</p>`,
+    bodyText: `Dear {{studentName}},
+
+Reminder: Your assessment "{{examName}}" (Exam Code: {{examCode}}) is starting soon.
+Duration: {{durationMinutes}} Minutes
+
+Best regards,
+AWS SBG CU-UP Examination Board`
+  },
+
+  // 8c. Admin Custom Announcement
+  {
+    id: 'tpl-admin_custom_announcement',
+    name: 'Official Announcement Broadcast',
+    type: 'admin_custom_announcement',
+    category: 'COMMUNITY',
+    subject: 'Official Announcement: {{announcementTitle}}',
+    description: 'Sent for official broadcast announcements.',
+    variables: ['announcementTitle', 'announcementDate', 'announcementCategory', 'announcementContent', 'ctaUrl'],
+    isActive: true,
+    updatedAt: new Date().toISOString(),
+    bodyHtml: `<p>Dear AWS SBG Community Member,</p>
+<p>We are pleased to share an official announcement with you:</p>
+<div class="card-box">
+  <div class="card-title">{{announcementTitle}}</div>
+  <div style="font-size:11px; color:#94A3B8; margin-bottom:10px;">{{announcementCategory}} • {{announcementDate}}</div>
+  <div style="font-size:13px; color:#F8FAFC; line-height:1.6;">{{announcementContent}}</div>
+</div>`,
+    bodyText: `Official Announcement: {{announcementTitle}}
+{{announcementCategory}} - {{announcementDate}}
+
+{{announcementContent}}
+
+Best regards,
+AWS Student Builder Group (CU-UP)`
   },
 
   // 9. Exam Submitted Successfully
