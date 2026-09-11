@@ -1,5 +1,17 @@
 [
   {
+    "id": "elog_1789150810795_lfnvyi",
+    "recipient": "krishnamdwivedi17@gmail.com",
+    "subject": "AWS SBG CU-UP — Email Service Verification Test",
+    "type": "system_test_email",
+    "category": "EVENTS",
+    "status": "SENT",
+    "sentAt": "2026-09-11T18:20:10.795Z",
+    "providerId": "cf4691a5-89e8-4b26-aa3d-96cd522232c8",
+    "triggeredBy": "ADMIN_TEST_VERIFICATION",
+    "createdAt": "2026-09-11T18:20:10.795Z"
+  },
+  {
     "id": "elog_1789150593335_nejw6o",
     "recipient": "awssbgchandigarhuniversity@gmail.com",
     "subject": "AWS SBG CU-UP — API Key Update Verification",
