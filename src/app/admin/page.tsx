@@ -1766,9 +1766,9 @@ export default function AdminDashboard() {
       <div className="flex-grow flex overflow-hidden">
         {/* 3. SIDEBAR NAVIGATION */}
         <aside
-          className={`bg-[#081A2A] text-slate-350 shrink-0 p-4 flex flex-col justify-between transition-all duration-200 z-25 ${
-            isSidebarCollapsed ? 'w-16 items-center' : 'w-64'
-          } hidden md:flex`}
+          className={`bg-[#081A2A] text-slate-350 shrink-0 p-4 flex flex-col justify-between transition-all duration-200 z-30 ${
+            isSidebarCollapsed ? 'hidden md:flex md:w-16 md:items-center' : 'fixed md:static inset-y-0 left-0 h-full md:h-auto shadow-2xl md:shadow-none w-64 flex'
+          } overflow-y-auto`}
         >
           <div className="space-y-6 w-full">
             {/* Header info inside sidebar */}
@@ -1859,17 +1859,35 @@ export default function AdminDashboard() {
                 {!isSidebarCollapsed && (
                   <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest px-3 flex items-center justify-between">
                     <span>Communications</span>
-                    <span className="text-[8px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono font-bold">SMTP</span>
+                    <span className="text-[8px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-mono font-bold">RESEND</span>
                   </span>
                 )}
-                <button onClick={() => setActiveTab('Emails')} className={getNavClass('Emails')}>
-                  <svg className="h-4 w-4 flex-shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
+                <button
+                  id="sidebar-nav-emails"
+                  onClick={() => {
+                    setActiveTab('Emails');
+                    if (typeof window !== 'undefined' && window.innerWidth < 768) setIsSidebarCollapsed(true);
+                  }}
+                  className={getNavClass('Emails')}
+                  title="Emails & Notifications Hub"
+                >
+                  <div className="relative flex items-center justify-center flex-shrink-0">
+                    <svg className="h-4 w-4 text-[#FF9900]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
+                    </svg>
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                  </div>
                   {!isSidebarCollapsed && (
                     <span className="flex items-center justify-between w-full">
-                      <span>Emails & Notifications</span>
-                      <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded font-mono">Hub</span>
+                      <span className="font-bold">Emails &amp; Notifications</span>
+                      <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-mono font-bold">
+                        Hub
+                      </span>
                     </span>
                   )}
                 </button>
