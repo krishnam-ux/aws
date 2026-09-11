@@ -264,3 +264,19 @@ test('Automation Settings Toggle Enforcement', async () => {
   // Re-enable
   await db.emailAutomationSettings.setSetting('event_registration_confirmation', true, 'test_admin');
 });
+
+test('Client-Safe Default Automation Settings and Templates Integrity', () => {
+  const { DEFAULT_AUTOMATION_SETTINGS } = require('../src/lib/email/automationSettings');
+  assert.ok(Array.isArray(DEFAULT_AUTOMATION_SETTINGS));
+  assert.ok(DEFAULT_AUTOMATION_SETTINGS.length >= 12, 'Should define at least 12 automation triggers');
+
+  const requiredCategories = ['EVENTS', 'OPPORTUNITIES', 'EXAMS', 'COMMUNITY'];
+  const categories = new Set(DEFAULT_AUTOMATION_SETTINGS.map((s: any) => s.category));
+  for (const cat of requiredCategories) {
+    assert.ok(categories.has(cat), `Should cover category ${cat}`);
+  }
+
+  assert.ok(Array.isArray(DEFAULT_EMAIL_TEMPLATES));
+  assert.ok(DEFAULT_EMAIL_TEMPLATES.length >= 17, 'Should define at least 17 master email templates');
+});
+
