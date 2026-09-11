@@ -291,6 +291,15 @@ export async function POST(request: Request) {
       const resources = await db.resources.getAll();
       const collaborations = await db.collaborationRequests.getAll();
       const contactMessages = await db.contactMessages.getAll();
+      let emailsCount = 0;
+      let emailsSent = 0;
+      try {
+        const emailLogs = await db.emailLogs.getAll();
+        emailsCount = emailLogs.length;
+        emailsSent = emailLogs.filter((l: any) => l.status === 'SENT').length;
+      } catch (e) {
+        // Fallback gracefully
+      }
 
       const counts = {
         registrations: eventRegistrations.length, // total event registrations
@@ -303,7 +312,9 @@ export async function POST(request: Request) {
         announcements: announcements.length,
         resources: resources.length,
         collaborations: collaborations.filter(c => c.status === 'New').length,
-        contactMessages: contactMessages.filter(m => m.status === 'NEW').length
+        contactMessages: contactMessages.filter(m => m.status === 'NEW').length,
+        emailsCount,
+        emailsSent
       };
 
       const recentRegistrations = [...eventRegistrations]

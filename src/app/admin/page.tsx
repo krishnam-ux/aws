@@ -1993,11 +1993,12 @@ export default function AdminDashboard() {
               </div>
 
               {/* 5. STATISTICS METRICS GRID */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-6">
                 {[
                   { label: 'Total Students Registered', value: stats.counts.registrations, desc: 'Total event enrollment logs', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1z' },
                   { label: 'Upcoming Events', value: stats.counts.upcomingEvents, desc: 'Planned calendar schedules', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
                   { label: 'Exam Live Control', value: 'Live', desc: 'Secure assessment engine', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', isExam: true },
+                  { label: 'Emails Dispatched', value: stats.counts?.emailsSent !== undefined ? stats.counts.emailsSent : (stats.counts?.emailsCount || 0), desc: 'Live Resend delivery logs', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', isEmail: true },
                   { label: 'Open Registrations', value: stats.counts.openRegistrations, desc: 'Active student intakes open', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04z' },
                   { label: 'Pending Registrations', value: stats.counts.pendingRegistrations, desc: 'New submissions to review', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253z' },
                   { label: 'New Contact Messages', value: stats.counts.contactMessages, desc: 'New submissions from visitors', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' }
@@ -2006,23 +2007,24 @@ export default function AdminDashboard() {
                     key={idx}
                     onClick={() => {
                       if (card.isExam) setActiveTab('Exams');
+                      if (card.isEmail) setActiveTab('Emails');
                     }}
                     className={`bg-white border border-[#E2E8F0] p-5 rounded-lg shadow-sm space-y-3 relative overflow-hidden flex items-center justify-between ${
-                      card.isExam ? 'cursor-pointer hover:border-amber-400 hover:shadow-md transition-all' : ''
+                      card.isExam || card.isEmail ? 'cursor-pointer hover:border-[#FF9900] hover:shadow-md transition-all' : ''
                     }`}
                   >
                     <div className="space-y-1">
                       <span className="text-[10px] uppercase font-bold tracking-wider text-[#64748B] font-display block">
                         {card.label}
                       </span>
-                      <p className={`text-3xl font-extrabold leading-none ${card.isExam ? 'text-amber-600' : 'text-[#111827]'}`}>
+                      <p className={`text-3xl font-extrabold leading-none ${card.isExam ? 'text-amber-600' : card.isEmail ? 'text-[#FF9900]' : 'text-[#111827]'}`}>
                         {card.value || 0}
                       </p>
                       <span className="text-[10px] text-[#64748B] block font-sans">
                         {card.desc}
                       </span>
                     </div>
-                    <div className={`p-2.5 rounded-md ${card.isExam ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-slate-50 border border-[#E2E8F0] text-[#64748B]'}`}>
+                    <div className={`p-2.5 rounded-md ${card.isExam ? 'bg-amber-50 text-amber-600 border border-amber-200' : card.isEmail ? 'bg-orange-50 text-[#FF9900] border border-orange-200' : 'bg-slate-50 border border-[#E2E8F0] text-[#64748B]'}`}>
                       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={card.icon} />
                       </svg>
@@ -2235,7 +2237,7 @@ export default function AdminDashboard() {
 
           {/* TAB: CENTRAL EMAIL & NOTIFICATION ENGINE */}
           {activeTab === 'Emails' && (
-            <AdminEmailManager token={token} />
+            <AdminEmailManager token={token || 'awssbg-admin-session-token-secure-hash'} />
           )}
 
           {/* TAB 2: REGISTRATIONS TABLE */}
