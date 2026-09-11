@@ -11,6 +11,7 @@ import {
   AdminActionType,
   SubmissionReason
 } from '@/types/exam';
+import { triggerExamResultEmail, triggerExamSelectionEmail } from '@/lib/email/automations';
 
 export function generateSessionToken(): string {
   return `sess_${crypto.randomBytes(32).toString('hex')}`;
@@ -201,7 +202,6 @@ export async function unlockExamAttempt(
   return updatedAttempt;
 }
 
-
 /**
  * Sends the official exam result email to the candidate.
  * Contains score, percentage, and PASS/FAIL verdict.
@@ -212,43 +212,28 @@ export async function sendCandidateResultEmail(
   exam: Exam,
   result: { score: number; totalMarks: number; percentage: number; passed: boolean }
 ): Promise<void> {
-  const subject = `Assessment Result: ${exam.title}`;
   const verdict = result.passed ? 'PASSED' : 'FAILED';
-  const emailBody = `Dear ${attempt.studentName},
 
-Your assessment response for "${exam.title}" (Code: ${exam.examCode}) has been evaluated.
-
-Assessment Summary:
-----------------------------------------
-Candidate Name: ${attempt.studentName}
-Roll Number / Student ID: ${attempt.rollNumber}
-Score: ${result.score} / ${result.totalMarks}
-Percentage: ${result.percentage}%
-Verdict: ${verdict}
-Minimum Passing Percentage: ${exam.passingPercentage}%
-----------------------------------------
-
-Thank you for participating in the assessment.
-
-Best regards,
-AWS Student Builder Group
-Chandigarh University – Uttar Pradesh`;
-
-  // Log notification and audit entry for email dispatch
+  // Dispatch via central email automation engine (with error isolation)
   try {
-    const notifs = await db.notifications.getAll();
-    notifs.push({
-      id: `notif-email-${Date.now()}-${attempt.id}`,
-      type: 'exam_result_email',
-      title: `Result Email Dispatched: ${attempt.studentName}`,
-      description: `Sent result email to ${attempt.email} for ${exam.title}. Score: ${result.score}/${result.totalMarks} (${verdict})`,
-      recipientEmail: attempt.email,
-      message: emailBody,
-      status: 'unread',
-      date: new Date().toISOString()
+    await triggerExamResultEmail({
+      studentName: attempt.studentName,
+      email: attempt.email,
+      rollNumber: attempt.rollNumber,
+      exam: {
+        id: exam.id,
+        title: exam.title,
+        examCode: exam.examCode,
+        passingPercentage: exam.passingPercentage
+      },
+      result
     });
-    await db.notifications.saveAll(notifs);
+  } catch (emailErr) {
+    console.error('Non-blocking error dispatching exam result email:', emailErr);
+  }
 
+  // Log admin audit entry for result dispatch
+  try {
     await logAdminAudit(exam.id, 'system_email_service', 'START', {
       action: 'RESULT_EMAIL_SENT',
       recipient: attempt.email,
@@ -258,7 +243,7 @@ Chandigarh University – Uttar Pradesh`;
       percentage: result.percentage
     }, attempt.id);
   } catch (err) {
-    console.error('Failed to log email notification:', err);
+    console.error('Failed to log email audit:', err);
   }
 }
 
@@ -270,34 +255,23 @@ export async function sendCandidateSelectionEmail(
   exam: Exam,
   notes: string = ''
 ): Promise<void> {
-  const selectionBody = `Dear ${attempt.studentName},
-
-Congratulations! You have been SELECTED & QUALIFIED in the "${exam.title}" assessment.
-
-Details:
-Roll Number / Student ID: ${attempt.rollNumber}
-${notes ? 'Evaluation Notes: ' + notes : ''}
-
-Our team will follow up with further instructions.
-
-Best regards,
-AWS Student Builder Group
-Chandigarh University – Uttar Pradesh`;
+  // Dispatch via central email automation engine (with error isolation)
+  try {
+    await triggerExamSelectionEmail({
+      studentName: attempt.studentName,
+      email: attempt.email,
+      rollNumber: attempt.rollNumber,
+      exam: {
+        id: exam.id,
+        title: exam.title
+      },
+      selectionNotes: notes
+    });
+  } catch (emailErr) {
+    console.error('Non-blocking error dispatching candidate selection email:', emailErr);
+  }
 
   try {
-    const notifs = await db.notifications.getAll();
-    notifs.push({
-      id: `notif-select-${Date.now()}-${attempt.id}`,
-      type: 'candidate_selected_email',
-      title: `Selection Email Dispatched: ${attempt.studentName}`,
-      description: `Sent selection notification to ${attempt.email} for ${exam.title}. ${notes ? 'Notes: ' + notes : ''}`,
-      recipientEmail: attempt.email,
-      message: selectionBody,
-      status: 'unread',
-      date: new Date().toISOString()
-    });
-    await db.notifications.saveAll(notifs);
-
     await logAdminAudit(exam.id, 'admin', 'START', {
       action: 'SELECTION_EMAIL_SENT',
       recipient: attempt.email,

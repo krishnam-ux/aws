@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { validateEventRegistrationInput } from '@/lib/eventRegistrationValidation';
+import { triggerEventRegistrationConfirmation } from '@/lib/email/automations';
 
 export async function POST(request: Request) {
   try {
@@ -142,14 +143,33 @@ export async function POST(request: Request) {
     });
     await db.notifications.saveAll(notifications);
 
+    // Dispatch automated confirmation email (isolated, non-blocking)
+    try {
+      await triggerEventRegistrationConfirmation({
+        studentName: fullName,
+        email,
+        event: {
+          id: event.id,
+          title: event.title,
+          date: event.date,
+          time: event.time,
+          venue: event.venue,
+          mode: event.mode
+        },
+        registrationId: regId
+      });
+    } catch (emailErr) {
+      console.error('Non-blocking error dispatching event registration email:', emailErr);
+    }
+
     return NextResponse.json({
       success: true,
       registrationId: regId,
       eventName: event.title,
       studentId: studentId || ''
     });
-  } catch (err) {
-    console.error('API Event Register POST Error:', err);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Event registration error:', error);
+    return NextResponse.json({ error: error.message || 'Server error occurred during registration.' }, { status: 500 });
   }
 }

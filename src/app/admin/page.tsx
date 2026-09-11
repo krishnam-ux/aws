@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { siteConfig } from '@/data/siteConfig';
 import AdminExamsManager from '@/components/AdminExamsManager';
+import AdminEmailManager from '@/components/AdminEmailManager';
 
 interface EventPhoto {
   id: string;
@@ -103,7 +104,7 @@ export default function AdminDashboard() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   // Tabs structure matching user specifications
-  const [activeTab, setActiveTab] = useState<'Dashboard' | 'Registrations' | 'EventRegistrations' | 'Verification' | 'Collaborations' | 'Events' | 'Announcements' | 'Resources' | 'Opportunities' | 'CoreTeam' | 'Content' | 'Settings' | 'ContactMessages' | 'Feedback' | 'Exams'>('Dashboard');
+  const [activeTab, setActiveTab] = useState<'Dashboard' | 'Registrations' | 'EventRegistrations' | 'Verification' | 'Collaborations' | 'Events' | 'Announcements' | 'Resources' | 'Opportunities' | 'CoreTeam' | 'Content' | 'Settings' | 'ContactMessages' | 'Feedback' | 'Exams' | 'Emails'>('Dashboard');
 
   // Stats / Dashboard data
   const [stats, setStats] = useState<any>({
@@ -1853,6 +1854,27 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
+              {/* Group: Communications & Emails */}
+              <div className="space-y-1">
+                {!isSidebarCollapsed && (
+                  <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest px-3 flex items-center justify-between">
+                    <span>Communications</span>
+                    <span className="text-[8px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono font-bold">SMTP</span>
+                  </span>
+                )}
+                <button onClick={() => setActiveTab('Emails')} className={getNavClass('Emails')}>
+                  <svg className="h-4 w-4 flex-shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  {!isSidebarCollapsed && (
+                    <span className="flex items-center justify-between w-full">
+                      <span>Emails & Notifications</span>
+                      <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded font-mono">Hub</span>
+                    </span>
+                  )}
+                </button>
+              </div>
+
               {/* Group: Content */}
               <div className="space-y-1">
                 {!isSidebarCollapsed && <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 block">Content</span>}
@@ -2020,6 +2042,12 @@ export default function AdminDashboard() {
                     className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded shadow-sm transition-all cursor-pointer flex items-center space-x-1.5"
                   >
                     <span>🔒 Exam Control Center</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('Emails')}
+                    className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded shadow-sm transition-all cursor-pointer flex items-center space-x-1.5"
+                  >
+                    <span>✉️ Email & Notification Hub</span>
                   </button>
                   <button
                     onClick={() => { setActiveTab('Events'); setCreateType('Event'); }}
@@ -2203,6 +2231,11 @@ export default function AdminDashboard() {
           {/* TAB: SECURE CERTIFICATION EXAMS & LIVE CONTROL */}
           {activeTab === 'Exams' && (
             <AdminExamsManager token={token} />
+          )}
+
+          {/* TAB: CENTRAL EMAIL & NOTIFICATION ENGINE */}
+          {activeTab === 'Emails' && (
+            <AdminEmailManager token={token} />
           )}
 
           {/* TAB 2: REGISTRATIONS TABLE */}

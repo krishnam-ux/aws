@@ -1,0 +1,9 @@
+[
+  {
+    "id": "auto-event_registration_confirmation",
+    "eventType": "event_registration_confirmation",
+    "isEnabled": true,
+    "updatedBy": "test_admin",
+    "updatedAt": "2026-09-11T17:29:54.725Z"
+  }
+]

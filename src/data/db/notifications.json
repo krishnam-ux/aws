@@ -1,5 +1,805 @@
 [
   {
+    "id": "notif_mail_1789147798974_ixwf",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
+    "description": "Delivered to fail.test@cumail.in [SIMULATED]",
+    "recipientEmail": "fail.test@cumail.in",
+    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:29:58.974Z"
+  },
+  {
+    "id": "notif_mail_1789147798964_g0ry",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
+    "description": "Delivered to abhay@cumail.in [SIMULATED]",
+    "recipientEmail": "abhay@cumail.in",
+    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:29:58.964Z"
+  },
+  {
+    "id": "notif_mail_1789147797016_w430",
+    "type": "exam_selected_qualified",
+    "title": "Email: Congratulations! Selected in AWS Certified Developer Assessment",
+    "description": "Delivered to priyanka@cumail.in [SIMULATED]",
+    "recipientEmail": "priyanka@cumail.in",
+    "message": "Dear Priyanka Sharma,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Certified Developer Assessment\" assessment.\n\nDetails:\nRoll Number / Student ID: 23BCS-1789147796903\nOutstanding technical performance\n\nOur team will follow up with further cohort orientation details.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:29:57.016Z"
+  },
+  {
+    "id": "notif_mail_1789147796982_fbcm",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Developer Assessment",
+    "description": "Delivered to priyanka@cumail.in [SIMULATED]",
+    "recipientEmail": "priyanka@cumail.in",
+    "message": "Dear Priyanka Sharma,\n\nYour assessment response for \"AWS Certified Developer Assessment\" (Code: AWS-E2E-6903) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Priyanka Sharma\nRoll Number / Student ID: 23BCS-1789147796903\nScore: 100 / 100\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 60%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:29:56.982Z"
+  },
+  {
+    "id": "notif_mail_1789147795549_158t",
+    "type": "event_registration_confirmation",
+    "title": "Email: Registration Confirmed: AWS Student Builder Group Inauguration & Cloud Kickstart",
+    "description": "Delivered to test.student@example.com [SIMULATED]",
+    "recipientEmail": "test.student@example.com",
+    "message": "Dear Test Student,\n\nYour registration for \"AWS Student Builder Group Inauguration & Cloud Kickstart\" has been confirmed!\n\nEvent Details:\n- Event: AWS Student Builder Group Inauguration & Cloud Kickstart\n- Date: 2026-08-22\n- Time: 8:30 PM\n- Venue / Link: Online\n- Registration ID: reg-1789147795536-7295\n\nView Event Details: https://www.awssbgcuup.tech/events/event-01\n\nBest regards,\nAWS Student Builder Group at Chandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:29:55.549Z"
+  },
+  {
+    "id": "notif_mail_1789147794712_foa6",
+    "type": "feedback_received_acknowledgement",
+    "title": "Email: Thank you for your feedback! (AWS SBG CU-UP)",
+    "description": "Delivered to sneha.patel@cumail.in [SIMULATED]",
+    "recipientEmail": "sneha.patel@cumail.in",
+    "message": "Dear Sneha Patel,\n\nThank you for sharing your feedback with AWS Student Builder Group at Chandigarh University – Uttar Pradesh.\n\nCategory: AWS Cloud Bootcamp Feedback\nMessage: Great hands-on session!\n\nOur organizing team reviews every suggestion to continuously improve our workshops and events.\n\nBest regards,\nAWS SBG CU-UP Team",
+    "status": "unread",
+    "date": "2026-09-11T17:29:54.712Z"
+  },
+  {
+    "id": "notif_mail_1789147794702_f4gs",
+    "type": "exam_selected_qualified",
+    "title": "Email: Congratulations! Selected in AWS Solutions Architecture Challenge",
+    "description": "Delivered to vikram.singh@cumail.in [SIMULATED]",
+    "recipientEmail": "vikram.singh@cumail.in",
+    "message": "Dear Vikram Singh,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Solutions Architecture Challenge\" assessment.\n\nDetails:\nRoll Number / Student ID: 22BCS5541\nTop 5 percentile performer\n\nOur team will follow up with further cohort orientation details.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:29:54.702Z"
+  },
+  {
+    "id": "notif_mail_1789147794693_se00",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Cloud Practitioner Simulation",
+    "description": "Delivered to ananya.gupta@cumail.in [SIMULATED]",
+    "recipientEmail": "ananya.gupta@cumail.in",
+    "message": "Dear Ananya Gupta,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Simulation\" (Code: AWS-CCP-101) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Ananya Gupta\nRoll Number / Student ID: 21BCS1089\nScore: 85 / 100\nPercentage: 85%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:29:54.693Z"
+  },
+  {
+    "id": "notif_mail_1789147794684_ibjw",
+    "type": "opportunity_application_received",
+    "title": "Email: Application Received: DevOps & Cloud Automation Lead",
+    "description": "Delivered to priya.verma@cumail.in [SIMULATED]",
+    "recipientEmail": "priya.verma@cumail.in",
+    "message": "Dear Priya Verma,\n\nThank you for applying for \"DevOps & Cloud Automation Lead\". Your application has been received and is being reviewed by the AWS SBG CU-UP selection committee.\n\nApplication Summary:\n- Position: DevOps & Cloud Automation Lead\n- Role: Technical Lead\n- Application Reference: APP-77124\n\nWe will get back to you regarding the next steps.\n\nBest regards,\nAWS Student Builder Group at Chandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:29:54.684Z"
+  },
+  {
+    "id": "notif_mail_1789147794673_kwmt",
+    "type": "event_registration_confirmation",
+    "title": "Email: Registration Confirmed: AWS Cloud Architecture Summit 2026",
+    "description": "Delivered to rohan.sharma@cumail.in [SIMULATED]",
+    "recipientEmail": "rohan.sharma@cumail.in",
+    "message": "Dear Rohan Sharma,\n\nYour registration for \"AWS Cloud Architecture Summit 2026\" has been confirmed!\n\nEvent Details:\n- Event: AWS Cloud Architecture Summit 2026\n- Date: October 15, 2026\n- Time: 11:00 AM IST\n- Venue / Link: Auditorium Block A\n- Registration ID: REG-99281\n\nView Event Details: https://www.awssbgcuup.tech/events/event-cloud-summit\n\nBest regards,\nAWS Student Builder Group at Chandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:29:54.673Z"
+  },
+  {
+    "id": "notif_mail_1789147794658_g7el",
+    "type": "admin_manual_message",
+    "title": "Email: Retry Test Message",
+    "description": "Delivered to retry.student@cu.edu [SIMULATED]",
+    "recipientEmail": "retry.student@cu.edu",
+    "message": "Retry Test Message",
+    "status": "unread",
+    "date": "2026-09-11T17:29:54.658Z"
+  },
+  {
+    "id": "notif_mail_1789147794646_16u4",
+    "type": "admin_custom_announcement",
+    "title": "Email: AWS Community Bootcamp Update",
+    "description": "Delivered to student3@cu.edu [SIMULATED]",
+    "recipientEmail": "student3@cu.edu",
+    "message": "AWS Community Bootcamp Update",
+    "status": "unread",
+    "date": "2026-09-11T17:29:54.646Z"
+  },
+  {
+    "id": "notif_mail_1789147794643_b3ur",
+    "type": "admin_custom_announcement",
+    "title": "Email: AWS Community Bootcamp Update",
+    "description": "Delivered to student2@cu.edu [SIMULATED]",
+    "recipientEmail": "student2@cu.edu",
+    "message": "AWS Community Bootcamp Update",
+    "status": "unread",
+    "date": "2026-09-11T17:29:54.643Z"
+  },
+  {
+    "id": "notif_mail_1789147794637_1lc8",
+    "type": "admin_custom_announcement",
+    "title": "Email: AWS Community Bootcamp Update",
+    "description": "Delivered to student1@cu.edu [SIMULATED]",
+    "recipientEmail": "student1@cu.edu",
+    "message": "AWS Community Bootcamp Update",
+    "status": "unread",
+    "date": "2026-09-11T17:29:54.637Z"
+  },
+  {
+    "id": "notif_mail_1789147794624_r4e0",
+    "type": "admin_manual_message",
+    "title": "Email: Welcome to AWS SBG CU-UP",
+    "description": "Delivered to student.builder@chandigarh.edu [SIMULATED]",
+    "recipientEmail": "student.builder@chandigarh.edu",
+    "message": "Welcome to AWS SBG CU-UP",
+    "status": "unread",
+    "date": "2026-09-11T17:29:54.625Z"
+  },
+  {
+    "id": "notif_mail_1789147271094_trmk",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
+    "description": "Delivered to fail.test@cumail.in [SIMULATED]",
+    "recipientEmail": "fail.test@cumail.in",
+    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:21:11.094Z"
+  },
+  {
+    "id": "notif_mail_1789147271081_ej70",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
+    "description": "Delivered to abhay@cumail.in [SIMULATED]",
+    "recipientEmail": "abhay@cumail.in",
+    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:21:11.081Z"
+  },
+  {
+    "id": "notif_mail_1789147268991_fzs0",
+    "type": "exam_selected_qualified",
+    "title": "Email: Congratulations! Selected in AWS Certified Developer Assessment",
+    "description": "Delivered to priyanka@cumail.in [SIMULATED]",
+    "recipientEmail": "priyanka@cumail.in",
+    "message": "Dear Priyanka Sharma,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Certified Developer Assessment\" assessment.\n\nDetails:\nRoll Number / Student ID: 23BCS-1789147268839\nOutstanding technical performance\n\nOur team will follow up with further cohort orientation details.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:21:08.991Z"
+  },
+  {
+    "id": "notif_mail_1789147268947_zdhb",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Developer Assessment",
+    "description": "Delivered to priyanka@cumail.in [SIMULATED]",
+    "recipientEmail": "priyanka@cumail.in",
+    "message": "Dear Priyanka Sharma,\n\nYour assessment response for \"AWS Certified Developer Assessment\" (Code: AWS-E2E-8839) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Priyanka Sharma\nRoll Number / Student ID: 23BCS-1789147268839\nScore: 100 / 100\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 60%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:21:08.947Z"
+  },
+  {
+    "id": "notif_mail_1789147267227_ziuw",
+    "type": "event_registration_confirmation",
+    "title": "Email: Registration Confirmed: AWS Student Builder Group Inauguration & Cloud Kickstart",
+    "description": "Delivered to test.student@example.com [SIMULATED]",
+    "recipientEmail": "test.student@example.com",
+    "message": "Dear Test Student,\n\nYour registration for \"AWS Student Builder Group Inauguration & Cloud Kickstart\" has been confirmed!\n\nEvent Details:\n- Event: AWS Student Builder Group Inauguration & Cloud Kickstart\n- Date: 2026-08-22\n- Time: 8:30 PM\n- Venue / Link: Online\n- Registration ID: reg-1789147267212-1245\n\nView Event Details: https://www.awssbgcuup.tech/events/event-01\n\nBest regards,\nAWS Student Builder Group at Chandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:21:07.227Z"
+  },
+  {
+    "id": "notif_mail_1789147266347_xj1t",
+    "type": "feedback_received_acknowledgement",
+    "title": "Email: Thank you for your feedback! (AWS SBG CU-UP)",
+    "description": "Delivered to sneha.patel@cumail.in [SIMULATED]",
+    "recipientEmail": "sneha.patel@cumail.in",
+    "message": "Dear Sneha Patel,\n\nThank you for sharing your feedback with AWS Student Builder Group at Chandigarh University – Uttar Pradesh.\n\nCategory: AWS Cloud Bootcamp Feedback\nMessage: Great hands-on session!\n\nOur organizing team reviews every suggestion to continuously improve our workshops and events.\n\nBest regards,\nAWS SBG CU-UP Team",
+    "status": "unread",
+    "date": "2026-09-11T17:21:06.347Z"
+  },
+  {
+    "id": "notif_mail_1789147266338_qbrz",
+    "type": "exam_selected_qualified",
+    "title": "Email: Congratulations! Selected in AWS Solutions Architecture Challenge",
+    "description": "Delivered to vikram.singh@cumail.in [SIMULATED]",
+    "recipientEmail": "vikram.singh@cumail.in",
+    "message": "Dear Vikram Singh,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Solutions Architecture Challenge\" assessment.\n\nDetails:\nRoll Number / Student ID: 22BCS5541\nTop 5 percentile performer\n\nOur team will follow up with further cohort orientation details.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:21:06.338Z"
+  },
+  {
+    "id": "notif_mail_1789147266327_bdhf",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Cloud Practitioner Simulation",
+    "description": "Delivered to ananya.gupta@cumail.in [SIMULATED]",
+    "recipientEmail": "ananya.gupta@cumail.in",
+    "message": "Dear Ananya Gupta,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Simulation\" (Code: AWS-CCP-101) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Ananya Gupta\nRoll Number / Student ID: 21BCS1089\nScore: 85 / 100\nPercentage: 85%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:21:06.327Z"
+  },
+  {
+    "id": "notif_mail_1789147266318_wf6z",
+    "type": "opportunity_application_received",
+    "title": "Email: Application Received: DevOps & Cloud Automation Lead",
+    "description": "Delivered to priya.verma@cumail.in [SIMULATED]",
+    "recipientEmail": "priya.verma@cumail.in",
+    "message": "Dear Priya Verma,\n\nThank you for applying for \"DevOps & Cloud Automation Lead\". Your application has been received and is being reviewed by the AWS SBG CU-UP selection committee.\n\nApplication Summary:\n- Position: DevOps & Cloud Automation Lead\n- Role: Technical Lead\n- Application Reference: APP-77124\n\nWe will get back to you regarding the next steps.\n\nBest regards,\nAWS Student Builder Group at Chandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:21:06.318Z"
+  },
+  {
+    "id": "notif_mail_1789147266309_o2lt",
+    "type": "event_registration_confirmation",
+    "title": "Email: Registration Confirmed: AWS Cloud Architecture Summit 2026",
+    "description": "Delivered to rohan.sharma@cumail.in [SIMULATED]",
+    "recipientEmail": "rohan.sharma@cumail.in",
+    "message": "Dear Rohan Sharma,\n\nYour registration for \"AWS Cloud Architecture Summit 2026\" has been confirmed!\n\nEvent Details:\n- Event: AWS Cloud Architecture Summit 2026\n- Date: October 15, 2026\n- Time: 11:00 AM IST\n- Venue / Link: Auditorium Block A\n- Registration ID: REG-99281\n\nView Event Details: https://www.awssbgcuup.tech/events/event-cloud-summit\n\nBest regards,\nAWS Student Builder Group at Chandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:21:06.309Z"
+  },
+  {
+    "id": "notif_mail_1789147266296_emw3",
+    "type": "admin_manual_message",
+    "title": "Email: Retry Test Message",
+    "description": "Delivered to retry.student@cu.edu [SIMULATED]",
+    "recipientEmail": "retry.student@cu.edu",
+    "message": "Retry Test Message",
+    "status": "unread",
+    "date": "2026-09-11T17:21:06.296Z"
+  },
+  {
+    "id": "notif_mail_1789147266286_ohz7",
+    "type": "admin_custom_announcement",
+    "title": "Email: AWS Community Bootcamp Update",
+    "description": "Delivered to student3@cu.edu [SIMULATED]",
+    "recipientEmail": "student3@cu.edu",
+    "message": "AWS Community Bootcamp Update",
+    "status": "unread",
+    "date": "2026-09-11T17:21:06.286Z"
+  },
+  {
+    "id": "notif_mail_1789147266283_65vo",
+    "type": "admin_custom_announcement",
+    "title": "Email: AWS Community Bootcamp Update",
+    "description": "Delivered to student2@cu.edu [SIMULATED]",
+    "recipientEmail": "student2@cu.edu",
+    "message": "AWS Community Bootcamp Update",
+    "status": "unread",
+    "date": "2026-09-11T17:21:06.283Z"
+  },
+  {
+    "id": "notif_mail_1789147266277_licq",
+    "type": "admin_custom_announcement",
+    "title": "Email: AWS Community Bootcamp Update",
+    "description": "Delivered to student1@cu.edu [SIMULATED]",
+    "recipientEmail": "student1@cu.edu",
+    "message": "AWS Community Bootcamp Update",
+    "status": "unread",
+    "date": "2026-09-11T17:21:06.277Z"
+  },
+  {
+    "id": "notif_mail_1789147266265_9fuk",
+    "type": "admin_manual_message",
+    "title": "Email: Welcome to AWS SBG CU-UP",
+    "description": "Delivered to student.builder@chandigarh.edu [SIMULATED]",
+    "recipientEmail": "student.builder@chandigarh.edu",
+    "message": "Welcome to AWS SBG CU-UP",
+    "status": "unread",
+    "date": "2026-09-11T17:21:06.265Z"
+  },
+  {
+    "id": "notif_mail_1789147116539_nzzt",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
+    "description": "Delivered to fail.test@cumail.in [SIMULATED]",
+    "recipientEmail": "fail.test@cumail.in",
+    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:18:36.539Z"
+  },
+  {
+    "id": "notif_mail_1789147116528_vgx6",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
+    "description": "Delivered to abhay@cumail.in [SIMULATED]",
+    "recipientEmail": "abhay@cumail.in",
+    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:18:36.528Z"
+  },
+  {
+    "id": "notif_mail_1789147114301_lgi0",
+    "type": "exam_selected_qualified",
+    "title": "Email: Congratulations! Selected in AWS Certified Developer Assessment",
+    "description": "Delivered to priyanka@cumail.in [SIMULATED]",
+    "recipientEmail": "priyanka@cumail.in",
+    "message": "Dear Priyanka Sharma,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Certified Developer Assessment\" assessment.\n\nDetails:\nRoll Number / Student ID: 23BCS-1789147114155\nOutstanding technical performance\n\nOur team will follow up with further cohort orientation details.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:18:34.301Z"
+  },
+  {
+    "id": "notif_mail_1789147114254_97fr",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Developer Assessment",
+    "description": "Delivered to priyanka@cumail.in [SIMULATED]",
+    "recipientEmail": "priyanka@cumail.in",
+    "message": "Dear Priyanka Sharma,\n\nYour assessment response for \"AWS Certified Developer Assessment\" (Code: AWS-E2E-4155) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Priyanka Sharma\nRoll Number / Student ID: 23BCS-1789147114155\nScore: 100 / 100\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 60%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:18:34.254Z"
+  },
+  {
+    "id": "notif_mail_1789147112585_spkh",
+    "type": "event_registration_confirmation",
+    "title": "Email: Registration Confirmed: AWS Student Builder Group Inauguration & Cloud Kickstart",
+    "description": "Delivered to test.student@example.com [SIMULATED]",
+    "recipientEmail": "test.student@example.com",
+    "message": "Dear Test Student,\n\nYour registration for \"AWS Student Builder Group Inauguration & Cloud Kickstart\" has been confirmed!\n\nEvent Details:\n- Event: AWS Student Builder Group Inauguration & Cloud Kickstart\n- Date: 2026-08-22\n- Time: 8:30 PM\n- Venue / Link: Online\n- Registration ID: reg-1789147112566-9443\n\nView Event Details: https://www.awssbgcuup.tech/events/event-01\n\nBest regards,\nAWS Student Builder Group at Chandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:18:32.585Z"
+  },
+  {
+    "id": "notif_mail_1789147110579_de1x",
+    "type": "feedback_received_acknowledgement",
+    "title": "Email: Thank you for your feedback! (AWS SBG CU-UP)",
+    "description": "Delivered to sneha.patel@cumail.in [SIMULATED]",
+    "recipientEmail": "sneha.patel@cumail.in",
+    "message": "Dear Sneha Patel,\n\nThank you for sharing your feedback with AWS Student Builder Group at Chandigarh University – Uttar Pradesh.\n\nCategory: AWS Cloud Bootcamp Feedback\nMessage: Great hands-on session!\n\nOur organizing team reviews every suggestion to continuously improve our workshops and events.\n\nBest regards,\nAWS SBG CU-UP Team",
+    "status": "unread",
+    "date": "2026-09-11T17:18:30.579Z"
+  },
+  {
+    "id": "notif_mail_1789147110560_u4ju",
+    "type": "exam_selected_qualified",
+    "title": "Email: Congratulations! Selected in AWS Solutions Architecture Challenge",
+    "description": "Delivered to vikram.singh@cumail.in [SIMULATED]",
+    "recipientEmail": "vikram.singh@cumail.in",
+    "message": "Dear Vikram Singh,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Solutions Architecture Challenge\" assessment.\n\nDetails:\nRoll Number / Student ID: 22BCS5541\nTop 5 percentile performer\n\nOur team will follow up with further cohort orientation details.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:18:30.560Z"
+  },
+  {
+    "id": "notif_mail_1789147110548_ydlo",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Cloud Practitioner Simulation",
+    "description": "Delivered to ananya.gupta@cumail.in [SIMULATED]",
+    "recipientEmail": "ananya.gupta@cumail.in",
+    "message": "Dear Ananya Gupta,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Simulation\" (Code: AWS-CCP-101) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Ananya Gupta\nRoll Number / Student ID: 21BCS1089\nScore: 85 / 100\nPercentage: 85%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:18:30.548Z"
+  },
+  {
+    "id": "notif_mail_1789147110538_89xz",
+    "type": "opportunity_application_received",
+    "title": "Email: Application Received: DevOps & Cloud Automation Lead",
+    "description": "Delivered to priya.verma@cumail.in [SIMULATED]",
+    "recipientEmail": "priya.verma@cumail.in",
+    "message": "Dear Priya Verma,\n\nThank you for applying for \"DevOps & Cloud Automation Lead\". Your application has been received and is being reviewed by the AWS SBG CU-UP selection committee.\n\nApplication Summary:\n- Position: DevOps & Cloud Automation Lead\n- Role: Technical Lead\n- Application Reference: APP-77124\n\nWe will get back to you regarding the next steps.\n\nBest regards,\nAWS Student Builder Group at Chandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:18:30.538Z"
+  },
+  {
+    "id": "notif_mail_1789147110528_f35l",
+    "type": "event_registration_confirmation",
+    "title": "Email: Registration Confirmed: AWS Cloud Architecture Summit 2026",
+    "description": "Delivered to rohan.sharma@cumail.in [SIMULATED]",
+    "recipientEmail": "rohan.sharma@cumail.in",
+    "message": "Dear Rohan Sharma,\n\nYour registration for \"AWS Cloud Architecture Summit 2026\" has been confirmed!\n\nEvent Details:\n- Event: AWS Cloud Architecture Summit 2026\n- Date: October 15, 2026\n- Time: 11:00 AM IST\n- Venue / Link: Auditorium Block A\n- Registration ID: REG-99281\n\nView Event Details: https://www.awssbgcuup.tech/events/event-cloud-summit\n\nBest regards,\nAWS Student Builder Group at Chandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T17:18:30.528Z"
+  },
+  {
+    "id": "notif_mail_1789147110513_oy96",
+    "type": "admin_manual_message",
+    "title": "Email: Retry Test Message",
+    "description": "Delivered to retry.student@cu.edu [SIMULATED]",
+    "recipientEmail": "retry.student@cu.edu",
+    "message": "Retry Test Message",
+    "status": "unread",
+    "date": "2026-09-11T17:18:30.513Z"
+  },
+  {
+    "id": "notif_mail_1789147110500_gg6z",
+    "type": "admin_custom_announcement",
+    "title": "Email: AWS Community Bootcamp Update",
+    "description": "Delivered to student3@cu.edu [SIMULATED]",
+    "recipientEmail": "student3@cu.edu",
+    "message": "AWS Community Bootcamp Update",
+    "status": "unread",
+    "date": "2026-09-11T17:18:30.501Z"
+  },
+  {
+    "id": "notif_mail_1789147110498_sz0x",
+    "type": "admin_custom_announcement",
+    "title": "Email: AWS Community Bootcamp Update",
+    "description": "Delivered to student2@cu.edu [SIMULATED]",
+    "recipientEmail": "student2@cu.edu",
+    "message": "AWS Community Bootcamp Update",
+    "status": "unread",
+    "date": "2026-09-11T17:18:30.498Z"
+  },
+  {
+    "id": "notif_mail_1789147110492_a8dz",
+    "type": "admin_custom_announcement",
+    "title": "Email: AWS Community Bootcamp Update",
+    "description": "Delivered to student1@cu.edu [SIMULATED]",
+    "recipientEmail": "student1@cu.edu",
+    "message": "AWS Community Bootcamp Update",
+    "status": "unread",
+    "date": "2026-09-11T17:18:30.492Z"
+  },
+  {
+    "id": "notif_mail_1789147110480_s4xw",
+    "type": "admin_manual_message",
+    "title": "Email: Welcome to AWS SBG CU-UP",
+    "description": "Delivered to student.builder@chandigarh.edu [SIMULATED]",
+    "recipientEmail": "student.builder@chandigarh.edu",
+    "message": "Welcome to AWS SBG CU-UP",
+    "status": "unread",
+    "date": "2026-09-11T17:18:30.480Z"
+  },
+  {
+    "id": "notif_mail_1789119695019_xfjh",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
+    "description": "Delivered to fail.test@cumail.in [SIMULATED]",
+    "recipientEmail": "fail.test@cumail.in",
+    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:41:35.019Z"
+  },
+  {
+    "id": "notif_mail_1789119694984_sjxi",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
+    "description": "Delivered to abhay@cumail.in [SIMULATED]",
+    "recipientEmail": "abhay@cumail.in",
+    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:41:34.984Z"
+  },
+  {
+    "id": "notif_mail_1789119687018_x9hf",
+    "type": "exam_selected_qualified",
+    "title": "Email: Congratulations! Selected in AWS Certified Developer Assessment",
+    "description": "Delivered to priyanka@cumail.in [SIMULATED]",
+    "recipientEmail": "priyanka@cumail.in",
+    "message": "Dear Priyanka Sharma,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Certified Developer Assessment\" assessment.\n\nDetails:\nRoll Number / Student ID: 23BCS-1789119686834\nOutstanding technical performance\n\nOur team will follow up with further cohort orientation details.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:41:27.018Z"
+  },
+  {
+    "id": "notif_mail_1789119686963_qaza",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Developer Assessment",
+    "description": "Delivered to priyanka@cumail.in [SIMULATED]",
+    "recipientEmail": "priyanka@cumail.in",
+    "message": "Dear Priyanka Sharma,\n\nYour assessment response for \"AWS Certified Developer Assessment\" (Code: AWS-E2E-6834) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Priyanka Sharma\nRoll Number / Student ID: 23BCS-1789119686834\nScore: 100 / 100\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 60%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:41:26.963Z"
+  },
+  {
+    "id": "notif_mail_1789119683437_np02",
+    "type": "event_registration_confirmation",
+    "title": "Email: Registration Confirmed: AWS Student Builder Group Inauguration & Cloud Kickstart",
+    "description": "Delivered to test.student@example.com [SIMULATED]",
+    "recipientEmail": "test.student@example.com",
+    "message": "Dear Test Student,\n\nYour registration for \"AWS Student Builder Group Inauguration & Cloud Kickstart\" has been confirmed!\n\nEvent Details:\n- Event: AWS Student Builder Group Inauguration & Cloud Kickstart\n- Date: 2026-08-22\n- Time: 8:30 PM\n- Venue / Link: Online\n- Registration ID: reg-1789119683408-3576\n\nView Event Details: https://www.awssbgcuup.tech/events/event-01\n\nBest regards,\nAWS Student Builder Group at Chandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:41:23.437Z"
+  },
+  {
+    "id": "notif_mail_1789119682041_kiqx",
+    "type": "feedback_received_acknowledgement",
+    "title": "Email: Thank you for your feedback! (AWS SBG CU-UP)",
+    "description": "Delivered to sneha.patel@cumail.in [SIMULATED]",
+    "recipientEmail": "sneha.patel@cumail.in",
+    "message": "Dear Sneha Patel,\n\nThank you for sharing your feedback with AWS Student Builder Group at Chandigarh University – Uttar Pradesh.\n\nCategory: AWS Cloud Bootcamp Feedback\nMessage: Great hands-on session!\n\nOur organizing team reviews every suggestion to continuously improve our workshops and events.\n\nBest regards,\nAWS SBG CU-UP Team",
+    "status": "unread",
+    "date": "2026-09-11T09:41:22.041Z"
+  },
+  {
+    "id": "notif_mail_1789119682027_npei",
+    "type": "exam_selected_qualified",
+    "title": "Email: Congratulations! Selected in AWS Solutions Architecture Challenge",
+    "description": "Delivered to vikram.singh@cumail.in [SIMULATED]",
+    "recipientEmail": "vikram.singh@cumail.in",
+    "message": "Dear Vikram Singh,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Solutions Architecture Challenge\" assessment.\n\nDetails:\nRoll Number / Student ID: 22BCS5541\nTop 5 percentile performer\n\nOur team will follow up with further cohort orientation details.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:41:22.027Z"
+  },
+  {
+    "id": "notif_mail_1789119682011_ywdj",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Cloud Practitioner Simulation",
+    "description": "Delivered to ananya.gupta@cumail.in [SIMULATED]",
+    "recipientEmail": "ananya.gupta@cumail.in",
+    "message": "Dear Ananya Gupta,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Simulation\" (Code: AWS-CCP-101) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Ananya Gupta\nRoll Number / Student ID: 21BCS1089\nScore: 85 / 100\nPercentage: 85%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:41:22.011Z"
+  },
+  {
+    "id": "notif_mail_1789119681996_s12s",
+    "type": "opportunity_application_received",
+    "title": "Email: Application Received: DevOps & Cloud Automation Lead",
+    "description": "Delivered to priya.verma@cumail.in [SIMULATED]",
+    "recipientEmail": "priya.verma@cumail.in",
+    "message": "Dear Priya Verma,\n\nThank you for applying for \"DevOps & Cloud Automation Lead\". Your application has been received and is being reviewed by the AWS SBG CU-UP selection committee.\n\nApplication Summary:\n- Position: DevOps & Cloud Automation Lead\n- Role: Technical Lead\n- Application Reference: APP-77124\n\nWe will get back to you regarding the next steps.\n\nBest regards,\nAWS Student Builder Group at Chandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:41:21.996Z"
+  },
+  {
+    "id": "notif_mail_1789119681978_hfqm",
+    "type": "event_registration_confirmation",
+    "title": "Email: Registration Confirmed: AWS Cloud Architecture Summit 2026",
+    "description": "Delivered to rohan.sharma@cumail.in [SIMULATED]",
+    "recipientEmail": "rohan.sharma@cumail.in",
+    "message": "Dear Rohan Sharma,\n\nYour registration for \"AWS Cloud Architecture Summit 2026\" has been confirmed!\n\nEvent Details:\n- Event: AWS Cloud Architecture Summit 2026\n- Date: October 15, 2026\n- Time: 11:00 AM IST\n- Venue / Link: Auditorium Block A\n- Registration ID: REG-99281\n\nView Event Details: https://www.awssbgcuup.tech/events/event-cloud-summit\n\nBest regards,\nAWS Student Builder Group at Chandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:41:21.978Z"
+  },
+  {
+    "id": "notif_mail_1789119681951_mno4",
+    "type": "admin_manual_message",
+    "title": "Email: Retry Test Message",
+    "description": "Delivered to retry.student@cu.edu [SIMULATED]",
+    "recipientEmail": "retry.student@cu.edu",
+    "message": "Retry Test Message",
+    "status": "unread",
+    "date": "2026-09-11T09:41:21.951Z"
+  },
+  {
+    "id": "notif_mail_1789119681918_s7hz",
+    "type": "admin_custom_announcement",
+    "title": "Email: AWS Community Bootcamp Update",
+    "description": "Delivered to student3@cu.edu [SIMULATED]",
+    "recipientEmail": "student3@cu.edu",
+    "message": "AWS Community Bootcamp Update",
+    "status": "unread",
+    "date": "2026-09-11T09:41:21.918Z"
+  },
+  {
+    "id": "notif_mail_1789119681910_8rvm",
+    "type": "admin_custom_announcement",
+    "title": "Email: AWS Community Bootcamp Update",
+    "description": "Delivered to student2@cu.edu [SIMULATED]",
+    "recipientEmail": "student2@cu.edu",
+    "message": "AWS Community Bootcamp Update",
+    "status": "unread",
+    "date": "2026-09-11T09:41:21.910Z"
+  },
+  {
+    "id": "notif_mail_1789119681895_lq1p",
+    "type": "admin_custom_announcement",
+    "title": "Email: AWS Community Bootcamp Update",
+    "description": "Delivered to student1@cu.edu [SIMULATED]",
+    "recipientEmail": "student1@cu.edu",
+    "message": "AWS Community Bootcamp Update",
+    "status": "unread",
+    "date": "2026-09-11T09:41:21.895Z"
+  },
+  {
+    "id": "notif_mail_1789119681866_0nia",
+    "type": "admin_manual_message",
+    "title": "Email: Welcome to AWS SBG CU-UP",
+    "description": "Delivered to student.builder@chandigarh.edu [SIMULATED]",
+    "recipientEmail": "student.builder@chandigarh.edu",
+    "message": "Welcome to AWS SBG CU-UP",
+    "status": "unread",
+    "date": "2026-09-11T09:41:21.866Z"
+  },
+  {
+    "id": "notif_mail_1789119517211_43o6",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
+    "description": "Delivered to fail.test@cumail.in [SIMULATED]",
+    "recipientEmail": "fail.test@cumail.in",
+    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:38:37.211Z"
+  },
+  {
+    "id": "notif_mail_1789119517173_zwj8",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
+    "description": "Delivered to abhay@cumail.in [SIMULATED]",
+    "recipientEmail": "abhay@cumail.in",
+    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:38:37.173Z"
+  },
+  {
+    "id": "notif_mail_1789119513416_sila",
+    "type": "exam_selected_qualified",
+    "title": "Email: Congratulations! Selected in AWS Certified Developer Assessment",
+    "description": "Delivered to priyanka@cumail.in [SIMULATED]",
+    "recipientEmail": "priyanka@cumail.in",
+    "message": "Dear Priyanka Sharma,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Certified Developer Assessment\" assessment.\n\nDetails:\nRoll Number / Student ID: 23BCS-1789119513151\nOutstanding technical performance\n\nOur team will follow up with further cohort orientation details.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:38:33.416Z"
+  },
+  {
+    "id": "notif_mail_1789119513344_ip0k",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Developer Assessment",
+    "description": "Delivered to priyanka@cumail.in [SIMULATED]",
+    "recipientEmail": "priyanka@cumail.in",
+    "message": "Dear Priyanka Sharma,\n\nYour assessment response for \"AWS Certified Developer Assessment\" (Code: AWS-E2E-3151) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Priyanka Sharma\nRoll Number / Student ID: 23BCS-1789119513151\nScore: 100 / 100\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 60%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:38:33.344Z"
+  },
+  {
+    "id": "notif_mail_1789119509566_u81f",
+    "type": "event_registration_confirmation",
+    "title": "Email: Registration Confirmed: AWS Student Builder Group Inauguration & Cloud Kickstart",
+    "description": "Delivered to test.student@example.com [SIMULATED]",
+    "recipientEmail": "test.student@example.com",
+    "message": "Dear Test Student,\n\nYour registration for \"AWS Student Builder Group Inauguration & Cloud Kickstart\" has been confirmed!\n\nEvent Details:\n- Event: AWS Student Builder Group Inauguration & Cloud Kickstart\n- Date: 2026-08-22\n- Time: 8:30 PM\n- Venue / Link: Online\n- Registration ID: reg-1789119509534-1125\n\nView Event Details: https://www.awssbgcuup.tech/events/event-01\n\nBest regards,\nAWS Student Builder Group at Chandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:38:29.566Z"
+  },
+  {
+    "id": "notif_mail_1789119507042_5m1z",
+    "type": "feedback_received_acknowledgement",
+    "title": "Email: Thank you for your feedback! (AWS SBG CU-UP)",
+    "description": "Delivered to sneha.patel@cumail.in [SIMULATED]",
+    "recipientEmail": "sneha.patel@cumail.in",
+    "message": "Dear Sneha Patel,\n\nThank you for sharing your feedback with AWS Student Builder Group at Chandigarh University – Uttar Pradesh.\n\nCategory: AWS Cloud Bootcamp Feedback\nMessage: Great hands-on session!\n\nOur organizing team reviews every suggestion to continuously improve our workshops and events.\n\nBest regards,\nAWS SBG CU-UP Team",
+    "status": "unread",
+    "date": "2026-09-11T09:38:27.042Z"
+  },
+  {
+    "id": "notif_mail_1789119506837_8zwf",
+    "type": "exam_selected_qualified",
+    "title": "Email: Congratulations! Selected in AWS Solutions Architecture Challenge",
+    "description": "Delivered to vikram.singh@cumail.in [SIMULATED]",
+    "recipientEmail": "vikram.singh@cumail.in",
+    "message": "Dear Vikram Singh,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Solutions Architecture Challenge\" assessment.\n\nDetails:\nRoll Number / Student ID: 22BCS5541\nTop 5 percentile performer\n\nOur team will follow up with further cohort orientation details.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:38:26.837Z"
+  },
+  {
+    "id": "notif_mail_1789119506543_3ki3",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Cloud Practitioner Simulation",
+    "description": "Delivered to ananya.gupta@cumail.in [SIMULATED]",
+    "recipientEmail": "ananya.gupta@cumail.in",
+    "message": "Dear Ananya Gupta,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Simulation\" (Code: AWS-CCP-101) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Ananya Gupta\nRoll Number / Student ID: 21BCS1089\nScore: 85 / 100\nPercentage: 85%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:38:26.543Z"
+  },
+  {
+    "id": "notif_mail_1789119506495_tszi",
+    "type": "opportunity_application_received",
+    "title": "Email: Application Received: DevOps & Cloud Automation Lead",
+    "description": "Delivered to priya.verma@cumail.in [SIMULATED]",
+    "recipientEmail": "priya.verma@cumail.in",
+    "message": "Dear Priya Verma,\n\nThank you for applying for \"DevOps & Cloud Automation Lead\". Your application has been received and is being reviewed by the AWS SBG CU-UP selection committee.\n\nApplication Summary:\n- Position: DevOps & Cloud Automation Lead\n- Role: Technical Lead\n- Application Reference: APP-77124\n\nWe will get back to you regarding the next steps.\n\nBest regards,\nAWS Student Builder Group at Chandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:38:26.495Z"
+  },
+  {
+    "id": "notif_mail_1789119506455_mv8l",
+    "type": "event_registration_confirmation",
+    "title": "Email: Registration Confirmed: AWS Cloud Architecture Summit 2026",
+    "description": "Delivered to rohan.sharma@cumail.in [SIMULATED]",
+    "recipientEmail": "rohan.sharma@cumail.in",
+    "message": "Dear Rohan Sharma,\n\nYour registration for \"AWS Cloud Architecture Summit 2026\" has been confirmed!\n\nEvent Details:\n- Event: AWS Cloud Architecture Summit 2026\n- Date: October 15, 2026\n- Time: 11:00 AM IST\n- Venue / Link: Auditorium Block A\n- Registration ID: REG-99281\n\nView Event Details: https://www.awssbgcuup.tech/events/event-cloud-summit\n\nBest regards,\nAWS Student Builder Group at Chandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:38:26.455Z"
+  },
+  {
+    "id": "notif_mail_1789119506395_sax0",
+    "type": "admin_manual_message",
+    "title": "Email: Retry Test Message",
+    "description": "Delivered to retry.student@cu.edu [SIMULATED]",
+    "recipientEmail": "retry.student@cu.edu",
+    "message": "Retry Test Message",
+    "status": "unread",
+    "date": "2026-09-11T09:38:26.395Z"
+  },
+  {
+    "id": "notif_mail_1789119506355_2x17",
+    "type": "admin_custom_announcement",
+    "title": "Email: AWS Community Bootcamp Update",
+    "description": "Delivered to student3@cu.edu [SIMULATED]",
+    "recipientEmail": "student3@cu.edu",
+    "message": "AWS Community Bootcamp Update",
+    "status": "unread",
+    "date": "2026-09-11T09:38:26.355Z"
+  },
+  {
+    "id": "notif_mail_1789119506343_13id",
+    "type": "admin_custom_announcement",
+    "title": "Email: AWS Community Bootcamp Update",
+    "description": "Delivered to student2@cu.edu [SIMULATED]",
+    "recipientEmail": "student2@cu.edu",
+    "message": "AWS Community Bootcamp Update",
+    "status": "unread",
+    "date": "2026-09-11T09:38:26.344Z"
+  },
+  {
+    "id": "notif_mail_1789119506325_l1ky",
+    "type": "admin_custom_announcement",
+    "title": "Email: AWS Community Bootcamp Update",
+    "description": "Delivered to student1@cu.edu [SIMULATED]",
+    "recipientEmail": "student1@cu.edu",
+    "message": "AWS Community Bootcamp Update",
+    "status": "unread",
+    "date": "2026-09-11T09:38:26.325Z"
+  },
+  {
+    "id": "notif_mail_1789119506282_z9pq",
+    "type": "admin_manual_message",
+    "title": "Email: Welcome to AWS SBG CU-UP",
+    "description": "Delivered to student.builder@chandigarh.edu [SIMULATED]",
+    "recipientEmail": "student.builder@chandigarh.edu",
+    "message": "Welcome to AWS SBG CU-UP",
+    "status": "unread",
+    "date": "2026-09-11T09:38:26.282Z"
+  },
+  {
+    "id": "notif_mail_1789119023651_geql",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
+    "description": "Delivered to fail.test@cumail.in [SIMULATED]",
+    "recipientEmail": "fail.test@cumail.in",
+    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:30:23.652Z"
+  },
+  {
+    "id": "notif_mail_1789119023634_i62n",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
+    "description": "Delivered to abhay@cumail.in [SIMULATED]",
+    "recipientEmail": "abhay@cumail.in",
+    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:30:23.634Z"
+  },
+  {
+    "id": "notif_mail_1789119018139_f7c0",
+    "type": "exam_selected_qualified",
+    "title": "Email: Congratulations! Selected in AWS Certified Developer Assessment",
+    "description": "Delivered to priyanka@cumail.in [SIMULATED]",
+    "recipientEmail": "priyanka@cumail.in",
+    "message": "Dear Priyanka Sharma,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Certified Developer Assessment\" assessment.\n\nDetails:\nRoll Number / Student ID: 23BCS-1789119017838\nOutstanding technical performance\n\nOur team will follow up with further cohort orientation details.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:30:18.139Z"
+  },
+  {
+    "id": "notif_mail_1789119018043_ti71",
+    "type": "exam_result",
+    "title": "Email: Assessment Result: AWS Certified Developer Assessment",
+    "description": "Delivered to priyanka@cumail.in [SIMULATED]",
+    "recipientEmail": "priyanka@cumail.in",
+    "message": "Dear Priyanka Sharma,\n\nYour assessment response for \"AWS Certified Developer Assessment\" (Code: AWS-E2E-7838) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Priyanka Sharma\nRoll Number / Student ID: 23BCS-1789119017838\nScore: 100 / 100\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 60%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:30:18.043Z"
+  },
+  {
+    "id": "notif_mail_1789119012637_w5ln",
+    "type": "event_registration_confirmation",
+    "title": "Email: Registration Confirmed: AWS Student Builder Group Inauguration & Cloud Kickstart",
+    "description": "Delivered to test.student@example.com [SIMULATED]",
+    "recipientEmail": "test.student@example.com",
+    "message": "Dear Test Student,\n\nYour registration for \"AWS Student Builder Group Inauguration & Cloud Kickstart\" has been confirmed!\n\nEvent Details:\n- Event: AWS Student Builder Group Inauguration & Cloud Kickstart\n- Date: 2026-08-22\n- Time: 8:30 PM\n- Venue / Link: Online\n- Registration ID: reg-1789119012577-5965\n\nView Event Details: https://www.awssbgcuup.tech/events/event-01\n\nBest regards,\nAWS Student Builder Group at Chandigarh University – Uttar Pradesh",
+    "status": "unread",
+    "date": "2026-09-11T09:30:12.637Z"
+  },
+  {
     "id": "notif-1786563760845",
     "title": "New Event Registration",
     "description": "John Doe registered for AWS Core Services Workshop.",
@@ -2939,973 +3739,5 @@
     "description": "Export Test User 355 registered for EXPORT TEST EVENT.",
     "date": "2026-08-14T13:50:07.374Z",
     "status": "unread"
-  },
-  {
-    "id": "notif-1786715407416",
-    "title": "New Event Registration",
-    "description": "Export Test User 356 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:07.416Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715407443",
-    "title": "New Event Registration",
-    "description": "Export Test User 357 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:07.443Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715407468",
-    "title": "New Event Registration",
-    "description": "Export Test User 359 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:07.468Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715407494",
-    "title": "New Event Registration",
-    "description": "Export Test User 358 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:07.494Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715407518",
-    "title": "New Event Registration",
-    "description": "Export Test User 360 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:07.518Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715407545",
-    "title": "New Event Registration",
-    "description": "Export Test User 361 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:07.545Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715407689",
-    "title": "New Event Registration",
-    "description": "Export Test User 362 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:07.689Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715407977",
-    "title": "New Event Registration",
-    "description": "Export Test User 363 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:07.977Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715408100",
-    "title": "New Event Registration",
-    "description": "Export Test User 364 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:08.100Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715408158",
-    "title": "New Event Registration",
-    "description": "Export Test User 365 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:08.158Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715408205",
-    "title": "New Event Registration",
-    "description": "Export Test User 366 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:08.205Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715408316",
-    "title": "New Event Registration",
-    "description": "Export Test User 367 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:08.316Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715408360",
-    "title": "New Event Registration",
-    "description": "Export Test User 368 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:08.360Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715408421",
-    "title": "New Event Registration",
-    "description": "Export Test User 369 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:08.421Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715408469",
-    "title": "New Event Registration",
-    "description": "Export Test User 370 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:08.469Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715408628",
-    "title": "New Event Registration",
-    "description": "Export Test User 371 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:08.628Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715408681",
-    "title": "New Event Registration",
-    "description": "Export Test User 372 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:08.681Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715408944",
-    "title": "New Event Registration",
-    "description": "Export Test User 373 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:08.944Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409042",
-    "title": "New Event Registration",
-    "description": "Export Test User 374 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.042Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409105",
-    "title": "New Event Registration",
-    "description": "Export Test User 375 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.105Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409156",
-    "title": "New Event Registration",
-    "description": "Export Test User 376 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.156Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409233",
-    "title": "New Event Registration",
-    "description": "Export Test User 377 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.233Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409268",
-    "title": "New Event Registration",
-    "description": "Export Test User 378 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.268Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409301",
-    "title": "New Event Registration",
-    "description": "Export Test User 379 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.301Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409336",
-    "title": "New Event Registration",
-    "description": "Export Test User 380 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.336Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409370",
-    "title": "New Event Registration",
-    "description": "Export Test User 381 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.370Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409405",
-    "title": "New Event Registration",
-    "description": "Export Test User 382 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.405Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409439",
-    "title": "New Event Registration",
-    "description": "Export Test User 383 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.439Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409472",
-    "title": "New Event Registration",
-    "description": "Export Test User 384 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.472Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409508",
-    "title": "New Event Registration",
-    "description": "Export Test User 385 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.508Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409542",
-    "title": "New Event Registration",
-    "description": "Export Test User 386 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.542Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409572",
-    "title": "New Event Registration",
-    "description": "Export Test User 387 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.572Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409603",
-    "title": "New Event Registration",
-    "description": "Export Test User 388 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.603Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409638",
-    "title": "New Event Registration",
-    "description": "Export Test User 389 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.638Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409672",
-    "title": "New Event Registration",
-    "description": "Export Test User 390 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.672Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409703",
-    "title": "New Event Registration",
-    "description": "Export Test User 391 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.703Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409733",
-    "title": "New Event Registration",
-    "description": "Export Test User 392 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.733Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409760",
-    "title": "New Event Registration",
-    "description": "Export Test User 393 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.760Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409811",
-    "title": "New Event Registration",
-    "description": "Export Test User 394 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.811Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409849",
-    "title": "New Event Registration",
-    "description": "Export Test User 395 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.849Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409883",
-    "title": "New Event Registration",
-    "description": "Export Test User 396 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.883Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409911",
-    "title": "New Event Registration",
-    "description": "Export Test User 397 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.911Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409943",
-    "title": "New Event Registration",
-    "description": "Export Test User 399 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.943Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409969",
-    "title": "New Event Registration",
-    "description": "Export Test User 398 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.969Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1786715409994",
-    "title": "New Event Registration",
-    "description": "Export Test User 400 registered for EXPORT TEST EVENT.",
-    "date": "2026-08-14T13:50:09.994Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-email-1789065275346-att_1789065275341_a0184db8",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to abhay@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 20/20 (PASSED)",
-    "status": "unread",
-    "date": "2026-09-10T18:34:35.346Z"
-  },
-  {
-    "id": "notif-email-1789065276517-att_1789065276431_94682eaa",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Priyanka Sharma",
-    "description": "Sent result email to priyanka@cumail.in for AWS Certified Developer Assessment. Score: 100/100 (PASSED)",
-    "status": "unread",
-    "date": "2026-09-10T18:34:36.517Z"
-  },
-  {
-    "id": "notif-1789065276538",
-    "title": "New Event Registration",
-    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
-    "date": "2026-09-10T18:34:36.538Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-email-1789065340702-att_1789065340695_60ef2218",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to abhay@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 20/20 (PASSED)",
-    "status": "unread",
-    "date": "2026-09-10T18:35:40.702Z"
-  },
-  {
-    "id": "notif-1789065341414",
-    "title": "New Event Registration",
-    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
-    "date": "2026-09-10T18:35:41.414Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-email-1789066514372-att_1789066514364_a2a3c45a",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to abhay@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 20/20 (PASSED)",
-    "recipientEmail": "abhay@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-10T18:55:14.372Z"
-  },
-  {
-    "id": "notif-email-1789066514387-att_1789066514386_017eae91",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to fail.test@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 0/20 (FAILED)",
-    "recipientEmail": "fail.test@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-10T18:55:14.387Z"
-  },
-  {
-    "id": "notif-email-1789066517368-att_1789066517300_a5043e1c",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Priyanka Sharma",
-    "description": "Sent result email to priyanka@cumail.in for AWS Certified Developer Assessment. Score: 100/100 (PASSED)",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nYour assessment response for \"AWS Certified Developer Assessment\" (Code: AWS-E2E-99) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Priyanka Sharma\nRoll Number / Student ID: 23BCS5555\nScore: 100 / 100\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 60%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-10T18:55:17.368Z"
-  },
-  {
-    "id": "notif-1789066517687",
-    "title": "New Event Registration",
-    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
-    "date": "2026-09-10T18:55:17.687Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-email-1789067042991-att_1789067042979_e7a8cd75",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to abhay@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 20/20 (PASSED)",
-    "recipientEmail": "abhay@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-10T19:04:02.991Z"
-  },
-  {
-    "id": "notif-email-1789067043018-att_1789067043013_43b5fcaf",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to fail.test@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 0/20 (FAILED)",
-    "recipientEmail": "fail.test@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-10T19:04:03.018Z"
-  },
-  {
-    "id": "notif-1789067044742",
-    "title": "New Event Registration",
-    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
-    "date": "2026-09-10T19:04:04.742Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-email-1789067044935-att_1789067044804_288141e7",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Priyanka Sharma",
-    "description": "Sent result email to priyanka@cumail.in for AWS Certified Developer Assessment. Score: 100/100 (PASSED)",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nYour assessment response for \"AWS Certified Developer Assessment\" (Code: AWS-E2E-99) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Priyanka Sharma\nRoll Number / Student ID: 23BCS5555\nScore: 100 / 100\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 60%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-10T19:04:04.935Z"
-  },
-  {
-    "id": "notif-select-1789067045034-att_1789067044804_288141e7",
-    "type": "candidate_selected_email",
-    "title": "Selection Email Dispatched: Priyanka Sharma",
-    "description": "Sent selection notification to priyanka@cumail.in for AWS Certified Developer Assessment. Notes: Outstanding technical performance",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Certified Developer Assessment\" assessment.\n\nDetails:\nRoll Number / Student ID: 23BCS5555\nEvaluation Notes: Outstanding technical performance\n\nOur team will follow up with further instructions.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-10T19:04:05.034Z"
-  },
-  {
-    "id": "notif-email-1789067321429-att_1789067321418_0550a2a2",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to abhay@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 20/20 (PASSED)",
-    "recipientEmail": "abhay@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-10T19:08:41.429Z"
-  },
-  {
-    "id": "notif-email-1789067321446-att_1789067321446_32c855c5",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to fail.test@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 0/20 (FAILED)",
-    "recipientEmail": "fail.test@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-10T19:08:41.446Z"
-  },
-  {
-    "id": "notif-1789067321977",
-    "title": "New Event Registration",
-    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
-    "date": "2026-09-10T19:08:41.977Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-email-1789067322483-att_1789067322373_9c50f43c",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Priyanka Sharma",
-    "description": "Sent result email to priyanka@cumail.in for AWS Certified Developer Assessment. Score: 100/100 (PASSED)",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nYour assessment response for \"AWS Certified Developer Assessment\" (Code: AWS-E2E-99) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Priyanka Sharma\nRoll Number / Student ID: 23BCS5555\nScore: 100 / 100\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 60%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-10T19:08:42.483Z"
-  },
-  {
-    "id": "notif-select-1789067322565-att_1789067322373_9c50f43c",
-    "type": "candidate_selected_email",
-    "title": "Selection Email Dispatched: Priyanka Sharma",
-    "description": "Sent selection notification to priyanka@cumail.in for AWS Certified Developer Assessment. Notes: Outstanding technical performance",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Certified Developer Assessment\" assessment.\n\nDetails:\nRoll Number / Student ID: 23BCS5555\nEvaluation Notes: Outstanding technical performance\n\nOur team will follow up with further instructions.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-10T19:08:42.565Z"
-  },
-  {
-    "id": "notif-email-1789072340240-att_1789072340233_94f24c60",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to abhay@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 20/20 (PASSED)",
-    "recipientEmail": "abhay@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-10T20:32:20.240Z"
-  },
-  {
-    "id": "notif-email-1789072340255-att_1789072340251_cbcb07a3",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to fail.test@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 0/20 (FAILED)",
-    "recipientEmail": "fail.test@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-10T20:32:20.255Z"
-  },
-  {
-    "id": "notif-email-1789072342285-att_1789072342232_edc8b026",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Priyanka Sharma",
-    "description": "Sent result email to priyanka@cumail.in for AWS Certified Developer Assessment. Score: 100/100 (PASSED)",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nYour assessment response for \"AWS Certified Developer Assessment\" (Code: AWS-E2E-99) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Priyanka Sharma\nRoll Number / Student ID: 23BCS5555\nScore: 100 / 100\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 60%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-10T20:32:22.285Z"
-  },
-  {
-    "id": "notif-select-1789072342318-att_1789072342232_edc8b026",
-    "type": "candidate_selected_email",
-    "title": "Selection Email Dispatched: Priyanka Sharma",
-    "description": "Sent selection notification to priyanka@cumail.in for AWS Certified Developer Assessment. Notes: Outstanding technical performance",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Certified Developer Assessment\" assessment.\n\nDetails:\nRoll Number / Student ID: 23BCS5555\nEvaluation Notes: Outstanding technical performance\n\nOur team will follow up with further instructions.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-10T20:32:22.318Z"
-  },
-  {
-    "id": "notif-1789072342476",
-    "title": "New Event Registration",
-    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
-    "date": "2026-09-10T20:32:22.476Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-email-1789104039061-att_1789104039054_ee497046",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to abhay@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 20/20 (PASSED)",
-    "recipientEmail": "abhay@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:20:39.061Z"
-  },
-  {
-    "id": "notif-email-1789104039076-att_1789104039075_9723c96c",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to fail.test@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 0/20 (FAILED)",
-    "recipientEmail": "fail.test@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:20:39.076Z"
-  },
-  {
-    "id": "notif-1789104039770",
-    "title": "New Event Registration",
-    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
-    "date": "2026-09-11T05:20:39.770Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-email-1789104040023-att_1789104039896_d62c6ad5",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Priyanka Sharma",
-    "description": "Sent result email to priyanka@cumail.in for AWS Certified Developer Assessment. Score: 100/100 (PASSED)",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nYour assessment response for \"AWS Certified Developer Assessment\" (Code: AWS-E2E-99) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Priyanka Sharma\nRoll Number / Student ID: 23BCS5555\nScore: 100 / 100\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 60%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:20:40.023Z"
-  },
-  {
-    "id": "notif-select-1789104040075-att_1789104039896_d62c6ad5",
-    "type": "candidate_selected_email",
-    "title": "Selection Email Dispatched: Priyanka Sharma",
-    "description": "Sent selection notification to priyanka@cumail.in for AWS Certified Developer Assessment. Notes: Outstanding technical performance",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Certified Developer Assessment\" assessment.\n\nDetails:\nRoll Number / Student ID: 23BCS5555\nEvaluation Notes: Outstanding technical performance\n\nOur team will follow up with further instructions.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:20:40.075Z"
-  },
-  {
-    "id": "notif-email-1789104069053-att_1789104069042_2ef975e4",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to abhay@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 20/20 (PASSED)",
-    "recipientEmail": "abhay@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:21:09.053Z"
-  },
-  {
-    "id": "notif-email-1789104069064-att_1789104069063_3adc6d6e",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to fail.test@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 0/20 (FAILED)",
-    "recipientEmail": "fail.test@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:21:09.064Z"
-  },
-  {
-    "id": "notif-email-1789104069551-att_1789104069422_94f6efd5",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Priyanka Sharma",
-    "description": "Sent result email to priyanka@cumail.in for AWS Certified Developer Assessment. Score: 100/100 (PASSED)",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nYour assessment response for \"AWS Certified Developer Assessment\" (Code: AWS-E2E-99) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Priyanka Sharma\nRoll Number / Student ID: 23BCS5555\nScore: 100 / 100\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 60%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:21:09.551Z"
-  },
-  {
-    "id": "notif-select-1789104069613-att_1789104069422_94f6efd5",
-    "type": "candidate_selected_email",
-    "title": "Selection Email Dispatched: Priyanka Sharma",
-    "description": "Sent selection notification to priyanka@cumail.in for AWS Certified Developer Assessment. Notes: Outstanding technical performance",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Certified Developer Assessment\" assessment.\n\nDetails:\nRoll Number / Student ID: 23BCS5555\nEvaluation Notes: Outstanding technical performance\n\nOur team will follow up with further instructions.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:21:09.613Z"
-  },
-  {
-    "id": "notif-email-1789104464498-att_1789104464490_f0b1cd34",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to abhay@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 20/20 (PASSED)",
-    "recipientEmail": "abhay@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:27:44.498Z"
-  },
-  {
-    "id": "notif-email-1789104464513-att_1789104464512_2be4e563",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to fail.test@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 0/20 (FAILED)",
-    "recipientEmail": "fail.test@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:27:44.513Z"
-  },
-  {
-    "id": "notif-email-1789104465293-att_1789104465162_f76abfea",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Priyanka Sharma",
-    "description": "Sent result email to priyanka@cumail.in for AWS Certified Developer Assessment. Score: 100/100 (PASSED)",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nYour assessment response for \"AWS Certified Developer Assessment\" (Code: AWS-E2E-99) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Priyanka Sharma\nRoll Number / Student ID: 23BCS5555\nScore: 100 / 100\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 60%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:27:45.293Z"
-  },
-  {
-    "id": "notif-select-1789104465357-att_1789104465162_f76abfea",
-    "type": "candidate_selected_email",
-    "title": "Selection Email Dispatched: Priyanka Sharma",
-    "description": "Sent selection notification to priyanka@cumail.in for AWS Certified Developer Assessment. Notes: Outstanding technical performance",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Certified Developer Assessment\" assessment.\n\nDetails:\nRoll Number / Student ID: 23BCS5555\nEvaluation Notes: Outstanding technical performance\n\nOur team will follow up with further instructions.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:27:45.357Z"
-  },
-  {
-    "id": "notif-1789104465471",
-    "title": "New Event Registration",
-    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
-    "date": "2026-09-11T05:27:45.471Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-email-1789105513142-att_1789105513135_2df09099",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to abhay@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 20/20 (PASSED)",
-    "recipientEmail": "abhay@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:45:13.142Z"
-  },
-  {
-    "id": "notif-email-1789105513159-att_1789105513158_c645e315",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to fail.test@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 0/20 (FAILED)",
-    "recipientEmail": "fail.test@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:45:13.159Z"
-  },
-  {
-    "id": "notif-1789105513728",
-    "title": "New Event Registration",
-    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
-    "date": "2026-09-11T05:45:13.728Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-email-1789105555210-att_1789105555203_89d77c30",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to abhay@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 20/20 (PASSED)",
-    "recipientEmail": "abhay@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:45:55.210Z"
-  },
-  {
-    "id": "notif-email-1789105555223-att_1789105555222_82cde601",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to fail.test@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 0/20 (FAILED)",
-    "recipientEmail": "fail.test@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:45:55.223Z"
-  },
-  {
-    "id": "notif-1789105556197",
-    "title": "New Event Registration",
-    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
-    "date": "2026-09-11T05:45:56.197Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-email-1789105677689-att_1789105677679_098f4448",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to abhay@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 20/20 (PASSED)",
-    "recipientEmail": "abhay@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:47:57.689Z"
-  },
-  {
-    "id": "notif-email-1789105677703-att_1789105677703_a669e65a",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to fail.test@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 0/20 (FAILED)",
-    "recipientEmail": "fail.test@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:47:57.703Z"
-  },
-  {
-    "id": "notif-1789105678463",
-    "title": "New Event Registration",
-    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
-    "date": "2026-09-11T05:47:58.463Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-email-1789106354652-att_1789106354642_ac231215",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to abhay@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 20/20 (PASSED)",
-    "recipientEmail": "abhay@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:59:14.652Z"
-  },
-  {
-    "id": "notif-email-1789106354676-att_1789106354675_81e2d57a",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to fail.test@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 0/20 (FAILED)",
-    "recipientEmail": "fail.test@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T05:59:14.676Z"
-  },
-  {
-    "id": "notif-1789106355767",
-    "title": "New Event Registration",
-    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
-    "date": "2026-09-11T05:59:15.767Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-email-1789106427955-att_1789106427947_d2fbed08",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to abhay@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 20/20 (PASSED)",
-    "recipientEmail": "abhay@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T06:00:27.955Z"
-  },
-  {
-    "id": "notif-email-1789106427984-att_1789106427981_89529727",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to fail.test@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 0/20 (FAILED)",
-    "recipientEmail": "fail.test@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T06:00:27.984Z"
-  },
-  {
-    "id": "notif-1789106428652",
-    "title": "New Event Registration",
-    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
-    "date": "2026-09-11T06:00:28.652Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-email-1789106541953-att_1789106541938_437bcc10",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to abhay@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 20/20 (PASSED)",
-    "recipientEmail": "abhay@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T06:02:21.953Z"
-  },
-  {
-    "id": "notif-email-1789106541977-att_1789106541976_5e355a58",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to fail.test@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 0/20 (FAILED)",
-    "recipientEmail": "fail.test@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T06:02:21.977Z"
-  },
-  {
-    "id": "notif-1789115071657",
-    "title": "New Event Registration",
-    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
-    "date": "2026-09-11T08:24:31.657Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-email-1789115301809-att_1789115301643_3b406b2c",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Priyanka Sharma",
-    "description": "Sent result email to priyanka@cumail.in for AWS Certified Developer Assessment. Score: 100/100 (PASSED)",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nYour assessment response for \"AWS Certified Developer Assessment\" (Code: AWS-E2E-1607) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Priyanka Sharma\nRoll Number / Student ID: 23BCS-1789115301606\nScore: 100 / 100\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 60%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T08:28:21.809Z"
-  },
-  {
-    "id": "notif-select-1789115301899-att_1789115301643_3b406b2c",
-    "type": "candidate_selected_email",
-    "title": "Selection Email Dispatched: Priyanka Sharma",
-    "description": "Sent selection notification to priyanka@cumail.in for AWS Certified Developer Assessment. Notes: Outstanding technical performance",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Certified Developer Assessment\" assessment.\n\nDetails:\nRoll Number / Student ID: 23BCS-1789115301606\nEvaluation Notes: Outstanding technical performance\n\nOur team will follow up with further instructions.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T08:28:21.899Z"
-  },
-  {
-    "id": "notif-email-1789115420882-att_1789115420753_02966ad2",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Priyanka Sharma",
-    "description": "Sent result email to priyanka@cumail.in for AWS Certified Developer Assessment. Score: 100/100 (PASSED)",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nYour assessment response for \"AWS Certified Developer Assessment\" (Code: AWS-E2E-0715) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Priyanka Sharma\nRoll Number / Student ID: 23BCS-1789115420715\nScore: 100 / 100\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 60%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T08:30:20.882Z"
-  },
-  {
-    "id": "notif-select-1789115420946-att_1789115420753_02966ad2",
-    "type": "candidate_selected_email",
-    "title": "Selection Email Dispatched: Priyanka Sharma",
-    "description": "Sent selection notification to priyanka@cumail.in for AWS Certified Developer Assessment. Notes: Outstanding technical performance",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Certified Developer Assessment\" assessment.\n\nDetails:\nRoll Number / Student ID: 23BCS-1789115420715\nEvaluation Notes: Outstanding technical performance\n\nOur team will follow up with further instructions.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T08:30:20.946Z"
-  },
-  {
-    "id": "notif-email-1789115558931-att_1789115558915_fc780f80",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to abhay@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 20/20 (PASSED)",
-    "recipientEmail": "abhay@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T08:32:38.931Z"
-  },
-  {
-    "id": "notif-email-1789115559003-att_1789115559002_714183e5",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to fail.test@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 0/20 (FAILED)",
-    "recipientEmail": "fail.test@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T08:32:39.003Z"
-  },
-  {
-    "id": "notif-1789115560124",
-    "title": "New Event Registration",
-    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
-    "date": "2026-09-11T08:32:40.124Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-email-1789115857707-att_1789115857697_cd633218",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to abhay@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 20/20 (PASSED)",
-    "recipientEmail": "abhay@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T08:37:37.707Z"
-  },
-  {
-    "id": "notif-email-1789115857745-att_1789115857744_cf4809c4",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to fail.test@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 0/20 (FAILED)",
-    "recipientEmail": "fail.test@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T08:37:37.745Z"
-  },
-  {
-    "id": "notif-1789115858774",
-    "title": "New Event Registration",
-    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
-    "date": "2026-09-11T08:37:38.774Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-1789116016392",
-    "title": "New Event Registration",
-    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
-    "date": "2026-09-11T08:40:16.392Z",
-    "status": "unread"
-  },
-  {
-    "id": "notif-email-1789116020834-att_1789116020643_dda7499d",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Priyanka Sharma",
-    "description": "Sent result email to priyanka@cumail.in for AWS Certified Developer Assessment. Score: 100/100 (PASSED)",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nYour assessment response for \"AWS Certified Developer Assessment\" (Code: AWS-E2E-0591) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Priyanka Sharma\nRoll Number / Student ID: 23BCS-1789116020591\nScore: 100 / 100\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 60%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T08:40:20.834Z"
-  },
-  {
-    "id": "notif-select-1789116020928-att_1789116020643_dda7499d",
-    "type": "candidate_selected_email",
-    "title": "Selection Email Dispatched: Priyanka Sharma",
-    "description": "Sent selection notification to priyanka@cumail.in for AWS Certified Developer Assessment. Notes: Outstanding technical performance",
-    "recipientEmail": "priyanka@cumail.in",
-    "message": "Dear Priyanka Sharma,\n\nCongratulations! You have been SELECTED & QUALIFIED in the \"AWS Certified Developer Assessment\" assessment.\n\nDetails:\nRoll Number / Student ID: 23BCS-1789116020591\nEvaluation Notes: Outstanding technical performance\n\nOur team will follow up with further instructions.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T08:40:20.928Z"
-  },
-  {
-    "id": "notif-email-1789116024949-att_1789116024944_e2bf49b4",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to abhay@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 20/20 (PASSED)",
-    "recipientEmail": "abhay@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 20 / 20\nPercentage: 100%\nVerdict: PASSED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T08:40:24.949Z"
-  },
-  {
-    "id": "notif-email-1789116024962-att_1789116024962_8cf29f24",
-    "type": "exam_result_email",
-    "title": "Result Email Dispatched: Abhay Kumar",
-    "description": "Sent result email to fail.test@cumail.in for AWS Certified Cloud Practitioner Unit Assessment. Score: 0/20 (FAILED)",
-    "recipientEmail": "fail.test@cumail.in",
-    "message": "Dear Abhay Kumar,\n\nYour assessment response for \"AWS Certified Cloud Practitioner Unit Assessment\" (Code: AWS-TEST-01) has been evaluated.\n\nAssessment Summary:\n----------------------------------------\nCandidate Name: Abhay Kumar\nRoll Number / Student ID: 23BCS1001\nScore: 0 / 20\nPercentage: 0%\nVerdict: FAILED\nMinimum Passing Percentage: 70%\n----------------------------------------\n\nThank you for participating in the assessment.\n\nBest regards,\nAWS Student Builder Group\nChandigarh University – Uttar Pradesh",
-    "status": "unread",
-    "date": "2026-09-11T08:40:24.962Z"
   }
 ]

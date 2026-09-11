@@ -1,8 +1,8 @@
 [
   {
-    "id": "sec_1789117968385_2d050b",
-    "attemptId": "att-admin-lock-1789117968336",
-    "examId": "exam-admin-lock-flow-1789117968332",
+    "id": "sec_1789147798477_14b2d8",
+    "attemptId": "att-admin-lock-1789147798453",
+    "examId": "exam-admin-lock-flow-1789147798450",
     "studentName": "Bob Invigilator Subject",
     "rollNumber": "ROLL-BOB-99",
     "eventType": "EXAM_UNLOCKED",
@@ -14,12 +14,12 @@
       "lockedSeconds": 0,
       "totalLockedSeconds": 0
     },
-    "timestamp": "2026-09-11T09:12:48.385Z"
+    "timestamp": "2026-09-11T17:29:58.478Z"
   },
   {
-    "id": "sec_1789117968354_6d2ede",
-    "attemptId": "att-admin-lock-1789117968336",
-    "examId": "exam-admin-lock-flow-1789117968332",
+    "id": "sec_1789147798464_bdf8ed",
+    "attemptId": "att-admin-lock-1789147798453",
+    "examId": "exam-admin-lock-flow-1789147798450",
     "studentName": "Bob Invigilator Subject",
     "rollNumber": "ROLL-BOB-99",
     "eventType": "EXAM_LOCKED",
@@ -30,14 +30,14 @@
       "lockCount": 1,
       "pausedRemainingSeconds": 1200
     },
-    "timestamp": "2026-09-11T09:12:48.354Z"
+    "timestamp": "2026-09-11T17:29:58.464Z"
   },
   {
-    "id": "sec_1789117968324_5a9bf5",
-    "attemptId": "att_1789117968231_9e4481e8",
-    "examId": "exam-lock-lifecycle-1789117968223",
+    "id": "sec_1789147798444_caf9b5",
+    "attemptId": "att_1789147798371_689428f0",
+    "examId": "exam-lock-lifecycle-1789147798365",
     "studentName": "Alice Security Candidate",
-    "rollNumber": "SEC-1789117968228",
+    "rollNumber": "SEC-1789147798368",
     "eventType": "EXAM_UNLOCKED",
     "severity": "INFO",
     "metadata": {
@@ -47,14 +47,14 @@
       "lockedSeconds": 0,
       "totalLockedSeconds": 0
     },
-    "timestamp": "2026-09-11T09:12:48.324Z"
+    "timestamp": "2026-09-11T17:29:58.444Z"
   },
   {
-    "id": "sec_1789117968302_ab1a1c",
-    "attemptId": "att_1789117968231_9e4481e8",
-    "examId": "exam-lock-lifecycle-1789117968223",
+    "id": "sec_1789147798428_50d7af",
+    "attemptId": "att_1789147798371_689428f0",
+    "examId": "exam-lock-lifecycle-1789147798365",
     "studentName": "Alice Security Candidate",
-    "rollNumber": "SEC-1789117968228",
+    "rollNumber": "SEC-1789147798368",
     "eventType": "EXAM_LOCKED",
     "severity": "WARNING",
     "metadata": {
@@ -63,19 +63,19 @@
       "lockCount": 1,
       "pausedRemainingSeconds": 1800
     },
-    "timestamp": "2026-09-11T09:12:48.302Z"
+    "timestamp": "2026-09-11T17:29:58.428Z"
   },
   {
-    "id": "sec_1789117968288_b528b3",
-    "attemptId": "att_1789117968231_9e4481e8",
-    "examId": "exam-lock-lifecycle-1789117968223",
+    "id": "sec_1789147798418_21b6e2",
+    "attemptId": "att_1789147798371_689428f0",
+    "examId": "exam-lock-lifecycle-1789147798365",
     "studentName": "Alice Security Candidate",
-    "rollNumber": "SEC-1789117968228",
+    "rollNumber": "SEC-1789147798368",
     "eventType": "ESC_FULLSCREEN_EXIT",
     "severity": "WARNING",
     "metadata": {
       "key": "Escape"
     },
-    "timestamp": "2026-09-11T09:12:48.288Z"
+    "timestamp": "2026-09-11T17:29:58.418Z"
   }
 ]

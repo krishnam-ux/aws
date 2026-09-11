@@ -1,0 +1,133 @@
+[
+  {
+    "id": "log_1789147798972_5d6m4p",
+    "recipient": "fail.test@cumail.in",
+    "subject": "Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
+    "type": "exam_result",
+    "category": "EXAMS",
+    "status": "SENT",
+    "sentAt": "2026-09-11T17:29:58.972Z",
+    "providerId": "sim_1789147798972_2mb94ay",
+    "triggeredBy": "SYSTEM_AUTO",
+    "templateId": "tpl-exam-result",
+    "metadata": {
+      "variables": {
+        "studentName": "Abhay Kumar",
+        "email": "fail.test@cumail.in",
+        "rollNumber": "23BCS1001",
+        "examName": "AWS Certified Cloud Practitioner Unit Assessment",
+        "examCode": "AWS-TEST-01",
+        "score": 0,
+        "totalMarks": 20,
+        "percentage": 0,
+        "verdict": "FAILED",
+        "verdictColor": "#EF4444",
+        "passingPercentage": 70
+      }
+    },
+    "createdAt": "2026-09-11T17:29:58.972Z"
+  },
+  {
+    "id": "log_1789147798959_5sju07",
+    "recipient": "abhay@cumail.in",
+    "subject": "Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
+    "type": "exam_result",
+    "category": "EXAMS",
+    "status": "SENT",
+    "sentAt": "2026-09-11T17:29:58.959Z",
+    "providerId": "sim_1789147798959_u88392y",
+    "triggeredBy": "SYSTEM_AUTO",
+    "templateId": "tpl-exam-result",
+    "metadata": {
+      "variables": {
+        "studentName": "Abhay Kumar",
+        "email": "abhay@cumail.in",
+        "rollNumber": "23BCS1001",
+        "examName": "AWS Certified Cloud Practitioner Unit Assessment",
+        "examCode": "AWS-TEST-01",
+        "score": 20,
+        "totalMarks": 20,
+        "percentage": 100,
+        "verdict": "PASSED",
+        "verdictColor": "#10B981",
+        "passingPercentage": 70
+      }
+    },
+    "createdAt": "2026-09-11T17:29:58.959Z"
+  },
+  {
+    "id": "log_1789147797013_zwp0d8",
+    "recipient": "priyanka@cumail.in",
+    "subject": "Congratulations! Selected in AWS Certified Developer Assessment",
+    "type": "exam_selected_qualified",
+    "category": "EXAMS",
+    "status": "SENT",
+    "sentAt": "2026-09-11T17:29:57.013Z",
+    "providerId": "sim_1789147797013_m2irb1l",
+    "triggeredBy": "SYSTEM_AUTO",
+    "templateId": "tpl-exam-selected",
+    "metadata": {
+      "variables": {
+        "studentName": "Priyanka Sharma",
+        "email": "priyanka@cumail.in",
+        "rollNumber": "23BCS-1789147796903",
+        "examName": "AWS Certified Developer Assessment",
+        "selectionNotes": "Outstanding technical performance"
+      }
+    },
+    "createdAt": "2026-09-11T17:29:57.013Z"
+  },
+  {
+    "id": "log_1789147796977_rh8p0i",
+    "recipient": "priyanka@cumail.in",
+    "subject": "Assessment Result: AWS Certified Developer Assessment",
+    "type": "exam_result",
+    "category": "EXAMS",
+    "status": "SENT",
+    "sentAt": "2026-09-11T17:29:56.977Z",
+    "providerId": "sim_1789147796977_85h9pqc",
+    "triggeredBy": "SYSTEM_AUTO",
+    "templateId": "tpl-exam-result",
+    "metadata": {
+      "variables": {
+        "studentName": "Priyanka Sharma",
+        "email": "priyanka@cumail.in",
+        "rollNumber": "23BCS-1789147796903",
+        "examName": "AWS Certified Developer Assessment",
+        "examCode": "AWS-E2E-6903",
+        "score": 100,
+        "totalMarks": 100,
+        "percentage": 100,
+        "verdict": "PASSED",
+        "verdictColor": "#10B981",
+        "passingPercentage": 60
+      }
+    },
+    "createdAt": "2026-09-11T17:29:56.977Z"
+  },
+  {
+    "id": "log_1789147795547_zxu7fp",
+    "recipient": "test.student@example.com",
+    "subject": "Registration Confirmed: AWS Student Builder Group Inauguration & Cloud Kickstart",
+    "type": "event_registration_confirmation",
+    "category": "EVENTS",
+    "status": "SENT",
+    "sentAt": "2026-09-11T17:29:55.547Z",
+    "providerId": "sim_1789147795547_sf73957",
+    "triggeredBy": "SYSTEM_AUTO",
+    "templateId": "tpl-event-reg-confirm",
+    "metadata": {
+      "variables": {
+        "studentName": "Test Student",
+        "email": "test.student@example.com",
+        "eventName": "AWS Student Builder Group Inauguration & Cloud Kickstart",
+        "eventDate": "2026-08-22",
+        "eventTime": "8:30 PM",
+        "venue": "Online",
+        "registrationId": "reg-1789147795536-7295",
+        "eventUrl": "https://www.awssbgcuup.tech/events/event-01"
+      }
+    },
+    "createdAt": "2026-09-11T17:29:55.547Z"
+  }
+]

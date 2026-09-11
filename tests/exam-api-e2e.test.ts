@@ -268,11 +268,11 @@ test('E2E Exam API: Full Student and Admin Flow', async () => {
   assert.equal(selectRes.status, 200);
   assert.equal(selectData.success, true);
 
-  // Verify candidate selection email was recorded in notifications
-  const allNotifs = await db.notifications.getAll();
-  const selectionEmail = allNotifs.find((n: any) => n.recipientEmail === 'priyanka@cumail.in' && n.title.includes('Selection'));
+  // Verify candidate selection email was recorded in email logs
+  const allLogs = await db.emailLogs.getAll();
+  const selectionEmail = allLogs.find((l: any) => l.recipient === 'priyanka@cumail.in' && l.type === 'exam_selected_qualified');
   assert.ok(selectionEmail, 'Selection email should be sent upon admin mark-selected action');
-  assert.ok(selectionEmail.message.includes('Outstanding technical performance'));
+  assert.ok(selectionEmail.subject.includes('Selected in') || selectionEmail.subject.includes('AWS Certified Developer'));
 
   // 18. Admin Exports CSV Results
   const exportReq = new Request(`http://localhost/api/admin/exams/export?examId=${testExamId}`, {

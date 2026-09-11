@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { triggerFeedbackReceivedEmail } from '@/lib/email/automations';
 
 export const dynamic = 'force-dynamic';
 
@@ -133,6 +134,18 @@ export async function POST(request: Request) {
       await db.notifications.saveAll(notifications);
     } catch (notifErr) {
       console.error('Failed to save feedback notification:', notifErr);
+    }
+
+    // Dispatch automated feedback acknowledgement email (isolated, non-blocking)
+    try {
+      await triggerFeedbackReceivedEmail({
+        studentName: name,
+        email,
+        category: eventTitle,
+        message: feedback
+      });
+    } catch (emailErr) {
+      console.error('Non-blocking error dispatching feedback email:', emailErr);
     }
 
     return NextResponse.json({

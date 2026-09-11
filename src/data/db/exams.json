@@ -1,7 +1,7 @@
 [
   {
-    "id": "exam-admin-lock-flow-1789117968332",
-    "examCode": "LOCK-ADM-8332",
+    "id": "exam-admin-lock-flow-1789147798450",
+    "examCode": "LOCK-ADM-8450",
     "password": "student-flow-pass",
     "examUnlockPassword": "UNLOCK-ADMIN-FLOW-12",
     "title": "AWS Admin Control Lock Assessment",
@@ -28,12 +28,12 @@
         "explanation": "S3 is object storage."
       }
     ],
-    "createdAt": "2026-09-11T09:12:48.333Z",
-    "updatedAt": "2026-09-11T09:12:48.333Z"
+    "createdAt": "2026-09-11T17:29:58.451Z",
+    "updatedAt": "2026-09-11T17:29:58.451Z"
   },
   {
-    "id": "exam-lock-lifecycle-1789117968223",
-    "examCode": "LOCK-8223",
+    "id": "exam-lock-lifecycle-1789147798365",
+    "examCode": "LOCK-8365",
     "password": "candidate-entry-pass",
     "examUnlockPassword": "UNLOCK-TEST-PROCTOR-99",
     "title": "AWS Lifecycle Lockout Assessment",
@@ -60,14 +60,14 @@
         "explanation": "Secret answer"
       }
     ],
-    "createdAt": "2026-09-11T09:12:48.225Z",
-    "updatedAt": "2026-09-11T09:12:48.225Z"
+    "createdAt": "2026-09-11T17:29:58.367Z",
+    "updatedAt": "2026-09-11T17:29:58.367Z"
   },
   {
-    "id": "exam-unlock-1789117968179-m288j",
-    "examCode": "LOCK-8179",
+    "id": "exam-unlock-1789147798335-vj4p3",
+    "examCode": "LOCK-8335",
     "password": "student-pass-123",
-    "examUnlockPassword": "UNLOCK-D0C590",
+    "examUnlockPassword": "UNLOCK-E5407F",
     "title": "AWS Secure Lock Verification Exam",
     "description": "Testing exam lock and invigilator recovery flows",
     "category": "Security Architecture",
@@ -105,8 +105,8 @@
         "explanation": "IAM Policies manage access permissions."
       }
     ],
-    "createdAt": "2026-09-11T09:12:48.181Z",
-    "updatedAt": "2026-09-11T09:12:48.209Z"
+    "createdAt": "2026-09-11T17:29:58.336Z",
+    "updatedAt": "2026-09-11T17:29:58.356Z"
   },
   {
     "id": "exam-aws-ccp-01",

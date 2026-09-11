@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { buildOpportunitySuccessUrl, hasDuplicateOpportunityApplication } from '@/lib/opportunityApplication';
+import { triggerOpportunityApplicationReceived } from '@/lib/email/automations';
 
 export const dynamic = 'force-dynamic';
 
@@ -121,6 +122,23 @@ export async function POST(request: Request) {
     };
 
     await db.careerApplications.insertOne(submission);
+
+    // Dispatch automated application acknowledgement email (isolated, non-blocking)
+    try {
+      await triggerOpportunityApplicationReceived({
+        studentName: name,
+        email,
+        opportunity: {
+          id: opportunity.id,
+          title: opportunity.title,
+          role: opportunity.opportunityType || opportunity.title,
+          slug: opportunity.slug
+        },
+        applicationId
+      });
+    } catch (emailErr) {
+      console.error('Non-blocking error dispatching career application email:', emailErr);
+    }
 
     return NextResponse.redirect(buildOpportunitySuccessUrl(request.url, opportunity.slug, request.headers), 303);
   } catch (error) {

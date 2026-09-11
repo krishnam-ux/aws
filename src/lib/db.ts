@@ -92,8 +92,71 @@ async function ensurePostgresTable() {
       )
     `;
     await ensureExamsTables();
+    await ensureEmailTables();
   } catch (err) {
     console.error('Failed to ensure kv_store table exists in PostgreSQL:', err);
+  }
+}
+
+async function ensureEmailTables() {
+  if (!sql) return;
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS email_logs (
+        id VARCHAR(255) PRIMARY KEY,
+        recipient VARCHAR(255) NOT NULL,
+        recipient_name VARCHAR(255),
+        subject VARCHAR(500) NOT NULL,
+        type VARCHAR(100) NOT NULL,
+        category VARCHAR(100) NOT NULL,
+        status VARCHAR(50) NOT NULL,
+        sent_at TIMESTAMP WITH TIME ZONE,
+        provider_id VARCHAR(255),
+        error_message TEXT,
+        triggered_by VARCHAR(255) NOT NULL,
+        admin_id VARCHAR(255),
+        template_id VARCHAR(255),
+        metadata JSONB,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_email_logs_status ON email_logs(status)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_email_logs_type ON email_logs(type)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_email_logs_recipient ON email_logs(recipient)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_email_logs_created_at ON email_logs(created_at)`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS email_templates (
+        id VARCHAR(255) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        type VARCHAR(100) NOT NULL UNIQUE,
+        category VARCHAR(100) NOT NULL,
+        subject TEXT NOT NULL,
+        body_html TEXT NOT NULL,
+        body_text TEXT NOT NULL,
+        variables JSONB NOT NULL DEFAULT '[]'::jsonb,
+        description TEXT,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_email_templates_type ON email_templates(type)`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS email_automation_settings (
+        id VARCHAR(255) PRIMARY KEY,
+        category VARCHAR(100) NOT NULL,
+        event_type VARCHAR(100) NOT NULL UNIQUE,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        is_enabled BOOLEAN NOT NULL DEFAULT true,
+        default_template_id VARCHAR(255),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_email_automation_event_type ON email_automation_settings(event_type)`;
+  } catch (err) {
+    console.error('Failed to ensure email tables exist in PostgreSQL:', err);
   }
 }
 
@@ -527,7 +590,10 @@ function isRealtimeCollection(filename: string): boolean {
     filename === 'exams.json' ||
     filename === 'exam_attempts.json' ||
     filename === 'exam_security_logs.json' ||
-    filename === 'exam_audit_logs.json'
+    filename === 'exam_audit_logs.json' ||
+    filename === 'email_logs.json' ||
+    filename === 'email_templates.json' ||
+    filename === 'email_automation_settings.json'
   );
 }
 
@@ -2264,6 +2330,115 @@ export const db = {
     saveAll: async (data: any[]): Promise<void> => {
       return withCollectionLock('exam_audit_logs.json', async () => {
         await writeJsonFile('exam_audit_logs.json', data);
+      });
+    }
+  },
+  emailLogs: {
+    getAll: async (): Promise<any[]> => {
+      return await readJsonFile<any[]>('email_logs.json', []);
+    },
+    getById: async (id: string): Promise<any | null> => {
+      const logs = await db.emailLogs.getAll();
+      return logs.find((l: any) => l.id === id) || null;
+    },
+    getByType: async (type: string): Promise<any[]> => {
+      const logs = await db.emailLogs.getAll();
+      return logs.filter((l: any) => l.type === type);
+    },
+    getByStatus: async (status: string): Promise<any[]> => {
+      const logs = await db.emailLogs.getAll();
+      return logs.filter((l: any) => l.status === status);
+    },
+    insertOne: async (log: any): Promise<void> => {
+      return withCollectionLock('email_logs.json', async () => {
+        const logs = await db.emailLogs.getAll();
+        logs.unshift(log);
+        await writeJsonFile('email_logs.json', logs.slice(0, 1000));
+      });
+    },
+    updateOne: async (id: string, fields: Partial<any>): Promise<void> => {
+      return withCollectionLock('email_logs.json', async () => {
+        const logs = await db.emailLogs.getAll();
+        const idx = logs.findIndex((l: any) => l.id === id);
+        if (idx !== -1) {
+          logs[idx] = { ...logs[idx], ...fields };
+          await writeJsonFile('email_logs.json', logs);
+        }
+      });
+    },
+    saveAll: async (data: any[]): Promise<void> => {
+      return withCollectionLock('email_logs.json', async () => {
+        await writeJsonFile('email_logs.json', data);
+      });
+    },
+    deleteById: async (id: string): Promise<void> => {
+      return withCollectionLock('email_logs.json', async () => {
+        let logs = await db.emailLogs.getAll();
+        logs = logs.filter((l: any) => l.id !== id);
+        await writeJsonFile('email_logs.json', logs);
+      });
+    }
+  },
+  emailTemplates: {
+    getAll: async (): Promise<any[]> => {
+      return await readJsonFile<any[]>('email_templates.json', []);
+    },
+    getByType: async (type: string): Promise<any | null> => {
+      const templates = await db.emailTemplates.getAll();
+      return templates.find((t: any) => t.type === type) || null;
+    },
+    upsert: async (template: any): Promise<void> => {
+      return withCollectionLock('email_templates.json', async () => {
+        const templates = await db.emailTemplates.getAll();
+        const idx = templates.findIndex((t: any) => t.id === template.id || t.type === template.type);
+        if (idx !== -1) {
+          templates[idx] = { ...templates[idx], ...template, updatedAt: new Date().toISOString() };
+        } else {
+          templates.push({ ...template, updatedAt: new Date().toISOString() });
+        }
+        await writeJsonFile('email_templates.json', templates);
+      });
+    },
+    saveAll: async (data: any[]): Promise<void> => {
+      return withCollectionLock('email_templates.json', async () => {
+        await writeJsonFile('email_templates.json', data);
+      });
+    }
+  },
+  emailAutomationSettings: {
+    getAll: async (): Promise<any[]> => {
+      return await readJsonFile<any[]>('email_automation_settings.json', []);
+    },
+    getByType: async (eventType: string): Promise<any | null> => {
+      const settings = await db.emailAutomationSettings.getAll();
+      return settings.find((s: any) => s.eventType === eventType) || null;
+    },
+    setSetting: async (eventType: string, isEnabled: boolean, updatedBy?: string): Promise<void> => {
+      return withCollectionLock('email_automation_settings.json', async () => {
+        const settings = await db.emailAutomationSettings.getAll();
+        const idx = settings.findIndex((s: any) => s.eventType === eventType);
+        if (idx !== -1) {
+          settings[idx] = {
+            ...settings[idx],
+            isEnabled,
+            updatedBy: updatedBy || 'admin',
+            updatedAt: new Date().toISOString()
+          };
+        } else {
+          settings.push({
+            id: `auto-${eventType}`,
+            eventType,
+            isEnabled,
+            updatedBy: updatedBy || 'admin',
+            updatedAt: new Date().toISOString()
+          });
+        }
+        await writeJsonFile('email_automation_settings.json', settings);
+      });
+    },
+    saveAll: async (data: any[]): Promise<void> => {
+      return withCollectionLock('email_automation_settings.json', async () => {
+        await writeJsonFile('email_automation_settings.json', data);
       });
     }
   }
