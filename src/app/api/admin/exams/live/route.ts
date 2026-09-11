@@ -54,6 +54,7 @@ export async function GET(request: Request) {
       verified: attempts.filter((a: ExamAttempt) => a.status === 'VERIFIED').length,
       unlocked: attempts.filter((a: ExamAttempt) => a.status === 'UNLOCKED').length,
       inExam: attempts.filter((a: ExamAttempt) => a.status === 'IN_EXAM').length,
+      examLocked: attempts.filter((a: ExamAttempt) => a.status === 'EXAM_LOCKED').length,
       paused: attempts.filter((a: ExamAttempt) => a.status === 'PAUSED').length,
       submitted: attempts.filter((a: ExamAttempt) => a.status === 'SUBMITTED' || a.status === 'REVIEW_REQUIRED').length,
       passed: attempts.filter((a: ExamAttempt) => a.passed).length,
@@ -62,14 +63,20 @@ export async function GET(request: Request) {
       reviewRequired: attempts.filter((a: ExamAttempt) => a.status === 'REVIEW_REQUIRED').length
     };
 
+    if (targetExam && !targetExam.examUnlockPassword) {
+      targetExam.examUnlockPassword = 'UNLOCK-' + (targetExam.examCode || 'AWS').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 4) + '-2026';
+    }
+
     return NextResponse.json(
       {
         exam: targetExam || null,
+        examUnlockPassword: targetExam?.examUnlockPassword,
         stats,
         candidates: enrichedAttempts
       },
       { headers: noStoreHeaders }
     );
+
   } catch (error: any) {
     console.error('Admin live exam error:', error);
     return NextResponse.json(

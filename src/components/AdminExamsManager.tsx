@@ -254,6 +254,7 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
     if (statusFilter === 'Verified') return c.status === 'VERIFIED';
     if (statusFilter === 'Unlocked') return c.status === 'UNLOCKED';
     if (statusFilter === 'In Exam') return c.status === 'IN_EXAM';
+    if (statusFilter === 'Exam Locked') return c.status === 'EXAM_LOCKED';
     if (statusFilter === 'Submitted') return c.status === 'SUBMITTED' || c.status === 'REVIEW_REQUIRED';
     if (statusFilter === 'Passed') return c.passed;
     if (statusFilter === 'Failed') return (c.status === 'SUBMITTED' || c.status === 'REVIEW_REQUIRED') && !c.passed;
@@ -261,6 +262,7 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
     if (statusFilter === 'Violations') return (c.securityViolationsCount || 0) > 0;
     return true;
   });
+
 
   const currentExam = exams.find((e) => e.id === selectedExamId) || exams[0];
   const stats = liveData?.stats || {
@@ -407,6 +409,35 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
                 <span className="text-slate-400">Questions: </span>
                 <span className="font-bold text-slate-800">{currentExam.questions?.length || 0}</span>
               </div>
+              <div>
+                <span className="text-slate-400">Invigilator Unlock Password: </span>
+                <span className="font-mono font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                  {currentExam.examUnlockPassword || 'UNLOCK-AWS-2026'}
+                </span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(currentExam.examUnlockPassword || 'UNLOCK-AWS-2026');
+                    showToast('Unlock Password copied to clipboard', 'success');
+                  }}
+                  className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-slate-200 hover:bg-slate-300 rounded font-bold text-slate-700"
+                  title="Copy Unlock Password"
+                >
+                  📋 Copy
+                </button>
+                <button
+                  onClick={async () => {
+                    if (confirm('Regenerate Exam Unlock Password? The previous unlock password will stop working immediately.')) {
+                      await handleControlAction('regenerate-unlock-password', {});
+                      await fetchExams();
+                      await fetchLiveData();
+                    }
+                  }}
+                  className="ml-1 px-1.5 py-0.5 text-[10px] bg-amber-100 hover:bg-amber-200 rounded font-bold text-amber-800"
+                  title="Regenerate Unlock Password"
+                >
+                  🔄 Regenerate
+                </button>
+              </div>
             </div>
             <div>
               <span className="text-slate-400">Direct Student Link: </span>
@@ -422,8 +453,8 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
         )}
       </div>
 
-      {/* 2. STATS BAR (9 Cards) */}
-      <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-3">
+      {/* 2. STATS BAR (10 Cards) */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-2.5">
         <div
           onClick={() => setStatusFilter('All')}
           className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
@@ -473,6 +504,17 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
           <div className="text-[10px] uppercase font-bold text-blue-600">In Exam</div>
           <div className="text-lg font-bold text-blue-600 font-mono mt-0.5">{stats.inExam}</div>
         </div>
+
+        <div
+          onClick={() => setStatusFilter('Exam Locked')}
+          className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
+            statusFilter === 'Exam Locked' ? 'ring-2 ring-rose-600 border-rose-600' : 'border-[#E2E8F0] hover:border-rose-300'
+          }`}
+        >
+          <div className="text-[10px] uppercase font-bold text-rose-600">🔒 Locked</div>
+          <div className="text-lg font-bold text-rose-600 font-mono mt-0.5">{stats.examLocked || 0}</div>
+        </div>
+
 
         <div
           onClick={() => setStatusFilter('Submitted')}
@@ -680,6 +722,7 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
                   const isVerified = candidate.status === 'VERIFIED';
                   const isUnlocked = candidate.status === 'UNLOCKED';
                   const isInExam = candidate.status === 'IN_EXAM';
+                  const isExamLocked = candidate.status === 'EXAM_LOCKED';
                   const isSubmitted = candidate.status === 'SUBMITTED';
                   const isReviewRequired = candidate.status === 'REVIEW_REQUIRED';
 
@@ -688,6 +731,7 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
                   if (isVerified) statusBadgeClass = 'bg-indigo-50 text-indigo-700 border-indigo-200 font-bold';
                   if (isUnlocked) statusBadgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200 font-bold';
                   if (isInExam) statusBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200 font-bold animate-pulse';
+                  if (isExamLocked) statusBadgeClass = 'bg-rose-600 text-white border-rose-700 font-bold animate-pulse';
                   if (isSubmitted) statusBadgeClass = candidate.passed ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-bold' : 'bg-rose-100 text-rose-800 border-rose-300 font-bold';
                   if (isReviewRequired) statusBadgeClass = 'bg-rose-600 text-white border-rose-700 font-bold';
 
@@ -716,7 +760,9 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
                       </td>
                       <td className="p-3">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] border ${statusBadgeClass}`}>
-                          {candidate.status}
+                          {isExamLocked
+                            ? `🔒 LOCKED ${candidate.lockCount ? `(${candidate.lockCount}x)` : ''}`
+                            : candidate.status}
                         </span>
                       </td>
                       <td className="p-3 font-mono font-bold text-slate-700">
@@ -731,6 +777,10 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
                             }
                           >
                             ⏱ {formatTime(candidate.remainingSeconds)}
+                          </span>
+                        ) : isExamLocked ? (
+                          <span className="text-rose-600 font-bold">
+                            ⏱ {formatTime(candidate.remainingSeconds)} (PAUSED)
                           </span>
                         ) : isSubmitted || isReviewRequired ? (
                           <span className="text-slate-400 font-normal">Completed</span>
@@ -759,7 +809,11 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
                         )}
                       </td>
                       <td className="p-3">
-                        {(candidate.securityViolationsCount || 0) > 0 ? (
+                        {isExamLocked ? (
+                          <span className="px-2 py-0.5 rounded bg-rose-100 border border-rose-300 text-rose-800 font-bold text-[10px]">
+                            🔒 {candidate.lockReason || 'Interrupted'}
+                          </span>
+                        ) : (candidate.securityViolationsCount || 0) > 0 ? (
                           <span className="px-2 py-0.5 rounded bg-rose-50 border border-rose-200 text-rose-700 font-bold text-[10px]">
                             ⚠️ {candidate.securityViolationsCount} violations
                           </span>
@@ -815,6 +869,35 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
                             </>
                           )}
 
+                          {isExamLocked && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  const reason = prompt(
+                                    'Enter reason to unlock candidate session:',
+                                    'Fullscreen accidentally exited'
+                                  );
+                                  if (reason !== null) {
+                                    handleControlAction('unlock-locked-candidate', {
+                                      candidateId: candidate.id,
+                                      notes: reason
+                                    });
+                                  }
+                                }}
+                                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-bold shadow-sm"
+                                title="Unlock and resume candidate exam session"
+                              >
+                                🔓 Unlock
+                              </button>
+                              <button
+                                onClick={() => handleControlAction('force-submit', { candidateId: candidate.id })}
+                                className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-[11px] font-semibold"
+                              >
+                                Force Submit
+                              </button>
+                            </>
+                          )}
+
                           {isInExam && (
                             <>
                               <button
@@ -824,6 +907,21 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
                                 className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded text-[11px] font-semibold border border-amber-200"
                               >
                                 +Time
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const reason = prompt('Reason to lock candidate exam session:', 'Proctor Manual Lock');
+                                  if (reason !== null) {
+                                    handleControlAction('manual-lock-candidate', {
+                                      candidateId: candidate.id,
+                                      notes: reason
+                                    });
+                                  }
+                                }}
+                                className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded text-[11px] font-semibold border border-rose-200"
+                                title="Manually lock candidate session"
+                              >
+                                🔒 Lock
                               </button>
                               <button
                                 onClick={() => handleControlAction('force-submit', { candidateId: candidate.id })}
@@ -848,6 +946,7 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
                               Select & Notify
                             </button>
                           )}
+
 
                           <button
                             onClick={() => handleInspectAttempt(candidate.id)}

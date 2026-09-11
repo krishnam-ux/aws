@@ -20,12 +20,8 @@ import { GET as adminExportGet } from '../src/app/api/admin/exams/export/route';
 const ADMIN_HEADER = { Authorization: 'Bearer awssbg-admin-session-token-secure-hash' };
 
 test('E2E Exam API: Full Student and Admin Flow', async () => {
-  // Pre-cleanup in case of prior test runs
-  const existingAttempts = await db.examAttempts.getByExamId('exam-e2e-live-test');
-  for (const a of existingAttempts) {
-    await db.examAttempts.deleteById(a.id);
-  }
-  await db.exams.deleteOne('exam-e2e-live-test');
+  const testExamId = `exam-e2e-${Date.now()}`;
+  const testRoll = `23BCS-${Date.now()}`;
 
   // 1. Admin creates / verifies exam
   const createExamReq = new Request('http://localhost/api/admin/exams', {
@@ -34,8 +30,8 @@ test('E2E Exam API: Full Student and Admin Flow', async () => {
     body: JSON.stringify({
       action: 'create',
       exam: {
-        id: 'exam-e2e-live-test',
-        examCode: 'AWS-E2E-99',
+        id: testExamId,
+        examCode: `AWS-E2E-${Date.now().toString().slice(-4)}`,
         password: 'pass-e2e-2026',
         title: 'AWS Certified Developer Assessment',
         description: 'E2E Assessment',
@@ -73,15 +69,15 @@ test('E2E Exam API: Full Student and Admin Flow', async () => {
   assert.equal(createExamRes.status, 200);
   assert.equal(createExamData.success, true);
 
-  // 2. Student Authentication (Enters lobby in LOCKED state)
+  // 2. Student registers & authenticates via Auth API
   const authReq = new Request('http://localhost/api/exam/auth', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      examId: 'exam-e2e-live-test',
+      examId: testExamId,
       password: 'pass-e2e-2026',
       studentName: 'Priyanka Sharma',
-      rollNumber: '23BCS5555',
+      rollNumber: testRoll,
       email: 'priyanka@cumail.in'
     })
   });
@@ -104,7 +100,7 @@ test('E2E Exam API: Full Student and Admin Flow', async () => {
   assert.equal(lobbyData.status, 'LOCKED');
 
   // 4. Admin views Live Control feed and sees candidate
-  const liveReq = new Request(`http://localhost/api/admin/exams/live?examId=exam-e2e-live-test`, {
+  const liveReq = new Request(`http://localhost/api/admin/exams/live?examId=${testExamId}`, {
     headers: ADMIN_HEADER
   });
   const liveRes = await adminLiveGet(liveReq);
@@ -120,7 +116,7 @@ test('E2E Exam API: Full Student and Admin Flow', async () => {
     headers: { ...ADMIN_HEADER, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       action: 'verify',
-      examId: 'exam-e2e-live-test',
+      examId: testExamId,
       candidateId: attemptId
     })
   });
@@ -133,7 +129,7 @@ test('E2E Exam API: Full Student and Admin Flow', async () => {
     headers: { ...ADMIN_HEADER, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       action: 'unlock',
-      examId: 'exam-e2e-live-test',
+      examId: testExamId,
       candidateId: attemptId
     })
   });
@@ -189,7 +185,7 @@ test('E2E Exam API: Full Student and Admin Flow', async () => {
     body: JSON.stringify({
       attemptId,
       token,
-      eventType: 'FULLSCREEN_EXIT',
+      eventType: 'TAB_BLUR',
       severity: 'WARNING'
     })
   });
@@ -237,7 +233,7 @@ test('E2E Exam API: Full Student and Admin Flow', async () => {
   assert.ok(pdfData.error.includes('disabled'));
 
   // 15. SEB Config download endpoint
-  const sebReq = new Request(`http://localhost/api/exam/seb-config?examId=exam-e2e-live-test`);
+  const sebReq = new Request(`http://localhost/api/exam/seb-config?examId=${testExamId}`);
   const sebRes = await sebConfigGet(sebReq);
   assert.equal(sebRes.status, 200);
   assert.equal(sebRes.headers.get('Content-Type'), 'application/seb');
@@ -279,7 +275,7 @@ test('E2E Exam API: Full Student and Admin Flow', async () => {
   assert.ok(selectionEmail.message.includes('Outstanding technical performance'));
 
   // 18. Admin Exports CSV Results
-  const exportReq = new Request(`http://localhost/api/admin/exams/export?examId=exam-e2e-live-test`, {
+  const exportReq = new Request(`http://localhost/api/admin/exams/export?examId=${testExamId}`, {
     headers: ADMIN_HEADER
   });
   const exportRes = await adminExportGet(exportReq);
@@ -290,5 +286,5 @@ test('E2E Exam API: Full Student and Admin Flow', async () => {
 
   // 19. Cleanup
   await db.examAttempts.deleteById(attemptId);
-  await db.exams.deleteOne('exam-e2e-live-test');
+  await db.exams.deleteOne(testExamId);
 });

@@ -20,9 +20,13 @@ export function generateAttemptId(): string {
   return `att_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
 }
 
+export function generateUnlockPassword(): string {
+  return `UNLOCK-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+}
+
 /**
  * Sanitize exam payload for public/student consumption.
- * STRICT SECURITY: Correct answers and explanations are stripped.
+ * STRICT SECURITY: Correct answers, explanations, and examUnlockPassword are strictly stripped.
  */
 export function sanitizeExamForStudent(exam: Exam) {
   return {
@@ -47,10 +51,14 @@ export function sanitizeExamForStudent(exam: Exam) {
 /**
  * Authoritative Server-side timer calculation.
  * Returns the exact number of seconds left for an attempt.
+ * If EXAM_LOCKED, returns paused remaining seconds so candidate is not penalized while waiting.
  */
 export function calculateRemainingSeconds(attempt: ExamAttempt, exam: Exam): number {
   if (attempt.status === 'SUBMITTED' || attempt.status === 'REVIEW_REQUIRED') {
     return 0;
+  }
+  if (attempt.status === 'EXAM_LOCKED' && typeof attempt.pausedRemainingSeconds === 'number') {
+    return Math.max(0, attempt.pausedRemainingSeconds);
   }
   if (!attempt.startedAt) {
     return (exam.durationMinutes + (attempt.extendedMinutes || 0)) * 60;
@@ -64,6 +72,135 @@ export function calculateRemainingSeconds(attempt: ExamAttempt, exam: Exam): num
 
   return Math.max(0, remaining);
 }
+
+/**
+ * Transition candidate attempt into EXAM_LOCKED state.
+ * Freezes questions and pauses candidate timer countdown.
+ */
+export async function lockExamAttempt(
+  attemptId: string,
+  reason: string,
+  source: string = 'SYSTEM'
+): Promise<ExamAttempt | null> {
+  const attempt = await db.examAttempts.getById(attemptId);
+  if (!attempt) return null;
+  if (attempt.status !== 'IN_EXAM') return attempt;
+
+  const exam = await db.exams.getById(attempt.examId);
+  const remainingSec = exam ? calculateRemainingSeconds(attempt, exam) : 0;
+  const newLockCount = (attempt.lockCount || 0) + 1;
+
+  const updatedAttempt = await db.examAttempts.updateOne(attemptId, {
+    status: 'EXAM_LOCKED',
+    lockedAt: new Date().toISOString(),
+    lockedBy: source,
+    lockReason: reason,
+    lockCount: newLockCount,
+    pausedRemainingSeconds: remainingSec,
+    securityViolationsCount: (attempt.securityViolationsCount || 0) + 1
+  });
+
+  // Log EXAM_LOCKED security event
+  const secEvent: ExamSecurityEvent = {
+    id: `sec_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
+    attemptId: attempt.id,
+    examId: attempt.examId,
+    studentName: attempt.studentName,
+    rollNumber: attempt.rollNumber,
+    eventType: 'EXAM_LOCKED',
+    severity: 'WARNING',
+    metadata: {
+      reason,
+      source,
+      lockCount: newLockCount,
+      pausedRemainingSeconds: remainingSec
+    },
+    timestamp: new Date().toISOString()
+  };
+  await db.examSecurityLogs.insertOne(secEvent);
+
+  if (source === 'ADMIN') {
+    await logAdminAudit(attempt.examId, 'admin', 'MANUAL_LOCK_CANDIDATE', {
+      candidateId: attempt.id,
+      studentName: attempt.studentName,
+      rollNumber: attempt.rollNumber,
+      reason,
+      previousState: 'IN_EXAM',
+      newState: 'EXAM_LOCKED'
+    }, attempt.id);
+  }
+
+  return updatedAttempt;
+}
+
+/**
+ * Unlock a locked candidate attempt and resume examination.
+ */
+export async function unlockExamAttempt(
+  attemptId: string,
+  unlockMethod: 'STUDENT_PASSWORD' | 'ADMIN_MANUAL',
+  adminUser?: string,
+  reason?: string
+): Promise<ExamAttempt | null> {
+  const attempt = await db.examAttempts.getById(attemptId);
+  if (!attempt) return null;
+  if (attempt.status !== 'EXAM_LOCKED') return attempt;
+
+  const exam = await db.exams.getById(attempt.examId);
+  const totalDurationSec = (exam?.durationMinutes || 30) * 60;
+  const pausedSec = typeof attempt.pausedRemainingSeconds === 'number' ? attempt.pausedRemainingSeconds : totalDurationSec;
+
+  // Calculate locked duration to record
+  const lockedMs = attempt.lockedAt ? Date.now() - new Date(attempt.lockedAt).getTime() : 0;
+  const lockedSeconds = Math.max(0, Math.floor(lockedMs / 1000));
+  const newTotalLockedSeconds = (attempt.totalLockedSeconds || 0) + lockedSeconds;
+
+  // Resume startedAt timestamp so elapsed time matches: elapsed = totalDuration - pausedSec
+  const targetStartedAtMs = Date.now() - Math.max(0, (totalDurationSec - pausedSec)) * 1000;
+
+  const updatedAttempt = await db.examAttempts.updateOne(attemptId, {
+    status: 'IN_EXAM',
+    startedAt: new Date(targetStartedAtMs).toISOString(),
+    lockedAt: undefined,
+    pausedRemainingSeconds: undefined,
+    totalLockedSeconds: newTotalLockedSeconds,
+    adminNotes: reason ? `${attempt.adminNotes ? attempt.adminNotes + ' | ' : ''}Unlocked: ${reason}` : attempt.adminNotes
+  });
+
+  // Log EXAM_UNLOCKED security event
+  const secEvent: ExamSecurityEvent = {
+    id: `sec_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
+    attemptId: attempt.id,
+    examId: attempt.examId,
+    studentName: attempt.studentName,
+    rollNumber: attempt.rollNumber,
+    eventType: 'EXAM_UNLOCKED',
+    severity: 'INFO',
+    metadata: {
+      unlockMethod,
+      adminUser: adminUser || 'STUDENT',
+      reason: reason || 'Verified Unlock Password',
+      lockedSeconds,
+      totalLockedSeconds: newTotalLockedSeconds
+    },
+    timestamp: new Date().toISOString()
+  };
+  await db.examSecurityLogs.insertOne(secEvent);
+
+  if (adminUser) {
+    await logAdminAudit(attempt.examId, adminUser, 'UNLOCK_LOCKED_CANDIDATE', {
+      candidateId: attempt.id,
+      studentName: attempt.studentName,
+      rollNumber: attempt.rollNumber,
+      reason: reason || 'Proctor manual unlock',
+      previousState: 'EXAM_LOCKED',
+      newState: 'IN_EXAM'
+    }, attempt.id);
+  }
+
+  return updatedAttempt;
+}
+
 
 /**
  * Sends the official exam result email to the candidate.

@@ -15,8 +15,8 @@ function ExamPortalContent({ initialExamId }: ExamPortalPageProps) {
   // Dynamic Exam ID extracted from prop, route params (/exam/[examId]), or search params (?examId=...)
   const routeExamId = initialExamId || (params?.examId as string) || searchParams?.get('examId') || '';
 
-  // Phase state: AUTH -> LOBBY -> EXAM -> SUBMITTED
-  const [phase, setPhase] = useState<'AUTH' | 'LOBBY' | 'EXAM' | 'SUBMITTED'>('AUTH');
+  // Phase state: AUTH -> LOBBY -> EXAM -> EXAM_LOCKED -> SUBMITTED
+  const [phase, setPhase] = useState<'AUTH' | 'LOBBY' | 'EXAM' | 'EXAM_LOCKED' | 'SUBMITTED'>('AUTH');
 
   // Auth Form State
   const [examId, setExamId] = useState(routeExamId);
@@ -26,6 +26,13 @@ function ExamPortalContent({ initialExamId }: ExamPortalPageProps) {
   const [email, setEmail] = useState('');
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+
+  // Lock Recovery State
+  const [unlockPasswordInput, setUnlockPasswordInput] = useState('');
+  const [unlockError, setUnlockError] = useState('');
+  const [unlockLoading, setUnlockLoading] = useState(false);
+  const [lockReason, setLockReason] = useState<string | null>(null);
+  const [lockCount, setLockCount] = useState(0);
 
   // Session State
   const [sessionToken, setSessionToken] = useState<string | null>(null);
@@ -75,6 +82,10 @@ function ExamPortalContent({ initialExamId }: ExamPortalPageProps) {
         setAttemptData(data);
         if (data.status === 'IN_EXAM') {
           loadExamSession(attId, tok);
+        } else if (data.status === 'EXAM_LOCKED') {
+          setPhase('EXAM_LOCKED');
+          setLockReason(data.lockReason || 'Secure exam environment interrupted');
+          setLockCount(data.lockCount || 1);
         } else if (data.status === 'SUBMITTED' || data.status === 'REVIEW_REQUIRED') {
           setPhase('SUBMITTED');
         } else {
@@ -102,6 +113,10 @@ function ExamPortalContent({ initialExamId }: ExamPortalPageProps) {
           setAttemptData(data);
           if (data.status === 'IN_EXAM') {
             loadExamSession(attemptId, sessionToken);
+          } else if (data.status === 'EXAM_LOCKED') {
+            setPhase('EXAM_LOCKED');
+            setLockReason(data.lockReason || 'Interrupted');
+            setLockCount(data.lockCount || 1);
           } else if (data.status === 'SUBMITTED' || data.status === 'REVIEW_REQUIRED') {
             setPhase('SUBMITTED');
           }
@@ -114,9 +129,9 @@ function ExamPortalContent({ initialExamId }: ExamPortalPageProps) {
     return () => clearInterval(interval);
   }, [phase, attemptId, sessionToken]);
 
-  // Real-time Exam Session & Authoritative Timer Background Sync (3s interval)
+  // Real-time Exam Session & Authoritative Timer Background Sync (1.5s interval)
   useEffect(() => {
-    if (phase !== 'EXAM' || !attemptId || !sessionToken) return;
+    if ((phase !== 'EXAM' && phase !== 'EXAM_LOCKED') || !attemptId || !sessionToken) return;
 
     const syncInterval = setInterval(async () => {
       try {
@@ -132,6 +147,24 @@ function ExamPortalContent({ initialExamId }: ExamPortalPageProps) {
           }
           if (data.attempt.status === 'SUBMITTED' || data.attempt.status === 'REVIEW_REQUIRED') {
             setPhase('SUBMITTED');
+          } else if (data.attempt.status === 'EXAM_LOCKED') {
+            if (phase !== 'EXAM_LOCKED') {
+              setPhase('EXAM_LOCKED');
+              setLockReason(data.attempt.lockReason || 'Interrupted');
+              setLockCount(data.attempt.lockCount || 1);
+            }
+          } else if (data.attempt.status === 'IN_EXAM' && phase === 'EXAM_LOCKED') {
+            // Invigilator remotely unlocked from Admin Portal!
+            setPhase('EXAM');
+            setLockReason(null);
+            setUnlockPasswordInput('');
+            setUnlockError('');
+            if (data.exam && data.exam.questions?.length > 0) {
+              setExamData(data.exam);
+            }
+            if (data.attempt.answers) {
+              setAnswers(data.attempt.answers);
+            }
           }
           if (data.attempt.securityViolationsCount !== undefined) {
             setViolationCount(data.attempt.securityViolationsCount);
@@ -140,10 +173,11 @@ function ExamPortalContent({ initialExamId }: ExamPortalPageProps) {
       } catch (err) {
         console.error('Exam sync error:', err);
       }
-    }, 3000);
+    }, 1500);
 
     return () => clearInterval(syncInterval);
   }, [phase, attemptId, sessionToken]);
+
 
   // Exam Local Countdown Timer (1s ticks)
   useEffect(() => {
@@ -229,6 +263,10 @@ function ExamPortalContent({ initialExamId }: ExamPortalPageProps) {
 
       if (data.attempt.status === 'SUBMITTED' || data.attempt.status === 'REVIEW_REQUIRED') {
         setPhase('SUBMITTED');
+      } else if (data.attempt.status === 'EXAM_LOCKED') {
+        setPhase('EXAM_LOCKED');
+        setLockReason(data.attempt.lockReason || 'Secure exam environment interrupted');
+        setLockCount(data.attempt.lockCount || 1);
       } else {
         setPhase('EXAM');
       }
@@ -262,6 +300,45 @@ function ExamPortalContent({ initialExamId }: ExamPortalPageProps) {
     }
   };
 
+  // Recover Lock (Using Invigilator Password)
+  const handleRecoverLock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!attemptId || !sessionToken || !unlockPasswordInput.trim()) return;
+    setUnlockError('');
+    setUnlockLoading(true);
+
+    try {
+      const res = await fetch('/api/exam/recover-lock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          attemptId,
+          token: sessionToken,
+          unlockPassword: unlockPasswordInput.trim()
+        }),
+        cache: 'no-store'
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to unlock exam session.');
+      }
+
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+
+      setPhase('EXAM');
+      setUnlockPasswordInput('');
+      setLockReason(null);
+      await loadExamSession(attemptId, sessionToken);
+    } catch (err: any) {
+      setUnlockError(err.message || 'Incorrect Invigilator Password.');
+    } finally {
+      setUnlockLoading(false);
+    }
+  };
+
   // Log Security Event
   const logClientSecurityEvent = useCallback(
     async (eventType: string, severity: 'INFO' | 'WARNING' | 'CRITICAL' = 'WARNING', metadata: any = {}) => {
@@ -286,7 +363,11 @@ function ExamPortalContent({ initialExamId }: ExamPortalPageProps) {
           setViolationCount(data.violationCount);
         }
 
-        if (data.autoSubmitted) {
+        if (data.locked || data.status === 'EXAM_LOCKED') {
+          setPhase('EXAM_LOCKED');
+          setLockReason(data.lockReason || eventType);
+          setLockCount(data.lockCount || 1);
+        } else if (data.autoSubmitted) {
           setSecurityWarning('Security violation limit exceeded. Your exam has been submitted for review.');
           setTimeout(() => {
             setPhase('SUBMITTED');
@@ -309,6 +390,8 @@ function ExamPortalContent({ initialExamId }: ExamPortalPageProps) {
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement) {
         logClientSecurityEvent('FULLSCREEN_EXIT', 'WARNING', { action: 'exited_fullscreen' });
+        setPhase('EXAM_LOCKED');
+        setLockReason('FULLSCREEN_EXIT');
       }
     };
 
@@ -317,6 +400,13 @@ function ExamPortalContent({ initialExamId }: ExamPortalPageProps) {
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        logClientSecurityEvent('ESC_FULLSCREEN_EXIT', 'WARNING', { key: 'Escape' });
+        setPhase('EXAM_LOCKED');
+        setLockReason('ESC_FULLSCREEN_EXIT');
+        return false;
+      }
       if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C'))) {
         e.preventDefault();
         logClientSecurityEvent('DEVTOOLS_ATTEMPT', 'CRITICAL', { key: e.key });
@@ -328,6 +418,7 @@ function ExamPortalContent({ initialExamId }: ExamPortalPageProps) {
         return false;
       }
     };
+
 
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault();
@@ -1001,6 +1092,123 @@ function ExamPortalContent({ initialExamId }: ExamPortalPageProps) {
             </div>
           </div>
         )}
+      </main>
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // RENDER PHASE: EXAM LOCKED (SECURITY / FULLSCREEN / SEB INTERRUPTION)
+  // --------------------------------------------------------------------------
+  if (phase === 'EXAM_LOCKED') {
+    return (
+      <main className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between py-10 px-4 sm:px-6 lg:px-8 select-none">
+        <div className="max-w-lg mx-auto w-full">
+          {/* Lock Card */}
+          <div className="bg-slate-900/95 backdrop-blur-2xl border-2 border-rose-500/50 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-rose-950/40 space-y-6">
+            <div className="text-center space-y-3">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-rose-500/10 border-2 border-rose-500/40 text-rose-400 animate-pulse shadow-xl shadow-rose-500/20 mx-auto">
+                <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+
+              <div className="inline-block px-3 py-1 rounded-full text-xs font-mono font-bold bg-rose-500/20 text-rose-400 border border-rose-500/40 uppercase tracking-wider">
+                Lock Incident #{lockCount}
+              </div>
+
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-display">
+                EXAM LOCKED
+              </h1>
+
+              <p className="text-sm text-slate-300 max-w-sm mx-auto">
+                Your exam session has been temporarily locked because the secure exam environment was interrupted.
+              </p>
+              <p className="text-xs text-rose-400 font-medium">
+                Please contact the invigilator / admin to resume your exam.
+              </p>
+            </div>
+
+            {/* Interruption Reason & Details */}
+            <div className="bg-slate-950/80 rounded-xl p-4 border border-slate-800 space-y-2.5 text-xs">
+              <div className="flex justify-between items-center text-slate-400 border-b border-slate-800/80 pb-2">
+                <span>Lock Reason:</span>
+                <span className="text-rose-400 font-semibold font-mono">
+                  {lockReason ? lockReason.replace(/_/g, ' ') : 'FULLSCREEN INTERRUPTION'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-slate-400 border-b border-slate-800/80 pb-2">
+                <span>Candidate:</span>
+                <span className="text-slate-200 font-medium">{attemptData?.studentName || studentName}</span>
+              </div>
+              <div className="flex justify-between items-center text-slate-400 border-b border-slate-800/80 pb-2">
+                <span>Roll Number:</span>
+                <span className="text-slate-200 font-mono font-medium">{attemptData?.rollNumber || rollNumber}</span>
+              </div>
+              <div className="flex justify-between items-center text-slate-400">
+                <span>Preserved Remaining Time:</span>
+                <span className="text-emerald-400 font-mono font-bold">
+                  ⏱️ {formatTime(remainingSeconds)} (Paused)
+                </span>
+              </div>
+            </div>
+
+            {/* Invigilator Unlock Form */}
+            <form onSubmit={handleRecoverLock} className="space-y-4 pt-2">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                  Invigilator Unlock Password
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    value={unlockPasswordInput}
+                    onChange={(e) => setUnlockPasswordInput(e.target.value)}
+                    placeholder="Enter invigilator unlock password"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 font-mono"
+                    required
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-500">
+                    🔑
+                  </div>
+                </div>
+              </div>
+
+              {unlockError && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center space-x-2">
+                  <span>⚠️</span>
+                  <span>{unlockError}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={unlockLoading || !unlockPasswordInput.trim()}
+                className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-bold text-sm shadow-xl shadow-rose-600/30 transition-all duration-200 disabled:opacity-50 cursor-pointer flex items-center justify-center space-x-2"
+              >
+                {unlockLoading ? (
+                  <span>Verifying Password…</span>
+                ) : (
+                  <>
+                    <span>🔓</span>
+                    <span>Unlock Exam Session</span>
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Real-time sync note */}
+            <div className="pt-2 border-t border-slate-800 text-center">
+              <div className="flex items-center justify-center space-x-1.5 text-[11px] text-slate-400">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                <span>Proctor Live Sync Active • If unlocked by admin remotely, your exam resumes automatically.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="text-center text-xs text-slate-500 mt-8">
+          AWS Student Builder Group • Chandigarh University – Uttar Pradesh
+        </div>
       </main>
     );
   }

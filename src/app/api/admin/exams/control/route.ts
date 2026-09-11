@@ -28,14 +28,21 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { action, examId, candidateId, candidateIds, minutes = 5, notes = '' } = body;
+    const rawAction = body.action;
+    const examId = body.examId;
+    const candidateId = body.candidateId || body.attemptId;
+    const candidateIds = body.candidateIds || (candidateId ? [candidateId] : []);
+    const minutes = body.minutes || 5;
+    const notes = body.notes || body.reason || '';
 
-    if (!action) {
+    if (!rawAction) {
       return NextResponse.json(
         { error: 'Action is required.' },
         { status: 400, headers: noStoreHeaders }
       );
     }
+
+    const action = rawAction === 'verify-candidate' ? 'verify' : rawAction === 'unlock-candidate' ? 'unlock' : rawAction;
 
     // 1. Verify candidate
     if (action === 'verify') {
@@ -244,7 +251,39 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, action: 'mark-selected' }, { headers: noStoreHeaders });
     }
 
-    // 14. Delete Single Candidate / Reset Attempt
+    // 14. Unlock Locked Candidate (from EXAM_LOCKED state)
+    if (action === 'unlock-locked-candidate') {
+      if (!candidateId) return NextResponse.json({ error: 'Candidate ID is required.' }, { status: 400, headers: noStoreHeaders });
+      const { unlockExamAttempt } = await import('@/lib/exam');
+      const unlocked = await unlockExamAttempt(candidateId, 'ADMIN_MANUAL', 'admin', notes || 'Proctor manual unlock authorization');
+      if (!unlocked) {
+        return NextResponse.json({ error: 'Failed to unlock candidate attempt.' }, { status: 400, headers: noStoreHeaders });
+      }
+      return NextResponse.json({ success: true, action: 'unlock-locked-candidate', status: 'IN_EXAM', candidateId }, { headers: noStoreHeaders });
+    }
+
+    // 15. Manual Lock Candidate (transitions IN_EXAM to EXAM_LOCKED)
+    if (action === 'manual-lock-candidate') {
+      if (!candidateId) return NextResponse.json({ error: 'Candidate ID is required.' }, { status: 400, headers: noStoreHeaders });
+      const { lockExamAttempt } = await import('@/lib/exam');
+      const locked = await lockExamAttempt(candidateId, notes || 'Proctor Manual Lock', 'ADMIN');
+      if (!locked) {
+        return NextResponse.json({ error: 'Failed to lock candidate attempt.' }, { status: 400, headers: noStoreHeaders });
+      }
+      return NextResponse.json({ success: true, action: 'manual-lock-candidate', status: 'EXAM_LOCKED', candidateId }, { headers: noStoreHeaders });
+    }
+
+    // 16. Regenerate Exam-Specific Unlock Password
+    if (action === 'regenerate-unlock-password') {
+      if (!examId) return NextResponse.json({ error: 'Exam ID is required.' }, { status: 400, headers: noStoreHeaders });
+      const { generateUnlockPassword } = await import('@/lib/exam');
+      const newPassword = generateUnlockPassword();
+      await db.exams.updateOne(examId, { examUnlockPassword: newPassword });
+      await logAdminAudit(examId, 'admin', 'REGENERATE_UNLOCK_PASSWORD', { newPassword });
+      return NextResponse.json({ success: true, action: 'regenerate-unlock-password', examUnlockPassword: newPassword }, { headers: noStoreHeaders });
+    }
+
+    // 17. Delete Single Candidate / Reset Attempt
     if (action === 'delete-candidate' || action === 'delete-attempt') {
       if (!candidateId) return NextResponse.json({ error: 'Candidate ID is required.' }, { status: 400, headers: noStoreHeaders });
       const attempt = await db.examAttempts.getById(candidateId);
@@ -260,7 +299,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, action: 'delete-candidate', candidateId }, { headers: noStoreHeaders });
     }
 
-    // 15. Bulk Delete Selected Candidates
+    // 18. Bulk Delete Selected Candidates
     if (action === 'delete-candidates' || action === 'bulk-delete') {
       if (!Array.isArray(candidateIds) || candidateIds.length === 0) {
         return NextResponse.json({ error: 'Candidate IDs array is required.' }, { status: 400, headers: noStoreHeaders });
@@ -270,7 +309,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, action: 'delete-candidates', count: deletedCount }, { headers: noStoreHeaders });
     }
 
-    // 16. Delete All Waiting / Unverified Candidates in Exam Lobby
+    // 19. Delete All Waiting / Unverified Candidates in Exam Lobby
     if (action === 'delete-waiting') {
       if (!examId) return NextResponse.json({ error: 'Exam ID is required.' }, { status: 400, headers: noStoreHeaders });
       const deletedCount = await db.examAttempts.deleteByExamId(examId, ['LOCKED', 'VERIFIED']);
@@ -278,7 +317,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, action: 'delete-waiting', count: deletedCount }, { headers: noStoreHeaders });
     }
 
-    // 17. Delete All Candidates for this Exam
+    // 20. Delete All Candidates for this Exam
     if (action === 'delete-all-candidates') {
       if (!examId) return NextResponse.json({ error: 'Exam ID is required.' }, { status: 400, headers: noStoreHeaders });
       const deletedCount = await db.examAttempts.deleteByExamId(examId);
@@ -287,6 +326,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ error: 'Unknown action.' }, { status: 400, headers: noStoreHeaders });
+
   } catch (error: any) {
     console.error('Admin exam control error:', error);
     return NextResponse.json(

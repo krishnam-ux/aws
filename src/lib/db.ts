@@ -535,6 +535,15 @@ function invalidateMemoryCache(filename: string): void {
   delete memoryDbCache[filename];
 }
 
+const collectionLocks: Record<string, Promise<any>> = {};
+
+function withCollectionLock<T>(collection: string, fn: () => Promise<T>): Promise<T> {
+  const currentLock = collectionLocks[collection] || Promise.resolve();
+  const nextLock = currentLock.then(() => fn(), () => fn());
+  collectionLocks[collection] = nextLock;
+  return nextLock;
+}
+
 // Generic read/write functions
 async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
   if (hasConfiguredDatabase() && !sql) {
@@ -606,20 +615,26 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
   // 4. Local file fallback only when no database backend is configured.
   const filePath = path.join(DB_DIR, filename);
   if (!fs.existsSync(filePath)) {
+    if (memoryDbCache[filename]?.data) return memoryDbCache[filename].data as T;
     await writeJsonFile(filename, defaultValue);
     return defaultValue;
   }
   try {
     const data = fs.readFileSync(filePath, 'utf-8');
-    const parsed = JSON.parse(data) as T;
-    if (!isRealtime) {
-      memoryDbCache[filename] = {
-        data: parsed,
-        expiresAt: Date.now() + CACHE_TTL_MS
-      };
+    if (!data || !data.trim()) {
+      if (memoryDbCache[filename]?.data) return memoryDbCache[filename].data as T;
+      return defaultValue;
     }
+    const parsed = JSON.parse(data) as T;
+    memoryDbCache[filename] = {
+      data: parsed,
+      expiresAt: Date.now() + CACHE_TTL_MS
+    };
     return parsed;
   } catch (err) {
+    if (memoryDbCache[filename]?.data) {
+      return memoryDbCache[filename].data as T;
+    }
     console.error(`Error reading database file: ${filename}`, err);
     return defaultValue;
   }
@@ -672,10 +687,19 @@ async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
 
   // 4. Local file fallback only when no database backend is configured.
   const filePath = path.join(DB_DIR, filename);
+  const tmpPath = path.join(DB_DIR, `.${filename}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`);
   try {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
+    try {
+      fs.renameSync(tmpPath, filePath);
+    } catch {
+      // In Windows, if renameSync fails due to file lock, copy and delete
+      fs.copyFileSync(tmpPath, filePath);
+      try { fs.unlinkSync(tmpPath); } catch {}
+    }
   } catch (err) {
     console.error(`Error writing database file: ${filename}`, err);
+    try { if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath); } catch {}
   }
 }
 
@@ -2030,30 +2054,45 @@ export const db = {
       );
     },
     insertOne: async (exam: any): Promise<void> => {
-      const exams = await db.exams.getAll();
-      const existingIdx = exams.findIndex((e: any) => e.id === exam.id);
-      if (existingIdx >= 0) {
-        exams[existingIdx] = { ...exams[existingIdx], ...exam, updatedAt: new Date().toISOString() };
-      } else {
-        exams.unshift({ ...exam, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
-      }
-      await writeJsonFile('exams.json', exams);
+      return withCollectionLock('exams.json', async () => {
+        const exams = await db.exams.getAll();
+        const existingIdx = exams.findIndex((e: any) => e.id === exam.id);
+        if (existingIdx >= 0) {
+          exams[existingIdx] = { ...exams[existingIdx], ...exam, updatedAt: new Date().toISOString() };
+        } else {
+          exams.unshift({ ...exam, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+        }
+        await writeJsonFile('exams.json', exams);
+      });
     },
     updateOne: async (id: string, fields: Partial<any>): Promise<void> => {
-      const exams = await db.exams.getAll();
-      const idx = exams.findIndex((e: any) => e.id === id);
-      if (idx !== -1) {
-        exams[idx] = { ...exams[idx], ...fields, updatedAt: new Date().toISOString() };
-        await writeJsonFile('exams.json', exams);
-      }
+      return withCollectionLock('exams.json', async () => {
+        const cleanId = String(id || '').trim().toLowerCase();
+        const cleanNoPrefix = cleanId.startsWith('exam-') ? cleanId.substring(5) : cleanId;
+        const exams = await db.exams.getAll();
+        const idx = exams.findIndex((e: any) => {
+          if (!e) return false;
+          const eId = String(e.id || '').trim().toLowerCase();
+          const eCode = String(e.examCode || '').trim().toLowerCase();
+          return eId === cleanId || eCode === cleanId || eId === cleanNoPrefix || eId === `exam-${cleanId}`;
+        });
+        if (idx !== -1) {
+          exams[idx] = { ...exams[idx], ...fields, updatedAt: new Date().toISOString() };
+          await writeJsonFile('exams.json', exams);
+        }
+      });
     },
     deleteOne: async (id: string): Promise<void> => {
-      let exams = await db.exams.getAll();
-      exams = exams.filter((e: any) => e.id !== id);
-      await writeJsonFile('exams.json', exams);
+      return withCollectionLock('exams.json', async () => {
+        let exams = await db.exams.getAll();
+        exams = exams.filter((e: any) => e.id !== id);
+        await writeJsonFile('exams.json', exams);
+      });
     },
     saveAll: async (data: any[]): Promise<void> => {
-      await writeJsonFile('exams.json', data);
+      return withCollectionLock('exams.json', async () => {
+        await writeJsonFile('exams.json', data);
+      });
     }
   },
   examAttempts: {
@@ -2085,74 +2124,86 @@ export const db = {
       return matching.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
     },
     insertOne: async (attempt: any): Promise<void> => {
-      const attempts = await db.examAttempts.getAll();
-      attempts.unshift(attempt);
-      await writeJsonFile('exam_attempts.json', attempts);
+      return withCollectionLock('exam_attempts.json', async () => {
+        const attempts = await db.examAttempts.getAll();
+        attempts.unshift(attempt);
+        await writeJsonFile('exam_attempts.json', attempts);
+      });
     },
     updateOne: async (id: string, fields: Partial<any>): Promise<any | null> => {
-      const attempts = await db.examAttempts.getAll();
-      const idx = attempts.findIndex((a: any) => a.id === id);
-      if (idx !== -1) {
-        attempts[idx] = { ...attempts[idx], ...fields, updatedAt: new Date().toISOString() };
-        await writeJsonFile('exam_attempts.json', attempts);
-        return attempts[idx];
-      }
-      return null;
+      return withCollectionLock('exam_attempts.json', async () => {
+        const attempts = await db.examAttempts.getAll();
+        const idx = attempts.findIndex((a: any) => a.id === id);
+        if (idx !== -1) {
+          attempts[idx] = { ...attempts[idx], ...fields, updatedAt: new Date().toISOString() };
+          await writeJsonFile('exam_attempts.json', attempts);
+          return attempts[idx];
+        }
+        return null;
+      });
     },
     deleteById: async (id: string): Promise<void> => {
-      let attempts = await db.examAttempts.getAll();
-      attempts = attempts.filter((a: any) => a.id !== id);
-      await writeJsonFile('exam_attempts.json', attempts);
-      try {
-        let secLogs = await db.examSecurityLogs.getAll();
-        secLogs = secLogs.filter((l: any) => l.attemptId !== id);
-        await writeJsonFile('exam_security_logs.json', secLogs);
-      } catch (e) {
-        console.error('Error cleaning security logs for deleted attempt:', e);
-      }
+      return withCollectionLock('exam_attempts.json', async () => {
+        let attempts = await db.examAttempts.getAll();
+        attempts = attempts.filter((a: any) => a.id !== id);
+        await writeJsonFile('exam_attempts.json', attempts);
+        try {
+          let secLogs = await db.examSecurityLogs.getAll();
+          secLogs = secLogs.filter((l: any) => l.attemptId !== id);
+          await writeJsonFile('exam_security_logs.json', secLogs);
+        } catch (e) {
+          console.error('Error cleaning security logs for deleted attempt:', e);
+        }
+      });
     },
     deleteMany: async (ids: string[]): Promise<number> => {
-      const idSet = new Set(ids);
-      let attempts = await db.examAttempts.getAll();
-      const beforeCount = attempts.length;
-      attempts = attempts.filter((a: any) => !idSet.has(a.id));
-      await writeJsonFile('exam_attempts.json', attempts);
-      try {
-        let secLogs = await db.examSecurityLogs.getAll();
-        secLogs = secLogs.filter((l: any) => !idSet.has(l.attemptId));
-        await writeJsonFile('exam_security_logs.json', secLogs);
-      } catch (e) {
-        console.error('Error cleaning security logs for deleted attempts:', e);
-      }
-      return beforeCount - attempts.length;
+      return withCollectionLock('exam_attempts.json', async () => {
+        const idSet = new Set(ids);
+        let attempts = await db.examAttempts.getAll();
+        const beforeCount = attempts.length;
+        attempts = attempts.filter((a: any) => !idSet.has(a.id));
+        await writeJsonFile('exam_attempts.json', attempts);
+        try {
+          let secLogs = await db.examSecurityLogs.getAll();
+          secLogs = secLogs.filter((l: any) => !idSet.has(l.attemptId));
+          await writeJsonFile('exam_security_logs.json', secLogs);
+        } catch (e) {
+          console.error('Error cleaning security logs for deleted attempts:', e);
+        }
+        return beforeCount - attempts.length;
+      });
     },
     deleteByExamId: async (examId: string, filterStatus?: string[]): Promise<number> => {
-      let attempts = await db.examAttempts.getAll();
-      const beforeCount = attempts.length;
-      const statusSet = filterStatus && filterStatus.length > 0 ? new Set(filterStatus) : null;
-      
-      const removedAttemptIds = new Set<string>();
-      attempts = attempts.filter((a: any) => {
-        if (a.examId === examId) {
-          if (!statusSet || statusSet.has(a.status)) {
-            removedAttemptIds.add(a.id);
-            return false;
+      return withCollectionLock('exam_attempts.json', async () => {
+        let attempts = await db.examAttempts.getAll();
+        const beforeCount = attempts.length;
+        const statusSet = filterStatus && filterStatus.length > 0 ? new Set(filterStatus) : null;
+        
+        const removedAttemptIds = new Set<string>();
+        attempts = attempts.filter((a: any) => {
+          if (a.examId === examId) {
+            if (!statusSet || statusSet.has(a.status)) {
+              removedAttemptIds.add(a.id);
+              return false;
+            }
           }
+          return true;
+        });
+        await writeJsonFile('exam_attempts.json', attempts);
+        try {
+          let secLogs = await db.examSecurityLogs.getAll();
+          secLogs = secLogs.filter((l: any) => !removedAttemptIds.has(l.attemptId));
+          await writeJsonFile('exam_security_logs.json', secLogs);
+        } catch (e) {
+          console.error('Error cleaning security logs for deleted exam attempts:', e);
         }
-        return true;
+        return beforeCount - attempts.length;
       });
-      await writeJsonFile('exam_attempts.json', attempts);
-      try {
-        let secLogs = await db.examSecurityLogs.getAll();
-        secLogs = secLogs.filter((l: any) => !removedAttemptIds.has(l.attemptId));
-        await writeJsonFile('exam_security_logs.json', secLogs);
-      } catch (e) {
-        console.error('Error cleaning security logs for deleted exam attempts:', e);
-      }
-      return beforeCount - attempts.length;
     },
     saveAll: async (data: any[]): Promise<void> => {
-      await writeJsonFile('exam_attempts.json', data);
+      return withCollectionLock('exam_attempts.json', async () => {
+        await writeJsonFile('exam_attempts.json', data);
+      });
     }
   },
   examSecurityLogs: {
@@ -2168,12 +2219,16 @@ export const db = {
       return logs.filter((l: any) => l.examId === examId);
     },
     insertOne: async (log: any): Promise<void> => {
-      const logs = await db.examSecurityLogs.getAll();
-      logs.unshift(log);
-      await writeJsonFile('exam_security_logs.json', logs);
+      return withCollectionLock('exam_security_logs.json', async () => {
+        const logs = await db.examSecurityLogs.getAll();
+        logs.unshift(log);
+        await writeJsonFile('exam_security_logs.json', logs);
+      });
     },
     saveAll: async (data: any[]): Promise<void> => {
-      await writeJsonFile('exam_security_logs.json', data);
+      return withCollectionLock('exam_security_logs.json', async () => {
+        await writeJsonFile('exam_security_logs.json', data);
+      });
     }
   },
   examAuditLogs: {
@@ -2185,12 +2240,16 @@ export const db = {
       return logs.filter((l: any) => l.examId === examId);
     },
     insertOne: async (log: any): Promise<void> => {
-      const logs = await db.examAuditLogs.getAll();
-      logs.unshift(log);
-      await writeJsonFile('exam_audit_logs.json', logs);
+      return withCollectionLock('exam_audit_logs.json', async () => {
+        const logs = await db.examAuditLogs.getAll();
+        logs.unshift(log);
+        await writeJsonFile('exam_audit_logs.json', logs);
+      });
     },
     saveAll: async (data: any[]): Promise<void> => {
-      await writeJsonFile('exam_audit_logs.json', data);
+      return withCollectionLock('exam_audit_logs.json', async () => {
+        await writeJsonFile('exam_audit_logs.json', data);
+      });
     }
   }
 };

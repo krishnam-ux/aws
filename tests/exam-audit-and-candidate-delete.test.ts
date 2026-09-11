@@ -79,12 +79,17 @@ test('Audit & Verification: Resilient Exam Lookup & Immediate Accessibility', as
 });
 
 test('Audit & Verification: Candidate Deletion Actions & Protection', async () => {
-  const testExamId = 'exam-delete-test';
+  const testExamId = `exam-delete-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  const c1Id = `att-cand-1-${Date.now()}`;
+  const c2Id = `att-cand-2-${Date.now()}`;
+  const c3Id = `att-cand-3-${Date.now()}`;
+
   await db.exams.deleteOne(testExamId);
+  await db.examAttempts.deleteByExamId(testExamId);
 
   await db.exams.insertOne({
     id: testExamId,
-    examCode: 'AWS-DEL-01',
+    examCode: `AWS-DEL-${Date.now().toString().slice(-4)}`,
     password: 'del-test-pass',
     title: 'Candidate Delete Test Exam',
     description: 'Verifying candidate deletion capabilities',
@@ -110,12 +115,12 @@ test('Audit & Verification: Candidate Deletion Actions & Protection', async () =
 
   // Seed 3 candidate attempts: 2 LOCKED, 1 IN_EXAM
   const c1: ExamAttempt = {
-    id: 'att-cand-1',
+    id: c1Id,
     examId: testExamId,
     studentName: 'Waiting Candidate A',
-    rollNumber: '23BCS1001',
+    rollNumber: `23BCS1001-${Date.now()}`,
     email: 'candA@cumail.in',
-    sessionToken: 'token-c1',
+    sessionToken: `token-c1-${Date.now()}`,
     status: 'LOCKED',
     extendedMinutes: 0,
     answers: {},
@@ -130,12 +135,12 @@ test('Audit & Verification: Candidate Deletion Actions & Protection', async () =
   };
 
   const c2: ExamAttempt = {
-    id: 'att-cand-2',
+    id: c2Id,
     examId: testExamId,
     studentName: 'Waiting Candidate B',
-    rollNumber: '23BCS1002',
+    rollNumber: `23BCS1002-${Date.now()}`,
     email: 'candB@cumail.in',
-    sessionToken: 'token-c2',
+    sessionToken: `token-c2-${Date.now()}`,
     status: 'LOCKED',
     extendedMinutes: 0,
     answers: {},
@@ -150,12 +155,12 @@ test('Audit & Verification: Candidate Deletion Actions & Protection', async () =
   };
 
   const c3: ExamAttempt = {
-    id: 'att-cand-3',
+    id: c3Id,
     examId: testExamId,
     studentName: 'Active Candidate C',
-    rollNumber: '23BCS1003',
+    rollNumber: `23BCS1003-${Date.now()}`,
     email: 'candC@cumail.in',
-    sessionToken: 'token-c3',
+    sessionToken: `token-c3-${Date.now()}`,
     status: 'IN_EXAM',
     startedAt: new Date().toISOString(),
     extendedMinutes: 0,
@@ -191,7 +196,7 @@ test('Audit & Verification: Candidate Deletion Actions & Protection', async () =
     body: JSON.stringify({
       action: 'delete-candidate',
       examId: testExamId,
-      candidateId: 'att-cand-1'
+      candidateId: c1Id
     })
   });
   const delSingleRes = await adminControlPost(delSingleReq);
@@ -200,7 +205,7 @@ test('Audit & Verification: Candidate Deletion Actions & Protection', async () =
   assert.equal(delSingleData.success, true);
 
   // Confirm c1 is deleted
-  const fetchedC1 = await db.examAttempts.getById('att-cand-1');
+  const fetchedC1 = await db.examAttempts.getById(c1Id);
   assert.equal(fetchedC1, null, 'Candidate 1 must be deleted');
 
   // 3. Delete waiting candidates in lobby (c2)
@@ -216,9 +221,9 @@ test('Audit & Verification: Candidate Deletion Actions & Protection', async () =
   assert.equal(delWaitingRes.status, 200);
 
   // Confirm c2 is deleted, c3 is still active
-  const fetchedC2 = await db.examAttempts.getById('att-cand-2');
+  const fetchedC2 = await db.examAttempts.getById(c2Id);
   assert.equal(fetchedC2, null, 'Candidate 2 should be deleted by delete-waiting');
-  const fetchedC3 = await db.examAttempts.getById('att-cand-3');
+  const fetchedC3 = await db.examAttempts.getById(c3Id);
   assert.ok(fetchedC3, 'Candidate 3 (IN_EXAM) should not be deleted by delete-waiting');
 
   // 4. Delete all remaining candidates

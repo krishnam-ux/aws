@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { logSecurityEvent, evaluateExamSubmission } from '@/lib/exam';
+import { logSecurityEvent, evaluateExamSubmission, lockExamAttempt } from '@/lib/exam';
 import { SecurityEventType, SecuritySeverity } from '@/types/exam';
 
 export const dynamic = 'force-dynamic';
@@ -39,6 +39,29 @@ export async function POST(request: Request) {
     const maxViolations = exam?.maxSecurityViolations || 3;
     const warningsRemaining = Math.max(0, maxViolations - violationCount);
 
+    const isLockdownInterruption =
+      eventType === 'FULLSCREEN_EXIT' ||
+      eventType === 'ESC_FULLSCREEN_EXIT' ||
+      eventType === 'SEB_LOCKDOWN_VIOLATION' ||
+      eventType === 'LOCKDOWN_VIOLATION';
+
+    if (attempt.status === 'IN_EXAM' && isLockdownInterruption) {
+      const lockedAttempt = await lockExamAttempt(attemptId, eventType, 'SYSTEM');
+      return NextResponse.json(
+        {
+          success: true,
+          locked: true,
+          status: 'EXAM_LOCKED',
+          lockCount: lockedAttempt?.lockCount || 1,
+          lockReason: eventType,
+          violationCount,
+          autoSubmitted: false,
+          message: 'Exam session locked due to secure environment interruption.'
+        },
+        { headers: noStoreHeaders }
+      );
+    }
+
     if (shouldAutoSubmit && (attempt.status === 'IN_EXAM' || attempt.status === 'UNLOCKED')) {
       // Evaluate and lock attempt as REVIEW_REQUIRED
       const result = await evaluateExamSubmission(exam, attempt, 'SECURITY_VIOLATION');
@@ -74,6 +97,7 @@ export async function POST(request: Request) {
       },
       { headers: noStoreHeaders }
     );
+
   } catch (error: any) {
     console.error('Security event error:', error);
     return NextResponse.json(

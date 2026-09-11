@@ -58,9 +58,15 @@ export async function GET(request: Request) {
 
     const sanitizedExam = sanitizeExamForStudent(exam);
 
+    // If candidate is EXAM_LOCKED, strip questions so they are completely inaccessible until unlocked
+    const isLocked = currentStatus === 'EXAM_LOCKED';
+    const returnedExam = isLocked
+      ? { ...sanitizedExam, questions: [] }
+      : sanitizedExam;
+
     return NextResponse.json(
       {
-        exam: sanitizedExam,
+        exam: returnedExam,
         attempt: {
           id: attempt.id,
           studentName: attempt.studentName,
@@ -69,14 +75,19 @@ export async function GET(request: Request) {
           status: currentStatus,
           startedAt: attempt.startedAt,
           expiresAt: attempt.expiresAt,
+          lockedAt: attempt.lockedAt,
+          lockReason: attempt.lockReason,
+          lockCount: attempt.lockCount || 0,
+          pausedRemainingSeconds: attempt.pausedRemainingSeconds ?? (isLocked ? remainingSeconds : undefined),
           remainingSeconds,
-          answers: attempt.answers || {},
-          markedForReview: attempt.markedForReview || [],
+          answers: isLocked ? {} : attempt.answers || {},
+          markedForReview: isLocked ? [] : attempt.markedForReview || [],
           securityViolationsCount: attempt.securityViolationsCount || 0
         }
       },
       { headers: noStoreHeaders }
     );
+
   } catch (error: any) {
     console.error('Exam session error:', error);
     return NextResponse.json(

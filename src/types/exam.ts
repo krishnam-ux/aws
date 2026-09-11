@@ -13,6 +13,7 @@ export interface Exam {
   id: string;
   examCode: string;
   password?: string;
+  examUnlockPassword?: string; // Independent admin-generated password to recover an interrupted/locked exam
   title: string;
   description: string;
   category: string;
@@ -32,6 +33,7 @@ export type AttemptStatus =
   | 'VERIFIED'
   | 'UNLOCKED'
   | 'IN_EXAM'
+  | 'EXAM_LOCKED'
   | 'PAUSED'
   | 'SUBMITTED'
   | 'REVIEW_REQUIRED';
@@ -56,6 +58,12 @@ export interface ExamAttempt {
   startedAt?: string;
   expiresAt?: string;
   submittedAt?: string;
+  lockedAt?: string;
+  lockedBy?: string;
+  lockReason?: string;
+  lockCount?: number;
+  totalLockedSeconds?: number;
+  pausedRemainingSeconds?: number;
   extendedMinutes: number;
   answers: Record<string, number>; // questionId -> selectedOptionIndex
   markedForReview: string[];
@@ -73,13 +81,18 @@ export interface ExamAttempt {
 
 export type SecurityEventType =
   | 'FULLSCREEN_EXIT'
+  | 'ESC_FULLSCREEN_EXIT'
   | 'NAVIGATION_ATTEMPT'
   | 'TAB_BLUR'
+  | 'VISIBILITY_VIOLATION'
   | 'COPY_ATTEMPT'
   | 'PASTE_ATTEMPT'
   | 'DEVTOOLS_ATTEMPT'
   | 'UNAUTHORIZED_KEY'
   | 'LOCKDOWN_VIOLATION'
+  | 'SEB_LOCKDOWN_VIOLATION'
+  | 'EXAM_LOCKED'
+  | 'EXAM_UNLOCKED'
   | 'EXAM_TIMEOUT'
   | 'NETWORK_DISCONNECT'
   | 'NETWORK_RECONNECT';
@@ -111,10 +124,14 @@ export type AdminActionType =
   | 'RESUME'
   | 'EXTEND_TIME'
   | 'FORCE_SUBMIT'
+  | 'UNLOCK_LOCKED_CANDIDATE'
+  | 'MANUAL_LOCK_CANDIDATE'
+  | 'REGENERATE_UNLOCK_PASSWORD'
   | 'CREATE_EXAM'
   | 'UPDATE_EXAM'
   | 'DELETE_EXAM'
   | 'RESET_ATTEMPT';
+
 
 export interface ExamAuditLog {
   id: string;
