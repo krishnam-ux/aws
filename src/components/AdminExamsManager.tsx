@@ -35,6 +35,15 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
   const [isExtendingTimeId, setIsExtendingTimeId] = useState<string | null>(null);
   const [extendMinutes, setExtendMinutes] = useState(5);
 
+  // Delete Candidate Confirmation Modal State
+  const [candidateToDelete, setCandidateToDelete] = useState<{
+    id: string;
+    studentName: string;
+    rollNumber: string;
+    status: string;
+  } | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 3500);
@@ -45,7 +54,10 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
     if (!effectiveToken) return;
     try {
       const res = await fetch('/api/admin/exams', {
-        headers: { Authorization: `Bearer ${effectiveToken}` }
+        headers: {
+          Authorization: `Bearer ${effectiveToken}`,
+          'Cache-Control': 'no-cache'
+        }
       });
       const data = await res.json();
       if (res.ok && data.exams) {
@@ -67,7 +79,10 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
         ? `/api/admin/exams/live?examId=${encodeURIComponent(selectedExamId)}`
         : '/api/admin/exams/live';
       const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${effectiveToken}` }
+        headers: {
+          Authorization: `Bearer ${effectiveToken}`,
+          'Cache-Control': 'no-cache'
+        }
       });
       const data = await res.json();
       if (res.ok) {
@@ -88,12 +103,12 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
     fetchLiveData();
   }, [fetchLiveData]);
 
-  // Live polling interval
+  // Live polling interval (1.5s for real-time synchronization)
   useEffect(() => {
     if (!autoRefresh || !effectiveToken) return;
     const interval = setInterval(() => {
       fetchLiveData();
-    }, 2500);
+    }, 1500);
     return () => clearInterval(interval);
   }, [autoRefresh, fetchLiveData, effectiveToken]);
 
@@ -110,7 +125,8 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${effectiveToken}`
+          Authorization: `Bearer ${effectiveToken}`,
+          'Cache-Control': 'no-cache'
         },
         body: JSON.stringify({
           action,
@@ -137,6 +153,7 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
     if (!effectiveToken) return;
     setInspectAttemptId(attemptId);
     setInspectLoading(true);
+
 
     try {
       const res = await fetch(`/api/admin/exams/attempt-details?attemptId=${encodeURIComponent(attemptId)}`, {
@@ -515,17 +532,30 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
           {/* Bulk Action Buttons */}
           <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={() => handleControlAction('unlock-all')}
+              onClick={() => {
+                fetchLiveData();
+                fetchExams();
+                showToast('Refreshed candidate feed', 'success');
+              }}
               disabled={actionLoading}
-              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition disabled:opacity-50"
+              className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-300 transition"
+              title="Manually refresh candidates & exam state"
+            >
+              🔄 Refresh
+            </button>
+
+            <button
+              onClick={() => handleControlAction('unlock-all')}
+              disabled={actionLoading || (stats.waiting + stats.verified === 0)}
+              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition disabled:opacity-40"
             >
               🔓 Unlock All in Lobby ({stats.waiting + stats.verified})
             </button>
 
             <button
               onClick={() => handleControlAction('start-all')}
-              disabled={actionLoading}
-              className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition disabled:opacity-50"
+              disabled={actionLoading || stats.unlocked === 0}
+              className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition disabled:opacity-40"
             >
               🚀 Start All Unlocked ({stats.unlocked})
             </button>
@@ -547,7 +577,49 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
                 >
                   Start Selected ({selectedCandidateIds.length})
                 </button>
+
+                <button
+                  onClick={() => {
+                    if (confirm(`Remove the ${selectedCandidateIds.length} selected candidate attempt(s)? This will delete their exam attempts.`)) {
+                      handleControlAction('delete-candidates', { candidateIds: selectedCandidateIds });
+                    }
+                  }}
+                  disabled={actionLoading}
+                  className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition shadow-sm"
+                >
+                  🗑️ Delete Selected ({selectedCandidateIds.length})
+                </button>
               </>
+            )}
+
+            {stats.waiting > 0 && (
+              <button
+                onClick={() => {
+                  if (confirm(`Remove all ${stats.waiting} waiting candidate(s) currently in the lobby?`)) {
+                    handleControlAction('delete-waiting');
+                  }
+                }}
+                disabled={actionLoading}
+                className="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold border border-amber-300 transition"
+              >
+                Clear Waiting ({stats.waiting})
+              </button>
+            )}
+
+            {stats.totalCandidates > 0 && (
+              <button
+                onClick={() => {
+                  const input = prompt(`WARNING: This will delete ALL ${stats.totalCandidates} candidate attempt(s) for this exam. Exam and questions will be kept. Type "RESET" to confirm:`);
+                  if (input === 'RESET') {
+                    handleControlAction('delete-all-candidates');
+                  }
+                }}
+                disabled={actionLoading}
+                className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 transition"
+                title="Delete all candidate attempts for this exam"
+              >
+                Reset Candidates
+              </button>
             )}
 
             <a
@@ -783,6 +855,22 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
                           >
                             Details
                           </button>
+
+                          <button
+                            onClick={() => {
+                              setCandidateToDelete({
+                                id: candidate.id,
+                                studentName: candidate.studentName,
+                                rollNumber: candidate.rollNumber,
+                                status: candidate.status
+                              });
+                              setDeleteConfirmText('');
+                            }}
+                            className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded text-[11px] font-semibold border border-rose-200 transition"
+                            title="Remove Candidate Record & Attempt"
+                          >
+                            🗑️ Delete
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -793,6 +881,87 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
           </table>
         </div>
       </div>
+
+      {/* DELETE CANDIDATE CONFIRMATION MODAL */}
+      {candidateToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl p-5 max-w-md w-full shadow-2xl space-y-4 border border-rose-100">
+            <div className="flex items-center space-x-2 text-rose-600">
+              <span className="text-xl">⚠️</span>
+              <h3 className="text-base font-bold text-slate-900 font-display">
+                Remove Candidate Record?
+              </h3>
+            </div>
+
+            {candidateToDelete.status === 'IN_EXAM' ? (
+              <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 text-xs text-rose-800 space-y-2">
+                <p className="font-bold">
+                  DANGER: This candidate is currently active inside the exam room (IN_EXAM)!
+                </p>
+                <p>
+                  Removing them now will immediately terminate their live exam session and permanently delete all responses and progress.
+                </p>
+                <div className="pt-2">
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                    To confirm deletion, type <span className="font-mono font-bold text-rose-600">DELETE</span> below:
+                  </label>
+                  <input
+                    type="text"
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    placeholder="Type DELETE"
+                    className="w-full border border-rose-300 rounded p-2 text-xs font-mono font-bold uppercase"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="text-xs text-slate-600 space-y-2">
+                <p>
+                  Are you sure you want to remove candidate{' '}
+                  <strong className="text-slate-900 font-semibold">{candidateToDelete.studentName}</strong> (
+                  <span className="font-mono font-semibold">{candidateToDelete.rollNumber}</span>)?
+                </p>
+                <p className="text-slate-500">
+                  This will remove the candidate&apos;s exam attempt and associated candidate record. Exam and question data will not be affected.
+                </p>
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+              <button
+                onClick={() => {
+                  setCandidateToDelete(null);
+                  setDeleteConfirmText('');
+                }}
+                className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (
+                    candidateToDelete.status === 'IN_EXAM' &&
+                    deleteConfirmText.trim().toUpperCase() !== 'DELETE'
+                  ) {
+                    showToast('Please type DELETE to confirm.', 'error');
+                    return;
+                  }
+                  handleControlAction('delete-candidate', { candidateId: candidateToDelete.id });
+                  setCandidateToDelete(null);
+                  setDeleteConfirmText('');
+                }}
+                disabled={
+                  candidateToDelete.status === 'IN_EXAM' &&
+                  deleteConfirmText.trim().toUpperCase() !== 'DELETE'
+                }
+                className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white text-xs font-bold transition shadow-sm"
+              >
+                Confirm Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* EXTEND TIME MODAL */}
       {isExtendingTimeId && (

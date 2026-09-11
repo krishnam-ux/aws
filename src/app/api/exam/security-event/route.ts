@@ -4,6 +4,9 @@ import { logSecurityEvent, evaluateExamSubmission } from '@/lib/exam';
 import { SecurityEventType, SecuritySeverity } from '@/types/exam';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const noStoreHeaders = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' };
 
 export async function POST(request: Request) {
   try {
@@ -11,12 +14,18 @@ export async function POST(request: Request) {
     const { attemptId, token, eventType, severity = 'WARNING', metadata = {} } = body;
 
     if (!attemptId || !token || !eventType) {
-      return NextResponse.json({ error: 'Attempt ID, session token, and event type are required.' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Attempt ID, session token, and event type are required.' },
+        { status: 400, headers: noStoreHeaders }
+      );
     }
 
     const attempt = await db.examAttempts.getById(attemptId);
     if (!attempt || attempt.sessionToken !== token) {
-      return NextResponse.json({ error: 'Invalid or expired session.' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Invalid or expired session.' },
+        { status: 401, headers: noStoreHeaders }
+      );
     }
 
     const { violationCount, shouldAutoSubmit } = await logSecurityEvent(
@@ -43,24 +52,33 @@ export async function POST(request: Request) {
         passed: result.passed
       });
 
-      return NextResponse.json({
-        success: true,
-        autoSubmitted: true,
-        violationCount,
-        warningsRemaining: 0,
-        status: 'REVIEW_REQUIRED',
-        message: 'Submitted — Review Required due to security event thresholds.'
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          autoSubmitted: true,
+          violationCount,
+          warningsRemaining: 0,
+          status: 'REVIEW_REQUIRED',
+          message: 'Submitted — Review Required due to security event thresholds.'
+        },
+        { headers: noStoreHeaders }
+      );
     }
 
-    return NextResponse.json({
-      success: true,
-      autoSubmitted: false,
-      violationCount,
-      warningsRemaining
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        autoSubmitted: false,
+        violationCount,
+        warningsRemaining
+      },
+      { headers: noStoreHeaders }
+    );
   } catch (error: any) {
     console.error('Security event error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to record security event.' }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || 'Failed to record security event.' },
+      { status: 500, headers: noStoreHeaders }
+    );
   }
 }

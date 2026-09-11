@@ -1,13 +1,25 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
 
-export default function ExamPortalPage() {
+interface ExamPortalPageProps {
+  initialExamId?: string;
+}
+
+function ExamPortalContent({ initialExamId }: ExamPortalPageProps) {
+
+  const params = useParams();
+  const searchParams = useSearchParams();
+
+  // Dynamic Exam ID extracted from prop, route params (/exam/[examId]), or search params (?examId=...)
+  const routeExamId = initialExamId || (params?.examId as string) || searchParams?.get('examId') || '';
+
   // Phase state: AUTH -> LOBBY -> EXAM -> SUBMITTED
   const [phase, setPhase] = useState<'AUTH' | 'LOBBY' | 'EXAM' | 'SUBMITTED'>('AUTH');
 
   // Auth Form State
-  const [examId, setExamId] = useState('exam-aws-ccp-01');
+  const [examId, setExamId] = useState(routeExamId);
   const [password, setPassword] = useState('');
   const [studentName, setStudentName] = useState('');
   const [rollNumber, setRollNumber] = useState('');
@@ -33,6 +45,13 @@ export default function ExamPortalPage() {
   const [securityWarning, setSecurityWarning] = useState<string | null>(null);
   const [violationCount, setViolationCount] = useState(0);
 
+  // Update examId when routeExamId changes
+  useEffect(() => {
+    if (routeExamId) {
+      setExamId(routeExamId);
+    }
+  }, [routeExamId]);
+
   // Auto-restore session from sessionStorage on mount
   useEffect(() => {
     const savedToken = sessionStorage.getItem('exam_token');
@@ -46,7 +65,10 @@ export default function ExamPortalPage() {
 
   const checkSession = async (attId: string, tok: string) => {
     try {
-      const res = await fetch(`/api/exam/lobby-status?attemptId=${encodeURIComponent(attId)}&token=${encodeURIComponent(tok)}`);
+      const res = await fetch(
+        `/api/exam/lobby-status?attemptId=${encodeURIComponent(attId)}&token=${encodeURIComponent(tok)}`,
+        { cache: 'no-store' }
+      );
       const data = await res.json();
       if (res.ok && data.status) {
         setLobbyStatus(data.status);
@@ -64,13 +86,16 @@ export default function ExamPortalPage() {
     }
   };
 
-  // Lobby Polling Effect
+  // Real-time Lobby Polling Effect (1.5s interval)
   useEffect(() => {
     if (phase !== 'LOBBY' || !attemptId || !sessionToken) return;
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/exam/lobby-status?attemptId=${encodeURIComponent(attemptId)}&token=${encodeURIComponent(sessionToken)}`);
+        const res = await fetch(
+          `/api/exam/lobby-status?attemptId=${encodeURIComponent(attemptId)}&token=${encodeURIComponent(sessionToken)}`,
+          { cache: 'no-store' }
+        );
         const data = await res.json();
         if (res.ok && data.status) {
           setLobbyStatus(data.status);
@@ -84,12 +109,43 @@ export default function ExamPortalPage() {
       } catch (err) {
         console.error('Lobby polling error:', err);
       }
-    }, 2500);
+    }, 1500);
 
     return () => clearInterval(interval);
   }, [phase, attemptId, sessionToken]);
 
-  // Exam Countdown Timer
+  // Real-time Exam Session & Authoritative Timer Background Sync (3s interval)
+  useEffect(() => {
+    if (phase !== 'EXAM' || !attemptId || !sessionToken) return;
+
+    const syncInterval = setInterval(async () => {
+      try {
+        const res = await fetch(
+          `/api/exam/session?attemptId=${encodeURIComponent(attemptId)}&token=${encodeURIComponent(sessionToken)}`,
+          { cache: 'no-store' }
+        );
+        const data = await res.json();
+        if (res.ok && data.attempt) {
+          // Authoritative timer sync
+          if (typeof data.attempt.remainingSeconds === 'number') {
+            setRemainingSeconds(data.attempt.remainingSeconds);
+          }
+          if (data.attempt.status === 'SUBMITTED' || data.attempt.status === 'REVIEW_REQUIRED') {
+            setPhase('SUBMITTED');
+          }
+          if (data.attempt.securityViolationsCount !== undefined) {
+            setViolationCount(data.attempt.securityViolationsCount);
+          }
+        }
+      } catch (err) {
+        console.error('Exam sync error:', err);
+      }
+    }, 3000);
+
+    return () => clearInterval(syncInterval);
+  }, [phase, attemptId, sessionToken]);
+
+  // Exam Local Countdown Timer (1s ticks)
   useEffect(() => {
     if (phase !== 'EXAM' || remainingSeconds <= 0) return;
 
@@ -118,12 +174,13 @@ export default function ExamPortalPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          examId,
-          password,
-          studentName,
-          rollNumber,
-          email
-        })
+          examId: examId.trim(),
+          password: password.trim(),
+          studentName: studentName.trim(),
+          rollNumber: rollNumber.trim(),
+          email: email.trim()
+        }),
+        cache: 'no-store'
       });
 
       const data = await res.json();
@@ -156,7 +213,10 @@ export default function ExamPortalPage() {
   // Load Exam Session & Questions
   const loadExamSession = async (attId: string, tok: string) => {
     try {
-      const res = await fetch(`/api/exam/session?attemptId=${encodeURIComponent(attId)}&token=${encodeURIComponent(tok)}`);
+      const res = await fetch(
+        `/api/exam/session?attemptId=${encodeURIComponent(attId)}&token=${encodeURIComponent(tok)}`,
+        { cache: 'no-store' }
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load session.');
 
@@ -189,7 +249,8 @@ export default function ExamPortalPage() {
       const res = await fetch('/api/exam/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ attemptId, token: sessionToken })
+        body: JSON.stringify({ attemptId, token: sessionToken }),
+        cache: 'no-store'
       });
 
       const data = await res.json();
@@ -216,7 +277,8 @@ export default function ExamPortalPage() {
             eventType,
             severity,
             metadata
-          })
+          }),
+          cache: 'no-store'
         });
 
         const data = await res.json();
@@ -307,7 +369,8 @@ export default function ExamPortalPage() {
           token: sessionToken,
           answers: newAnswers,
           markedForReview: newMarked
-        })
+        }),
+        cache: 'no-store'
       });
 
       if (!res.ok) throw new Error('Save failed');
@@ -347,7 +410,8 @@ export default function ExamPortalPage() {
           token: sessionToken,
           answers,
           reason: 'MANUAL'
-        })
+        }),
+        cache: 'no-store'
       });
 
       const data = await res.json();
@@ -375,7 +439,8 @@ export default function ExamPortalPage() {
           token: sessionToken,
           answers,
           reason
-        })
+        }),
+        cache: 'no-store'
       });
 
       setPhase('SUBMITTED');
@@ -437,7 +502,7 @@ export default function ExamPortalPage() {
                     required
                     value={examId}
                     onChange={(e) => setExamId(e.target.value)}
-                    placeholder="e.g. AWS-CCP-01"
+                    placeholder="e.g. AWS-CCP-01 or Exam ID"
                     className="w-full bg-slate-950/80 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono"
                   />
                 </div>
@@ -447,7 +512,6 @@ export default function ExamPortalPage() {
                   </label>
                   <input
                     type="password"
-                    required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••"
@@ -523,12 +587,16 @@ export default function ExamPortalPage() {
             <div className="mt-8 pt-6 border-t border-slate-800 text-xs text-slate-400 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-slate-300">Safe Exam Browser (SEB) Support:</span>
-                <a
-                  href={`/api/exam/seb-config?examId=${encodeURIComponent(examId)}`}
-                  className="text-indigo-400 hover:text-indigo-300 font-medium underline flex items-center space-x-1"
-                >
-                  <span>Download .seb file</span>
-                </a>
+                {examId ? (
+                  <a
+                    href={`/api/exam/seb-config?examId=${encodeURIComponent(examId.trim())}`}
+                    className="text-indigo-400 hover:text-indigo-300 font-medium underline flex items-center space-x-1"
+                  >
+                    <span>Download .seb file</span>
+                  </a>
+                ) : (
+                  <span className="text-slate-500">Enter Exam ID to download config</span>
+                )}
               </div>
               <p>
                 This examination is monitored with anti-tamper security policies. Fullscreen mode is enforced upon start. Tab-switching, shortcuts, and copy-pasting are logged.
@@ -562,7 +630,7 @@ export default function ExamPortalPage() {
               {attemptData?.examTitle || 'AWS Certification Assessment'}
             </h1>
             <p className="text-sm text-slate-400 mt-1 font-mono">
-              Code: {attemptData?.examCode || 'AWS-CCP-01'} • Duration: {attemptData?.durationMinutes || 30} mins
+              Code: {attemptData?.examCode || 'AWS-EXAM'} • Duration: {attemptData?.durationMinutes || 30} mins
             </p>
           </div>
 
@@ -698,7 +766,7 @@ export default function ExamPortalPage() {
 
             <button
               onClick={() => setIsSubmitModalOpen(true)}
-              className="py-1.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition"
+              className="py-1.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition cursor-pointer"
             >
               Finish & Submit
             </button>
@@ -731,7 +799,7 @@ export default function ExamPortalPage() {
 
                   <button
                     onClick={() => handleToggleReview(currentQuestion.id)}
-                    className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition flex items-center space-x-1.5 ${
+                    className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition flex items-center space-x-1.5 cursor-pointer ${
                       markedForReview.includes(currentQuestion.id)
                         ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                         : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
@@ -756,7 +824,7 @@ export default function ExamPortalPage() {
                       <button
                         key={optIdx}
                         onClick={() => handleSelectOption(currentQuestion.id, optIdx)}
-                        className={`w-full text-left p-4 rounded-xl border transition-all duration-150 flex items-start space-x-4 ${
+                        className={`w-full text-left p-4 rounded-xl border transition-all duration-150 flex items-start space-x-4 cursor-pointer ${
                           isSelected
                             ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-md shadow-indigo-500/10'
                             : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:bg-slate-800/80 hover:border-slate-700'
@@ -782,7 +850,7 @@ export default function ExamPortalPage() {
                   <button
                     disabled={currentQIndex === 0}
                     onClick={() => setCurrentQIndex((prev) => Math.max(0, prev - 1))}
-                    className="py-2.5 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold disabled:opacity-30 disabled:pointer-events-none transition"
+                    className="py-2.5 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
                   >
                     ← Previous
                   </button>
@@ -796,14 +864,14 @@ export default function ExamPortalPage() {
                   {currentQIndex < questions.length - 1 ? (
                     <button
                       onClick={() => setCurrentQIndex((prev) => Math.min(questions.length - 1, prev + 1))}
-                      className="py-2.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition"
+                      className="py-2.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition cursor-pointer"
                     >
                       Next →
                     </button>
                   ) : (
                     <button
                       onClick={() => setIsSubmitModalOpen(true)}
-                      className="py-2.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition"
+                      className="py-2.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition cursor-pointer"
                     >
                       Review & Submit
                     </button>
@@ -841,7 +909,7 @@ export default function ExamPortalPage() {
                     <button
                       key={q.id}
                       onClick={() => setCurrentQIndex(idx)}
-                      className={`h-9 rounded-lg font-mono text-xs border transition flex items-center justify-center ${bgColor} ${
+                      className={`h-9 rounded-lg font-mono text-xs border transition flex items-center justify-center cursor-pointer ${bgColor} ${
                         isCurrent ? 'ring-2 ring-indigo-400 ring-offset-2 ring-offset-slate-900 font-bold' : ''
                       }`}
                     >
@@ -918,14 +986,14 @@ export default function ExamPortalPage() {
                 <button
                   onClick={() => setIsSubmitModalOpen(false)}
                   disabled={submitting}
-                  className="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition"
+                  className="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition cursor-pointer"
                 >
                   Return to Exam
                 </button>
                 <button
                   onClick={handleManualSubmit}
                   disabled={submitting}
-                  className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-sm font-bold shadow-lg shadow-emerald-500/25 transition disabled:opacity-50"
+                  className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-sm font-bold shadow-lg shadow-emerald-500/25 transition disabled:opacity-50 cursor-pointer"
                 >
                   {submitting ? 'Submitting…' : 'Submit Final Answers'}
                 </button>
@@ -938,7 +1006,7 @@ export default function ExamPortalPage() {
   }
 
   // --------------------------------------------------------------------------
-  // RENDER PHASE 4: SUBMITTED CONFIRMATION (ONLY CLEAN MESSAGE - NO SCORE/CERTIFICATE)
+  // RENDER PHASE 4: SUBMITTED CONFIRMATION (STRICT PRIVACY: ONLY CLEAN CONFIRMATION)
   // --------------------------------------------------------------------------
   if (phase === 'SUBMITTED') {
     return (
@@ -984,8 +1052,12 @@ export default function ExamPortalPage() {
                   sessionStorage.removeItem('exam_token');
                   sessionStorage.removeItem('exam_attempt_id');
                   setPhase('AUTH');
+                  setAnswers({});
+                  setMarkedForReview([]);
+                  setAttemptId(null);
+                  setSessionToken(null);
                 }}
-                className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition"
+                className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition cursor-pointer"
               >
                 Exit Assessment Portal
               </button>
@@ -1002,3 +1074,19 @@ export default function ExamPortalPage() {
 
   return null;
 }
+
+export default function ExamPortalPage(props: ExamPortalPageProps) {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 text-slate-400 text-xs">
+          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+          <p className="font-semibold text-slate-300">Loading Secure Examination Portal...</p>
+        </div>
+      }
+    >
+      <ExamPortalContent {...props} />
+    </Suspense>
+  );
+}
+

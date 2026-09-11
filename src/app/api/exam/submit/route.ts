@@ -4,6 +4,9 @@ import { evaluateExamSubmission } from '@/lib/exam';
 import { SubmissionReason } from '@/types/exam';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const noStoreHeaders = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' };
 
 export async function POST(request: Request) {
   try {
@@ -11,27 +14,39 @@ export async function POST(request: Request) {
     const { attemptId, token, answers, reason = 'MANUAL' } = body;
 
     if (!attemptId || !token) {
-      return NextResponse.json({ error: 'Attempt ID and session token are required.' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Attempt ID and session token are required.' },
+        { status: 400, headers: noStoreHeaders }
+      );
     }
 
     const attempt = await db.examAttempts.getById(attemptId);
     if (!attempt || attempt.sessionToken !== token) {
-      return NextResponse.json({ error: 'Invalid or expired session.' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Invalid or expired session.' },
+        { status: 401, headers: noStoreHeaders }
+      );
     }
 
     if (attempt.status === 'SUBMITTED' || attempt.status === 'REVIEW_REQUIRED') {
       // Replay / duplicate submission response: strictly no score or pass/fail
-      return NextResponse.json({
-        success: true,
-        alreadySubmitted: true,
-        status: 'SUBMITTED',
-        message: 'Exam Submitted Successfully. Your response has been recorded. Your result will be communicated by email.'
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          alreadySubmitted: true,
+          status: 'SUBMITTED',
+          message: 'Exam Submitted Successfully. Your response has been recorded. Your result will be communicated by email.'
+        },
+        { headers: noStoreHeaders }
+      );
     }
 
     const exam = await db.exams.getById(attempt.examId);
     if (!exam) {
-      return NextResponse.json({ error: 'Exam not found.' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Exam not found.' },
+        { status: 404, headers: noStoreHeaders }
+      );
     }
 
     // Save final answers if provided
@@ -78,13 +93,19 @@ export async function POST(request: Request) {
     });
 
     // Student response MUST NOT expose score, percentage, or pass/fail verdict
-    return NextResponse.json({
-      success: true,
-      status: 'SUBMITTED',
-      message: 'Exam Submitted Successfully. Your response has been recorded. Your result will be communicated by email.'
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        status: 'SUBMITTED',
+        message: 'Exam Submitted Successfully. Your response has been recorded. Your result will be communicated by email.'
+      },
+      { headers: noStoreHeaders }
+    );
   } catch (error: any) {
     console.error('Exam submit error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to submit exam.' }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || 'Failed to submit exam.' },
+      { status: 500, headers: noStoreHeaders }
+    );
   }
 }

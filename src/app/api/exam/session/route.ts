@@ -3,6 +3,9 @@ import { db } from '@/lib/db';
 import { sanitizeExamForStudent, calculateRemainingSeconds, evaluateExamSubmission } from '@/lib/exam';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const noStoreHeaders = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' };
 
 export async function GET(request: Request) {
   try {
@@ -11,17 +14,26 @@ export async function GET(request: Request) {
     const token = searchParams.get('token');
 
     if (!attemptId || !token) {
-      return NextResponse.json({ error: 'Attempt ID and session token are required.' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Attempt ID and session token are required.' },
+        { status: 400, headers: noStoreHeaders }
+      );
     }
 
     const attempt = await db.examAttempts.getById(attemptId);
     if (!attempt || attempt.sessionToken !== token) {
-      return NextResponse.json({ error: 'Invalid or expired session.' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Invalid or expired session.' },
+        { status: 401, headers: noStoreHeaders }
+      );
     }
 
     const exam = await db.exams.getById(attempt.examId);
     if (!exam) {
-      return NextResponse.json({ error: 'Exam not found.' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Exam not found.' },
+        { status: 404, headers: noStoreHeaders }
+      );
     }
 
     // Check if time expired while IN_EXAM
@@ -46,24 +58,30 @@ export async function GET(request: Request) {
 
     const sanitizedExam = sanitizeExamForStudent(exam);
 
-    return NextResponse.json({
-      exam: sanitizedExam,
-      attempt: {
-        id: attempt.id,
-        studentName: attempt.studentName,
-        rollNumber: attempt.rollNumber,
-        email: attempt.email,
-        status: currentStatus,
-        startedAt: attempt.startedAt,
-        expiresAt: attempt.expiresAt,
-        remainingSeconds,
-        answers: attempt.answers || {},
-        markedForReview: attempt.markedForReview || [],
-        securityViolationsCount: attempt.securityViolationsCount || 0
-      }
-    });
+    return NextResponse.json(
+      {
+        exam: sanitizedExam,
+        attempt: {
+          id: attempt.id,
+          studentName: attempt.studentName,
+          rollNumber: attempt.rollNumber,
+          email: attempt.email,
+          status: currentStatus,
+          startedAt: attempt.startedAt,
+          expiresAt: attempt.expiresAt,
+          remainingSeconds,
+          answers: attempt.answers || {},
+          markedForReview: attempt.markedForReview || [],
+          securityViolationsCount: attempt.securityViolationsCount || 0
+        }
+      },
+      { headers: noStoreHeaders }
+    );
   } catch (error: any) {
     console.error('Exam session error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to fetch session.' }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || 'Failed to fetch session.' },
+      { status: 500, headers: noStoreHeaders }
+    );
   }
 }

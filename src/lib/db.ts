@@ -430,6 +430,15 @@ async function writeKv<T>(filename: string, data: T): Promise<void> {
 const memoryDbCache: Record<string, { data: any; expiresAt: number }> = {};
 const CACHE_TTL_MS = 5000; // 5 seconds cache TTL
 
+function isRealtimeCollection(filename: string): boolean {
+  return (
+    filename === 'exams.json' ||
+    filename === 'exam_attempts.json' ||
+    filename === 'exam_security_logs.json' ||
+    filename === 'exam_audit_logs.json'
+  );
+}
+
 function invalidateMemoryCache(filename: string): void {
   delete memoryDbCache[filename];
 }
@@ -440,18 +449,23 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
     throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
   }
 
-  const cached = memoryDbCache[filename];
-  if (cached !== undefined && Date.now() < cached.expiresAt) {
-    return cached.data as T;
+  const isRealtime = isRealtimeCollection(filename);
+  if (!isRealtime) {
+    const cached = memoryDbCache[filename];
+    if (cached !== undefined && Date.now() < cached.expiresAt) {
+      return cached.data as T;
+    }
   }
 
   // 1. Try Vercel KV
   if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
     const val = await readKv(filename, defaultValue);
-    memoryDbCache[filename] = {
-      data: val,
-      expiresAt: Date.now() + CACHE_TTL_MS
-    };
+    if (!isRealtime) {
+      memoryDbCache[filename] = {
+        data: val,
+        expiresAt: Date.now() + CACHE_TTL_MS
+      };
+    }
     return val;
   }
 
@@ -462,10 +476,12 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
     } else {
       try {
         const val = await readPostgres(filename, defaultValue);
-        memoryDbCache[filename] = {
-          data: val,
-          expiresAt: Date.now() + CACHE_TTL_MS
-        };
+        if (!isRealtime) {
+          memoryDbCache[filename] = {
+            data: val,
+            expiresAt: Date.now() + CACHE_TTL_MS
+          };
+        }
         return val;
       } catch (err) {
         console.error(`PostgreSQL read failed for ${filename}:`, err);
@@ -481,10 +497,12 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
         const val = await store.get(filename, { type: 'text' });
         if (val) {
           const parsed = JSON.parse(val) as T;
-          memoryDbCache[filename] = {
-            data: parsed,
-            expiresAt: Date.now() + CACHE_TTL_MS
-          };
+          if (!isRealtime) {
+            memoryDbCache[filename] = {
+              data: parsed,
+              expiresAt: Date.now() + CACHE_TTL_MS
+            };
+          }
           return parsed;
         }
       } catch (err) {
@@ -502,10 +520,12 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
   try {
     const data = fs.readFileSync(filePath, 'utf-8');
     const parsed = JSON.parse(data) as T;
-    memoryDbCache[filename] = {
-      data: parsed,
-      expiresAt: Date.now() + CACHE_TTL_MS
-    };
+    if (!isRealtime) {
+      memoryDbCache[filename] = {
+        data: parsed,
+        expiresAt: Date.now() + CACHE_TTL_MS
+      };
+    }
     return parsed;
   } catch (err) {
     console.error(`Error reading database file: ${filename}`, err);
@@ -1892,8 +1912,30 @@ export const db = {
       return await readJsonFile<any[]>('exams.json', DEFAULT_EXAMS);
     },
     getById: async (id: string): Promise<any | null> => {
+      if (!id) return null;
+      const cleanId = String(id).trim().toLowerCase();
+      const cleanNoPrefix = cleanId.startsWith('exam-') ? cleanId.substring(5) : cleanId;
+      const cleanNormalized = cleanId.replace(/[^a-z0-9]/g, '');
+
       const exams = await db.exams.getAll();
-      return exams.find((e: any) => e.id === id || e.examCode?.toLowerCase() === id?.toLowerCase()) || null;
+      return (
+        exams.find((e: any) => {
+          if (!e) return false;
+          const eId = String(e.id || '').trim().toLowerCase();
+          const eCode = String(e.examCode || '').trim().toLowerCase();
+          const eSlug = String(e.slug || '').trim().toLowerCase();
+          const eCodeNormalized = eCode.replace(/[^a-z0-9]/g, '');
+
+          return (
+            eId === cleanId ||
+            eCode === cleanId ||
+            eSlug === cleanId ||
+            eId === `exam-${cleanId}` ||
+            (cleanNoPrefix && (eId === cleanNoPrefix || eId === `exam-${cleanNoPrefix}`)) ||
+            (cleanNormalized && (eCodeNormalized === cleanNormalized || eId.replace(/[^a-z0-9]/g, '') === cleanNormalized))
+          );
+        }) || null
+      );
     },
     insertOne: async (exam: any): Promise<void> => {
       const exams = await db.exams.getAll();
@@ -1927,10 +1969,12 @@ export const db = {
       return await readJsonFile<any[]>('exam_attempts.json', []);
     },
     getById: async (id: string): Promise<any | null> => {
+      if (!id) return null;
       const attempts = await db.examAttempts.getAll();
       return attempts.find((a: any) => a.id === id) || null;
     },
     getByExamId: async (examId: string): Promise<any[]> => {
+      if (!examId) return [];
       const attempts = await db.examAttempts.getAll();
       return attempts.filter((a: any) => a.examId === examId);
     },
@@ -1940,6 +1984,7 @@ export const db = {
       return attempts.find((a: any) => a.sessionToken === token) || null;
     },
     getByRollAndExam: async (rollNumber: string, examId: string): Promise<any | null> => {
+      if (!rollNumber || !examId) return null;
       const attempts = await db.examAttempts.getAll();
       const matching = attempts.filter(
         (a: any) => a.examId === examId && a.rollNumber?.toLowerCase() === rollNumber?.toLowerCase()
@@ -1966,6 +2011,53 @@ export const db = {
       let attempts = await db.examAttempts.getAll();
       attempts = attempts.filter((a: any) => a.id !== id);
       await writeJsonFile('exam_attempts.json', attempts);
+      try {
+        let secLogs = await db.examSecurityLogs.getAll();
+        secLogs = secLogs.filter((l: any) => l.attemptId !== id);
+        await writeJsonFile('exam_security_logs.json', secLogs);
+      } catch (e) {
+        console.error('Error cleaning security logs for deleted attempt:', e);
+      }
+    },
+    deleteMany: async (ids: string[]): Promise<number> => {
+      const idSet = new Set(ids);
+      let attempts = await db.examAttempts.getAll();
+      const beforeCount = attempts.length;
+      attempts = attempts.filter((a: any) => !idSet.has(a.id));
+      await writeJsonFile('exam_attempts.json', attempts);
+      try {
+        let secLogs = await db.examSecurityLogs.getAll();
+        secLogs = secLogs.filter((l: any) => !idSet.has(l.attemptId));
+        await writeJsonFile('exam_security_logs.json', secLogs);
+      } catch (e) {
+        console.error('Error cleaning security logs for deleted attempts:', e);
+      }
+      return beforeCount - attempts.length;
+    },
+    deleteByExamId: async (examId: string, filterStatus?: string[]): Promise<number> => {
+      let attempts = await db.examAttempts.getAll();
+      const beforeCount = attempts.length;
+      const statusSet = filterStatus && filterStatus.length > 0 ? new Set(filterStatus) : null;
+      
+      const removedAttemptIds = new Set<string>();
+      attempts = attempts.filter((a: any) => {
+        if (a.examId === examId) {
+          if (!statusSet || statusSet.has(a.status)) {
+            removedAttemptIds.add(a.id);
+            return false;
+          }
+        }
+        return true;
+      });
+      await writeJsonFile('exam_attempts.json', attempts);
+      try {
+        let secLogs = await db.examSecurityLogs.getAll();
+        secLogs = secLogs.filter((l: any) => !removedAttemptIds.has(l.attemptId));
+        await writeJsonFile('exam_security_logs.json', secLogs);
+      } catch (e) {
+        console.error('Error cleaning security logs for deleted exam attempts:', e);
+      }
+      return beforeCount - attempts.length;
     },
     saveAll: async (data: any[]): Promise<void> => {
       await writeJsonFile('exam_attempts.json', data);

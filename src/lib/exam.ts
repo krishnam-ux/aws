@@ -299,7 +299,7 @@ export async function logAdminAudit(
  */
 export function generateSEBConfigXml(exam: Exam, siteUrl: string): string {
   const targetUrl = `${siteUrl}/exam/${exam.id}`;
-  const quitUrl = `${siteUrl}/exam/${exam.id}/finished`;
+  const quitUrl = `${siteUrl}/exam`;
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -361,6 +361,93 @@ export function generateSEBConfigXml(exam: Exam, siteUrl: string): string {
     <false/>
     <key>enableRightMouse</key>
     <false/>
+    <key>prohibitedProcesses</key>
+    <array>
+        <dict>
+            <key>active</key>
+            <true/>
+            <key>currentUser</key>
+            <true/>
+            <key>description</key>
+            <string>Communication &amp; Remote Access</string>
+            <key>executable</key>
+            <string>Discord.exe</string>
+            <key>originalName</key>
+            <string>Discord.exe</string>
+        </dict>
+        <dict>
+            <key>active</key>
+            <true/>
+            <key>currentUser</key>
+            <true/>
+            <key>description</key>
+            <string>Remote Desktop</string>
+            <key>executable</key>
+            <string>AnyDesk.exe</string>
+            <key>originalName</key>
+            <string>AnyDesk.exe</string>
+        </dict>
+        <dict>
+            <key>active</key>
+            <true/>
+            <key>currentUser</key>
+            <true/>
+            <key>description</key>
+            <string>TeamViewer</string>
+            <key>executable</key>
+            <string>TeamViewer.exe</string>
+            <key>originalName</key>
+            <string>TeamViewer.exe</string>
+        </dict>
+        <dict>
+            <key>active</key>
+            <true/>
+            <key>currentUser</key>
+            <true/>
+            <key>description</key>
+            <string>Screen Recording</string>
+            <key>executable</key>
+            <string>obs64.exe</string>
+            <key>originalName</key>
+            <string>obs64.exe</string>
+        </dict>
+        <dict>
+            <key>active</key>
+            <true/>
+            <key>currentUser</key>
+            <true/>
+            <key>description</key>
+            <string>Zoom Meetings</string>
+            <key>executable</key>
+            <string>Zoom.exe</string>
+            <key>originalName</key>
+            <string>Zoom.exe</string>
+        </dict>
+        <dict>
+            <key>active</key>
+            <true/>
+            <key>currentUser</key>
+            <true/>
+            <key>description</key>
+            <string>WhatsApp</string>
+            <key>executable</key>
+            <string>WhatsApp.exe</string>
+            <key>originalName</key>
+            <string>WhatsApp.exe</string>
+        </dict>
+        <dict>
+            <key>active</key>
+            <true/>
+            <key>currentUser</key>
+            <true/>
+            <key>description</key>
+            <string>Telegram</string>
+            <key>executable</key>
+            <string>Telegram.exe</string>
+            <key>originalName</key>
+            <string>Telegram.exe</string>
+        </dict>
+    </array>
     <key>URLFilterEnable</key>
     <true/>
     <key>URLFilterRules</key>
@@ -389,3 +476,4 @@ export function generateSEBConfigXml(exam: Exam, siteUrl: string): string {
 </dict>
 </plist>`;
 }
+

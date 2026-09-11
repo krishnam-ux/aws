@@ -1,5 +1,49 @@
 [
   {
+    "id": "exam-e2e-live-test",
+    "examCode": "AWS-E2E-99",
+    "password": "pass-e2e-2026",
+    "title": "AWS Certified Developer Assessment",
+    "description": "E2E Assessment",
+    "category": "DevOps",
+    "durationMinutes": 45,
+    "passingPercentage": 60,
+    "maxAttempts": 2,
+    "status": "Live",
+    "requireSecureBrowser": true,
+    "maxSecurityViolations": 3,
+    "questions": [
+      {
+        "id": "e2e-q1",
+        "question": "What is Amazon DynamoDB?",
+        "options": [
+          "Relational DB",
+          "Fully managed NoSQL DB",
+          "Data warehouse",
+          "Graph DB"
+        ],
+        "correctOptionIndex": 1,
+        "marks": 50,
+        "explanation": "DynamoDB is a fast, flexible NoSQL database service."
+      },
+      {
+        "id": "e2e-q2",
+        "question": "Which service is used for container orchestration?",
+        "options": [
+          "Amazon ECS",
+          "Amazon S3",
+          "Amazon Route 53",
+          "Amazon SNS"
+        ],
+        "correctOptionIndex": 0,
+        "marks": 50,
+        "explanation": "Amazon ECS is a container orchestration service."
+      }
+    ],
+    "createdAt": "2026-09-11T05:21:09.404Z",
+    "updatedAt": "2026-09-11T05:21:09.404Z"
+  },
+  {
     "id": "exam-aws-ccp-01",
     "examCode": "AWS-CCP-01",
     "password": "builder-cloud-2026",

@@ -4,6 +4,7 @@ import { logAdminAudit } from '@/lib/exam';
 import { Exam } from '@/types/exam';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const SECURE_TOKEN = 'awssbg-admin-session-token-secure-hash';
 
@@ -15,10 +16,15 @@ function isAuthorized(request: Request): boolean {
   return authHeader.substring(7) === SECURE_TOKEN;
 }
 
+const noStoreHeaders = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' };
+
 export async function GET(request: Request) {
   try {
     if (!isAuthorized(request)) {
-      return NextResponse.json({ error: 'Unauthorized administrative access.' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized administrative access.' },
+        { status: 401, headers: noStoreHeaders }
+      );
     }
 
     const exams = await db.exams.getAll();
@@ -42,17 +48,23 @@ export async function GET(request: Request) {
       };
     });
 
-    return NextResponse.json({ exams: examsWithStats });
+    return NextResponse.json({ exams: examsWithStats }, { headers: noStoreHeaders });
   } catch (error: any) {
     console.error('Admin exams fetch error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to fetch exams.' }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || 'Failed to fetch exams.' },
+      { status: 500, headers: noStoreHeaders }
+    );
   }
 }
 
 export async function POST(request: Request) {
   try {
     if (!isAuthorized(request)) {
-      return NextResponse.json({ error: 'Unauthorized administrative access.' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized administrative access.' },
+        { status: 401, headers: noStoreHeaders }
+      );
     }
 
     const body = await request.json();
@@ -60,7 +72,10 @@ export async function POST(request: Request) {
 
     if (action === 'create' || action === 'update') {
       if (!exam || !exam.title?.trim() || !exam.examCode?.trim()) {
-        return NextResponse.json({ error: 'Exam title and code are required.' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'Exam title and code are required.' },
+          { status: 400, headers: noStoreHeaders }
+        );
       }
 
       const id = exam.id?.trim() || `exam-${Date.now()}`;
@@ -97,21 +112,27 @@ export async function POST(request: Request) {
         questionsCount: cleanExam.questions.length
       });
 
-      return NextResponse.json({ success: true, exam: cleanExam });
+      return NextResponse.json({ success: true, exam: cleanExam }, { headers: noStoreHeaders });
     }
 
     if (action === 'delete') {
       if (!examId) {
-        return NextResponse.json({ error: 'Exam ID is required.' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'Exam ID is required.' },
+          { status: 400, headers: noStoreHeaders }
+        );
       }
       await db.exams.deleteOne(examId);
       await logAdminAudit(examId, 'admin', 'DELETE_EXAM', { examId });
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ success: true }, { headers: noStoreHeaders });
     }
 
-    return NextResponse.json({ error: 'Invalid action.' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid action.' }, { status: 400, headers: noStoreHeaders });
   } catch (error: any) {
     console.error('Admin exams error:', error);
-    return NextResponse.json({ error: error.message || 'Operation failed.' }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || 'Operation failed.' },
+      { status: 500, headers: noStoreHeaders }
+    );
   }
 }

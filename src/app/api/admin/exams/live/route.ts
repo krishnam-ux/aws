@@ -4,6 +4,7 @@ import { calculateRemainingSeconds } from '@/lib/exam';
 import { ExamAttempt, Exam } from '@/types/exam';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const SECURE_TOKEN = 'awssbg-admin-session-token-secure-hash';
 
@@ -15,17 +16,22 @@ function isAuthorized(request: Request): boolean {
   return authHeader.substring(7) === SECURE_TOKEN;
 }
 
+const noStoreHeaders = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' };
+
 export async function GET(request: Request) {
   try {
     if (!isAuthorized(request)) {
-      return NextResponse.json({ error: 'Unauthorized administrative access.' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized administrative access.' },
+        { status: 401, headers: noStoreHeaders }
+      );
     }
 
     const { searchParams } = new URL(request.url);
     const examId = searchParams.get('examId');
 
     const allExams = await db.exams.getAll();
-    const targetExam = examId ? allExams.find((e: Exam) => e.id === examId) : allExams[0];
+    const targetExam = examId ? allExams.find((e: Exam) => e.id === examId || e.examCode?.toLowerCase() === examId.toLowerCase()) : allExams[0];
 
     const allAttempts: ExamAttempt[] = await db.examAttempts.getAll();
     const attempts = targetExam ? allAttempts.filter((a: ExamAttempt) => a.examId === targetExam.id) : allAttempts;
@@ -56,13 +62,19 @@ export async function GET(request: Request) {
       reviewRequired: attempts.filter((a: ExamAttempt) => a.status === 'REVIEW_REQUIRED').length
     };
 
-    return NextResponse.json({
-      exam: targetExam || null,
-      stats,
-      candidates: enrichedAttempts
-    });
+    return NextResponse.json(
+      {
+        exam: targetExam || null,
+        stats,
+        candidates: enrichedAttempts
+      },
+      { headers: noStoreHeaders }
+    );
   } catch (error: any) {
     console.error('Admin live exam error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to fetch live exam data.' }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || 'Failed to fetch live exam data.' },
+      { status: 500, headers: noStoreHeaders }
+    );
   }
 }

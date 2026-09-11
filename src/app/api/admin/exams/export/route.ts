@@ -42,7 +42,7 @@ export async function GET(request: Request) {
       'Result',
       'Submission Reason',
       'Security Violations',
-      'Certificate ID',
+      'Selection Status / Notes',
       'Started At',
       'Submitted At'
     ];
@@ -62,7 +62,7 @@ export async function GET(request: Request) {
         a.passed ? 'PASSED' : a.status === 'SUBMITTED' || a.status === 'REVIEW_REQUIRED' ? 'FAILED' : 'IN_PROGRESS',
         `"${a.submissionReason || 'N/A'}"`,
         a.securityViolationsCount || 0,
-        `"${a.certificateId || ''}"`,
+        `"${(a.adminNotes || '').replace(/"/g, '""')}"`,
         `"${a.startedAt || ''}"`,
         `"${a.submittedAt || ''}"`
       ].join(',');
@@ -76,7 +76,7 @@ export async function GET(request: Request) {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
         'Content-Disposition': `attachment; filename="${fileName}"`,
-        'Cache-Control': 'no-store'
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
       }
     });
   } catch (error: any) {
@@ -84,3 +84,4 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message || 'Failed to export results.' }, { status: 500 });
   }
 }
+

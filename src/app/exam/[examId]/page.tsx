@@ -1,5 +1,10 @@
 import ExamPortalPage from '../page';
 
-export default function DynamicExamPortalPage() {
-  return <ExamPortalPage />;
+export default async function DynamicExamPortalPage({
+  params
+}: {
+  params: Promise<{ examId: string }>;
+}) {
+  const resolvedParams = await params;
+  return <ExamPortalPage initialExamId={resolvedParams?.examId} />;
 }
