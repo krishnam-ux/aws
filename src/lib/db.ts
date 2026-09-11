@@ -91,10 +91,102 @@ async function ensurePostgresTable() {
         value TEXT
       )
     `;
+    await ensureExamsTables();
   } catch (err) {
     console.error('Failed to ensure kv_store table exists in PostgreSQL:', err);
   }
 }
+
+async function ensureExamsTables() {
+  if (!sql) return;
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS exams (
+        id VARCHAR(255) PRIMARY KEY,
+        exam_code VARCHAR(255) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        category VARCHAR(255),
+        duration_minutes INTEGER NOT NULL,
+        passing_percentage INTEGER NOT NULL,
+        max_attempts INTEGER NOT NULL DEFAULT 1,
+        status VARCHAR(50) NOT NULL DEFAULT 'Live',
+        password VARCHAR(255),
+        require_secure_browser BOOLEAN NOT NULL DEFAULT true,
+        max_security_violations INTEGER NOT NULL DEFAULT 3,
+        questions JSONB NOT NULL DEFAULT '[]'::jsonb,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_exams_code ON exams(exam_code)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_exams_status ON exams(status)`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS exam_attempts (
+        id VARCHAR(255) PRIMARY KEY,
+        exam_id VARCHAR(255) NOT NULL,
+        student_name VARCHAR(255) NOT NULL,
+        roll_number VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        session_token VARCHAR(255) NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'LOCKED',
+        started_at TIMESTAMP WITH TIME ZONE,
+        submitted_at TIMESTAMP WITH TIME ZONE,
+        extended_minutes INTEGER NOT NULL DEFAULT 0,
+        answers JSONB NOT NULL DEFAULT '{}'::jsonb,
+        marked_for_review JSONB NOT NULL DEFAULT '[]'::jsonb,
+        score INTEGER NOT NULL DEFAULT 0,
+        total_marks INTEGER NOT NULL DEFAULT 0,
+        percentage NUMERIC(5,2) NOT NULL DEFAULT 0,
+        passed BOOLEAN NOT NULL DEFAULT false,
+        submission_reason VARCHAR(100),
+        security_violations_count INTEGER NOT NULL DEFAULT 0,
+        verified_by VARCHAR(255),
+        verified_at TIMESTAMP WITH TIME ZONE,
+        unlocked_by VARCHAR(255),
+        unlocked_at TIMESTAMP WITH TIME ZONE,
+        admin_notes TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_exam_attempts_exam_id ON exam_attempts(exam_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_exam_attempts_roll_number ON exam_attempts(roll_number)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_exam_attempts_session_token ON exam_attempts(session_token)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_exam_attempts_status ON exam_attempts(status)`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS exam_security_logs (
+        id VARCHAR(255) PRIMARY KEY,
+        attempt_id VARCHAR(255) NOT NULL,
+        exam_id VARCHAR(255) NOT NULL,
+        event_type VARCHAR(100) NOT NULL,
+        severity VARCHAR(50) NOT NULL,
+        metadata JSONB,
+        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_exam_security_logs_attempt ON exam_security_logs(attempt_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_exam_security_logs_exam ON exam_security_logs(exam_id)`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS exam_audit_logs (
+        id VARCHAR(255) PRIMARY KEY,
+        exam_id VARCHAR(255) NOT NULL,
+        attempt_id VARCHAR(255),
+        admin_user VARCHAR(255) NOT NULL,
+        action VARCHAR(100) NOT NULL,
+        details JSONB,
+        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_exam_audit_logs_exam ON exam_audit_logs(exam_id)`;
+  } catch (err) {
+    console.error('Failed to ensure exam tables exist in PostgreSQL:', err);
+  }
+}
+
 
 async function ensureRegistrationsTable() {
   if (!sql) return;
