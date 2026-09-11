@@ -201,5 +201,6 @@ test('fails fast instead of silently falling back to local JSON when a database 
     if (originalDatabaseUrl === undefined) delete process.env.DATABASE_URL; else process.env.DATABASE_URL = originalDatabaseUrl;
     if (originalKvUrl === undefined) delete process.env.KV_REST_API_URL; else process.env.KV_REST_API_URL = originalKvUrl;
     if (originalKvToken === undefined) delete process.env.KV_REST_API_TOKEN; else process.env.KV_REST_API_TOKEN = originalKvToken;
+    clearDbCache();
   }
 });

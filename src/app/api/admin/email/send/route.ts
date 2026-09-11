@@ -33,6 +33,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const {
       mode = 'single', // 'single' | 'batch'
+      from,
       to,
       cc,
       bcc,
@@ -64,6 +65,7 @@ export async function POST(request: Request) {
 
       const summary = await sendBatchEmails({
         recipients,
+        from,
         subject: subject.trim(),
         templateId,
         type,
@@ -92,6 +94,7 @@ export async function POST(request: Request) {
     }
 
     const result = await sendEmail({
+      from,
       to,
       cc,
       bcc,

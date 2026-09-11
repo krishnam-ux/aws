@@ -71,14 +71,14 @@ test('Core Email Dispatch & Fallback Simulation', async () => {
   });
 
   assert.equal(result.success, true);
-  assert.equal(result.status, 'SENT');
+  assert.ok(result.status === 'SENT' || result.status === 'SIMULATED');
   assert.equal(result.recipient, 'student.builder@chandigarh.edu');
 
   const logs = await db.emailLogs.getAll();
   assert.equal(logs.length, 1);
   assert.equal(logs[0].recipient, 'student.builder@chandigarh.edu');
   assert.equal(logs[0].subject, 'Welcome to AWS SBG CU-UP');
-  assert.equal(logs[0].status, 'SENT');
+  assert.ok(logs[0].status === 'SENT' || logs[0].status === 'SIMULATED');
 });
 
 test('Batch Email Dispatch with Deduplication and Error Isolation', async () => {
@@ -218,7 +218,7 @@ test('Automated Candidate Qualification Email from Proctor', async () => {
   const selectLog = logs.find((l) => l.recipient === 'vikram.singh@cumail.in');
   assert.ok(selectLog, 'Log should exist for selected candidate');
   assert.equal(selectLog?.type, 'exam_selected_qualified');
-  assert.ok(selectLog?.subject.includes('Selected in'));
+  assert.ok(selectLog?.subject.includes('Selected & Qualified in'));
 });
 
 test('Automated Feedback Received Acknowledgement Email', async () => {

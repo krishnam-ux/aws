@@ -53,6 +53,7 @@ export interface EmailRecipient {
 }
 
 export interface EmailPayload {
+  from?: string;
   to: string | string[];
   cc?: string | string[];
   bcc?: string | string[];

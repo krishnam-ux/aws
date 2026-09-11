@@ -1,17 +1,17 @@
 import { db } from '@/lib/db';
-import { EmailAutomationSetting, EmailType } from '@/types/email';
-import { sendTemplateEmail } from './index';
+import { sendTemplateEmail } from './service';
+import { EmailType, EmailAutomationSetting } from '@/types/email';
 
 export const DEFAULT_AUTOMATION_SETTINGS: EmailAutomationSetting[] = [
-  // Events
+  // 1. Events
   {
     id: 'auto-event-reg-confirm',
     category: 'EVENTS',
     eventType: 'event_registration_confirmation',
     title: 'Event Registration Confirmation',
-    description: 'Send confirmation email immediately upon student registering for any event.',
+    description: 'Triggered immediately when a student registers for a published event.',
     isEnabled: true,
-    defaultTemplateId: 'tpl-event-reg-confirm',
+    defaultTemplateId: 'tpl-event_registration_confirmation',
     updatedAt: new Date().toISOString()
   },
   {
@@ -19,9 +19,9 @@ export const DEFAULT_AUTOMATION_SETTINGS: EmailAutomationSetting[] = [
     category: 'EVENTS',
     eventType: 'event_24h_reminder',
     title: 'Event 24-Hour Reminder',
-    description: 'Send reminder email to registered attendees 24 hours before event starts.',
+    description: 'Scheduled broadcast 24 hours prior to event start.',
     isEnabled: true,
-    defaultTemplateId: 'tpl-event-24h-reminder',
+    defaultTemplateId: 'tpl-event_24h_reminder',
     updatedAt: new Date().toISOString()
   },
   {
@@ -29,21 +29,40 @@ export const DEFAULT_AUTOMATION_SETTINGS: EmailAutomationSetting[] = [
     category: 'EVENTS',
     eventType: 'event_1h_reminder',
     title: 'Event 1-Hour Reminder',
-    description: 'Send quick reminder with entry instructions 1 hour prior to session.',
+    description: 'Scheduled urgent broadcast 1 hour prior to event start.',
     isEnabled: true,
-    defaultTemplateId: 'tpl-event-24h-reminder',
+    defaultTemplateId: 'tpl-event_1h_reminder',
     updatedAt: new Date().toISOString()
   },
-
-  // Opportunities
   {
-    id: 'auto-opp-received',
+    id: 'auto-event-updated',
+    category: 'EVENTS',
+    eventType: 'event_updated',
+    title: 'Event Details Updated',
+    description: 'Sent when venue, schedule, or prerequisites are modified.',
+    isEnabled: true,
+    defaultTemplateId: 'tpl-event_updated',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'auto-event-cancelled',
+    category: 'EVENTS',
+    eventType: 'event_cancelled',
+    title: 'Event Cancellation Alert',
+    description: 'Dispatched if an event is cancelled by administrators.',
+    isEnabled: true,
+    defaultTemplateId: 'tpl-event_cancelled',
+    updatedAt: new Date().toISOString()
+  },
+  // 2. Opportunities / Careers
+  {
+    id: 'auto-opp-app-received',
     category: 'OPPORTUNITIES',
     eventType: 'opportunity_application_received',
-    title: 'Opportunity Application Received',
-    description: 'Send acknowledgement with reference ID upon candidate application submission.',
+    title: 'Application Received Acknowledgment',
+    description: 'Dispatched to applicants immediately upon submitting an opportunity application.',
     isEnabled: true,
-    defaultTemplateId: 'tpl-opp-received',
+    defaultTemplateId: 'tpl-opportunity_application_received',
     updatedAt: new Date().toISOString()
   },
   {
@@ -51,77 +70,104 @@ export const DEFAULT_AUTOMATION_SETTINGS: EmailAutomationSetting[] = [
     category: 'OPPORTUNITIES',
     eventType: 'opportunity_shortlisted',
     title: 'Candidate Shortlisted Notification',
-    description: 'Send notification when applicant is marked shortlisted by reviewers.',
+    description: 'Sent when Admin marks application as Shortlisted for interview.',
     isEnabled: true,
-    defaultTemplateId: 'tpl-opp-received',
+    defaultTemplateId: 'tpl-opportunity_shortlisted',
     updatedAt: new Date().toISOString()
   },
   {
     id: 'auto-opp-selected',
     category: 'OPPORTUNITIES',
     eventType: 'opportunity_selected',
-    title: 'Candidate Selected Notification',
-    description: 'Send official selection letter and onboarding instructions.',
+    title: 'Official Selection & Offer',
+    description: 'Sent when candidate is accepted into the AWS SBG Core Team.',
     isEnabled: true,
-    defaultTemplateId: 'tpl-opp-received',
+    defaultTemplateId: 'tpl-opportunity_selected',
     updatedAt: new Date().toISOString()
   },
-
-  // Certification Exams
+  {
+    id: 'auto-opp-rejected',
+    category: 'OPPORTUNITIES',
+    eventType: 'opportunity_rejected',
+    title: 'Application Regret Notification',
+    description: 'Polite notice dispatched if candidate is not selected.',
+    isEnabled: true,
+    defaultTemplateId: 'tpl-opportunity_rejected',
+    updatedAt: new Date().toISOString()
+  },
+  // 3. Exams
+  {
+    id: 'auto-exam-credentials',
+    category: 'EXAMS',
+    eventType: 'exam_instructions',
+    title: 'Exam Credentials & Instructions',
+    description: 'Dispatched to verified candidates with Exam Code and Access Password.',
+    isEnabled: true,
+    defaultTemplateId: 'tpl-exam_instructions',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'auto-exam-submitted',
+    category: 'EXAMS',
+    eventType: 'exam_submitted_confirmation',
+    title: 'Exam Submitted Confirmation',
+    description: 'Official receipt confirming exam submission without score leakage.',
+    isEnabled: true,
+    defaultTemplateId: 'tpl-exam_submitted_confirmation',
+    updatedAt: new Date().toISOString()
+  },
   {
     id: 'auto-exam-result',
     category: 'EXAMS',
     eventType: 'exam_result',
-    title: 'Exam Scorecard & Result Delivery',
-    description: 'Dispatch official evaluation scorecard and Pass/Fail verdict after server-side grading.',
+    title: 'Official Assessment Result Scorecard',
+    description: 'Direct candidate scorecard email containing score, percentage, and verdict.',
     isEnabled: true,
-    defaultTemplateId: 'tpl-exam-result',
+    defaultTemplateId: 'tpl-exam_result',
     updatedAt: new Date().toISOString()
   },
   {
     id: 'auto-exam-selected',
     category: 'EXAMS',
     eventType: 'exam_selected_qualified',
-    title: 'Proctor Candidate Qualification Email',
-    description: 'Dispatch official selection notification when Proctor qualifies candidate in Live Monitor.',
+    title: 'Candidate Selected / Qualified Alert',
+    description: 'Dispatched when Admin marks candidate as selected from proctor console.',
     isEnabled: true,
-    defaultTemplateId: 'tpl-exam-selected',
+    defaultTemplateId: 'tpl-exam_selected_qualified',
     updatedAt: new Date().toISOString()
   },
-
-  // Feedback & Community
+  // 4. Feedback
   {
-    id: 'auto-feedback-ack',
+    id: 'auto-feedback-received',
     category: 'COMMUNITY',
     eventType: 'feedback_received_acknowledgement',
-    title: 'Feedback Received Acknowledgement',
-    description: 'Acknowledge community suggestions and feedback submissions.',
+    title: 'Feedback Received Receipt',
+    description: 'Dispatched to students after submitting feedback on events.',
     isEnabled: true,
-    defaultTemplateId: 'tpl-feedback-ack',
+    defaultTemplateId: 'tpl-feedback_received_acknowledgement',
     updatedAt: new Date().toISOString()
   }
 ];
 
 /**
- * Checks if a particular email automation trigger is currently enabled in settings
+ * Checks if a specific automated email trigger is currently enabled in settings.
  */
 export async function isAutomationEnabled(eventType: EmailType): Promise<boolean> {
   try {
-    const settings = await db.emailAutomationSettings.getAll();
-    const match = settings.find((s: any) => s.eventType === eventType);
-    if (match) {
-      return Boolean(match.isEnabled);
-    }
-    const defaultSetting = DEFAULT_AUTOMATION_SETTINGS.find((s) => s.eventType === eventType);
-    return defaultSetting ? defaultSetting.isEnabled : true;
-  } catch (err) {
-    console.error(`Failed to check automation status for ${eventType}:`, err);
-    return true; // fail-safe: allow essential transactional emails
+    const setting = await db.emailAutomationSettings.getByType(eventType);
+    if (!setting) return true; // Enabled by default
+    return Boolean(setting.isEnabled);
+  } catch {
+    return true;
   }
 }
 
+/* =========================================================================
+   1. EVENT AUTOMATIONS
+========================================================================= */
+
 /**
- * Automated Trigger: Event Registration Confirmation
+ * Trigger: Event Registration Confirmation
  */
 export async function triggerEventRegistrationConfirmation(params: {
   studentName: string;
@@ -137,19 +183,18 @@ export async function triggerEventRegistrationConfirmation(params: {
   registrationId?: string;
 }) {
   const { studentName, email, event, registrationId } = params;
-  if (!(await isAutomationEnabled('event_registration_confirmation'))) {
-    console.log(`[Email Automation] event_registration_confirmation is disabled. Skipping ${email}.`);
+  if (!email || !(await isAutomationEnabled('event_registration_confirmation'))) {
     return;
   }
 
   const variables = {
-    studentName: studentName || 'Student Builder',
-    email,
-    eventName: event.title,
-    eventDate: event.date,
-    eventTime: event.time || '10:00 AM IST',
-    venue: event.venue || (event.mode === 'Online' ? 'Online / Virtual Platform' : 'Chandigarh University Campus'),
-    registrationId: registrationId || `REG-${Date.now().toString().slice(-6)}`,
+    studentName,
+    eventTitle: event.title,
+    eventDate: event.date || 'TBA',
+    eventTime: event.time || 'TBA',
+    eventVenue: event.venue || 'Chandigarh University – Uttar Pradesh',
+    eventMode: event.mode || 'In-Person',
+    registrationId,
     eventUrl: `https://www.awssbgcuup.tech/events/${event.id}`
   };
 
@@ -163,7 +208,119 @@ export async function triggerEventRegistrationConfirmation(params: {
 }
 
 /**
- * Automated Trigger: Opportunity Application Received
+ * Trigger: Event 24h or 1h Reminder
+ */
+export async function triggerEventReminder(params: {
+  studentName: string;
+  email: string;
+  event: {
+    id: string;
+    title: string;
+    date: string;
+    time: string;
+    venue: string;
+  };
+  type: 'event_24h_reminder' | 'event_1h_reminder';
+}) {
+  const { studentName, email, event, type } = params;
+  if (!email || !(await isAutomationEnabled(type))) {
+    return;
+  }
+
+  const variables = {
+    studentName,
+    eventTitle: event.title,
+    eventDate: event.date,
+    eventTime: event.time,
+    eventVenue: event.venue,
+    eventUrl: `https://www.awssbgcuup.tech/events/${event.id}`
+  };
+
+  return await sendTemplateEmail({
+    type,
+    to: email,
+    variables,
+    ctaText: 'Event Information',
+    ctaUrl: variables.eventUrl
+  });
+}
+
+/**
+ * Trigger: Event Updated / Rescheduled
+ */
+export async function triggerEventUpdated(params: {
+  studentName: string;
+  email: string;
+  event: {
+    id: string;
+    title: string;
+    date: string;
+    time: string;
+    venue: string;
+  };
+  updateNotes?: string;
+}) {
+  const { studentName, email, event, updateNotes } = params;
+  if (!email || !(await isAutomationEnabled('event_updated'))) {
+    return;
+  }
+
+  const variables = {
+    studentName,
+    eventTitle: event.title,
+    eventDate: event.date,
+    eventTime: event.time,
+    eventVenue: event.venue,
+    updateNotes: updateNotes || 'Schedule and location details have been updated.',
+    eventUrl: `https://www.awssbgcuup.tech/events/${event.id}`
+  };
+
+  return await sendTemplateEmail({
+    type: 'event_updated',
+    to: email,
+    variables,
+    ctaText: 'Check Updated Schedule',
+    ctaUrl: variables.eventUrl
+  });
+}
+
+/**
+ * Trigger: Event Cancelled
+ */
+export async function triggerEventCancelled(params: {
+  studentName: string;
+  email: string;
+  event: {
+    id: string;
+    title: string;
+  };
+  reason?: string;
+}) {
+  const { studentName, email, event, reason } = params;
+  if (!email || !(await isAutomationEnabled('event_cancelled'))) {
+    return;
+  }
+
+  const variables = {
+    studentName,
+    eventTitle: event.title,
+    cancellationReason: reason || 'Unforeseen scheduling constraints.',
+    eventUrl: 'https://www.awssbgcuup.tech/events'
+  };
+
+  return await sendTemplateEmail({
+    type: 'event_cancelled',
+    to: email,
+    variables
+  });
+}
+
+/* =========================================================================
+   2. CAREER / OPPORTUNITY AUTOMATIONS
+========================================================================= */
+
+/**
+ * Trigger: Opportunity Application Received
  */
 export async function triggerOpportunityApplicationReceived(params: {
   studentName: string;
@@ -174,20 +331,18 @@ export async function triggerOpportunityApplicationReceived(params: {
     role?: string;
     slug?: string;
   };
-  applicationId?: string;
+  applicationId: string;
 }) {
   const { studentName, email, opportunity, applicationId } = params;
-  if (!(await isAutomationEnabled('opportunity_application_received'))) {
-    console.log(`[Email Automation] opportunity_application_received is disabled. Skipping ${email}.`);
+  if (!email || !(await isAutomationEnabled('opportunity_application_received'))) {
     return;
   }
 
   const variables = {
-    studentName: studentName || 'Applicant',
-    email,
+    studentName,
     opportunityTitle: opportunity.title,
-    role: opportunity.role || 'Core Team Member',
-    applicationId: applicationId || `APP-${Date.now().toString().slice(-6)}`,
+    role: opportunity.role || opportunity.title,
+    applicationId,
     opportunityUrl: `https://www.awssbgcuup.tech/opportunities/${opportunity.slug || opportunity.id}`
   };
 
@@ -195,13 +350,119 @@ export async function triggerOpportunityApplicationReceived(params: {
     type: 'opportunity_application_received',
     to: email,
     variables,
-    ctaText: 'View Opportunities',
+    ctaText: 'View Opportunity',
     ctaUrl: variables.opportunityUrl
   });
 }
 
 /**
- * Automated Trigger: Exam Evaluation Result
+ * Trigger: Opportunity Status Change (Shortlisted, Selected, Rejected)
+ */
+export async function triggerOpportunityStatusChange(params: {
+  studentName: string;
+  email: string;
+  opportunityTitle: string;
+  status: 'Shortlisted' | 'Selected' | 'Rejected';
+  notes?: string;
+}) {
+  const { studentName, email, opportunityTitle, status, notes } = params;
+  let type: EmailType = 'opportunity_under_review';
+  if (status === 'Shortlisted') type = 'opportunity_shortlisted';
+  if (status === 'Selected') type = 'opportunity_selected';
+  if (status === 'Rejected') type = 'opportunity_rejected';
+
+  if (!email || !(await isAutomationEnabled(type))) {
+    return;
+  }
+
+  const variables = {
+    studentName,
+    opportunityTitle,
+    nextSteps: notes || 'Check your student inbox for scheduling instructions.',
+    onboardingNotes: notes || 'Welcome to the team! Our leadership will connect with you soon.',
+    opportunityUrl: 'https://www.awssbgcuup.tech/opportunities'
+  };
+
+  return await sendTemplateEmail({
+    type,
+    to: email,
+    variables
+  });
+}
+
+/* =========================================================================
+   3. CERTIFICATION EXAM AUTOMATIONS
+========================================================================= */
+
+/**
+ * Trigger: Exam Credentials & Entry Instructions
+ */
+export async function triggerExamCredentialsEmail(params: {
+  studentName: string;
+  email: string;
+  exam: {
+    id: string;
+    title: string;
+    examCode: string;
+    password?: string;
+    durationMinutes: number;
+  };
+}) {
+  const { studentName, email, exam } = params;
+  if (!email || !(await isAutomationEnabled('exam_instructions'))) {
+    return;
+  }
+
+  const variables = {
+    studentName,
+    examName: exam.title,
+    examCode: exam.examCode,
+    examPassword: exam.password || 'TBA',
+    durationMinutes: exam.durationMinutes,
+    examUrl: `https://www.awssbgcuup.tech/exam/${exam.id}`
+  };
+
+  return await sendTemplateEmail({
+    type: 'exam_instructions',
+    to: email,
+    variables,
+    ctaText: 'Enter Exam Lobby',
+    ctaUrl: variables.examUrl
+  });
+}
+
+/**
+ * Trigger: Exam Submitted Successfully
+ * Strictly acknowledges submission without revealing scores on website.
+ */
+export async function triggerExamSubmissionConfirmation(params: {
+  studentName: string;
+  email: string;
+  rollNumber: string;
+  examTitle: string;
+}) {
+  const { studentName, email, rollNumber, examTitle } = params;
+  if (!email || !(await isAutomationEnabled('exam_submitted_confirmation'))) {
+    return;
+  }
+
+  const variables = {
+    studentName,
+    examName: examTitle,
+    rollNumber,
+    submittedAt: new Date().toLocaleTimeString()
+  };
+
+  return await sendTemplateEmail({
+    type: 'exam_submitted_confirmation',
+    to: email,
+    variables
+  });
+}
+
+/**
+ * Trigger: Exam Result Scorecard Delivery (EMAIL ONLY)
+ * Delivers evaluated score, percentage, and PASS/FAIL verdict to candidate.
  */
 export async function triggerExamResultEmail(params: {
   studentName: string;
@@ -210,8 +471,8 @@ export async function triggerExamResultEmail(params: {
   exam: {
     id: string;
     title: string;
-    examCode: string;
-    passingPercentage: number;
+    examCode?: string;
+    passingPercentage?: number;
   };
   result: {
     score: number;
@@ -221,26 +482,24 @@ export async function triggerExamResultEmail(params: {
   };
 }) {
   const { studentName, email, rollNumber, exam, result } = params;
-  if (!(await isAutomationEnabled('exam_result'))) {
-    console.log(`[Email Automation] exam_result is disabled. Skipping ${email}.`);
+  if (!email || !(await isAutomationEnabled('exam_result'))) {
     return;
   }
 
   const verdict = result.passed ? 'PASSED' : 'FAILED';
-  const verdictColor = result.passed ? '#10B981' : '#EF4444';
+  const verdictColor = result.passed ? '#10B981' : '#F43F5E';
 
   const variables = {
     studentName,
-    email,
-    rollNumber,
     examName: exam.title,
-    examCode: exam.examCode,
+    examCode: exam.examCode || 'EXAM',
+    rollNumber,
     score: result.score,
     totalMarks: result.totalMarks,
     percentage: result.percentage,
     verdict,
     verdictColor,
-    passingPercentage: exam.passingPercentage
+    passingPercentage: exam.passingPercentage || 60
   };
 
   return await sendTemplateEmail({
@@ -251,7 +510,7 @@ export async function triggerExamResultEmail(params: {
 }
 
 /**
- * Automated Trigger: Candidate Selected in Exam
+ * Trigger: Candidate Selected in Exam
  */
 export async function triggerExamSelectionEmail(params: {
   studentName: string;
@@ -264,8 +523,7 @@ export async function triggerExamSelectionEmail(params: {
   selectionNotes?: string;
 }) {
   const { studentName, email, rollNumber, exam, selectionNotes } = params;
-  if (!(await isAutomationEnabled('exam_selected_qualified'))) {
-    console.log(`[Email Automation] exam_selected_qualified is disabled. Skipping ${email}.`);
+  if (!email || !(await isAutomationEnabled('exam_selected_qualified'))) {
     return;
   }
 
@@ -284,8 +542,12 @@ export async function triggerExamSelectionEmail(params: {
   });
 }
 
+/* =========================================================================
+   4. COMMUNITY & FEEDBACK AUTOMATIONS
+========================================================================= */
+
 /**
- * Automated Trigger: Feedback Received Acknowledgement
+ * Trigger: Feedback Received Acknowledgement
  */
 export async function triggerFeedbackReceivedEmail(params: {
   studentName: string;
@@ -299,9 +561,9 @@ export async function triggerFeedbackReceivedEmail(params: {
   }
 
   const variables = {
-    studentName: studentName || 'Student Builder',
-    feedbackCategory: category || 'General Feedback',
-    feedbackMessage: message || 'Feedback received.'
+    studentName: studentName || 'Community Builder',
+    category: category || 'Community Feedback',
+    messageSummary: message.length > 120 ? message.substring(0, 117) + '...' : message
   };
 
   return await sendTemplateEmail({

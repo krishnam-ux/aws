@@ -17,7 +17,9 @@ interface AdminEmailManagerProps {
 }
 
 export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'compose' | 'automations' | 'templates' | 'logs'>('compose');
+  const [activeSubTab, setActiveSubTab] = useState<
+    'dashboard' | 'compose' | 'templates' | 'automations' | 'logs' | 'settings'
+  >('dashboard');
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
@@ -27,10 +29,20 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
   const [logs, setLogs] = useState<EmailLog[]>([]);
   const [logStats, setLogStats] = useState({ total: 0, sent: 0, failed: 0, simulated: 0 });
   const [availableRecipients, setAvailableRecipients] = useState<EmailRecipient[]>([]);
+  const [providerStatus, setProviderStatus] = useState<{
+    provider: string;
+    isConfigured: boolean;
+    verifiedDomain: string;
+    brandName: string;
+    senders: Record<string, string>;
+  } | null>(null);
 
   // Compose State
   const [composeMode, setComposeMode] = useState<'single' | 'bulk'>('single');
-  const [recipientSource, setRecipientSource] = useState<'ALL' | 'EVENT' | 'OPPORTUNITY' | 'EXAM' | 'TEAM' | 'CUSTOM'>('EVENT');
+  const [senderAddress, setSenderAddress] = useState('events@awssbgcuup.tech');
+  const [recipientSource, setRecipientSource] = useState<
+    'ALL' | 'EVENT' | 'OPPORTUNITY' | 'EXAM' | 'TEAM' | 'SELECTED' | 'STUDENTS' | 'CUSTOM'
+  >('EVENT');
   const [selectedRecipients, setSelectedRecipients] = useState<EmailRecipient[]>([]);
   const [singleTo, setSingleTo] = useState('');
   const [cc, setCc] = useState('');
@@ -38,9 +50,10 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
   const [subject, setSubject] = useState('');
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [emailType, setEmailType] = useState<EmailType>('admin_manual_message');
-  const [contentHtml, setContentHtml] = useState('<p>Hello {{studentName}},</p><p>We are excited to share an update with you regarding AWS Student Builder Group CU-UP!</p>');
+  const [contentHtml, setContentHtml] = useState(
+    '<p>Hello {{studentName}},</p><p>We are excited to share an update with you regarding AWS Student Builder Group CU-UP!</p>'
+  );
   const [previewHtml, setPreviewHtml] = useState('');
-  const [showLivePreview, setShowLivePreview] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [batchProgress, setBatchProgress] = useState<EmailBatchSummary | null>(null);
   const [showBatchConfirmModal, setShowBatchConfirmModal] = useState(false);
@@ -56,6 +69,9 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
   const [logTypeFilter, setLogTypeFilter] = useState<string>('ALL');
   const [selectedLogDetail, setSelectedLogDetail] = useState<EmailLog | null>(null);
   const [retryingLogId, setRetryingLogId] = useState<string | null>(null);
+
+  // Scheduled / Cron state
+  const [cronRunning, setCronRunning] = useState(false);
 
   // Headers helper
   const getHeaders = () => ({
@@ -109,7 +125,7 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
     }
   };
 
-  const loadRecipients = async (source = 'ALL') => {
+  const loadRecipients = async (source = 'EVENT') => {
     try {
       const res = await fetch(`/api/admin/email/recipients?source=${source}`, {
         headers: getHeaders(),
@@ -124,15 +140,31 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
     }
   };
 
+  const loadStatus = async () => {
+    try {
+      const res = await fetch('/api/admin/email/status', {
+        headers: getHeaders(),
+        cache: 'no-store'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProviderStatus(data);
+      }
+    } catch (err) {
+      console.error('Failed to load email status:', err);
+    }
+  };
+
   useEffect(() => {
     loadTemplates();
     loadAutomations();
     loadLogs();
+    loadStatus();
     loadRecipients(recipientSource);
   }, []);
 
   useEffect(() => {
-    if (activeSubTab === 'logs') {
+    if (activeSubTab === 'logs' || activeSubTab === 'dashboard') {
       loadLogs();
     }
   }, [logStatusFilter, logTypeFilter, logSearchQuery, activeSubTab]);
@@ -154,7 +186,7 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
         body: JSON.stringify({
           action: 'preview',
           template: {
-            subject: subject || 'Sample Email Subject',
+            subject: subject || 'Sample Notification - AWS SBG CU-UP',
             bodyHtml: contentHtml
           }
         })
@@ -177,6 +209,12 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
       setSubject(tpl.subject);
       setContentHtml(tpl.bodyHtml);
       setEmailType(tpl.type);
+
+      // Auto-route sender identity based on template category
+      if (tpl.category === 'EVENTS') setSenderAddress('events@awssbgcuup.tech');
+      else if (tpl.category === 'OPPORTUNITIES') setSenderAddress('career@awssbgcuup.tech');
+      else if (tpl.category === 'EXAMS') setSenderAddress('notifications@awssbgcuup.tech');
+      else if (tpl.category === 'COMMUNITY') setSenderAddress('communication@awssbgcuup.tech');
     }
   };
 
@@ -260,7 +298,7 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
       });
 
       if (res.ok) {
-        setStatusMessage({ type: 'success', text: `Test email dispatched to ${testEmailRecipient}!` });
+        setStatusMessage({ type: 'success', text: `Live test email dispatched via Resend to ${testEmailRecipient}!` });
       } else {
         const data = await res.json();
         setStatusMessage({ type: 'error', text: data.error || 'Failed to send test email.' });
@@ -314,6 +352,7 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
         headers: getHeaders(),
         body: JSON.stringify({
           mode: 'single',
+          from: senderAddress,
           to: singleTo.trim(),
           cc: cc ? cc.split(',').map((s) => s.trim()) : undefined,
           bcc: bcc ? bcc.split(',').map((s) => s.trim()) : undefined,
@@ -347,7 +386,7 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
     const targetRecipients = selectedRecipients.length > 0 ? selectedRecipients : availableRecipients;
 
     if (targetRecipients.length === 0) {
-      setStatusMessage({ type: 'error', text: 'No recipients selected for batch send.' });
+      setStatusMessage({ type: 'error', text: 'No recipients available for batch send.' });
       return;
     }
 
@@ -360,6 +399,7 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
         headers: getHeaders(),
         body: JSON.stringify({
           mode: 'batch',
+          from: senderAddress,
           recipients: targetRecipients,
           subject: subject.trim(),
           contentHtml,
@@ -386,6 +426,32 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
     }
   };
 
+  // Trigger Scheduled Cron Reminders
+  const handleTriggerCron = async () => {
+    try {
+      setCronRunning(true);
+      const res = await fetch('/api/admin/email/cron', {
+        method: 'POST',
+        headers: getHeaders()
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setStatusMessage({
+          type: 'success',
+          text: `Scheduled Reminder Check Complete: ${data.summary?.sent || 0} reminders sent.`
+        });
+        loadLogs();
+      } else {
+        setStatusMessage({ type: 'error', text: data.error || 'Failed to execute scheduled reminders.' });
+      }
+    } catch (err: any) {
+      setStatusMessage({ type: 'error', text: err.message || 'Cron error' });
+    } finally {
+      setCronRunning(false);
+      setTimeout(() => setStatusMessage(null), 5000);
+    }
+  };
+
   const insertVariableChip = (variable: string) => {
     const placeholder = `{{${variable}}}`;
     setContentHtml((prev) => `${prev} ${placeholder} `);
@@ -399,95 +465,127 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
           <div className="flex items-center space-x-3">
             <div className="h-10 w-10 rounded-lg bg-orange-50 border border-orange-200 flex items-center justify-center text-[#FF9900]">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
               </svg>
             </div>
             <div>
               <h2 className="font-display font-extrabold text-lg text-[#111827] flex items-center space-x-2">
                 <span>Centralized Email & Notification Hub</span>
                 <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded uppercase tracking-wider">
-                  SMTP / Simulated
+                  Resend • awssbgcuup.tech
                 </span>
               </h2>
               <p className="text-xs text-[#64748B]">
-                Automated multi-channel communications, branded HTML templates, batch broadcasts & delivery tracking.
+                Official transactional communications, branded HTML templates, automated triggers & delivery tracking.
               </p>
             </div>
           </div>
 
-          {/* Subtabs navigation */}
-          <div className="flex bg-[#F6F8FA] p-1 rounded-lg border border-[#E2E8F0] text-xs font-bold">
+          {/* Subtabs navigation - All 6 Designated Sections */}
+          <div className="flex flex-wrap bg-[#F6F8FA] p-1 rounded-lg border border-[#E2E8F0] text-xs font-bold gap-1">
+            <button
+              onClick={() => setActiveSubTab('dashboard')}
+              className={`px-3 py-1.5 rounded transition-all cursor-pointer flex items-center space-x-1.5 ${
+                activeSubTab === 'dashboard'
+                  ? 'bg-white text-[#FF9900] shadow-sm'
+                  : 'text-[#64748B] hover:text-[#111827]'
+              }`}
+            >
+              <span>📊</span>
+              <span>Dashboard</span>
+            </button>
             <button
               onClick={() => setActiveSubTab('compose')}
-              className={`px-3.5 py-1.5 rounded transition-all cursor-pointer flex items-center space-x-1.5 ${
+              className={`px-3 py-1.5 rounded transition-all cursor-pointer flex items-center space-x-1.5 ${
                 activeSubTab === 'compose'
                   ? 'bg-white text-[#FF9900] shadow-sm'
                   : 'text-[#64748B] hover:text-[#111827]'
               }`}
             >
               <span>✉️</span>
-              <span>Compose & Broadcast</span>
-            </button>
-            <button
-              onClick={() => setActiveSubTab('automations')}
-              className={`px-3.5 py-1.5 rounded transition-all cursor-pointer flex items-center space-x-1.5 ${
-                activeSubTab === 'automations'
-                  ? 'bg-white text-[#FF9900] shadow-sm'
-                  : 'text-[#64748B] hover:text-[#111827]'
-              }`}
-            >
-              <span>⚡</span>
-              <span>Automations Matrix</span>
-              <span className="ml-1 px-1.5 py-0.2 bg-amber-100 text-amber-800 text-[10px] rounded-full">
-                {automations.filter((a) => a.isEnabled).length}
-              </span>
+              <span>Compose Email</span>
             </button>
             <button
               onClick={() => setActiveSubTab('templates')}
-              className={`px-3.5 py-1.5 rounded transition-all cursor-pointer flex items-center space-x-1.5 ${
+              className={`px-3 py-1.5 rounded transition-all cursor-pointer flex items-center space-x-1.5 ${
                 activeSubTab === 'templates'
                   ? 'bg-white text-[#FF9900] shadow-sm'
                   : 'text-[#64748B] hover:text-[#111827]'
               }`}
             >
               <span>📋</span>
-              <span>Templates</span>
-              <span className="ml-1 px-1.5 py-0.2 bg-slate-200 text-slate-700 text-[10px] rounded-full">
-                {templates.length}
+              <span>Templates ({templates.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveSubTab('automations')}
+              className={`px-3 py-1.5 rounded transition-all cursor-pointer flex items-center space-x-1.5 ${
+                activeSubTab === 'automations'
+                  ? 'bg-white text-[#FF9900] shadow-sm'
+                  : 'text-[#64748B] hover:text-[#111827]'
+              }`}
+            >
+              <span>⚡</span>
+              <span>Automations</span>
+              <span className="ml-1 px-1.5 py-0.2 bg-amber-100 text-amber-800 text-[10px] rounded-full">
+                {automations.filter((a) => a.isEnabled).length}
               </span>
             </button>
             <button
               onClick={() => setActiveSubTab('logs')}
-              className={`px-3.5 py-1.5 rounded transition-all cursor-pointer flex items-center space-x-1.5 ${
+              className={`px-3 py-1.5 rounded transition-all cursor-pointer flex items-center space-x-1.5 ${
                 activeSubTab === 'logs'
                   ? 'bg-white text-[#FF9900] shadow-sm'
                   : 'text-[#64748B] hover:text-[#111827]'
               }`}
             >
-              <span>📊</span>
-              <span>Delivery Logs</span>
+              <span>📜</span>
+              <span>Logs ({logStats.total})</span>
+            </button>
+            <button
+              onClick={() => setActiveSubTab('settings')}
+              className={`px-3 py-1.5 rounded transition-all cursor-pointer flex items-center space-x-1.5 ${
+                activeSubTab === 'settings'
+                  ? 'bg-white text-[#FF9900] shadow-sm'
+                  : 'text-[#64748B] hover:text-[#111827]'
+              }`}
+            >
+              <span>⚙️</span>
+              <span>Settings</span>
             </button>
           </div>
         </div>
 
         {/* Quick Stats Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 text-xs font-sans">
+        <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 mt-4 text-xs font-sans">
           <div className="p-3 bg-[#F6F8FA] border border-[#E2E8F0] rounded">
-            <span className="text-[10px] uppercase font-bold text-[#64748B] tracking-wider block">Total Dispatched</span>
+            <span className="text-[10px] uppercase font-bold text-[#64748B] tracking-wider block">Total Sent</span>
             <span className="text-xl font-extrabold text-[#111827] mt-0.5 block">{logStats.total}</span>
           </div>
           <div className="p-3 bg-emerald-50 border border-emerald-100 rounded text-emerald-800">
-            <span className="text-[10px] uppercase font-bold tracking-wider block">Delivered (Sent)</span>
+            <span className="text-[10px] uppercase font-bold tracking-wider block">Delivered</span>
             <span className="text-xl font-extrabold mt-0.5 block">{logStats.sent}</span>
           </div>
+          <div className="p-3 bg-amber-50 border border-amber-100 rounded text-amber-800">
+            <span className="text-[10px] uppercase font-bold tracking-wider block">Pending / Sim</span>
+            <span className="text-xl font-extrabold mt-0.5 block">{logStats.simulated}</span>
+          </div>
           <div className="p-3 bg-red-50 border border-red-100 rounded text-red-800">
-            <span className="text-[10px] uppercase font-bold tracking-wider block">Failed / Bounced</span>
+            <span className="text-[10px] uppercase font-bold tracking-wider block">Failed</span>
             <span className="text-xl font-extrabold mt-0.5 block">{logStats.failed}</span>
           </div>
-          <div className="p-3 bg-amber-50 border border-amber-100 rounded text-amber-800">
-            <span className="text-[10px] uppercase font-bold tracking-wider block">Automations Active</span>
+          <div className="p-3 bg-blue-50 border border-blue-100 rounded text-blue-800">
+            <span className="text-[10px] uppercase font-bold tracking-wider block">Templates</span>
+            <span className="text-xl font-extrabold mt-0.5 block">{templates.length}</span>
+          </div>
+          <div className="p-3 bg-purple-50 border border-purple-100 rounded text-purple-800">
+            <span className="text-[10px] uppercase font-bold tracking-wider block">Automations</span>
             <span className="text-xl font-extrabold mt-0.5 block">
-              {automations.filter((a) => a.isEnabled).length} / {automations.length}
+              {automations.filter((a) => a.isEnabled).length} Active
             </span>
           </div>
         </div>
@@ -511,7 +609,130 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
         </div>
       )}
 
-      {/* 2. SUBTAB 1: COMPOSE & BROADCAST */}
+      {/* 2. SECTION 1: DASHBOARD */}
+      {activeSubTab === 'dashboard' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Quick Action 1: Compose Email */}
+            <div className="bg-white border border-[#E2E8F0] hover:border-[#FF9900] rounded-lg p-5 shadow-xs transition-all flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="w-10 h-10 rounded-lg bg-orange-50 text-[#FF9900] flex items-center justify-center text-xl font-bold">
+                  ✉️
+                </div>
+                <h3 className="font-bold text-sm text-[#111827]">Compose & Broadcast</h3>
+                <p className="text-xs text-[#64748B] leading-relaxed">
+                  Send official manual emails or mass broadcasts to event registrants, exam candidates, or applicants.
+                </p>
+              </div>
+              <button
+                onClick={() => setActiveSubTab('compose')}
+                className="mt-4 px-4 py-2 bg-[#FF9900] hover:bg-[#E08800] text-white text-xs font-bold rounded shadow-xs cursor-pointer transition-colors"
+              >
+                Open Composer &rarr;
+              </button>
+            </div>
+
+            {/* Quick Action 2: Automations */}
+            <div className="bg-white border border-[#E2E8F0] hover:border-amber-400 rounded-lg p-5 shadow-xs transition-all flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xl font-bold">
+                  ⚡
+                </div>
+                <h3 className="font-bold text-sm text-[#111827]">Automated Triggers</h3>
+                <p className="text-xs text-[#64748B] leading-relaxed">
+                  Control automatic event registrations, exam credentials, scorecards, and application status notices.
+                </p>
+              </div>
+              <button
+                onClick={() => setActiveSubTab('automations')}
+                className="mt-4 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded shadow-xs cursor-pointer transition-colors"
+              >
+                Manage Automations &rarr;
+              </button>
+            </div>
+
+            {/* Quick Action 3: Cron Reminders */}
+            <div className="bg-white border border-[#E2E8F0] hover:border-blue-400 rounded-lg p-5 shadow-xs transition-all flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold">
+                  ⏱️
+                </div>
+                <h3 className="font-bold text-sm text-[#111827]">Scheduled Reminders</h3>
+                <p className="text-xs text-[#64748B] leading-relaxed">
+                  Vercel Cron compatible scheduled processor for 24h & 1h event & exam reminders.
+                </p>
+              </div>
+              <button
+                onClick={handleTriggerCron}
+                disabled={cronRunning}
+                className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold rounded shadow-xs cursor-pointer transition-colors"
+              >
+                {cronRunning ? 'Processing...' : 'Run Scheduled Reminders Now'}
+              </button>
+            </div>
+          </div>
+
+          {/* Recent Activity Table */}
+          <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-sm p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
+              <h3 className="font-display font-bold text-sm text-[#111827]">Recent Email Activity</h3>
+              <button
+                onClick={() => setActiveSubTab('logs')}
+                className="text-xs text-[#FF9900] hover:text-[#E08800] font-bold cursor-pointer"
+              >
+                View All Logs &rarr;
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-[#E2E8F0] text-xs font-sans">
+                <thead className="bg-[#F6F8FA] font-bold text-[#64748B]">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Recipient</th>
+                    <th className="px-3 py-2 text-left">Subject</th>
+                    <th className="px-3 py-2 text-left">Type</th>
+                    <th className="px-3 py-2 text-left">Status</th>
+                    <th className="px-3 py-2 text-left">Time</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-700">
+                  {logs.slice(0, 5).map((log) => (
+                    <tr key={log.id} className="hover:bg-slate-50">
+                      <td className="px-3 py-2 font-mono font-medium">{log.recipient}</td>
+                      <td className="px-3 py-2 font-semibold truncate max-w-xs">{log.subject}</td>
+                      <td className="px-3 py-2 font-mono text-[10px] text-slate-500">{log.type}</td>
+                      <td className="px-3 py-2">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[9px] font-bold font-mono uppercase ${
+                            log.status === 'SENT'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : log.status === 'FAILED'
+                              ? 'bg-red-50 text-red-700 border border-red-200'
+                              : 'bg-blue-50 text-blue-700 border border-blue-200'
+                          }`}
+                        >
+                          {log.status}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-slate-400 font-mono text-[10px]">
+                        {new Date(log.sentAt || log.createdAt).toLocaleTimeString()}
+                      </td>
+                    </tr>
+                  ))}
+                  {logs.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-6 text-center text-slate-400">
+                        No recent email logs recorded.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. SECTION 2: COMPOSE & BROADCAST */}
       {activeSubTab === 'compose' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Form (7 cols) */}
@@ -541,7 +762,45 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
               </div>
             </div>
 
-            <form onSubmit={composeMode === 'single' ? handleSendSingleEmail : (e) => { e.preventDefault(); setShowBatchConfirmModal(true); }} className="space-y-4 text-xs font-sans">
+            <form
+              onSubmit={
+                composeMode === 'single'
+                  ? handleSendSingleEmail
+                  : (e) => {
+                      e.preventDefault();
+                      setShowBatchConfirmModal(true);
+                    }
+              }
+              className="space-y-4 text-xs font-sans"
+            >
+              {/* Sender Identity Dropdown (From Address) */}
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider block">
+                  From (Official Sender Identity) <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={senderAddress}
+                  onChange={(e) => setSenderAddress(e.target.value)}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded bg-white focus:outline-none focus:ring-1 focus:ring-[#FF9900] font-mono text-xs"
+                >
+                  <option value="events@awssbgcuup.tech">
+                    AWS Student Builder Group (CU-UP) &lt;events@awssbgcuup.tech&gt; — Events &amp; Registrations
+                  </option>
+                  <option value="career@awssbgcuup.tech">
+                    AWS Student Builder Group (CU-UP) &lt;career@awssbgcuup.tech&gt; — Career &amp; Opportunities
+                  </option>
+                  <option value="notifications@awssbgcuup.tech">
+                    AWS Student Builder Group (CU-UP) &lt;notifications@awssbgcuup.tech&gt; — Official Notifications &amp; Exams
+                  </option>
+                  <option value="communication@awssbgcuup.tech">
+                    AWS Student Builder Group (CU-UP) &lt;communication@awssbgcuup.tech&gt; — General Communication
+                  </option>
+                  <option value="noreply@awssbgcuup.tech">
+                    AWS Student Builder Group (CU-UP) &lt;noreply@awssbgcuup.tech&gt; — Automated System Receipts
+                  </option>
+                </select>
+              </div>
+
               {/* Template Preset Loader */}
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider block">
@@ -606,24 +865,26 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
                   </div>
                 </>
               ) : (
-                /* Bulk Broadcast Mode */
+                /* Bulk Broadcast Mode with 8 Recipient Groups */
                 <div className="space-y-3 p-3.5 bg-orange-50/60 border border-orange-200 rounded-lg">
                   <div className="flex items-center justify-between">
                     <label className="font-bold text-orange-950 uppercase tracking-wider block">
                       Broadcast Target Audience
                     </label>
                     <span className="text-xs font-bold text-[#FF9900] bg-white px-2 py-0.5 rounded border border-orange-200">
-                      {availableRecipients.length} Recipient{availableRecipients.length === 1 ? '' : 's'} Available
+                      {availableRecipients.length} Recipient{availableRecipients.length === 1 ? '' : 's'} Selected
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
-                      { id: 'EVENT', label: 'Event Attendees' },
-                      { id: 'OPPORTUNITY', label: 'Applicants' },
+                      { id: 'EVENT', label: 'Event Registrants' },
+                      { id: 'OPPORTUNITY', label: 'Opportunity Applicants' },
                       { id: 'EXAM', label: 'Exam Candidates' },
-                      { id: 'TEAM', label: 'Core Team' },
-                      { id: 'ALL', label: 'All Community' }
+                      { id: 'SELECTED', label: 'Selected Candidates' },
+                      { id: 'STUDENTS', label: 'All Students' },
+                      { id: 'TEAM', label: 'Team Members' },
+                      { id: 'ALL', label: 'Entire Community' }
                     ].map((src) => (
                       <button
                         type="button"
@@ -663,7 +924,22 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
                   Insert Dynamic Variables (Click to Add)
                 </label>
                 <div className="flex flex-wrap gap-1.5">
-                  {['studentName', 'eventName', 'eventDate', 'eventTime', 'venue', 'registrationId', 'opportunityTitle', 'score', 'verdict'].map((v) => (
+                  {[
+                    'studentName',
+                    'eventTitle',
+                    'eventDate',
+                    'eventTime',
+                    'eventVenue',
+                    'eventUrl',
+                    'examName',
+                    'examId',
+                    'examPassword',
+                    'score',
+                    'percentage',
+                    'result',
+                    'opportunityTitle',
+                    'selectionStatus'
+                  ].map((v) => (
                     <button
                       type="button"
                       key={v}
@@ -693,14 +969,20 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
               {/* Dispatch Button */}
               <div className="pt-3 border-t border-[#E2E8F0] flex items-center justify-between">
                 <span className="text-[11px] text-[#64748B]">
-                  🛡️ Branded AWS SBG header, footer & security headers automatically attached.
+                  🛡️ Branded AWS SBG header, footer &amp; security headers automatically attached.
                 </span>
                 <button
                   type="submit"
                   disabled={isSending}
                   className="px-5 py-2.5 bg-[#FF9900] hover:bg-[#E08800] text-white font-bold rounded shadow-sm transition-all cursor-pointer disabled:opacity-50 flex items-center space-x-2"
                 >
-                  <span>{isSending ? 'Sending...' : composeMode === 'single' ? '✉️ Dispatch Email' : '🚀 Launch Broadcast'}</span>
+                  <span>
+                    {isSending
+                      ? 'Sending...'
+                      : composeMode === 'single'
+                      ? '✉️ Dispatch Email'
+                      : '🚀 Launch Broadcast'}
+                  </span>
                 </button>
               </div>
             </form>
@@ -734,7 +1016,56 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
         </div>
       )}
 
-      {/* 3. SUBTAB 2: AUTOMATIONS MATRIX */}
+      {/* 4. SECTION 3: TEMPLATES */}
+      {activeSubTab === 'templates' && (
+        <div className="space-y-6">
+          <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-sm p-6 space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E2E8F0] pb-4">
+              <div>
+                <h3 className="font-display font-bold text-base text-[#111827]">
+                  Master Email Templates
+                </h3>
+                <p className="text-xs text-[#64748B] mt-1">
+                  Customize the official AWS SBG branded layouts and default copy across all notification types.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {templates.map((tpl) => (
+                <div
+                  key={tpl.id}
+                  className="bg-white border border-[#E2E8F0] hover:border-[#FF9900] rounded-lg p-5 shadow-xs transition-all space-y-3 flex flex-col justify-between"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-mono uppercase">
+                        {tpl.category}
+                      </span>
+                      <span className="text-[9px] text-emerald-600 font-bold">● Active</span>
+                    </div>
+                    <h4 className="font-bold text-sm text-[#111827]">{tpl.name}</h4>
+                    <p className="text-xs text-[#64748B] font-mono text-[11px] truncate">{tpl.subject}</p>
+                    <p className="text-[11px] text-slate-500 line-clamp-2">{tpl.description}</p>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-[10px] text-slate-400 font-mono">{tpl.variables.length} variables</span>
+                    <button
+                      onClick={() => setEditingTemplate(tpl)}
+                      className="px-3 py-1 bg-slate-100 hover:bg-[#FF9900] hover:text-white text-slate-800 text-xs font-bold rounded transition-colors cursor-pointer"
+                    >
+                      Edit Template
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. SECTION 4: AUTOMATIONS */}
       {activeSubTab === 'automations' && (
         <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-sm p-6 space-y-6">
           <div className="border-b border-[#E2E8F0] pb-4">
@@ -801,65 +1132,16 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
         </div>
       )}
 
-      {/* 4. SUBTAB 3: TEMPLATES MANAGER */}
-      {activeSubTab === 'templates' && (
-        <div className="space-y-6">
-          <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-sm p-6 space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E2E8F0] pb-4">
-              <div>
-                <h3 className="font-display font-bold text-base text-[#111827]">
-                  Master Email Templates
-                </h3>
-                <p className="text-xs text-[#64748B] mt-1">
-                  Customize the official AWS SBG branded layouts and default copy across all notification types.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {templates.map((tpl) => (
-                <div
-                  key={tpl.id}
-                  className="bg-white border border-[#E2E8F0] hover:border-[#FF9900] rounded-lg p-5 shadow-xs transition-all space-y-3 flex flex-col justify-between"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-mono uppercase">
-                        {tpl.category}
-                      </span>
-                      <span className="text-[9px] text-emerald-600 font-bold">● Active</span>
-                    </div>
-                    <h4 className="font-bold text-sm text-[#111827]">{tpl.name}</h4>
-                    <p className="text-xs text-[#64748B] font-mono text-[11px] truncate">{tpl.subject}</p>
-                    <p className="text-[11px] text-slate-500 line-clamp-2">{tpl.description}</p>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-[10px] text-slate-400 font-mono">{tpl.variables.length} variables</span>
-                    <button
-                      onClick={() => setEditingTemplate(tpl)}
-                      className="px-3 py-1 bg-slate-100 hover:bg-[#FF9900] hover:text-white text-slate-800 text-xs font-bold rounded transition-colors cursor-pointer"
-                    >
-                      Edit Template
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 5. SUBTAB 4: DELIVERY LOGS */}
+      {/* 6. SECTION 5: LOGS */}
       {activeSubTab === 'logs' && (
         <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-sm p-6 space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E2E8F0] pb-4">
             <div>
               <h3 className="font-display font-bold text-base text-[#111827]">
-                Email Delivery Logs & Audit Trail
+                Email Delivery Logs &amp; Audit Trail
               </h3>
               <p className="text-xs text-[#64748B] mt-1">
-                Real-time tracking of sent messages, SMTP delivery statuses, simulated dispatches and retry controls.
+                Real-time tracking of sent messages, Resend provider IDs, failure reasons and retry controls.
               </p>
             </div>
             <button
@@ -885,7 +1167,7 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
               className="px-3 py-1.5 border border-[#E2E8F0] rounded bg-white font-medium focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
             >
               <option value="ALL">All Statuses</option>
-              <option value="SENT">SENT (Live/Simulated)</option>
+              <option value="SENT">SENT (Live / Resend)</option>
               <option value="FAILED">FAILED</option>
               <option value="SIMULATED">SIMULATED</option>
             </select>
@@ -930,7 +1212,7 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
                       <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
                         <button
                           onClick={() => setSelectedLogDetail(log)}
-                          className="text-brand-navy hover:text-[#FF9900] font-bold cursor-pointer"
+                          className="text-[#0F172A] hover:text-[#FF9900] font-bold cursor-pointer"
                         >
                           Details
                         </button>
@@ -959,6 +1241,103 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
         </div>
       )}
 
+      {/* 7. SECTION 6: SETTINGS */}
+      {activeSubTab === 'settings' && (
+        <div className="space-y-6">
+          <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-sm p-6 space-y-6">
+            <div className="border-b border-[#E2E8F0] pb-4">
+              <h3 className="font-display font-bold text-base text-[#111827]">
+                Email Service Configuration &amp; Infrastructure
+              </h3>
+              <p className="text-xs text-[#64748B] mt-1">
+                Verified Resend domain, official sender identities, scheduled jobs runner and security controls.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Provider Details */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-slate-700">
+                  Email Provider Status
+                </h4>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between py-1 border-b border-slate-200">
+                    <span className="text-slate-500 font-medium">Provider</span>
+                    <span className="font-mono font-bold text-slate-800">
+                      {providerStatus?.provider || 'RESEND'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-slate-200">
+                    <span className="text-slate-500 font-medium">Verified Domain</span>
+                    <span className="font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      {providerStatus?.verifiedDomain || 'awssbgcuup.tech'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-slate-200">
+                    <span className="text-slate-500 font-medium">RESEND_API_KEY</span>
+                    <span className="font-mono font-bold text-emerald-700">
+                      {providerStatus?.isConfigured ? '● Configured (Server Only)' : '● Fallback Simulated'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span className="text-slate-500 font-medium">Brand Identity</span>
+                    <span className="font-semibold text-slate-800">AWS Student Builder Group (CU-UP)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Official Sender Routing */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-slate-700">
+                  Official Sender Identities
+                </h4>
+                <div className="space-y-1.5 text-xs font-mono">
+                  <div className="p-2 bg-white rounded border border-slate-200">
+                    <span className="font-bold text-blue-700">events@awssbgcuup.tech</span>
+                    <span className="block text-[11px] font-sans text-slate-500">Event Registrations, Reminders, Updates</span>
+                  </div>
+                  <div className="p-2 bg-white rounded border border-slate-200">
+                    <span className="font-bold text-purple-700">career@awssbgcuup.tech</span>
+                    <span className="block text-[11px] font-sans text-slate-500">Applications, Review, Selection Notices</span>
+                  </div>
+                  <div className="p-2 bg-white rounded border border-slate-200">
+                    <span className="font-bold text-amber-700">notifications@awssbgcuup.tech</span>
+                    <span className="block text-[11px] font-sans text-slate-500">Exam Credentials, Scorecards, System Notices</span>
+                  </div>
+                  <div className="p-2 bg-white rounded border border-slate-200">
+                    <span className="font-bold text-emerald-700">communication@awssbgcuup.tech</span>
+                    <span className="block text-[11px] font-sans text-slate-500">General Community Outreach &amp; Feedback</span>
+                  </div>
+                  <div className="p-2 bg-white rounded border border-slate-200">
+                    <span className="font-bold text-slate-700">noreply@awssbgcuup.tech</span>
+                    <span className="block text-[11px] font-sans text-slate-500">Automated System Receipts</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Scheduled Cron Triggers */}
+            <div className="p-4 bg-blue-50/50 border border-blue-200 rounded-lg flex flex-wrap items-center justify-between gap-4">
+              <div className="space-y-1">
+                <h4 className="font-bold text-xs text-blue-950">
+                  Vercel Server-Side Scheduled Cron Reminders
+                </h4>
+                <p className="text-xs text-blue-700">
+                  Runs idempotent 24-hour and 1-hour email reminder jobs for events and exams.
+                </p>
+              </div>
+              <button
+                onClick={handleTriggerCron}
+                disabled={cronRunning}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded shadow-xs cursor-pointer disabled:opacity-50 transition-colors"
+              >
+                {cronRunning ? 'Running Reminders...' : 'Trigger Scheduled Reminders Now'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODAL: EDIT TEMPLATE & PREVIEW TEST */}
       {editingTemplate && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-sans text-xs">
@@ -966,7 +1345,9 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
             <div className="flex items-start justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="font-display font-bold text-sm text-[#111827]">Edit Master Template</h3>
-                <p className="text-[11px] text-[#64748B] mt-0.5">{editingTemplate.name} ({editingTemplate.type})</p>
+                <p className="text-[11px] text-[#64748B] mt-0.5">
+                  {editingTemplate.name} ({editingTemplate.type})
+                </p>
               </div>
               <button onClick={() => setEditingTemplate(null)} className="text-slate-400 hover:text-slate-600">
                 ✕
@@ -999,7 +1380,7 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
               {/* Test Send Section */}
               <div className="p-3 bg-slate-50 border border-slate-200 rounded space-y-2">
                 <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
-                  Send Test Email (Does not write to candidate logs)
+                  Send Test Email (Direct Resend Test)
                 </label>
                 <div className="flex space-x-2">
                   <input
@@ -1049,11 +1430,12 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
               Confirm Mass Email Broadcast?
             </h3>
             <p className="text-slate-600 leading-relaxed">
-              You are about to broadcast this email to <strong>{availableRecipients.length} recipients</strong> from audience group <strong>{recipientSource}</strong>.
+              You are about to broadcast this email to <strong>{availableRecipients.length} recipients</strong> from sender <strong>{senderAddress}</strong>.
             </p>
             <div className="p-3 bg-amber-50 border border-amber-200 rounded text-amber-900 text-[11px] space-y-1">
               <span className="font-bold block">Safety Assurance:</span>
-              <span>- Automatic duplicate deduplication is enforced.</span><br/>
+              <span>- Automatic duplicate deduplication is enforced.</span>
+              <br />
               <span>- Failed dispatches are isolated and logged without halting other recipients.</span>
             </div>
             <div className="pt-3 border-t border-slate-100 flex justify-end space-x-3">
@@ -1069,7 +1451,7 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
                 onClick={handleSendBatchEmail}
                 className="px-5 py-2 bg-[#FF9900] hover:bg-[#E08800] text-white font-bold rounded shadow-xs cursor-pointer"
               >
-                🚀 Confirm & Send Broadcast
+                🚀 Confirm &amp; Send Broadcast
               </button>
             </div>
           </div>
@@ -1088,13 +1470,27 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
             </div>
 
             <div className="space-y-2 font-mono text-[11px]">
-              <div><strong>Log ID:</strong> {selectedLogDetail.id}</div>
-              <div><strong>Recipient:</strong> {selectedLogDetail.recipient}</div>
-              <div><strong>Subject:</strong> {selectedLogDetail.subject}</div>
-              <div><strong>Status:</strong> {selectedLogDetail.status}</div>
-              <div><strong>Type:</strong> {selectedLogDetail.type}</div>
-              <div><strong>Triggered By:</strong> {selectedLogDetail.triggeredBy}</div>
-              <div><strong>Message ID:</strong> {selectedLogDetail.providerId || 'N/A'}</div>
+              <div>
+                <strong>Log ID:</strong> {selectedLogDetail.id}
+              </div>
+              <div>
+                <strong>Recipient:</strong> {selectedLogDetail.recipient}
+              </div>
+              <div>
+                <strong>Subject:</strong> {selectedLogDetail.subject}
+              </div>
+              <div>
+                <strong>Status:</strong> {selectedLogDetail.status}
+              </div>
+              <div>
+                <strong>Type:</strong> {selectedLogDetail.type}
+              </div>
+              <div>
+                <strong>Triggered By:</strong> {selectedLogDetail.triggeredBy}
+              </div>
+              <div>
+                <strong>Message ID:</strong> {selectedLogDetail.providerId || 'N/A'}
+              </div>
               {selectedLogDetail.errorMessage && (
                 <div className="p-2 bg-red-50 text-red-700 border border-red-200 rounded">
                   <strong>Error:</strong> {selectedLogDetail.errorMessage}

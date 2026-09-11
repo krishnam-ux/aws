@@ -3739,5 +3739,47 @@
     "description": "Export Test User 355 registered for EXPORT TEST EVENT.",
     "date": "2026-08-14T13:50:07.374Z",
     "status": "unread"
+  },
+  {
+    "id": "notif-1789148689033",
+    "title": "New Event Registration",
+    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-09-11T17:44:49.033Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1789148742752",
+    "title": "New Event Registration",
+    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-09-11T17:45:42.752Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1789148888814",
+    "title": "New Event Registration",
+    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-09-11T17:48:08.815Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1789148939357",
+    "title": "New Event Registration",
+    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-09-11T17:48:59.357Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1789149074626",
+    "title": "New Event Registration",
+    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-09-11T17:51:14.626Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1789149581444",
+    "title": "New Event Registration",
+    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-09-11T17:59:41.444Z",
+    "status": "unread"
   }
 ]
