@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { logAdminAudit } from '@/lib/exam';
+import { logAdminAudit, generateUnlockPassword } from '@/lib/exam';
 import { Exam } from '@/types/exam';
 
 export const dynamic = 'force-dynamic';
@@ -40,6 +40,7 @@ export async function GET(request: Request) {
           verified: examAttempts.filter((a: any) => a.status === 'VERIFIED').length,
           unlocked: examAttempts.filter((a: any) => a.status === 'UNLOCKED').length,
           inExam: examAttempts.filter((a: any) => a.status === 'IN_EXAM').length,
+          examLocked: examAttempts.filter((a: any) => a.status === 'EXAM_LOCKED').length,
           submitted: examAttempts.filter((a: any) => a.status === 'SUBMITTED' || a.status === 'REVIEW_REQUIRED').length,
           passed: examAttempts.filter((a: any) => a.passed).length,
           failed: examAttempts.filter((a: any) => (a.status === 'SUBMITTED' || a.status === 'REVIEW_REQUIRED') && !a.passed).length,
@@ -92,6 +93,7 @@ export async function POST(request: Request) {
         status: ['Draft', 'Published', 'Live', 'Archived'].includes(exam.status) ? exam.status : 'Live',
         requireSecureBrowser: Boolean(exam.requireSecureBrowser),
         maxSecurityViolations: Number(exam.maxSecurityViolations) || 3,
+        examUnlockPassword: exam.examUnlockPassword || generateUnlockPassword(),
         questions: Array.isArray(exam.questions)
           ? exam.questions.map((q: any, idx: number) => ({
               id: q.id || `q-${idx + 1}`,
