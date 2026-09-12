@@ -138,6 +138,7 @@ export async function sendEmail(payload: EmailPayload): Promise<EmailSendResult>
   // 3. Log to DB
   await logEmailDelivery({
     recipient,
+    recipientName: payload.recipientName || payload.metadata?.studentName || payload.metadata?.recipientName,
     subject: sanitizedSubject,
     type: payload.type,
     category: payload.category,

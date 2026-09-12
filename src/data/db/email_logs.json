@@ -1,78 +1,123 @@
 [
   {
-    "id": "elog_1789225259163_4ic07h",
+    "id": "elog_1789239218013_bzyctv",
     "recipient": "fail.test@cumail.in",
     "subject": "Official Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
     "type": "exam_result",
     "category": "EXAMS",
     "status": "SIMULATED",
-    "sentAt": "2026-09-12T15:00:59.163Z",
-    "providerId": "sim_1789225259163_y6jeuox",
+    "sentAt": "2026-09-12T18:53:38.013Z",
+    "providerId": "sim_1789239218013_1d8ie1a",
     "triggeredBy": "SYSTEM_AUTO",
     "templateId": "tpl-exam_result",
-    "createdAt": "2026-09-12T15:00:59.163Z"
+    "createdAt": "2026-09-12T18:53:38.013Z"
   },
   {
-    "id": "elog_1789225259148_d8zq8c",
+    "id": "elog_1789239217998_tehh9m",
     "recipient": "abhay@cumail.in",
     "subject": "Official Assessment Result: AWS Certified Cloud Practitioner Unit Assessment",
     "type": "exam_result",
     "category": "EXAMS",
     "status": "SIMULATED",
-    "sentAt": "2026-09-12T15:00:59.148Z",
-    "providerId": "sim_1789225259148_8z026vn",
+    "sentAt": "2026-09-12T18:53:37.998Z",
+    "providerId": "sim_1789239217998_wm490dg",
     "triggeredBy": "SYSTEM_AUTO",
     "templateId": "tpl-exam_result",
-    "createdAt": "2026-09-12T15:00:59.148Z"
+    "createdAt": "2026-09-12T18:53:37.998Z"
   },
   {
-    "id": "elog_1789225256483_ce5vuy",
+    "id": "elog_1789239215750_43zgfa",
     "recipient": "priyanka@cumail.in",
     "subject": "Congratulations! Selected & Qualified in AWS Certified Developer Assessment",
     "type": "exam_selected_qualified",
     "category": "EXAMS",
     "status": "SIMULATED",
-    "sentAt": "2026-09-12T15:00:56.483Z",
-    "providerId": "sim_1789225256483_j5x4p6p",
+    "sentAt": "2026-09-12T18:53:35.750Z",
+    "providerId": "sim_1789239215750_gdzaibn",
     "triggeredBy": "SYSTEM_AUTO",
     "templateId": "tpl-exam_selected_qualified",
-    "createdAt": "2026-09-12T15:00:56.483Z"
+    "createdAt": "2026-09-12T18:53:35.750Z"
   },
   {
-    "id": "elog_1789225256437_orcm20",
+    "id": "elog_1789239215703_q4ped1",
     "recipient": "priyanka@cumail.in",
     "subject": "Official Assessment Result: AWS Certified Developer Assessment",
     "type": "exam_result",
     "category": "EXAMS",
     "status": "SIMULATED",
-    "sentAt": "2026-09-12T15:00:56.437Z",
-    "providerId": "sim_1789225256437_rkriyuh",
+    "sentAt": "2026-09-12T18:53:35.703Z",
+    "providerId": "sim_1789239215703_fdcgk7x",
     "triggeredBy": "SYSTEM_AUTO",
     "templateId": "tpl-exam_result",
-    "createdAt": "2026-09-12T15:00:56.437Z"
+    "createdAt": "2026-09-12T18:53:35.703Z"
   },
   {
-    "id": "elog_1789225254484_lkhu3r",
+    "id": "elog_1789239214125_06ss5b",
     "recipient": "test.student@example.com",
     "subject": "Registration Confirmed: AWS Student Builder Group Inauguration & Cloud Kickstart",
     "type": "event_registration_confirmation",
     "category": "EVENTS",
     "status": "SIMULATED",
-    "sentAt": "2026-09-12T15:00:54.484Z",
-    "providerId": "sim_1789225254484_etbkhnc",
+    "sentAt": "2026-09-12T18:53:34.125Z",
+    "providerId": "sim_1789239214125_u4i2blq",
     "triggeredBy": "SYSTEM_AUTO",
     "templateId": "tpl-event_registration_confirmation",
-    "createdAt": "2026-09-12T15:00:54.484Z"
+    "createdAt": "2026-09-12T18:53:34.125Z"
   },
   {
-    "id": "elog_1789225253243_k5i5x1",
+    "id": "elog_1789239213085_hzvmzo",
+    "recipient": "aditya.soni@cumail.in",
+    "recipientName": "Aditya Soni",
+    "subject": "Reminder: AWS Cloud Day 2026 is Tomorrow",
+    "type": "event_24h_reminder",
+    "category": "EVENTS",
+    "status": "SIMULATED",
+    "sentAt": "2026-09-12T18:53:33.085Z",
+    "providerId": "sim_1789239213085_ux1uaum",
+    "triggeredBy": "ADMIN_BULK",
+    "adminId": "admin_test",
+    "templateId": "tpl-event_24h_reminder",
+    "metadata": {
+      "batchId": "batch_test_1789239213080",
+      "registrationId": "reg-bulk-aditya-1789239213069-102",
+      "studentName": "Aditya Soni",
+      "eventName": "AWS Cloud Day 2026",
+      "purpose": "Event Reminder – 24 Hours"
+    },
+    "createdAt": "2026-09-12T18:53:33.085Z"
+  },
+  {
+    "id": "elog_1789239213081_2ongia",
+    "recipient": "sumit.kumar@cumail.in",
+    "recipientName": "Sumit Kumar",
+    "subject": "Reminder: AWS Cloud Day 2026 is Tomorrow",
+    "type": "event_24h_reminder",
+    "category": "EVENTS",
+    "status": "SIMULATED",
+    "sentAt": "2026-09-12T18:53:33.081Z",
+    "providerId": "sim_1789239213081_shyncwm",
+    "triggeredBy": "ADMIN_BULK",
+    "adminId": "admin_test",
+    "templateId": "tpl-event_24h_reminder",
+    "metadata": {
+      "batchId": "batch_test_1789239213080",
+      "registrationId": "reg-bulk-sumit-1789239213069-101",
+      "studentName": "Sumit Kumar",
+      "eventName": "AWS Cloud Day 2026",
+      "purpose": "Event Reminder – 24 Hours"
+    },
+    "createdAt": "2026-09-12T18:53:33.081Z"
+  },
+  {
+    "id": "elog_1789239213064_qpg1w7",
     "recipient": "krishnamdwivedi17@gmail.com",
+    "recipientName": "Krishnam Dwivedi",
     "subject": "Registration Confirmed: AWS Cloud Day 2026",
     "type": "event_registration_confirmation",
     "category": "EVENTS",
     "status": "SIMULATED",
-    "sentAt": "2026-09-12T15:00:53.243Z",
-    "providerId": "sim_1789225253243_75gvp8i",
+    "sentAt": "2026-09-12T18:53:33.064Z",
+    "providerId": "sim_1789239213064_jo3y54h",
     "triggeredBy": "ADMIN_MANUAL",
     "adminId": "admin",
     "templateId": "tpl-event_registration_confirmation",
@@ -82,6 +127,6 @@
       "eventName": "AWS Cloud Day 2026",
       "purpose": "Registration Confirmation"
     },
-    "createdAt": "2026-09-12T15:00:53.243Z"
+    "createdAt": "2026-09-12T18:53:33.064Z"
   }
 ]

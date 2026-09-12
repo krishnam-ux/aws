@@ -55,6 +55,7 @@ export interface EmailRecipient {
 export interface EmailPayload {
   from?: string;
   to: string | string[];
+  recipientName?: string;
   cc?: string | string[];
   bcc?: string | string[];
   subject: string;
@@ -86,7 +87,7 @@ export interface EmailBatchSummary {
   sent: number;
   failed: number;
   simulated: number;
-  errors: Array<{ recipient: string; error: string }>;
+  errors: Array<{ recipient: string; error: string; registrationId?: string; name?: string }>;
   batchId: string;
 }
 

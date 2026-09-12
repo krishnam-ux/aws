@@ -10,7 +10,7 @@
     "program": "B.Tech CSE",
     "year": "3rd Year",
     "status": "Approved",
-    "date": "2026-09-12T10:16:24.767Z",
+    "date": "2026-09-12T18:23:53.315Z",
     "attendance": "Registered",
     "certificateId": null
   },
@@ -25,7 +25,22 @@
     "program": "B.Tech CSE",
     "year": "3rd Year",
     "status": "Approved",
-    "date": "2026-09-12T15:00:53.235Z",
+    "date": "2026-09-12T18:35:04.746Z",
+    "attendance": "Registered",
+    "certificateId": null
+  },
+  {
+    "id": "reg-krishnam-test-101",
+    "eventId": "event-aws-cloud-day",
+    "eventName": "AWS Cloud Day 2026",
+    "name": "Krishnam Dwivedi",
+    "email": "krishnamdwivedi17@gmail.com",
+    "studentId": "22BCS10101",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "program": "B.Tech CSE",
+    "year": "3rd Year",
+    "status": "Approved",
+    "date": "2026-09-12T18:53:33.059Z",
     "attendance": "Registered",
     "certificateId": null
   }

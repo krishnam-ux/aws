@@ -5,6 +5,7 @@ import { siteConfig } from '@/data/siteConfig';
 import AdminExamsManager from '@/components/AdminExamsManager';
 import AdminEmailManager from '@/components/AdminEmailManager';
 import AdminSendStudentEmailModal from '@/components/AdminSendStudentEmailModal';
+import AdminBulkSendStudentEmailModal from '@/components/AdminBulkSendStudentEmailModal';
 
 interface EventPhoto {
   id: string;
@@ -122,6 +123,7 @@ export default function AdminDashboard() {
   const [selectedEventRegs, setSelectedEventRegs] = useState<CommunityEvent | null>(null);
   const [emailTargetReg, setEmailTargetReg] = useState<any | null>(null);
   const [sendEmailModalOpen, setSendEmailModalOpen] = useState(false);
+  const [bulkEmailModalOpen, setBulkEmailModalOpen] = useState(false);
   const [selectedOpportunityRegs, setSelectedOpportunityRegs] = useState<any | null>(null);
   const [opportunityApplicationSearch, setOpportunityApplicationSearch] = useState('');
   const [opportunityApplicationStatusFilter, setOpportunityApplicationStatusFilter] = useState('All');
@@ -2393,6 +2395,17 @@ export default function AdminDashboard() {
                     )}
                     {selectedRegIds.length > 0 && (
                       <button
+                        onClick={() => setBulkEmailModalOpen(true)}
+                        className="px-3.5 py-1.5 bg-[#FF9900] hover:bg-[#E08800] text-white text-xs font-bold rounded transition-colors cursor-pointer flex items-center space-x-1.5 shadow-xs"
+                      >
+                        <svg className="w-3.5 h-3.5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <span>Send Email to Selected ({selectedRegIds.length})</span>
+                      </button>
+                    )}
+                    {selectedRegIds.length > 0 && (
+                      <button
                         onClick={confirmDeleteBulk}
                         className="px-3.5 py-1.5 bg-red-50 border border-red-200 hover:border-red-300 text-red-700 hover:bg-red-100 text-xs font-bold rounded transition-colors cursor-pointer"
                       >
@@ -2407,6 +2420,42 @@ export default function AdminDashboard() {
                     </button>
                   </div>
                 </div>
+
+                {/* STICKY BULK ACTION BAR */}
+                {selectedRegIds.length > 0 && (
+                  <div className="sticky top-2 z-20 bg-[#0B0F17] text-white border border-[#1E293B] shadow-2xl rounded-xl px-4 py-3 flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 rounded-lg bg-[#FF9900]/20 border border-[#FF9900]/40 flex items-center justify-center text-sm font-extrabold text-[#FF9900] font-mono">
+                        {selectedRegIds.length}
+                      </div>
+                      <div>
+                        <span className="font-display font-bold text-xs text-white">
+                          {selectedRegIds.length} Student{selectedRegIds.length === 1 ? '' : 's'} Selected
+                        </span>
+                        <p className="text-[10px] text-[#94A3B8]">
+                          Perform batch administrative actions or broadcast personalized emails
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => setSelectedRegIds([])}
+                        className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-slate-200 text-xs font-semibold rounded cursor-pointer transition-colors"
+                      >
+                        Clear Selection
+                      </button>
+                      <button
+                        onClick={() => setBulkEmailModalOpen(true)}
+                        className="px-4 py-1.5 bg-[#FF9900] hover:bg-[#E08800] text-white text-xs font-bold rounded shadow-sm cursor-pointer transition-all flex items-center space-x-1.5"
+                      >
+                        <svg className="w-3.5 h-3.5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <span>Send Email to Selected ({selectedRegIds.length})</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Search & filters */}
                 <div className="flex flex-wrap items-center gap-4 text-xs">
@@ -5425,6 +5474,14 @@ export default function AdminDashboard() {
               <div className="flex items-center space-x-2">
                 {selectedRegIds.length > 0 && (
                   <button
+                    onClick={() => setBulkEmailModalOpen(true)}
+                    className="px-3.5 py-1.5 bg-[#FF9900] hover:bg-[#E08800] text-white rounded font-bold transition-colors cursor-pointer text-[10px] flex items-center space-x-1"
+                  >
+                    <span>✉️ Send Email ({selectedRegIds.length})</span>
+                  </button>
+                )}
+                {selectedRegIds.length > 0 && (
+                  <button
                     onClick={confirmDeleteBulk}
                     className="px-3.5 py-1.5 bg-red-50 border border-red-200 hover:border-red-300 text-red-750 hover:bg-red-100 rounded font-bold transition-colors cursor-pointer text-[10px]"
                   >
@@ -6079,6 +6136,19 @@ export default function AdminDashboard() {
         onEmailSent={() => {
           setActionSuccess('Email successfully dispatched to student and logged.');
           setTimeout(() => setActionSuccess(''), 5000);
+        }}
+      />
+      {/* BULK SEND STUDENT EMAIL MODAL */}
+      <AdminBulkSendStudentEmailModal
+        isOpen={bulkEmailModalOpen}
+        onClose={() => setBulkEmailModalOpen(false)}
+        selectedRegistrationIds={selectedRegIds}
+        registrations={eventRegistrations}
+        events={events}
+        token={token}
+        onBatchComplete={(summary) => {
+          setActionSuccess(`Bulk email batch complete: ${summary.sent} sent, ${summary.failed} failed.`);
+          setTimeout(() => setActionSuccess(''), 6000);
         }}
       />
     </div>

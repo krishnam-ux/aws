@@ -1636,7 +1636,12 @@ export const db = {
   },
   notifications: {
     getAll: async () => await readJsonFile<any[]>('notifications.json', []),
-    saveAll: async (data: any[]) => await writeJsonFile('notifications.json', data)
+    saveAll: async (data: any[]) => await writeJsonFile('notifications.json', data),
+    insertOne: async (notif: any) => {
+      const all = await readJsonFile<any[]>('notifications.json', []);
+      all.unshift(notif);
+      await writeJsonFile('notifications.json', all);
+    }
   },
   contactMessages: {
     getAll: async () => await readJsonFile<any[]>('contact_messages.json', []),

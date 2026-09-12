@@ -498,3 +498,127 @@ test('Individual Student Send Email Flow with Server-Side Registration Resolutio
   assert.equal(savedLog?.metadata?.purpose, 'Registration Confirmation');
   assert.ok(savedLog?.providerId, 'Message ID must be present');
 });
+
+test('Bulk Send Email to Multiple Selected Registrations with Individual Personalization & Batch ID', async () => {
+  const testUid = Date.now();
+  const reg1 = {
+    id: `reg-bulk-sumit-${testUid}-101`,
+    eventId: 'event-aws-cloud-day',
+    eventName: 'AWS Cloud Day 2026',
+    name: 'Sumit Kumar',
+    email: 'sumit.kumar@cumail.in',
+    studentId: '25LBCS3255',
+    status: 'Approved',
+    date: new Date().toISOString()
+  };
+  const reg2 = {
+    id: `reg-bulk-aditya-${testUid}-102`,
+    eventId: 'event-aws-cloud-day',
+    eventName: 'AWS Cloud Day 2026',
+    name: 'Aditya Soni',
+    email: 'aditya.soni@cumail.in',
+    studentId: '25LBCS3289',
+    status: 'Approved',
+    date: new Date().toISOString()
+  };
+  const reg3Duplicate = {
+    id: `reg-bulk-sumit-dup-${testUid}-103`,
+    eventId: 'event-aws-cloud-day',
+    eventName: 'AWS Cloud Day 2026',
+    name: 'Sumit Kumar Duplicate',
+    email: 'sumit.kumar@cumail.in', // duplicate email
+    studentId: '25LBCS3255',
+    status: 'Approved',
+    date: new Date().toISOString()
+  };
+
+  try {
+    await db.eventRegistrations.insertOne(reg1);
+    await db.eventRegistrations.insertOne(reg2);
+    await db.eventRegistrations.insertOne(reg3Duplicate);
+
+    // Simulate bulk send route logic
+    const selectedIds = [reg1.id, reg2.id, reg3Duplicate.id];
+    const allRegistrations = await db.eventRegistrations.getAll();
+    const matchedRegs = allRegistrations.filter((r: any) => selectedIds.includes(r.id));
+    assert.equal(matchedRegs.length, 3);
+
+    const tpl = DEFAULT_EMAIL_TEMPLATES.find((t) => t.type === 'event_24h_reminder')!;
+    const batchId = `batch_test_${Date.now()}`;
+
+    const seen = new Set<string>();
+    const deduplicated = [];
+    for (const r of matchedRegs) {
+      const norm = normalizeEmail(r.email);
+      if (!seen.has(norm)) {
+        seen.add(norm);
+        deduplicated.push(r);
+      }
+    }
+
+    assert.equal(deduplicated.length, 2, 'Deduplication should keep only 2 unique emails');
+
+    for (const r of deduplicated) {
+      const vars = {
+        studentName: r.name,
+        fullName: r.name,
+        email: r.email,
+        eventTitle: r.eventName,
+        eventName: r.eventName,
+        eventDate: 'September 25, 2026',
+        eventTime: '10:00 AM IST',
+        eventVenue: 'Main Auditorium',
+        registrationId: r.id
+      };
+
+      const renderedSubj = interpolateVariables(tpl.subject, vars);
+      const renderedBody = interpolateVariables(tpl.bodyHtml, vars);
+      const fullHtml = renderEmailLayout({
+        title: renderedSubj,
+        contentHtml: renderedBody
+      });
+
+      // Check individual greeting
+      assert.ok(fullHtml.includes(`Dear ${r.name},`), `Email must be personally addressed to Dear ${r.name},`);
+      assert.equal(fullHtml.match(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g), null, 'No unresolved curly braces');
+
+      await sendEmail({
+        to: r.email,
+        subject: renderedSubj,
+        html: fullHtml,
+        type: 'event_24h_reminder',
+        category: 'EVENTS',
+        templateId: tpl.id,
+        triggeredBy: 'ADMIN_BULK',
+        adminId: 'admin_test',
+        metadata: {
+          batchId,
+          registrationId: r.id,
+          studentName: r.name,
+          eventName: r.eventName,
+          purpose: 'Event Reminder – 24 Hours'
+        }
+      });
+    }
+
+    const logs = await db.emailLogs.getAll();
+    const batchLogs = logs.filter((l) => l.metadata?.batchId === batchId);
+    assert.equal(batchLogs.length, 2, 'Must log 2 delivery records for the batch');
+
+    const sumitLog = batchLogs.find((l) => l.recipient === 'sumit.kumar@cumail.in');
+    const adityaLog = batchLogs.find((l) => l.recipient === 'aditya.soni@cumail.in');
+
+    assert.ok(sumitLog, 'Sumit log exists');
+    assert.equal(sumitLog?.metadata?.studentName, 'Sumit Kumar');
+    assert.equal(sumitLog?.metadata?.batchId, batchId);
+
+    assert.ok(adityaLog, 'Aditya log exists');
+    assert.equal(adityaLog?.metadata?.studentName, 'Aditya Soni');
+    assert.equal(adityaLog?.metadata?.batchId, batchId);
+  } finally {
+    try {
+      await db.eventRegistrations.deleteBulk([reg1.id, reg2.id, reg3Duplicate.id]);
+    } catch {}
+  }
+});
+

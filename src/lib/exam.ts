@@ -232,6 +232,22 @@ export async function sendCandidateResultEmail(
     console.error('Non-blocking error dispatching exam result email:', emailErr);
   }
 
+  // Insert notification record for candidate
+  try {
+    await db.notifications.insertOne({
+      id: `notif_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
+      title: `Exam Result - ${exam.title}`,
+      description: `Result scorecard delivered for ${attempt.studentName} (${attempt.rollNumber})`,
+      message: `Score: ${result.percentage}% - Status: ${verdict}`,
+      recipientEmail: attempt.email,
+      type: 'exam_result',
+      status: 'unread',
+      createdAt: new Date().toISOString()
+    } as any);
+  } catch (err) {
+    console.error('Failed to log result notification:', err);
+  }
+
   // Log admin audit entry for result dispatch
   try {
     await logAdminAudit(exam.id, 'system_email_service', 'START', {
