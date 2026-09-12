@@ -280,3 +280,150 @@ test('Client-Safe Default Automation Settings and Templates Integrity', () => {
   assert.ok(DEFAULT_EMAIL_TEMPLATES.length >= 17, 'Should define at least 17 master email templates');
 });
 
+test('Logo Assets and Header Rendering Verification', () => {
+  const html = renderEmailLayout({
+    title: 'Branding Verification',
+    contentHtml: '<p>Testing logo layout and styling</p>'
+  });
+
+  // Must use absolute HTTPS production URL or configured site URL
+  assert.ok(
+    html.includes('https://www.awssbgcuup.tech/chandigarh-university-logo.jpg'),
+    'Should include absolute HTTPS Chandigarh University logo URL'
+  );
+  assert.ok(
+    html.includes('https://www.awssbgcuup.tech/aws-sbg-logo.png'),
+    'Should include absolute HTTPS AWS SBG PNG logo URL'
+  );
+
+  // Must NOT use SVG in img tags for cross-client compatibility
+  assert.equal(html.includes('.svg'), false, 'Email HTML should not use SVG in img tags');
+
+  // Must NOT use local file paths
+  assert.equal(html.includes('/public/'), false, 'Email HTML must not reference /public/');
+
+  // Chandigarh University logo must preserve 1:1 square aspect ratio
+  assert.ok(
+    html.includes('width="48" height="48"') || html.includes('width="52" height="52"'),
+    'Chandigarh University logo must maintain 1:1 aspect ratio'
+  );
+
+  // Header must contain official community and university text
+  assert.ok(html.includes('AWS <span style="color: #FF9900;">Student Builder Group</span>'));
+  assert.ok(html.includes('CHANDIGARH UNIVERSITY – UTTAR PRADESH'));
+});
+
+test('Dynamic Student Name and Personalization Flow', () => {
+  // 1. Direct variable interpolation with studentName
+  const eventTemplate = DEFAULT_EMAIL_TEMPLATES.find((t) => t.type === 'event_registration_confirmation');
+  assert.ok(eventTemplate, 'Event registration template must exist');
+
+  const renderedHtml = interpolateVariables(eventTemplate.bodyHtml, {
+    studentName: 'Krishnam Dwivedi',
+    eventTitle: 'AWS Serverless Workshop 2026',
+    eventDate: 'September 20, 2026',
+    eventTime: '10:00 AM IST',
+    eventVenue: 'Seminar Hall 3',
+    eventMode: 'In-Person',
+    registrationId: 'REG-KD-8819',
+    eventUrl: 'https://www.awssbgcuup.tech/events/event-serverless-2026'
+  });
+
+  assert.ok(renderedHtml.includes('Dear Krishnam Dwivedi,'), 'Must render "Dear Krishnam Dwivedi,"');
+  assert.ok(renderedHtml.includes('AWS Serverless Workshop 2026'), 'Must include event title');
+  assert.ok(renderedHtml.includes('REG-KD-8819'), 'Must include registration ID');
+  assert.equal(renderedHtml.includes('{{studentName}}'), false, 'Must NOT contain unresolved {{studentName}}');
+  assert.equal(renderedHtml.includes('{{eventTitle}}'), false, 'Must NOT contain unresolved {{eventTitle}}');
+
+  // 2. Variable resolution via fullName alias
+  const aliasHtml = interpolateVariables('Dear {{studentName}}, your code is {{examCode}}.', {
+    fullName: 'Krishnam Dwivedi',
+    code: 'AWS-SOL-2026'
+  });
+  assert.equal(aliasHtml, 'Dear Krishnam Dwivedi, your code is AWS-SOL-2026.');
+
+  // 3. Fallback when studentName is empty
+  const fallbackHtml = interpolateVariables('Dear {{studentName}}, welcome!', {});
+  assert.equal(fallbackHtml, 'Dear Student, welcome!');
+
+  // 4. Scrub any completely unknown unresolved placeholder
+  const scrubbedHtml = interpolateVariables('Hello {{unknownVar123}}!', {});
+  assert.equal(scrubbedHtml, 'Hello !');
+});
+
+test('All Default Email Templates Render Cleanly Without Unresolved Variables', () => {
+  const sampleData: Record<string, any> = {
+    studentName: 'Krishnam Dwivedi',
+    fullName: 'Krishnam Dwivedi',
+    email: 'krishnamdwivedi17@gmail.com',
+    eventTitle: 'Cloud AI Summit 2026',
+    eventDate: 'October 10, 2026',
+    eventTime: '2:00 PM IST',
+    eventVenue: 'CU Auditorium',
+    eventMode: 'In-Person',
+    registrationId: 'REG-10023',
+    eventUrl: 'https://www.awssbgcuup.tech/events/cloud-ai-2026',
+    opportunityTitle: 'Technical Operations Associate',
+    role: 'Technical Operations Associate',
+    applicationId: 'APP-99881',
+    opportunityUrl: 'https://www.awssbgcuup.tech/opportunities/tech-ops',
+    examName: 'AWS Solutions Architecture Test',
+    examCode: 'SA-PRO-101',
+    examPassword: 'PROCTOR-PASS-99',
+    durationMinutes: 90,
+    examUrl: 'https://www.awssbgcuup.tech/exam/sa-pro',
+    rollNumber: '22BCS1001',
+    submittedAt: '11:45 AM',
+    score: 88,
+    totalMarks: 100,
+    percentage: 88,
+    verdict: 'PASSED',
+    verdictColor: '#10B981',
+    passingPercentage: 70,
+    selectionNotes: 'Top rank candidate in cohort',
+    nextSteps: 'Check email for technical interview schedule',
+    onboardingNotes: 'Welcome aboard! Community orientation on Monday',
+    cancellationReason: 'Scheduled maintenance of facility',
+    updateNotes: 'New venue assigned: Block C Lab 4',
+    category: 'Workshops',
+    messageSummary: 'Great cloud architecture insights',
+    announcementTitle: 'AWS SBG Annual Tech Fest Announced',
+    announcementDate: 'September 12, 2026',
+    announcementCategory: 'Announcements',
+    announcementContent: 'Registration is now live for all CU students.',
+    recipientName: 'Krishnam Dwivedi',
+    messageContent: 'Please check your student email for the orientation kit.',
+    timestamp: '2026-09-12 12:00:00 UTC',
+    provider: 'Resend',
+    adminUser: 'lead_admin'
+  };
+
+  for (const tpl of DEFAULT_EMAIL_TEMPLATES) {
+    const renderedSubject = interpolateVariables(tpl.subject, sampleData);
+    const renderedBody = interpolateVariables(tpl.bodyHtml, sampleData);
+    const renderedText = interpolateVariables(tpl.bodyText, sampleData);
+
+    const fullLayout = renderEmailLayout({
+      title: renderedSubject,
+      contentHtml: renderedBody
+    });
+
+    // Verify no raw unreplaced curly tags remain in the layout
+    const remainingTags = fullLayout.match(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g);
+    assert.equal(
+      remainingTags,
+      null,
+      `Template ${tpl.id} should have zero unresolved {{...}} tags, but found: ${remainingTags?.join(', ')}`
+    );
+
+    // If template has student/recipient greeting, verify Krishnam Dwivedi is rendered
+    if (tpl.bodyHtml.includes('Dear ')) {
+      assert.ok(
+        renderedBody.includes('Dear Krishnam Dwivedi,'),
+        `Template ${tpl.id} must dynamically render "Dear Krishnam Dwivedi,"`
+      );
+    }
+  }
+});
+
+

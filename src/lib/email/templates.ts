@@ -51,7 +51,8 @@ export function renderEmailLayout(params: {
   footerNotes?: string;
 }): string {
   const { title, preheader, headerBadge, contentHtml, ctaText, ctaUrl, footerNotes } = params;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.awssbgcuup.tech';
+  const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.awssbgcuup.tech';
+  const siteUrl = rawSiteUrl.replace(/\/+$/, '');
   const currentYear = new Date().getFullYear();
 
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -108,16 +109,16 @@ export function renderEmailLayout(params: {
             <td bgcolor="#0B0F17" style="background-color: #0B0F17; padding: 18px 24px; border-bottom: 1px solid #1E293B;">
               <table width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
-                  <!-- Left: Chandigarh University Logo -->
-                  <td align="left" valign="middle" style="width: 120px;">
+                  <!-- Left: Chandigarh University Logo (Exact 1:1 Aspect Ratio Square) -->
+                  <td align="left" valign="middle" style="width: 52px;">
                     <a href="${siteUrl}" target="_blank" style="text-decoration: none; display: block;">
-                      <img src="${siteUrl}/chandigarh-university-logo.jpg" alt="Chandigarh University" width="115" height="38" style="display: block; height: 38px; width: auto; max-width: 115px; border-radius: 4px; object-fit: contain;" />
+                      <img src="${siteUrl}/chandigarh-university-logo.jpg" alt="Chandigarh University" width="48" height="48" style="display: block; width: 48px; height: 48px; max-width: 48px; border-radius: 6px; border: 0; outline: none;" />
                     </a>
                   </td>
 
                   <!-- Center: Brand Name & Subtext -->
-                  <td align="center" valign="middle" style="padding: 0 10px;">
-                    <div style="font-size: 15px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.2px; line-height: 1.2; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                  <td align="center" valign="middle" style="padding: 0 12px;">
+                    <div style="font-size: 15px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.2px; line-height: 1.25; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                       AWS <span style="color: #FF9900;">Student Builder Group</span>
                     </div>
                     <div style="font-size: 9px; font-weight: 700; color: #94A3B8; letter-spacing: 0.8px; text-transform: uppercase; margin-top: 3px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
@@ -125,10 +126,10 @@ export function renderEmailLayout(params: {
                     </div>
                   </td>
 
-                  <!-- Right: AWS Mark -->
-                  <td align="right" valign="middle" style="width: 70px;">
+                  <!-- Right: AWS Student Builder Group Logo (Reliable High-Res PNG) -->
+                  <td align="right" valign="middle" style="width: 120px;">
                     <a href="${siteUrl}" target="_blank" style="text-decoration: none; display: inline-block;">
-                      <img src="${siteUrl}/aws-logo.svg" alt="AWS" width="46" height="26" style="display: block; height: 26px; width: auto; max-width: 46px;" />
+                      <img src="${siteUrl}/aws-sbg-logo.png" alt="AWS Student Builder Group" width="114" height="40" style="display: block; width: 114px; height: 40px; max-width: 114px; border: 0; outline: none; object-fit: contain;" />
                     </a>
                   </td>
                 </tr>
@@ -247,18 +248,200 @@ export function renderEmailLayout(params: {
 }
 
 /**
+ * Safe fallback values when an expected variable is not provided.
+ */
+const DEFAULT_FALLBACKS: Record<string, string> = {
+  studentName: 'Student',
+  name: 'Student',
+  fullName: 'Student',
+  recipientName: 'Student',
+  candidateName: 'Candidate',
+  eventVenue: 'Chandigarh University – Uttar Pradesh',
+  eventDate: 'TBA',
+  eventTime: 'TBA',
+  eventMode: 'In-Person',
+  eventUrl: 'https://www.awssbgcuup.tech/events',
+  opportunityUrl: 'https://www.awssbgcuup.tech/opportunities',
+  examUrl: 'https://www.awssbgcuup.tech/exam',
+  examPassword: 'TBA',
+  durationMinutes: '60',
+  verdictColor: '#FF9900',
+  cancellationReason: 'Unforeseen scheduling constraints.',
+  updateNotes: 'Schedule and location details have been updated.',
+  onboardingNotes: 'Welcome to the team! Our leadership will connect with you soon.',
+  nextSteps: 'Check your student inbox for scheduling instructions.',
+  selectionNotes: 'Selected & Qualified by Proctor',
+  passingPercentage: '60'
+};
+
+/**
+ * Normalizes input variable map and resolves aliases across all domains.
+ */
+function resolveVariableValue(key: string, variables: Record<string, any>): string | undefined {
+  // Direct match
+  if (variables[key] !== undefined && variables[key] !== null) {
+    const val = String(variables[key]).trim();
+    if (val.length > 0) return val;
+  }
+
+  const lowerKey = key.toLowerCase().replace(/_/g, '');
+
+  // Dynamic Name Aliases
+  if (['studentname', 'name', 'fullname', 'recipientname', 'candidatename'].includes(lowerKey)) {
+    const nameVal =
+      variables.studentName ||
+      variables.fullName ||
+      variables.name ||
+      variables.recipientName ||
+      variables.candidateName ||
+      variables.student_name ||
+      variables.full_name;
+    if (nameVal !== undefined && nameVal !== null) {
+      const trimmed = String(nameVal).trim();
+      if (trimmed.length > 0) return trimmed;
+    }
+  }
+
+  // Event Aliases
+  if (['eventtitle', 'eventname', 'title'].includes(lowerKey)) {
+    const val = variables.eventTitle || variables.eventName || variables.title || variables.event_title;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['eventdate', 'date'].includes(lowerKey)) {
+    const val = variables.eventDate || variables.date || variables.event_date;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['eventtime', 'time'].includes(lowerKey)) {
+    const val = variables.eventTime || variables.time || variables.event_time;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['eventvenue', 'venue', 'location'].includes(lowerKey)) {
+    const val = variables.eventVenue || variables.venue || variables.location || variables.event_venue;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['eventmode', 'mode'].includes(lowerKey)) {
+    const val = variables.eventMode || variables.mode || variables.event_mode;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['registrationid', 'regid', 'id'].includes(lowerKey)) {
+    const val = variables.registrationId || variables.regId || variables.id || variables.registration_id;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['eventurl', 'url'].includes(lowerKey)) {
+    const val = variables.eventUrl || variables.url || variables.event_url;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+
+  // Exam Aliases
+  if (['examname', 'examtitle', 'assessmentname'].includes(lowerKey)) {
+    const val = variables.examName || variables.examTitle || variables.title || variables.exam_name;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['examid'].includes(lowerKey)) {
+    const val = variables.examId || variables.id || variables.exam_id;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['examcode', 'code'].includes(lowerKey)) {
+    const val = variables.examCode || variables.code || variables.exam_code;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['exampassword', 'password'].includes(lowerKey)) {
+    const val = variables.examPassword || variables.password || variables.exam_password;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['durationminutes', 'duration'].includes(lowerKey)) {
+    const val = variables.durationMinutes || variables.duration || variables.duration_minutes;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['rollnumber', 'studentid', 'rollno'].includes(lowerKey)) {
+    const val = variables.rollNumber || variables.studentId || variables.rollNo || variables.roll_number;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['score', 'earnedmarks', 'marks'].includes(lowerKey)) {
+    const val = variables.score ?? variables.earnedMarks ?? variables.marks;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['totalmarks', 'maxmarks'].includes(lowerKey)) {
+    const val = variables.totalMarks ?? variables.maxMarks;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['percentage', 'percent'].includes(lowerKey)) {
+    const val = variables.percentage ?? variables.percent;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['verdict', 'result', 'status', 'applicationstatus', 'selectionstatus'].includes(lowerKey)) {
+    const val =
+      variables.verdict ||
+      variables.result ||
+      variables.status ||
+      variables.applicationStatus ||
+      variables.selectionStatus;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['verdictcolor'].includes(lowerKey)) {
+    const val = variables.verdictColor || variables.verdict_color;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['passingpercentage'].includes(lowerKey)) {
+    const val = variables.passingPercentage ?? variables.passing_percentage;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+
+  // Opportunity Aliases
+  if (['opportunitytitle', 'role', 'position'].includes(lowerKey)) {
+    const val =
+      variables.opportunityTitle ||
+      variables.role ||
+      variables.position ||
+      variables.title ||
+      variables.opportunity_title;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['applicationid'].includes(lowerKey)) {
+    const val = variables.applicationId || variables.id || variables.application_id;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['opportunityurl'].includes(lowerKey)) {
+    const val = variables.opportunityUrl || variables.url || variables.opportunity_url;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+
+  // General & Case-Insensitive fallback check across variables
+  for (const [vKey, vVal] of Object.entries(variables)) {
+    if (vKey.toLowerCase().replace(/_/g, '') === lowerKey && vVal !== undefined && vVal !== null) {
+      return String(vVal).trim();
+    }
+  }
+
+  return undefined;
+}
+
+/**
  * Interpolates variables in a template string (e.g. `{{studentName}}`).
- * Safely handles missing keys.
+ * Resolves aliases, applies safe fallbacks, and ensures NO unresolved {{...}} tags remain.
  */
 export function interpolateVariables(template: string, variables: Record<string, any>): string {
   if (!template) return '';
-  return template.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (match, key) => {
-    if (key in variables) {
-      const val = variables[key];
-      if (val === null || val === undefined) return '';
-      return String(val);
+
+  return template.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_match, key) => {
+    const resolved = resolveVariableValue(key, variables || {});
+    if (resolved !== undefined && resolved !== '') {
+      return resolved;
     }
-    return match;
+
+    // Safe fallback check
+    if (key in DEFAULT_FALLBACKS) {
+      return DEFAULT_FALLBACKS[key];
+    }
+    const lowerKey = key.toLowerCase().replace(/_/g, '');
+    for (const [fKey, fVal] of Object.entries(DEFAULT_FALLBACKS)) {
+      if (fKey.toLowerCase().replace(/_/g, '') === lowerKey) {
+        return fVal;
+      }
+    }
+
+    // Scrub unresolved variable tag to prevent raw {{variable}} from leaking into emails
+    return '';
   });
 }
 
