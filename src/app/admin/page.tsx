@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { siteConfig } from '@/data/siteConfig';
 import AdminExamsManager from '@/components/AdminExamsManager';
 import AdminEmailManager from '@/components/AdminEmailManager';
+import AdminSendStudentEmailModal from '@/components/AdminSendStudentEmailModal';
 
 interface EventPhoto {
   id: string;
@@ -119,6 +120,8 @@ export default function AdminDashboard() {
   // DB Data
   const [eventRegistrations, setEventRegistrations] = useState<any[]>([]);
   const [selectedEventRegs, setSelectedEventRegs] = useState<CommunityEvent | null>(null);
+  const [emailTargetReg, setEmailTargetReg] = useState<any | null>(null);
+  const [sendEmailModalOpen, setSendEmailModalOpen] = useState(false);
   const [selectedOpportunityRegs, setSelectedOpportunityRegs] = useState<any | null>(null);
   const [opportunityApplicationSearch, setOpportunityApplicationSearch] = useState('');
   const [opportunityApplicationStatusFilter, setOpportunityApplicationStatusFilter] = useState('All');
@@ -2509,6 +2512,19 @@ export default function AdminDashboard() {
                             </button>
                             <button onClick={() => updateEventRegStatus(reg.id, 'Attended')} className="text-indigo-650 hover:text-indigo-800 font-bold cursor-pointer">
                               Attended
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEmailTargetReg(reg);
+                                setSendEmailModalOpen(true);
+                              }}
+                              className="text-[#FF9900] hover:text-[#E08800] font-bold cursor-pointer inline-flex items-center gap-1"
+                              title="Send Email"
+                            >
+                              <svg className="w-3.5 h-3.5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                              </svg>
+                              <span>Send Email</span>
                             </button>
                             <button onClick={() => updateEventRegStatus(reg.id, 'Cancelled')} className="text-slate-400 hover:text-slate-655 font-bold cursor-pointer">
                               Cancel
@@ -5544,6 +5560,19 @@ export default function AdminDashboard() {
                             Attended
                           </button>
                           <button
+                            onClick={() => {
+                              setEmailTargetReg(reg);
+                              setSendEmailModalOpen(true);
+                            }}
+                            className="text-[#FF9900] hover:text-[#E08800] font-bold cursor-pointer inline-flex items-center gap-1"
+                            title="Send Email"
+                          >
+                            <svg className="w-3.5 h-3.5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            <span>Send Email</span>
+                          </button>
+                          <button
                             onClick={() => confirmDeleteIndividual(reg)}
                             className="text-red-600 hover:text-red-750 font-bold cursor-pointer"
                           >
@@ -6037,6 +6066,21 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+      {/* SEND STUDENT EMAIL MODAL */}
+      <AdminSendStudentEmailModal
+        isOpen={sendEmailModalOpen}
+        onClose={() => {
+          setSendEmailModalOpen(false);
+          setEmailTargetReg(null);
+        }}
+        registration={emailTargetReg}
+        events={events}
+        token={token}
+        onEmailSent={() => {
+          setActionSuccess('Email successfully dispatched to student and logged.');
+          setTimeout(() => setActionSuccess(''), 5000);
+        }}
+      />
     </div>
   );
 }

@@ -426,4 +426,75 @@ test('All Default Email Templates Render Cleanly Without Unresolved Variables', 
   }
 });
 
+test('Individual Student Send Email Flow with Server-Side Registration Resolution', async () => {
+  await db.emailLogs.saveAll([]);
+  
+  // Seed a test registration
+  const testReg = {
+    id: 'reg-krishnam-test-101',
+    eventId: 'event-aws-cloud-day',
+    eventName: 'AWS Cloud Day 2026',
+    name: 'Krishnam Dwivedi',
+    email: 'krishnamdwivedi17@gmail.com',
+    studentId: '22BCS10101',
+    university: 'Chandigarh University – Uttar Pradesh',
+    program: 'B.Tech CSE',
+    year: '3rd Year',
+    status: 'Approved',
+    date: new Date().toISOString()
+  };
+  await db.eventRegistrations.insertOne(testReg);
 
+  const tpl = DEFAULT_EMAIL_TEMPLATES.find((t) => t.type === 'event_registration_confirmation')!;
+  const vars = {
+    studentName: testReg.name,
+    fullName: testReg.name,
+    email: testReg.email,
+    eventTitle: testReg.eventName,
+    eventName: testReg.eventName,
+    eventDate: 'October 15, 2026',
+    eventTime: '10:00 AM IST',
+    eventVenue: 'Main Auditorium',
+    eventMode: 'In-Person',
+    registrationId: testReg.id,
+    eventUrl: 'https://www.awssbgcuup.tech/events/event-aws-cloud-day'
+  };
+
+  const renderedSubject = interpolateVariables(tpl.subject, vars);
+  const renderedHtml = renderEmailLayout({
+    title: renderedSubject,
+    contentHtml: interpolateVariables(tpl.bodyHtml, vars)
+  });
+
+  assert.ok(renderedHtml.includes('Dear Krishnam Dwivedi,'));
+  assert.equal(renderedHtml.match(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g), null);
+
+  const sendRes = await sendEmail({
+    to: testReg.email,
+    subject: renderedSubject,
+    html: renderedHtml,
+    type: 'event_registration_confirmation',
+    category: 'EVENTS',
+    templateId: tpl.id,
+    triggeredBy: 'ADMIN_MANUAL',
+    adminId: 'admin',
+    metadata: {
+      registrationId: testReg.id,
+      studentName: testReg.name,
+      eventName: testReg.eventName,
+      purpose: 'Registration Confirmation'
+    }
+  });
+
+  assert.equal(sendRes.success, true);
+  assert.equal(sendRes.recipient, 'krishnamdwivedi17@gmail.com');
+
+  const logs = await db.emailLogs.getAll();
+  const savedLog = logs.find((l) => l.recipient === 'krishnamdwivedi17@gmail.com');
+  assert.ok(savedLog, 'Email log must be saved in Email Center');
+  assert.equal(savedLog?.recipient, 'krishnamdwivedi17@gmail.com');
+  assert.equal(savedLog?.metadata?.studentName, 'Krishnam Dwivedi');
+  assert.equal(savedLog?.metadata?.eventName, 'AWS Cloud Day 2026');
+  assert.equal(savedLog?.metadata?.purpose, 'Registration Confirmation');
+  assert.ok(savedLog?.providerId, 'Message ID must be present');
+});

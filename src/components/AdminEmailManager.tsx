@@ -1518,31 +1518,77 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
               </button>
             </div>
 
-            <div className="space-y-2 font-mono text-[11px]">
-              <div>
-                <strong>Log ID:</strong> {selectedLogDetail.id}
+            <div className="space-y-2.5 text-xs">
+              <div className="grid grid-cols-2 gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-lg">
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Recipient</span>
+                  <span className="font-mono font-semibold text-slate-900 text-[11px] select-all">{selectedLogDetail.recipient}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Student Name</span>
+                  <span className="font-semibold text-slate-900 text-[11px]">
+                    {selectedLogDetail.recipientName || selectedLogDetail.metadata?.studentName || '—'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Event</span>
+                  <span className="font-semibold text-slate-900 text-[11px] truncate block">
+                    {selectedLogDetail.metadata?.eventName || '—'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Purpose / Template</span>
+                  <span className="font-semibold text-[#FF9900] text-[11px]">
+                    {selectedLogDetail.metadata?.purpose || selectedLogDetail.type}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Sender Identity</span>
+                  <span className="font-mono text-slate-800 text-[11px]">
+                    {selectedLogDetail.metadata?.sender || selectedLogDetail.metadata?.from || 'events@awssbgcuup.tech'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Status</span>
+                  <span className={`inline-block px-2 py-0.5 rounded text-[9px] font-bold font-mono uppercase ${
+                    selectedLogDetail.status === 'SENT'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : selectedLogDetail.status === 'FAILED'
+                      ? 'bg-red-50 text-red-700 border border-red-200'
+                      : 'bg-blue-50 text-blue-700 border border-blue-200'
+                  }`}>
+                    {selectedLogDetail.status}
+                  </span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Resend Message ID</span>
+                  <span className="font-mono text-slate-800 text-[11px] select-all">
+                    {selectedLogDetail.providerId || 'N/A'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Sent At / Timestamp</span>
+                  <span className="font-mono text-slate-600 text-[10px]">
+                    {new Date(selectedLogDetail.sentAt || selectedLogDetail.createdAt).toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Admin Dispatcher</span>
+                  <span className="font-semibold text-slate-800 text-[11px]">
+                    {selectedLogDetail.adminId || selectedLogDetail.triggeredBy}
+                  </span>
+                </div>
               </div>
-              <div>
-                <strong>Recipient:</strong> {selectedLogDetail.recipient}
+
+              <div className="p-3 bg-white border border-slate-200 rounded-lg space-y-1">
+                <span className="text-[10px] font-bold uppercase text-slate-500 block">Subject</span>
+                <p className="font-semibold text-slate-900 text-xs">{selectedLogDetail.subject}</p>
               </div>
-              <div>
-                <strong>Subject:</strong> {selectedLogDetail.subject}
-              </div>
-              <div>
-                <strong>Status:</strong> {selectedLogDetail.status}
-              </div>
-              <div>
-                <strong>Type:</strong> {selectedLogDetail.type}
-              </div>
-              <div>
-                <strong>Triggered By:</strong> {selectedLogDetail.triggeredBy}
-              </div>
-              <div>
-                <strong>Message ID:</strong> {selectedLogDetail.providerId || 'N/A'}
-              </div>
+
               {selectedLogDetail.errorMessage && (
-                <div className="p-2 bg-red-50 text-red-700 border border-red-200 rounded">
-                  <strong>Error:</strong> {selectedLogDetail.errorMessage}
+                <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded-lg text-xs">
+                  <strong className="block text-[11px] uppercase font-bold">Error Detail:</strong>
+                  <span>{selectedLogDetail.errorMessage}</span>
                 </div>
               )}
             </div>

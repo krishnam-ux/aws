@@ -1059,6 +1059,228 @@ Best regards,
 AWS SBG CU-UP Events Desk`
   },
 
+  // 5b. Event Starting Soon
+  {
+    id: 'tpl-event_starting_soon',
+    name: 'Event Starting Soon Notice',
+    type: 'event_starting_soon',
+    category: 'EVENTS',
+    subject: 'Starting Soon: {{eventTitle}}',
+    description: 'Sent right before session commencement to guide attendees.',
+    variables: ['studentName', 'eventTitle', 'eventTime', 'eventVenue', 'registrationId', 'eventUrl'],
+    isActive: true,
+    updatedAt: new Date().toISOString(),
+    bodyHtml: `<!-- HERO SECTION -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#090E1A" style="background: linear-gradient(180deg, #090E1A 0%, #111A2E 100%); padding: 32px 28px; border-bottom: 1px solid #1E293B;">
+  <tr>
+    <td align="left" valign="top">
+      <div style="font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #FF9900; text-transform: uppercase; margin-bottom: 8px;">
+        SESSION STARTING SOON
+      </div>
+      <h1 class="hero-title-mobile" style="margin: 0 0 16px 0; font-size: 32px; font-weight: 800; color: #FFFFFF; line-height: 1.2; letter-spacing: -0.5px;">
+        We're Starting <span style="color: #FF9900;">Soon!</span>
+      </h1>
+      <div style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin-bottom: 8px;">
+        Dear {{studentName}},
+      </div>
+      <div style="font-size: 14px; line-height: 1.6; color: #CBD5E1; max-width: 480px;">
+        <strong>{{eventTitle}}</strong> is about to begin. Please make your way to the session venue. Check-in desks are actively verifying attendee entries.
+      </div>
+    </td>
+  </tr>
+</table>
+
+<!-- LIGHT CARD CONTAINER -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#F1F5F9" style="background-color: #F1F5F9; padding: 28px 24px;">
+  <tr>
+    <td>
+      <!-- PRIMARY DETAILS CARD -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); padding: 24px; margin-bottom: 20px;">
+        <tr>
+          <td>
+            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">
+              {{eventTitle}}
+            </div>
+            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+              ${renderMetaRow('⏰', 'Time', '{{eventTime}}')}
+              ${renderMetaRow('📍', 'Venue', '{{eventVenue}}')}
+              ${renderMetaRow('🎫', 'Registration ID', '{{registrationId}}', true)}
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      <!-- PRIMARY CTA BUTTON -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top: 12px; margin-bottom: 18px;">
+        <tr>
+          <td align="center">
+            <a href="{{eventUrl}}" target="_blank" class="btn-cta-primary" style="display: inline-block; background-color: #FF9900; background: linear-gradient(135deg, #FF9900 0%, #EA580C 100%); color: #FFFFFF !important; font-size: 15px; font-weight: 800; text-decoration: none; padding: 15px 40px; border-radius: 8px; box-shadow: 0 4px 14px rgba(255, 153, 0, 0.35); text-align: center;">
+              Open Event Hub &rarr;
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
+    bodyText: `Dear {{studentName}},
+
+"{{eventTitle}}" is starting soon at {{eventTime}} (Venue: {{eventVenue}}).
+
+Registration ID: {{registrationId}}
+Event Link: {{eventUrl}}
+
+Best regards,
+AWS SBG CU-UP Events Desk`
+  },
+
+  // 5c. Event Feedback Request
+  {
+    id: 'tpl-event_feedback_request',
+    name: 'Event Feedback Request',
+    type: 'event_feedback_request',
+    category: 'EVENTS',
+    subject: 'Share Your Feedback: {{eventTitle}}',
+    description: 'Sent after event completion to collect student ratings and feedback.',
+    variables: ['studentName', 'eventTitle', 'feedbackUrl', 'eventUrl'],
+    isActive: true,
+    updatedAt: new Date().toISOString(),
+    bodyHtml: `<!-- HERO SECTION -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#090E1A" style="background: linear-gradient(180deg, #090E1A 0%, #111A2E 100%); padding: 32px 28px; border-bottom: 1px solid #1E293B;">
+  <tr>
+    <td align="left" valign="top">
+      <div style="font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #FF9900; text-transform: uppercase; margin-bottom: 8px;">
+        WE VALUE YOUR INPUT
+      </div>
+      <h1 class="hero-title-mobile" style="margin: 0 0 16px 0; font-size: 32px; font-weight: 800; color: #FFFFFF; line-height: 1.2; letter-spacing: -0.5px;">
+        How was your <span style="color: #FF9900;">Experience?</span>
+      </h1>
+      <div style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin-bottom: 8px;">
+        Dear {{studentName}},
+      </div>
+      <div style="font-size: 14px; line-height: 1.6; color: #CBD5E1; max-width: 480px;">
+        Thank you for participating in <strong>{{eventTitle}}</strong>! Your feedback helps us shape upcoming cloud workshops and student learning initiatives.
+      </div>
+    </td>
+  </tr>
+</table>
+
+<!-- LIGHT CARD CONTAINER -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#F1F5F9" style="background-color: #F1F5F9; padding: 28px 24px;">
+  <tr>
+    <td>
+      <!-- FEEDBACK CALLOUT CARD -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); padding: 24px; margin-bottom: 20px;">
+        <tr>
+          <td>
+            <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-bottom: 8px;">
+              2-Minute Anonymous Session Feedback
+            </div>
+            <div style="font-size: 13px; color: #64748B; line-height: 1.6;">
+              Please take 2 minutes to rate the session content, technical delivery, and hands-on demonstrations.
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <!-- PRIMARY CTA BUTTON -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top: 12px; margin-bottom: 18px;">
+        <tr>
+          <td align="center">
+            <a href="https://www.awssbgcuup.tech/feedback" target="_blank" class="btn-cta-primary" style="display: inline-block; background-color: #FF9900; background: linear-gradient(135deg, #FF9900 0%, #EA580C 100%); color: #FFFFFF !important; font-size: 15px; font-weight: 800; text-decoration: none; padding: 15px 40px; border-radius: 8px; box-shadow: 0 4px 14px rgba(255, 153, 0, 0.35); text-align: center;">
+              Submit Session Feedback &rarr;
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
+    bodyText: `Dear {{studentName}},
+
+Thank you for attending "{{eventTitle}}"!
+
+Please share your feedback at: https://www.awssbgcuup.tech/feedback
+
+Best regards,
+AWS SBG CU-UP Events & Community Desk`
+  },
+
+  // 5d. Event Certificate Available
+  {
+    id: 'tpl-event_certificate_available',
+    name: 'Event Certificate Available',
+    type: 'event_certificate_available',
+    category: 'EVENTS',
+    subject: 'Your Certificate is Ready: {{eventTitle}}',
+    description: 'Sent to attendees when their official participation certificate is generated.',
+    variables: ['studentName', 'eventTitle', 'certificateId', 'certificateUrl', 'eventUrl'],
+    isActive: true,
+    updatedAt: new Date().toISOString(),
+    bodyHtml: `<!-- HERO SECTION -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#090E1A" style="background: linear-gradient(180deg, #090E1A 0%, #111A2E 100%); padding: 32px 28px; border-bottom: 1px solid #1E293B;">
+  <tr>
+    <td align="left" valign="top">
+      <div style="font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #10B981; text-transform: uppercase; margin-bottom: 8px;">
+        CERTIFICATE OF PARTICIPATION
+      </div>
+      <h1 class="hero-title-mobile" style="margin: 0 0 16px 0; font-size: 32px; font-weight: 800; color: #FFFFFF; line-height: 1.2; letter-spacing: -0.5px;">
+        Certificate <span style="color: #10B981;">Ready!</span>
+      </h1>
+      <div style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin-bottom: 8px;">
+        Dear {{studentName}},
+      </div>
+      <div style="font-size: 14px; line-height: 1.6; color: #CBD5E1; max-width: 480px;">
+        Congratulations! Your official Certificate of Participation for <strong>{{eventTitle}}</strong> has been generated and digitally verified.
+      </div>
+    </td>
+  </tr>
+</table>
+
+<!-- LIGHT CARD CONTAINER -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#F1F5F9" style="background-color: #F1F5F9; padding: 28px 24px;">
+  <tr>
+    <td>
+      <!-- DETAILS CARD -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); padding: 24px; margin-bottom: 20px;">
+        <tr>
+          <td>
+            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">
+              Certificate Details
+            </div>
+            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+              ${renderMetaRow('👤', 'Recipient Name', '{{studentName}}')}
+              ${renderMetaRow('🎓', 'Event / Workshop', '{{eventTitle}}')}
+              ${renderMetaRow('📜', 'Certificate ID', '{{certificateId}}', true)}
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      <!-- PRIMARY CTA BUTTON -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top: 12px; margin-bottom: 18px;">
+        <tr>
+          <td align="center">
+            <a href="https://www.awssbgcuup.tech/verification" target="_blank" class="btn-cta-primary" style="display: inline-block; background-color: #FF9900; background: linear-gradient(135deg, #FF9900 0%, #EA580C 100%); color: #FFFFFF !important; font-size: 15px; font-weight: 800; text-decoration: none; padding: 15px 40px; border-radius: 8px; box-shadow: 0 4px 14px rgba(255, 153, 0, 0.35); text-align: center;">
+              Verify &amp; Download Certificate &rarr;
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
+    bodyText: `Dear {{studentName}},
+
+Congratulations! Your Certificate of Participation for "{{eventTitle}}" is now available.
+
+Certificate ID: {{certificateId}}
+Verify and Download: https://www.awssbgcuup.tech/verification
+
+Best regards,
+AWS SBG CU-UP Academic & Certification Desk`
+  },
+
   // 6. Opportunity Application Received
   {
     id: 'tpl-opportunity_application_received',

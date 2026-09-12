@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { db } from '@/lib/db';
 import { sendEmail, sendBatchEmails } from '@/lib/email';
 import { EmailRecipient, EmailType } from '@/types/email';
 
@@ -45,7 +46,10 @@ export async function POST(request: Request) {
       type = 'admin_manual_message' as EmailType,
       attachments,
       adminId = 'admin',
-      isTest = false
+      isTest = false,
+      registrationId,
+      recipientName,
+      metadata = {}
     } = body;
 
     if (!subject || typeof subject !== 'string' || !subject.trim()) {
@@ -85,8 +89,26 @@ export async function POST(request: Request) {
       );
     }
 
-    // Single send
-    if (!to || (typeof to !== 'string' && !Array.isArray(to))) {
+    // 1. Single send: Resolve registration record server-side if registrationId is provided
+    let resolvedRecipient = to;
+    let resolvedStudentName = recipientName || metadata?.studentName || '';
+    let resolvedEventName = metadata?.eventName || metadata?.eventTitle || '';
+
+    if (registrationId) {
+      try {
+        const allRegistrations = await db.eventRegistrations.getAll();
+        const reg = allRegistrations.find((r: any) => r.id === registrationId);
+        if (reg) {
+          resolvedRecipient = reg.email;
+          resolvedStudentName = reg.name;
+          resolvedEventName = reg.eventName;
+        }
+      } catch (dbErr) {
+        console.error('Failed to query registration record for email dispatch:', dbErr);
+      }
+    }
+
+    if (!resolvedRecipient || (typeof resolvedRecipient !== 'string' && !Array.isArray(resolvedRecipient))) {
       return NextResponse.json(
         { error: 'Recipient "to" address is required.' },
         { status: 400, headers: noStoreHeaders }
@@ -95,7 +117,7 @@ export async function POST(request: Request) {
 
     const result = await sendEmail({
       from,
-      to,
+      to: resolvedRecipient,
       cc,
       bcc,
       subject: subject.trim(),
@@ -106,7 +128,14 @@ export async function POST(request: Request) {
       attachments,
       triggeredBy: 'ADMIN_MANUAL',
       adminId,
-      isTest
+      isTest,
+      metadata: {
+        ...metadata,
+        registrationId: registrationId || undefined,
+        studentName: resolvedStudentName || undefined,
+        eventName: resolvedEventName || undefined,
+        purpose: type
+      }
     });
 
     return NextResponse.json(
@@ -124,3 +153,4 @@ export async function POST(request: Request) {
     );
   }
 }
+
