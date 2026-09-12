@@ -256,6 +256,10 @@ const DEFAULT_FALLBACKS: Record<string, string> = {
   fullName: 'Student',
   recipientName: 'Student',
   candidateName: 'Candidate',
+  memberName: 'Founding Member',
+  memberRole: 'Core Team Lead',
+  memberDomain: 'Cloud & Infrastructure',
+  memberEmail: '',
   eventVenue: 'Chandigarh University – Uttar Pradesh',
   eventDate: 'TBA',
   eventTime: 'TBA',
@@ -286,20 +290,36 @@ function resolveVariableValue(key: string, variables: Record<string, any>): stri
 
   const lowerKey = key.toLowerCase().replace(/_/g, '');
 
-  // Dynamic Name Aliases
-  if (['studentname', 'name', 'fullname', 'recipientname', 'candidatename'].includes(lowerKey)) {
+  // Dynamic Name Aliases (Prioritize specific memberName if provided)
+  if (['membername', 'studentname', 'name', 'fullname', 'recipientname', 'candidatename'].includes(lowerKey)) {
     const nameVal =
+      variables.memberName ||
       variables.studentName ||
       variables.fullName ||
       variables.name ||
       variables.recipientName ||
       variables.candidateName ||
       variables.student_name ||
-      variables.full_name;
+      variables.full_name ||
+      variables.member_name;
     if (nameVal !== undefined && nameVal !== null) {
       const trimmed = String(nameVal).trim();
       if (trimmed.length > 0) return trimmed;
     }
+  }
+
+  // Founding Member Role & Domain Aliases
+  if (['memberrole', 'role', 'designation', 'member_role'].includes(lowerKey)) {
+    const roleVal = variables.memberRole || variables.role || variables.designation || variables.member_role;
+    if (roleVal !== undefined && roleVal !== null) return String(roleVal).trim();
+  }
+  if (['memberdomain', 'domain', 'department', 'team', 'member_domain'].includes(lowerKey)) {
+    const domainVal = variables.memberDomain || variables.domain || variables.department || variables.team || variables.member_domain;
+    if (domainVal !== undefined && domainVal !== null) return String(domainVal).trim();
+  }
+  if (['memberemail', 'email', 'recipientemail', 'member_email'].includes(lowerKey)) {
+    const emailVal = variables.memberEmail || variables.email || variables.recipientEmail || variables.member_email;
+    if (emailVal !== undefined && emailVal !== null) return String(emailVal).trim();
   }
 
   // Event Aliases
@@ -2289,5 +2309,403 @@ Dispatched At: {{timestamp}}
 Triggered By: {{adminUser}}
 
 All email services are fully operational.`
+  },
+
+  // 19. Founding Members Announcement
+  {
+    id: 'tpl-founding_members_announcement',
+    name: 'Founding Members Announcement',
+    type: 'founding_members_announcement',
+    category: 'TEAM',
+    subject: 'Official Announcement: AWS Student Builder Group Leadership & Founding Team',
+    description: 'Sent to Founding Members regarding community milestones, leadership decisions, and roadmap advisories.',
+    variables: ['memberName', 'memberRole', 'memberDomain', 'messageContent', 'announcementTitle'],
+    isActive: true,
+    updatedAt: new Date().toISOString(),
+    bodyHtml: `<!-- HERO SECTION -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#090E1A" style="background: linear-gradient(180deg, #090E1A 0%, #111A2E 100%); padding: 32px 28px; border-bottom: 1px solid #1E293B;">
+  <tr>
+    <td align="left" valign="top">
+      <div style="font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #FF9900; text-transform: uppercase; margin-bottom: 8px;">
+        FOUNDING TEAM ADVISORY
+      </div>
+      <h1 class="hero-title-mobile" style="margin: 0 0 16px 0; font-size: 32px; font-weight: 800; color: #FFFFFF; line-height: 1.2; letter-spacing: -0.5px;">
+        Leadership <span style="color: #FF9900;">Announcement</span>
+      </h1>
+      <div style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin-bottom: 8px;">
+        Dear {{memberName}},
+      </div>
+      <div style="font-size: 14px; line-height: 1.6; color: #CBD5E1; max-width: 480px;">
+        As a Founding Member serving as <strong>{{memberRole}}</strong> in the <strong>{{memberDomain}}</strong> domain, please review this official leadership update.
+      </div>
+    </td>
+  </tr>
+</table>
+
+<!-- LIGHT CARD CONTAINER -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#F1F5F9" style="background-color: #F1F5F9; padding: 28px 24px;">
+  <tr>
+    <td>
+      <!-- MEMBER PROFILE BADGE -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); padding: 24px; margin-bottom: 20px;">
+        <tr>
+          <td>
+            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">
+              Leadership Information
+            </div>
+            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+              ${renderMetaRow('👤', 'Founding Member', '{{memberName}}')}
+              ${renderMetaRow('🎖️', 'Leadership Role', '{{memberRole}}')}
+              ${renderMetaRow('🌐', 'Assigned Domain', '{{memberDomain}}')}
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      <!-- ANNOUNCEMENT CONTENT CARD -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); padding: 24px; margin-bottom: 20px;">
+        <tr>
+          <td>
+            <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-bottom: 12px;">
+              {{announcementTitle}}
+            </div>
+            <div style="font-size: 14px; line-height: 1.7; color: #334155;">
+              {{messageContent}}
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <!-- CTA BUTTON -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top: 10px; margin-bottom: 10px;">
+        <tr>
+          <td align="center">
+            <a href="https://www.awssbgcuup.tech/leadership" target="_blank" class="btn-cta-primary" style="display: inline-block; background-color: #FF9900; background: linear-gradient(135deg, #FF9900 0%, #EA580C 100%); color: #FFFFFF !important; font-size: 15px; font-weight: 800; text-decoration: none; padding: 15px 40px; border-radius: 8px; box-shadow: 0 4px 14px rgba(255, 153, 0, 0.35); text-align: center;">
+              View Leadership Portal &rarr;
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
+    bodyText: `Dear {{memberName}},
+
+As a Founding Member ({{memberRole}} — {{memberDomain}}), please review this official leadership update:
+
+{{announcementTitle}}
+
+{{messageContent}}
+
+Best regards,
+AWS Student Builder Group (CU-UP)`
+  },
+
+  // 20. Founding Members Meeting / Discussion
+  {
+    id: 'tpl-founding_members_meeting',
+    name: 'Founding Members Meeting / Discussion',
+    type: 'founding_members_meeting',
+    category: 'TEAM',
+    subject: 'Core Team Sync: {{meetingAgenda}}',
+    description: 'Sent to Founding Members for scheduled syncs, strategy discussions, and review sessions.',
+    variables: ['memberName', 'memberRole', 'memberDomain', 'meetingAgenda', 'meetingTime', 'meetingVenue', 'meetingLink', 'messageContent'],
+    isActive: true,
+    updatedAt: new Date().toISOString(),
+    bodyHtml: `<!-- HERO SECTION -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#090E1A" style="background: linear-gradient(180deg, #090E1A 0%, #111A2E 100%); padding: 32px 28px; border-bottom: 1px solid #1E293B;">
+  <tr>
+    <td align="left" valign="top">
+      <div style="font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #38BDF8; text-transform: uppercase; margin-bottom: 8px;">
+        CORE TEAM SYNC
+      </div>
+      <h1 class="hero-title-mobile" style="margin: 0 0 16px 0; font-size: 32px; font-weight: 800; color: #FFFFFF; line-height: 1.2; letter-spacing: -0.5px;">
+        Meeting <span style="color: #38BDF8;">Notice</span>
+      </h1>
+      <div style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin-bottom: 8px;">
+        Dear {{memberName}},
+      </div>
+      <div style="font-size: 14px; line-height: 1.6; color: #CBD5E1; max-width: 480px;">
+        You are scheduled to attend an official Core Team sync regarding <strong>{{meetingAgenda}}</strong>.
+      </div>
+    </td>
+  </tr>
+</table>
+
+<!-- LIGHT CARD CONTAINER -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#F1F5F9" style="background-color: #F1F5F9; padding: 28px 24px;">
+  <tr>
+    <td>
+      <!-- MEETING DETAILS CARD -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); padding: 24px; margin-bottom: 20px;">
+        <tr>
+          <td>
+            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">
+              Meeting Details
+            </div>
+            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+              ${renderMetaRow('📌', 'Agenda', '{{meetingAgenda}}')}
+              ${renderMetaRow('⏱️', 'Date & Time', '{{meetingTime}}')}
+              ${renderMetaRow('📍', 'Location / Mode', '{{meetingVenue}}')}
+              ${renderMetaRow('🎖️', 'Attendee Role', '{{memberRole}} ({{memberDomain}})')}
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      <!-- NOTES CARD -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); padding: 24px; margin-bottom: 20px;">
+        <tr>
+          <td>
+            <div style="font-size: 14px; font-weight: 800; color: #0F172A; margin-bottom: 8px;">
+              Discussion Points &amp; Preparation
+            </div>
+            <div style="font-size: 14px; line-height: 1.7; color: #334155;">
+              {{messageContent}}
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <!-- CTA BUTTON -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top: 10px; margin-bottom: 10px;">
+        <tr>
+          <td align="center">
+            <a href="{{meetingLink}}" target="_blank" class="btn-cta-primary" style="display: inline-block; background-color: #0284C7; background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%); color: #FFFFFF !important; font-size: 15px; font-weight: 800; text-decoration: none; padding: 15px 40px; border-radius: 8px; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35); text-align: center;">
+              Join Discussion / View Agenda &rarr;
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
+    bodyText: `Dear {{memberName}},
+
+You are scheduled to attend an official Core Team sync:
+
+Agenda: {{meetingAgenda}}
+Date & Time: {{meetingTime}}
+Location: {{meetingVenue}}
+Attendee: {{memberName}} ({{memberRole}} — {{memberDomain}})
+
+Notes:
+{{messageContent}}
+
+Meeting Link: {{meetingLink}}
+
+Best regards,
+AWS Student Builder Group (CU-UP)`
+  },
+
+  // 21. Founding Members Event Coordination
+  {
+    id: 'tpl-founding_members_coordination',
+    name: 'Founding Members Event Coordination',
+    type: 'founding_members_coordination',
+    category: 'TEAM',
+    subject: 'Event Execution & Coordination: {{eventTitle}}',
+    description: 'Coordination guidelines, logistics allocation, and duties sent to founding members for upcoming events.',
+    variables: ['memberName', 'memberRole', 'memberDomain', 'eventTitle', 'eventDate', 'eventVenue', 'coordinationDuties', 'messageContent'],
+    isActive: true,
+    updatedAt: new Date().toISOString(),
+    bodyHtml: `<!-- HERO SECTION -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#090E1A" style="background: linear-gradient(180deg, #090E1A 0%, #111A2E 100%); padding: 32px 28px; border-bottom: 1px solid #1E293B;">
+  <tr>
+    <td align="left" valign="top">
+      <div style="font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #F59E0B; text-transform: uppercase; margin-bottom: 8px;">
+        EVENT OPERATIONS &amp; LOGISTICS
+      </div>
+      <h1 class="hero-title-mobile" style="margin: 0 0 16px 0; font-size: 32px; font-weight: 800; color: #FFFFFF; line-height: 1.2; letter-spacing: -0.5px;">
+        Operations <span style="color: #F59E0B;">Briefing</span>
+      </h1>
+      <div style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin-bottom: 8px;">
+        Dear {{memberName}},
+      </div>
+      <div style="font-size: 14px; line-height: 1.6; color: #CBD5E1; max-width: 480px;">
+        Here is your operational coordination briefing for <strong>{{eventTitle}}</strong>.
+      </div>
+    </td>
+  </tr>
+</table>
+
+<!-- LIGHT CARD CONTAINER -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#F1F5F9" style="background-color: #F1F5F9; padding: 28px 24px;">
+  <tr>
+    <td>
+      <!-- EVENT OVERVIEW CARD -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); padding: 24px; margin-bottom: 20px;">
+        <tr>
+          <td>
+            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">
+              Session Parameters
+            </div>
+            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+              ${renderMetaRow('🚀', 'Event', '{{eventTitle}}')}
+              ${renderMetaRow('📅', 'Date & Time', '{{eventDate}}')}
+              ${renderMetaRow('📍', 'Venue', '{{eventVenue}}')}
+              ${renderMetaRow('🎖️', 'Lead & Domain', '{{memberName}} ({{memberDomain}})')}
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      <!-- RESPONSIBILITIES CARD -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); padding: 24px; margin-bottom: 20px;">
+        <tr>
+          <td>
+            <div style="font-size: 14px; font-weight: 800; color: #0F172A; margin-bottom: 8px;">
+              Allocated Responsibilities &amp; Coordination Notes
+            </div>
+            <div style="font-size: 14px; line-height: 1.7; color: #334155;">
+              {{messageContent}}
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
+    bodyText: `Dear {{memberName}},
+
+Event Coordination Briefing for {{eventTitle}}:
+Date: {{eventDate}}
+Venue: {{eventVenue}}
+Domain: {{memberDomain}}
+Role: {{memberRole}}
+
+Operational Notes:
+{{messageContent}}
+
+Best regards,
+AWS Student Builder Group (CU-UP)`
+  },
+
+  // 22. Founding Member Recognition & Appreciation
+  {
+    id: 'tpl-founding_members_recognition',
+    name: 'Founding Member Recognition & Appreciation',
+    type: 'founding_members_recognition',
+    category: 'TEAM',
+    subject: 'Recognition & Appreciation — AWS Student Builder Group Founding Leadership',
+    description: 'Formal appreciation notice acknowledging a Founding Member’s contributions and impact.',
+    variables: ['memberName', 'memberRole', 'memberDomain', 'recognitionMessage', 'messageContent'],
+    isActive: true,
+    updatedAt: new Date().toISOString(),
+    bodyHtml: `<!-- HERO SECTION -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#090E1A" style="background: linear-gradient(180deg, #090E1A 0%, #111A2E 100%); padding: 32px 28px; border-bottom: 1px solid #1E293B;">
+  <tr>
+    <td align="left" valign="top">
+      <div style="font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #A855F7; text-transform: uppercase; margin-bottom: 8px;">
+        HONOR &amp; RECOGNITION
+      </div>
+      <h1 class="hero-title-mobile" style="margin: 0 0 16px 0; font-size: 32px; font-weight: 800; color: #FFFFFF; line-height: 1.2; letter-spacing: -0.5px;">
+        Leadership <span style="color: #A855F7;">Appreciation</span>
+      </h1>
+      <div style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin-bottom: 8px;">
+        Dear {{memberName}},
+      </div>
+      <div style="font-size: 14px; line-height: 1.6; color: #CBD5E1; max-width: 480px;">
+        Thank you for your foundational leadership and contributions to the <strong>AWS Student Builder Group</strong>.
+      </div>
+    </td>
+  </tr>
+</table>
+
+<!-- LIGHT CARD CONTAINER -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#F1F5F9" style="background-color: #F1F5F9; padding: 28px 24px;">
+  <tr>
+    <td>
+      <!-- APPRECIATION CARD -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); padding: 24px; margin-bottom: 20px;">
+        <tr>
+          <td>
+            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">
+              Leadership Citation
+            </div>
+            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+              ${renderMetaRow('🌟', 'Founding Member', '{{memberName}}')}
+              ${renderMetaRow('🎖️', 'Domain Leadership', '{{memberRole}}')}
+              ${renderMetaRow('🌐', 'Key Domain', '{{memberDomain}}')}
+            </table>
+            <div style="margin-top: 16px; font-size: 14px; line-height: 1.7; color: #334155; border-top: 1px solid #F1F5F9; padding-top: 14px;">
+              {{messageContent}}
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
+    bodyText: `Dear {{memberName}},
+
+Thank you for your dedicated leadership as {{memberRole}} ({{memberDomain}}) with the AWS Student Builder Group.
+
+{{messageContent}}
+
+With highest appreciation,
+AWS Student Builder Group (CU-UP)`
+  },
+
+  // 23. Founding Members Internal Update
+  {
+    id: 'tpl-founding_members_update',
+    name: 'Founding Members Internal Update',
+    type: 'founding_members_update',
+    category: 'TEAM',
+    subject: 'Internal Leadership Update: {{updateSubject}}',
+    description: 'Internal memos, progress reviews, and operational updates dispatched to founding members.',
+    variables: ['memberName', 'memberRole', 'memberDomain', 'updateSubject', 'messageContent'],
+    isActive: true,
+    updatedAt: new Date().toISOString(),
+    bodyHtml: `<!-- HERO SECTION -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#090E1A" style="background: linear-gradient(180deg, #090E1A 0%, #111A2E 100%); padding: 32px 28px; border-bottom: 1px solid #1E293B;">
+  <tr>
+    <td align="left" valign="top">
+      <div style="font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #10B981; text-transform: uppercase; margin-bottom: 8px;">
+        INTERNAL LEADERSHIP MEMO
+      </div>
+      <h1 class="hero-title-mobile" style="margin: 0 0 16px 0; font-size: 32px; font-weight: 800; color: #FFFFFF; line-height: 1.2; letter-spacing: -0.5px;">
+        Core Team <span style="color: #10B981;">Update</span>
+      </h1>
+      <div style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin-bottom: 8px;">
+        Dear {{memberName}},
+      </div>
+      <div style="font-size: 14px; line-height: 1.6; color: #CBD5E1; max-width: 480px;">
+        Please review this internal update regarding <strong>{{updateSubject}}</strong>.
+      </div>
+    </td>
+  </tr>
+</table>
+
+<!-- LIGHT CARD CONTAINER -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#F1F5F9" style="background-color: #F1F5F9; padding: 28px 24px;">
+  <tr>
+    <td>
+      <!-- UPDATE CONTENT CARD -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); padding: 24px; margin-bottom: 20px;">
+        <tr>
+          <td>
+            <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-bottom: 12px;">
+              {{updateSubject}}
+            </div>
+            <div style="font-size: 14px; line-height: 1.7; color: #334155;">
+              {{messageContent}}
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
+    bodyText: `Dear {{memberName}},
+
+Internal Leadership Update: {{updateSubject}}
+Recipient: {{memberName}} ({{memberRole}} — {{memberDomain}})
+
+{{messageContent}}
+
+Best regards,
+AWS Student Builder Group (CU-UP)`
   }
 ];

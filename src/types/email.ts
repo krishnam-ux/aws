@@ -31,11 +31,16 @@ export type EmailType =
   | 'feedback_received_acknowledgement'
   | 'admin_custom_announcement'
   | 'admin_manual_message'
+  | 'founding_members_announcement'
+  | 'founding_members_meeting'
+  | 'founding_members_coordination'
+  | 'founding_members_recognition'
+  | 'founding_members_update'
   | 'system_test_email';
 
 export type EmailDeliveryStatus = 'SENT' | 'FAILED' | 'PENDING' | 'SIMULATED';
 
-export type EmailCategory = 'EVENTS' | 'OPPORTUNITIES' | 'EXAMS' | 'COMMUNITY' | 'ADMIN';
+export type EmailCategory = 'EVENTS' | 'OPPORTUNITIES' | 'EXAMS' | 'COMMUNITY' | 'ADMIN' | 'TEAM';
 
 export interface EmailAttachment {
   filename: string;
@@ -45,11 +50,14 @@ export interface EmailAttachment {
 }
 
 export interface EmailRecipient {
+  id?: string;
   email: string;
   name?: string;
+  role?: string;
+  domain?: string;
   studentId?: string;
   rollNumber?: string;
-  source?: 'EVENT' | 'OPPORTUNITY' | 'EXAM' | 'MANUAL' | 'TEAM';
+  source?: 'EVENT' | 'OPPORTUNITY' | 'EXAM' | 'MANUAL' | 'TEAM' | 'FOUNDING_MEMBERS';
 }
 
 export interface EmailPayload {
@@ -87,7 +95,15 @@ export interface EmailBatchSummary {
   sent: number;
   failed: number;
   simulated: number;
-  errors: Array<{ recipient: string; error: string; registrationId?: string; name?: string }>;
+  errors: Array<{
+    recipient: string;
+    error: string;
+    registrationId?: string;
+    memberId?: string;
+    name?: string;
+    role?: string;
+    domain?: string;
+  }>;
   batchId: string;
 }
 

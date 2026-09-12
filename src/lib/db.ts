@@ -968,17 +968,21 @@ const DEFAULT_OPPORTUNITIES = [
 const DEFAULT_CORE_TEAM = [
   {
     id: 'team-krishnam',
-    name: 'Krishnam',
+    name: 'Krishnam Dwivedi',
+    email: 'krishnamdwivedi17@gmail.com',
     role: 'Technical Lead, Cloud & Infrastructure',
+    domain: 'Cloud & Infrastructure',
     bio: 'Manages core cloud repositories, VPC infrastructures, server deployment environments, and local builder laboratories.',
-    initials: 'K',
+    initials: 'KD',
     displayOrder: 1,
     status: 'Published'
   },
   {
     id: 'team-ayush',
     name: 'Ayush Pandey',
+    email: 'ayush@culko.in',
     role: 'Events & Operations Lead',
+    domain: 'Events & Operations',
     bio: 'Coordinates event registration clearances, technical workshop layouts, logistics schedules, and local project mock reviews.',
     initials: 'AP',
     displayOrder: 2,
@@ -987,7 +991,9 @@ const DEFAULT_CORE_TEAM = [
   {
     id: 'team-priyanshu',
     name: 'Priyanshu Kumar',
+    email: 'priyanshu@culko.in',
     role: 'Marketing & Community Outreach Lead',
+    domain: 'Marketing & Community Outreach',
     bio: 'Manages outreach communications, educational platform partners, panel liaison schedules, and student enrollment pipelines.',
     initials: 'PK',
     displayOrder: 3,
@@ -996,7 +1002,9 @@ const DEFAULT_CORE_TEAM = [
   {
     id: 'team-aakarshan',
     name: 'Aakarshan Agnihotri',
+    email: 'aakarshan@culko.in',
     role: 'Content & Documentation Lead',
+    domain: 'Content & Documentation',
     bio: 'Drafts learning resource listings, event slide repositories, documentation templates, and official community logs.',
     initials: 'AA',
     displayOrder: 4,
@@ -1005,7 +1013,9 @@ const DEFAULT_CORE_TEAM = [
   {
     id: 'team-ananya',
     name: 'Ananya Shukla',
+    email: 'ananya@culko.in',
     role: 'Design & Creative Lead',
+    domain: 'Design & Creative',
     bio: 'Reviews website interface styles, community visuals, event presentation layouts, and branding design systems.',
     initials: 'AS',
     displayOrder: 5,

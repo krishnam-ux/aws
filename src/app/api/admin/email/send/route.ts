@@ -7,9 +7,10 @@ import {
   interpolateVariables,
   renderEmailLayout
 } from '@/lib/email/templates';
-import { getSenderForEmailType } from '@/lib/email/senders';
+import { OFFICIAL_SENDERS, getSenderForEmailType } from '@/lib/email/senders';
 import { logEmailAudit } from '@/lib/email/logger';
 import { isValidEmail, normalizeEmail } from '@/lib/email/validation';
+import { siteConfig } from '@/data/siteConfig';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -41,14 +42,15 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const {
-      mode = 'single', // 'single' | 'batch' | 'registration_batch'
+      mode = 'single', // 'single' | 'batch' | 'registration_batch' | 'member_batch' | 'founding_members_batch'
       from,
       to,
       cc,
       bcc,
       recipients, // Array<EmailRecipient | string> for manual batch
       registrationIds, // Array<string> of selected registration IDs
-      purpose, // Human readable purpose e.g. "Registration Confirmation"
+      memberIds, // Array<string> of selected Founding Member IDs
+      purpose, // Human readable purpose e.g. "Founding Members Announcement"
       customNotes, // Notes or reason for update/cancel/important notice
       subject,
       contentHtml,
@@ -59,6 +61,7 @@ export async function POST(request: Request) {
       adminId = 'admin',
       isTest = false,
       registrationId,
+      memberId,
       recipientName,
       metadata = {}
     } = body;
@@ -329,6 +332,216 @@ export async function POST(request: Request) {
       );
     }
 
+    // 2. BULK SEND TO SELECTED FOUNDING MEMBERS / CORE TEAM (Server-Side Authoritative Resolution)
+    if (mode === 'member_batch' || mode === 'founding_members_batch' || (Array.isArray(memberIds) && memberIds.length > 0)) {
+      if (!Array.isArray(memberIds) || memberIds.length === 0) {
+        return NextResponse.json(
+          { error: 'Member IDs list is required for Founding Members bulk email dispatch.' },
+          { status: 400, headers: noStoreHeaders }
+        );
+      }
+
+      // Fetch authoritative database records
+      const allCoreTeam = await db.coreTeam.getAll();
+      const allTemplates = await db.emailTemplates.getAll();
+
+      // Find matching team member records (match by id or email)
+      const matchedMembers = allCoreTeam.filter((m: any) =>
+        memberIds.includes(m.id) || memberIds.includes(m.email?.toLowerCase())
+      );
+
+      // Also check siteConfig leaders if ID starts with leader- or matches email
+      if (matchedMembers.length < memberIds.length) {
+        const leaders = [siteConfig.leader, siteConfig.facultyContact].filter(Boolean);
+        for (const leader of leaders) {
+          const leaderId = `leader-${leader.name?.toLowerCase().replace(/\s+/g, '-')}`;
+          const leaderEmail = (leader.email || siteConfig.email || '').toLowerCase();
+          if ((memberIds.includes(leaderId) || memberIds.includes(leaderEmail)) && !matchedMembers.some(m => m.email?.toLowerCase() === leaderEmail)) {
+            matchedMembers.push({
+              id: leaderId,
+              name: leader.name,
+              email: leaderEmail,
+              role: leader.role,
+              domain: leader.department || 'Executive Leadership'
+            });
+          }
+        }
+      }
+
+      if (matchedMembers.length === 0) {
+        return NextResponse.json(
+          { error: 'No matching founding member records found for the provided IDs.' },
+          { status: 404, headers: noStoreHeaders }
+        );
+      }
+
+      // Find Base Template
+      const baseTemplate =
+        (templateId && allTemplates.find((t: any) => t.id === templateId)) ||
+        allTemplates.find((t: any) => t.type === type && t.isActive) ||
+        DEFAULT_EMAIL_TEMPLATES.find((t) => t.type === type) ||
+        DEFAULT_EMAIL_TEMPLATES.find((t) => t.type === 'founding_members_announcement') ||
+        DEFAULT_EMAIL_TEMPLATES[0];
+
+      const senderAddress = getSenderForEmailType(type, 'TEAM', from || OFFICIAL_SENDERS.COMMUNICATION);
+      const batchId = `batch_team_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+      const summary: EmailBatchSummary = {
+        total: matchedMembers.length,
+        sent: 0,
+        failed: 0,
+        simulated: 0,
+        errors: [],
+        batchId
+      };
+
+      // Deduplicate recipients by normalized email
+      const seenEmails = new Set<string>();
+      const deduplicatedMembers: any[] = [];
+
+      for (const member of matchedMembers) {
+        const norm = normalizeEmail(member.email || '');
+        if (!isValidEmail(norm)) {
+          summary.failed++;
+          summary.errors.push({
+            recipient: member.email || 'INVALID_EMAIL',
+            error: 'Invalid recipient email address format',
+            memberId: member.id,
+            name: member.name,
+            role: member.role,
+            domain: member.domain
+          });
+          continue;
+        }
+        if (seenEmails.has(norm)) {
+          continue;
+        }
+        seenEmails.add(norm);
+        deduplicatedMembers.push(member);
+      }
+
+      // Process batch with safe rate-limited iteration (30ms spacing)
+      for (const member of deduplicatedMembers) {
+        try {
+          const memberName = member.name?.trim() || 'Founding Member';
+          const memberRole = member.role?.trim() || 'Core Team Lead';
+          const memberDomain = member.domain?.trim() || 'Cloud & Technology';
+          const memberEmail = member.email?.trim() || '';
+
+          const vars: Record<string, any> = {
+            memberName,
+            memberRole,
+            memberDomain,
+            memberEmail,
+            studentName: memberName,
+            name: memberName,
+            fullName: memberName,
+            recipientName: memberName,
+            role: memberRole,
+            domain: memberDomain,
+            email: memberEmail,
+            messageContent: customNotes || contentText || 'Important update regarding AWS SBG CU-UP founding team operations.',
+            announcementTitle: subject || baseTemplate.subject || 'Leadership Update',
+            meetingAgenda: subject || metadata?.meetingAgenda || 'Strategic Leadership & Operations Sync',
+            meetingTime: metadata?.meetingTime || 'To be coordinated with team',
+            meetingVenue: metadata?.meetingVenue || 'Auditorium Block A / Google Meet',
+            meetingLink: metadata?.meetingLink || 'https://www.awssbgcuup.tech/leadership',
+            eventTitle: metadata?.eventTitle || 'AWS Community Workshop',
+            eventDate: metadata?.eventDate || 'Upcoming',
+            eventVenue: metadata?.eventVenue || 'Chandigarh University – UP',
+            updateSubject: subject || 'Internal Core Team Memo'
+          };
+
+          let rawBodyHtml = contentHtml || baseTemplate.bodyHtml;
+          let rawBodyText = contentText || baseTemplate.bodyText;
+
+          const currentSubj = subject || baseTemplate.subject;
+          const finalSubject = interpolateVariables(currentSubj, vars);
+          const finalBodyHtml = interpolateVariables(rawBodyHtml, vars);
+          const finalBodyText = interpolateVariables(rawBodyText, vars);
+
+          const fullHtml = finalBodyHtml.includes('<!DOCTYPE html')
+            ? finalBodyHtml
+            : renderEmailLayout({
+                title: finalSubject,
+                contentHtml: finalBodyHtml
+              });
+
+          const sendResult = await sendEmail({
+            from: senderAddress,
+            to: member.email,
+            recipientName: member.name,
+            subject: finalSubject,
+            html: fullHtml,
+            text: finalBodyText,
+            type,
+            category: 'TEAM',
+            templateId: baseTemplate.id,
+            triggeredBy: `ADMIN_BULK (${adminId})`,
+            adminId,
+            metadata: {
+              batchId,
+              memberId: member.id,
+              studentName: member.name,
+              role: member.role,
+              domain: member.domain,
+              purpose: purpose || baseTemplate.name || type,
+              sender: senderAddress
+            }
+          });
+
+          if (sendResult.success) {
+            summary.sent++;
+            if (sendResult.status === 'SIMULATED') summary.simulated++;
+          } else {
+            summary.failed++;
+            summary.errors.push({
+              recipient: member.email,
+              error: sendResult.error || 'Failed to dispatch via Resend provider.',
+              memberId: member.id,
+              name: member.name,
+              role: member.role,
+              domain: member.domain
+            });
+          }
+
+          // Safety Throttling: 30ms sleep between dispatches
+          await new Promise((resolve) => setTimeout(resolve, 30));
+        } catch (itemErr: any) {
+          summary.failed++;
+          summary.errors.push({
+            recipient: member.email,
+            error: itemErr.message || 'Unexpected error processing team member email.',
+            memberId: member.id,
+            name: member.name
+          });
+        }
+      }
+
+      // Log administrative audit record
+      await logEmailAudit({
+        adminUser: adminId,
+        action: 'BULK_FOUNDING_MEMBERS_EMAIL',
+        details: {
+          batchId,
+          total: deduplicatedMembers.length,
+          sent: summary.sent,
+          failed: summary.failed,
+          purpose: purpose || type,
+          type
+        }
+      });
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: `Founding Members bulk dispatch completed: ${summary.sent} sent, ${summary.failed} failed.`,
+          summary
+        },
+        { headers: noStoreHeaders }
+      );
+    }
+
     if (!subject || typeof subject !== 'string' || !subject.trim()) {
       return NextResponse.json(
         { error: 'Email subject is required.' },
@@ -336,7 +549,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Generic Manual Batch
+    // 3. Generic Manual Batch
     if (mode === 'batch') {
       if (!Array.isArray(recipients) || recipients.length === 0) {
         return NextResponse.json(
@@ -367,9 +580,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Single Send: Resolve registration record server-side if registrationId is provided
+    // 4. Single Send: Resolve registration record or team member record server-side if ID is provided
     let resolvedRecipient = to;
-    let resolvedStudentName = recipientName || metadata?.studentName || '';
+    let resolvedStudentName = recipientName || metadata?.studentName || metadata?.memberName || '';
     let resolvedEventName = metadata?.eventName || metadata?.eventTitle || '';
 
     if (registrationId) {
@@ -383,6 +596,17 @@ export async function POST(request: Request) {
         }
       } catch (dbErr) {
         console.error('Failed to query registration record for email dispatch:', dbErr);
+      }
+    } else if (memberId) {
+      try {
+        const allMembers = await db.coreTeam.getAll();
+        const member = allMembers.find((m: any) => m.id === memberId || m.email?.toLowerCase() === memberId?.toLowerCase());
+        if (member) {
+          resolvedRecipient = member.email;
+          resolvedStudentName = member.name;
+        }
+      } catch (dbErr) {
+        console.error('Failed to query core team member for email dispatch:', dbErr);
       }
     }
 

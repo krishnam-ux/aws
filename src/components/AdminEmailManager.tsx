@@ -61,19 +61,19 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
 
   // Compose State
   const [composeMode, setComposeMode] = useState<'single' | 'bulk'>('single');
-  const [senderAddress, setSenderAddress] = useState('events@awssbgcuup.tech');
+  const [senderAddress, setSenderAddress] = useState('communication@awssbgcuup.tech');
   const [recipientSource, setRecipientSource] = useState<
-    'ALL' | 'EVENT' | 'OPPORTUNITY' | 'EXAM' | 'TEAM' | 'SELECTED' | 'STUDENTS' | 'CUSTOM'
-  >('EVENT');
+    'ALL' | 'EVENT' | 'OPPORTUNITY' | 'EXAM' | 'TEAM' | 'FOUNDING_MEMBERS' | 'SELECTED' | 'STUDENTS' | 'CUSTOM'
+  >('FOUNDING_MEMBERS');
   const [selectedRecipients, setSelectedRecipients] = useState<EmailRecipient[]>([]);
   const [singleTo, setSingleTo] = useState('');
   const [cc, setCc] = useState('');
   const [bcc, setBcc] = useState('');
-  const [subject, setSubject] = useState('');
-  const [selectedTemplateId, setSelectedTemplateId] = useState('');
-  const [emailType, setEmailType] = useState<EmailType>('admin_manual_message');
+  const [subject, setSubject] = useState('[Core Team] Official Founding Members Announcement - AWS SBG CU-UP');
+  const [selectedTemplateId, setSelectedTemplateId] = useState('tpl-founding-announcement');
+  const [emailType, setEmailType] = useState<EmailType>('founding_members_announcement');
   const [contentHtml, setContentHtml] = useState(
-    '<p>Hello {{studentName}},</p><p>We are excited to share an update with you regarding AWS Student Builder Group CU-UP!</p>'
+    `<p>Dear <strong>{{memberName}}</strong>,</p><p>As a foundational member of the <strong>AWS Student Builder Group (CU-UP)</strong> serving in <strong>{{memberRole}}</strong> (<strong>{{memberDomain}}</strong>), you are at the core of our student innovation ecosystem.</p><p>We are delighted to share key milestones, active initiatives, and upcoming executive action plans with you.</p>`
   );
   const [previewHtml, setPreviewHtml] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -151,7 +151,7 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
     }
   };
 
-  const loadRecipients = async (source = 'EVENT') => {
+  const loadRecipients = async (source = 'FOUNDING_MEMBERS') => {
     try {
       const res = await fetch(`/api/admin/email/recipients?source=${source}`, {
         headers: getHeaders(),
@@ -159,7 +159,14 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
       });
       if (res.ok) {
         const data = await res.json();
-        setAvailableRecipients(data.recipients || []);
+        const list: EmailRecipient[] = data.recipients || [];
+        setAvailableRecipients(list);
+        if (source === 'FOUNDING_MEMBERS') {
+          // Select all founding members by default
+          setSelectedRecipients(list);
+        } else {
+          setSelectedRecipients([]);
+        }
       }
     } catch (err) {
       console.error('Failed to load recipients:', err);
@@ -215,10 +222,37 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
   // Update preview when content changes
   useEffect(() => {
     updateLivePreview();
-  }, [subject, contentHtml, selectedTemplateId]);
+  }, [subject, contentHtml, selectedTemplateId, selectedRecipients, recipientSource]);
 
   const updateLivePreview = async () => {
     try {
+      const isFounding =
+        recipientSource === 'FOUNDING_MEMBERS' ||
+        String(emailType).startsWith('founding_members_') ||
+        (emailType as string) === 'admin_team_broadcast';
+
+      const sampleMember =
+        selectedRecipients.find((r) => r.source === 'FOUNDING_MEMBERS' || r.role) ||
+        availableRecipients.find((r) => r.source === 'FOUNDING_MEMBERS' || r.role) ||
+        (isFounding ? availableRecipients[0] : null);
+
+      const sampleVariables = isFounding
+        ? {
+            memberName: sampleMember?.name || 'Krishnam Dwivedi',
+            memberRole: sampleMember?.role || 'Technical Lead',
+            memberDomain: sampleMember?.domain || 'Cloud & Infrastructure',
+            memberEmail: sampleMember?.email || 'krishnamdwivedi17@gmail.com',
+            studentName: sampleMember?.name || 'Krishnam Dwivedi',
+            role: sampleMember?.role || 'Technical Lead',
+            domain: sampleMember?.domain || 'Cloud & Infrastructure',
+            email: sampleMember?.email || 'krishnamdwivedi17@gmail.com',
+            meetingLink: 'https://meet.google.com/aws-sbg-core-sync',
+            updateDetails: 'Technical infrastructure, AWS Cloud Club integration & event roadmap review.',
+            actionItems: '1. Review portal release\n2. Finalize domain coordinators\n3. Confirm upcoming workshop dates',
+            senderName: 'AWS Student Builder Group (CU-UP)'
+          }
+        : undefined;
+
       const res = await fetch('/api/admin/email/templates', {
         method: 'POST',
         headers: getHeaders(),
@@ -227,7 +261,8 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
           template: {
             subject: subject || 'Sample Notification - AWS SBG CU-UP',
             bodyHtml: contentHtml
-          }
+          },
+          sampleVariables
         })
       });
       if (res.ok) {
@@ -253,7 +288,42 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
       if (tpl.category === 'EVENTS') setSenderAddress('events@awssbgcuup.tech');
       else if (tpl.category === 'OPPORTUNITIES') setSenderAddress('career@awssbgcuup.tech');
       else if (tpl.category === 'EXAMS') setSenderAddress('notifications@awssbgcuup.tech');
-      else if (tpl.category === 'COMMUNITY') setSenderAddress('communication@awssbgcuup.tech');
+      else if (tpl.category === 'COMMUNITY' || tpl.category === 'TEAM') setSenderAddress('communication@awssbgcuup.tech');
+    }
+  };
+
+  const handleFoundingMemberPurposeChange = (purposeType: string) => {
+    setEmailType(purposeType as EmailType);
+    const matchedTemplate = templates.find((t) => t.type === purposeType || t.id === purposeType);
+    if (matchedTemplate) {
+      setSelectedTemplateId(matchedTemplate.id);
+      setSubject(matchedTemplate.subject);
+      setContentHtml(matchedTemplate.bodyHtml);
+      setSenderAddress('communication@awssbgcuup.tech');
+    } else if (purposeType === 'community_update') {
+      setSelectedTemplateId('');
+      setSubject('AWS SBG Community Update & Milestones');
+      setContentHtml(
+        `<h2>Community Update &amp; Progress</h2><p>Dear <strong>{{memberName}}</strong>,</p><p>Here is the latest progress report and key milestones achieved across our student tracks.</p><p><strong>Domain Focus:</strong> {{memberDomain}}</p><p>Thank you for your foundational leadership and active contributions.</p>`
+      );
+    } else if (purposeType === 'opportunity_collaboration') {
+      setSelectedTemplateId('');
+      setSubject('New Collaboration & Initiative Opportunity - AWS SBG');
+      setContentHtml(
+        `<h2>Collaboration Opportunity</h2><p>Dear <strong>{{memberName}}</strong>,</p><p>We have a new initiative opening up in <strong>{{memberDomain}}</strong> and would love your leadership in driving this forward.</p><p>Please share your feedback and availability to sync.</p>`
+      );
+    } else if (purposeType === 'general_communication') {
+      setSelectedTemplateId('');
+      setSubject('AWS SBG Founding Team Communication');
+      setContentHtml(
+        `<p>Dear <strong>{{memberName}}</strong>,</p><p>We are reaching out regarding important updates for our core leadership team.</p><p>Best regards,<br><strong>AWS Student Builder Group (CU-UP)</strong></p>`
+      );
+    } else if (purposeType === 'custom_message') {
+      setSelectedTemplateId('');
+      setSubject('AWS SBG Internal Update');
+      setContentHtml(
+        `<p>Dear <strong>{{memberName}}</strong>,</p><p>Enter your custom internal message here for <strong>{{memberRole}}</strong> ({{memberDomain}}).</p>`
+      );
     }
   };
 
@@ -425,26 +495,38 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
     const targetRecipients = selectedRecipients.length > 0 ? selectedRecipients : availableRecipients;
 
     if (targetRecipients.length === 0) {
-      setStatusMessage({ type: 'error', text: 'No recipients available for batch send.' });
+      setStatusMessage({ type: 'error', text: 'No recipients selected for batch send.' });
       return;
     }
+
+    const isMemberBatch =
+      recipientSource === 'FOUNDING_MEMBERS' ||
+      targetRecipients.some((r) => r.source === 'FOUNDING_MEMBERS');
 
     try {
       setIsSending(true);
       setBatchProgress(null);
 
+      const payload: any = {
+        from: senderAddress,
+        subject: subject.trim(),
+        contentHtml,
+        type: emailType,
+        templateId: selectedTemplateId || undefined
+      };
+
+      if (isMemberBatch) {
+        payload.mode = 'member_batch';
+        payload.memberIds = targetRecipients.map((r) => r.id || r.email);
+      } else {
+        payload.mode = 'batch';
+        payload.recipients = targetRecipients;
+      }
+
       const res = await fetch('/api/admin/email/send', {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify({
-          mode: 'batch',
-          from: senderAddress,
-          recipients: targetRecipients,
-          subject: subject.trim(),
-          contentHtml,
-          type: emailType,
-          templateId: selectedTemplateId || undefined
-        })
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
@@ -452,7 +534,7 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
         setBatchProgress(data.summary);
         setStatusMessage({
           type: 'success',
-          text: `Batch Complete: ${data.summary.sent} emails dispatched (${data.summary.failed} failed).`
+          text: `Batch Complete: ${data.summary.sent} personalized email(s) dispatched (${data.summary.failed} failed).`
         });
         loadLogs();
       } else {
@@ -921,12 +1003,15 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
                       Broadcast Target Audience
                     </label>
                     <span className="text-xs font-bold text-[#FF9900] bg-white px-2 py-0.5 rounded border border-orange-200">
-                      {availableRecipients.length} Recipient{availableRecipients.length === 1 ? '' : 's'} Selected
+                      {recipientSource === 'FOUNDING_MEMBERS'
+                        ? `${selectedRecipients.length} of ${availableRecipients.length} Selected`
+                        : `${availableRecipients.length} Recipient${availableRecipients.length === 1 ? '' : 's'} Selected`}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
+                      { id: 'FOUNDING_MEMBERS', label: '⭐ Founding Members' },
                       { id: 'EVENT', label: 'Event Registrants' },
                       { id: 'OPPORTUNITY', label: 'Opportunity Applicants' },
                       { id: 'EXAM', label: 'Exam Candidates' },
@@ -938,10 +1023,15 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
                       <button
                         type="button"
                         key={src.id}
-                        onClick={() => setRecipientSource(src.id as any)}
-                        className={`p-2 rounded text-xs font-bold border transition-colors ${
+                        onClick={() => {
+                          setRecipientSource(src.id as any);
+                          if (src.id === 'FOUNDING_MEMBERS') {
+                            setSenderAddress('communication@awssbgcuup.tech');
+                          }
+                        }}
+                        className={`p-2 rounded text-xs font-bold border transition-colors cursor-pointer ${
                           recipientSource === src.id
-                            ? 'bg-[#FF9900] text-white border-[#FF9900]'
+                            ? 'bg-[#FF9900] text-white border-[#FF9900] shadow-xs'
                             : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                         }`}
                       >
@@ -949,8 +1039,136 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
                       </button>
                     ))}
                   </div>
+
+                  {/* Founding Members Specific Multi-Select Panel */}
+                  {recipientSource === 'FOUNDING_MEMBERS' && (
+                    <div className="mt-3 p-3 bg-white border border-amber-200 rounded-lg space-y-2.5">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <span className="font-bold text-slate-800 text-[11px] flex items-center gap-1.5">
+                          <span>⭐</span>
+                          <span>Select Founding Members ({selectedRecipients.length} of {availableRecipients.length})</span>
+                        </span>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedRecipients([...availableRecipients])}
+                            className="px-2 py-0.5 text-[10px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded cursor-pointer transition-colors"
+                          >
+                            Select All
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedRecipients([])}
+                            className="px-2 py-0.5 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded cursor-pointer transition-colors"
+                          >
+                            Deselect All
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                        {availableRecipients.map((member) => {
+                          const isSelected = selectedRecipients.some(
+                            (r) => r.email === member.email || (r.id && r.id === member.id)
+                          );
+                          return (
+                            <div
+                              key={member.id || member.email}
+                              onClick={() => {
+                                if (isSelected) {
+                                  setSelectedRecipients((prev) =>
+                                    prev.filter(
+                                      (r) => r.email !== member.email && (!member.id || r.id !== member.id)
+                                    )
+                                  );
+                                } else {
+                                  setSelectedRecipients((prev) => [...prev, member]);
+                                }
+                              }}
+                              className={`p-2 rounded border transition-all cursor-pointer flex items-start space-x-2 select-none ${
+                                isSelected
+                                  ? 'bg-amber-50/70 border-amber-300 ring-1 ring-amber-300'
+                                  : 'bg-slate-50 border-slate-200 hover:bg-slate-100/70'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => {}} // Handled by container click
+                                className="mt-0.5 h-3.5 w-3.5 text-[#FF9900] rounded border-slate-300 focus:ring-[#FF9900] cursor-pointer"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-slate-900 text-xs truncate">
+                                    {member.name}
+                                  </span>
+                                </div>
+                                <span className="block font-mono text-[10px] text-slate-500 truncate">
+                                  {member.email}
+                                </span>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {member.role && (
+                                    <span className="px-1.5 py-0.2 bg-blue-100 text-blue-800 font-bold text-[9px] rounded">
+                                      {member.role}
+                                    </span>
+                                  )}
+                                  {member.domain && (
+                                    <span className="px-1.5 py-0.2 bg-slate-200 text-slate-700 text-[9px] rounded font-medium truncate">
+                                      {member.domain}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
+
+              {/* Email Purpose Selector for Founding Members or General Templates */}
+              {recipientSource === 'FOUNDING_MEMBERS' ? (
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider block">
+                    Email Purpose (Founding Members Preset)
+                  </label>
+                  <select
+                    value={emailType}
+                    onChange={(e) => handleFoundingMemberPurposeChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-amber-300 rounded bg-amber-50/40 focus:outline-none focus:ring-1 focus:ring-[#FF9900] font-bold text-xs text-slate-900"
+                  >
+                    <option value="founding_members_announcement">
+                      ⭐ Founding Members Announcement (Official Broadcast)
+                    </option>
+                    <option value="founding_members_update">
+                      ⚡ Important Internal Update (Executive Sync)
+                    </option>
+                    <option value="founding_members_meeting">
+                      🗓️ Meeting / Discussion (Agenda &amp; Planning Sync)
+                    </option>
+                    <option value="founding_members_coordination">
+                      🤝 Event Coordination (Lead &amp; Track Sync)
+                    </option>
+                    <option value="founding_members_recognition">
+                      🏆 Appreciation / Recognition (Foundational Honors)
+                    </option>
+                    <option value="community_update">
+                      📢 Community Update (Milestones &amp; Track Highlights)
+                    </option>
+                    <option value="opportunity_collaboration">
+                      💡 Opportunity / Collaboration (New Lead Initiatives)
+                    </option>
+                    <option value="general_communication">
+                      ✉️ General Communication (Core Team Dispatch)
+                    </option>
+                    <option value="custom_message">
+                      ✏️ Custom Message (Personalized Blank Canvas)
+                    </option>
+                  </select>
+                </div>
+              ) : null}
 
               {/* Subject */}
               <div className="space-y-1">
@@ -970,34 +1188,56 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
               {/* Variable Helper Chips */}
               <div className="space-y-1.5">
                 <label className="font-bold text-[#64748B] uppercase tracking-wider block text-[10px]">
-                  Insert Dynamic Variables (Click to Add)
+                  {recipientSource === 'FOUNDING_MEMBERS'
+                    ? 'Founding Member Dynamic Variables (Click to Insert)'
+                    : 'Insert Dynamic Variables (Click to Add)'}
                 </label>
                 <div className="flex flex-wrap gap-1.5">
-                  {[
-                    'studentName',
-                    'eventTitle',
-                    'eventDate',
-                    'eventTime',
-                    'eventVenue',
-                    'eventUrl',
-                    'examName',
-                    'examId',
-                    'examPassword',
-                    'score',
-                    'percentage',
-                    'result',
-                    'opportunityTitle',
-                    'selectionStatus'
-                  ].map((v) => (
-                    <button
-                      type="button"
-                      key={v}
-                      onClick={() => insertVariableChip(v)}
-                      className="px-2 py-0.5 bg-slate-100 hover:bg-orange-100 hover:text-[#FF9900] border border-slate-200 text-[10px] font-mono font-semibold rounded cursor-pointer transition-colors"
-                    >
-                      {`{{${v}}}`}
-                    </button>
-                  ))}
+                  {recipientSource === 'FOUNDING_MEMBERS'
+                    ? [
+                        'memberName',
+                        'memberRole',
+                        'memberDomain',
+                        'memberEmail',
+                        'meetingLink',
+                        'updateDetails',
+                        'actionItems',
+                        'senderName'
+                      ].map((v) => (
+                        <button
+                          type="button"
+                          key={v}
+                          onClick={() => insertVariableChip(v)}
+                          className="px-2 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-[10px] font-mono font-bold rounded cursor-pointer transition-colors"
+                        >
+                          {`{{${v}}}`}
+                        </button>
+                      ))
+                    : [
+                        'studentName',
+                        'eventTitle',
+                        'eventDate',
+                        'eventTime',
+                        'eventVenue',
+                        'eventUrl',
+                        'examName',
+                        'examId',
+                        'examPassword',
+                        'score',
+                        'percentage',
+                        'result',
+                        'opportunityTitle',
+                        'selectionStatus'
+                      ].map((v) => (
+                        <button
+                          type="button"
+                          key={v}
+                          onClick={() => insertVariableChip(v)}
+                          className="px-2 py-0.5 bg-slate-100 hover:bg-orange-100 hover:text-[#FF9900] border border-slate-200 text-[10px] font-mono font-semibold rounded cursor-pointer transition-colors"
+                        >
+                          {`{{${v}}}`}
+                        </button>
+                      ))}
                 </div>
               </div>
 
@@ -1474,18 +1714,47 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
       {/* MODAL: BATCH BROADCAST CONFIRMATION */}
       {showBatchConfirmModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-sans text-xs">
-          <div className="bg-white rounded-lg border border-[#E2E8F0] shadow-2xl max-w-md w-full p-6 space-y-4">
-            <h3 className="font-display font-extrabold text-sm text-[#111827]">
-              Confirm Mass Email Broadcast?
+          <div className="bg-white rounded-lg border border-[#E2E8F0] shadow-2xl max-w-lg w-full p-6 space-y-4">
+            <h3 className="font-display font-extrabold text-sm text-[#111827] flex items-center gap-2">
+              <span>{recipientSource === 'FOUNDING_MEMBERS' ? '⭐ Confirm Founding Members Personalized Broadcast' : 'Confirm Mass Email Broadcast?'}</span>
             </h3>
             <p className="text-slate-600 leading-relaxed">
-              You are about to broadcast this email to <strong>{availableRecipients.length} recipients</strong> from sender <strong>{senderAddress}</strong>.
+              You are about to dispatch this email to{' '}
+              <strong>
+                {(selectedRecipients.length > 0 ? selectedRecipients : availableRecipients).length}{' '}
+                {recipientSource === 'FOUNDING_MEMBERS' ? 'Founding Members' : 'recipients'}
+              </strong>{' '}
+              from official sender <strong>{senderAddress}</strong>.
             </p>
+
+            {recipientSource === 'FOUNDING_MEMBERS' && (
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                  Selected Founding Members:
+                </span>
+                <div className="max-h-36 overflow-y-auto border border-amber-200 bg-amber-50/40 rounded p-2 space-y-1">
+                  {(selectedRecipients.length > 0 ? selectedRecipients : availableRecipients).map((m) => (
+                    <div key={m.id || m.email} className="flex items-center justify-between text-[11px] text-slate-800">
+                      <span className="font-bold flex items-center gap-1">
+                        <span>⭐</span>
+                        <span>{m.name || m.email}</span>
+                      </span>
+                      <span className="text-slate-500 font-mono text-[10px]">
+                        {m.role ? `${m.role} • ` : ''}{m.email}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="p-3 bg-amber-50 border border-amber-200 rounded text-amber-900 text-[11px] space-y-1">
-              <span className="font-bold block">Safety Assurance:</span>
-              <span>- Automatic duplicate deduplication is enforced.</span>
+              <span className="font-bold block">Safety &amp; Delivery Assurance:</span>
+              <span>- Dynamic variables (<code>{`{{memberName}}`}</code>, <code>{`{{memberRole}}`}</code>, <code>{`{{memberDomain}}`}</code>) are resolved server-side from authoritative team records.</span>
               <br />
-              <span>- Failed dispatches are isolated and logged without halting other recipients.</span>
+              <span>- Automated duplicate deduplication &amp; rate-limiting are enforced.</span>
+              <br />
+              <span>- Delivery logs will be recorded in the Email Center with full tracking.</span>
             </div>
             <div className="pt-3 border-t border-slate-100 flex justify-end space-x-3">
               <button

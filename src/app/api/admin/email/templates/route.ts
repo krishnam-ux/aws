@@ -73,6 +73,10 @@ export async function POST(request: Request) {
     // 1. Preview Rendering Action
     if (action === 'preview') {
       const vars = sampleVariables || {
+        memberName: 'Krishnam Dwivedi',
+        memberRole: 'Technical Lead',
+        memberDomain: 'Cloud & Infrastructure',
+        memberEmail: 'krishnamdwivedi17@gmail.com',
         studentName: 'Alex Smith',
         eventName: 'Cloud Practitioner Bootcamp',
         eventDate: 'September 20, 2026',
@@ -82,6 +86,7 @@ export async function POST(request: Request) {
         eventUrl: 'https://www.awssbgcuup.tech/events',
         opportunityTitle: 'AWS Cloud Architecture Fellow',
         role: 'Core Engineering Track',
+        domain: 'Cloud & Infrastructure',
         applicationId: 'APP-99482',
         examName: 'AWS Certified Cloud Practitioner Simulation',
         examCode: 'AWS-CCP-2026',

@@ -160,22 +160,45 @@ export async function GET(request: Request) {
       }
     }
 
-    // 5. Team Members
-    if (source === 'ALL' || source === 'TEAM') {
+    // 5. Founding Members & Leadership Team
+    if (source === 'ALL' || source === 'TEAM' || source === 'FOUNDING_MEMBERS') {
       try {
-        const teamMembers: any[] = [siteConfig.leader, siteConfig.facultyContact].filter(Boolean);
-        for (const member of teamMembers) {
-          const email = (member.email || siteConfig.email || '').trim().toLowerCase();
+        const coreTeam = await db.coreTeam.getAll();
+        const activeMembers = coreTeam
+          .filter((m: any) => m.status === 'Published' || !m.status)
+          .sort((a: any, b: any) => (a.displayOrder || 99) - (b.displayOrder || 99));
+
+        for (const member of activeMembers) {
+          const email = (member.email || '').trim().toLowerCase();
           if (email && email.includes('@') && !recipientMap.has(email)) {
             recipientMap.set(email, {
+              id: member.id,
               email,
-              name: member.name || 'Team Member',
-              source: 'TEAM'
+              name: member.name || 'Founding Member',
+              role: member.role || 'Core Team Lead',
+              domain: member.domain || 'Cloud & Technology',
+              source: 'FOUNDING_MEMBERS'
+            });
+          }
+        }
+
+        // Also include leadership and faculty contacts if not already included
+        const leaders: any[] = [siteConfig.leader, siteConfig.facultyContact].filter(Boolean);
+        for (const leader of leaders) {
+          const email = (leader.email || siteConfig.email || '').trim().toLowerCase();
+          if (email && email.includes('@') && !recipientMap.has(email)) {
+            recipientMap.set(email, {
+              id: `leader-${leader.name?.toLowerCase().replace(/\s+/g, '-')}`,
+              email,
+              name: leader.name || 'Leadership Member',
+              role: leader.role || 'Community Leader',
+              domain: leader.department || 'Executive Leadership',
+              source: 'FOUNDING_MEMBERS'
             });
           }
         }
       } catch (err) {
-        console.error('Error querying team members for recipients:', err);
+        console.error('Error querying founding team members for recipients:', err);
       }
     }
 
