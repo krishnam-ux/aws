@@ -57,6 +57,9 @@ export interface EmailRecipient {
   domain?: string;
   studentId?: string;
   rollNumber?: string;
+  university?: string;
+  formSubmitted?: boolean;
+  formToken?: string;
   source?: 'EVENT' | 'OPPORTUNITY' | 'EXAM' | 'MANUAL' | 'TEAM' | 'FOUNDING_MEMBERS';
 }
 

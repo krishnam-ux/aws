@@ -160,12 +160,12 @@ export async function GET(request: Request) {
       }
     }
 
-    // 5. Founding Members & Leadership Team
+    // 5. Founding Members (Strictly from db.foundingMembers, decoupled from Core Team)
     if (source === 'ALL' || source === 'TEAM' || source === 'FOUNDING_MEMBERS') {
       try {
-        const coreTeam = await db.coreTeam.getAll();
-        const activeMembers = coreTeam
-          .filter((m: any) => m.status === 'Published' || !m.status)
+        const foundingMembers = await db.foundingMembers.getAll();
+        const activeMembers = foundingMembers
+          .filter((m: any) => m.status === 'Active' || !m.status)
           .sort((a: any, b: any) => (a.displayOrder || 99) - (b.displayOrder || 99));
 
         for (const member of activeMembers) {
@@ -174,31 +174,18 @@ export async function GET(request: Request) {
             recipientMap.set(email, {
               id: member.id,
               email,
-              name: member.name || 'Founding Member',
-              role: member.role || 'Core Team Lead',
-              domain: member.domain || 'Cloud & Technology',
-              source: 'FOUNDING_MEMBERS'
-            });
-          }
-        }
-
-        // Also include leadership and faculty contacts if not already included
-        const leaders: any[] = [siteConfig.leader, siteConfig.facultyContact].filter(Boolean);
-        for (const leader of leaders) {
-          const email = (leader.email || siteConfig.email || '').trim().toLowerCase();
-          if (email && email.includes('@') && !recipientMap.has(email)) {
-            recipientMap.set(email, {
-              id: `leader-${leader.name?.toLowerCase().replace(/\s+/g, '-')}`,
-              email,
-              name: leader.name || 'Leadership Member',
-              role: leader.role || 'Community Leader',
-              domain: leader.department || 'Executive Leadership',
+              name: member.fullName || member.name || 'Founding Member',
+              role: member.role || 'Founding Member',
+              domain: member.domain || member.skills || 'Cloud & Technology',
+              university: member.university || 'Chandigarh University',
+              formSubmitted: member.formSubmitted || false,
+              formToken: member.formToken || '',
               source: 'FOUNDING_MEMBERS'
             });
           }
         }
       } catch (err) {
-        console.error('Error querying founding team members for recipients:', err);
+        console.error('Error querying founding members for recipients:', err);
       }
     }
 

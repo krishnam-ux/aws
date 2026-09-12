@@ -2456,5 +2456,57 @@ export const db = {
         await writeJsonFile('email_automation_settings.json', data);
       });
     }
+  },
+  foundingMembers: {
+    getAll: async (): Promise<any[]> => {
+      return await readJsonFile<any[]>('founding_members.json', []);
+    },
+    getById: async (id: string): Promise<any | null> => {
+      const list = await db.foundingMembers.getAll();
+      return list.find((m: any) => m.id === id) || null;
+    },
+    getByToken: async (token: string): Promise<any | null> => {
+      if (!token) return null;
+      const list = await db.foundingMembers.getAll();
+      return list.find((m: any) => m.formToken && m.formToken.trim() === token.trim()) || null;
+    },
+    getByEmail: async (email: string): Promise<any | null> => {
+      const list = await db.foundingMembers.getAll();
+      const norm = String(email || '').trim().toLowerCase();
+      return list.find((m: any) => String(m.email || '').trim().toLowerCase() === norm) || null;
+    },
+    insertOne: async (member: any): Promise<void> => {
+      return withCollectionLock('founding_members.json', async () => {
+        const list = await db.foundingMembers.getAll();
+        list.push(member);
+        await writeJsonFile('founding_members.json', list);
+      });
+    },
+    updateOne: async (id: string, fields: Partial<any>): Promise<void> => {
+      return withCollectionLock('founding_members.json', async () => {
+        const list = await db.foundingMembers.getAll();
+        const idx = list.findIndex((m: any) => m.id === id);
+        if (idx !== -1) {
+          list[idx] = {
+            ...list[idx],
+            ...fields,
+            updatedAt: new Date().toISOString()
+          };
+          await writeJsonFile('founding_members.json', list);
+        }
+      });
+    },
+    saveAll: async (data: any[]): Promise<void> => {
+      return withCollectionLock('founding_members.json', async () => {
+        await writeJsonFile('founding_members.json', data);
+      });
+    },
+    deleteById: async (id: string): Promise<void> => {
+      return withCollectionLock('founding_members.json', async () => {
+        let list = await db.foundingMembers.getAll();
+        list = list.filter((m: any) => m.id !== id);
+        await writeJsonFile('founding_members.json', list);
+      });
+    }
   }
 };

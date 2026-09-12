@@ -341,32 +341,14 @@ export async function POST(request: Request) {
         );
       }
 
-      // Fetch authoritative database records
-      const allCoreTeam = await db.coreTeam.getAll();
+      // Fetch authoritative database records from dedicated Founding Members data store
+      const allFoundingMembers = await db.foundingMembers.getAll();
       const allTemplates = await db.emailTemplates.getAll();
 
-      // Find matching team member records (match by id or email)
-      const matchedMembers = allCoreTeam.filter((m: any) =>
+      // Find matching founding member records (match by id or email)
+      const matchedMembers = allFoundingMembers.filter((m: any) =>
         memberIds.includes(m.id) || memberIds.includes(m.email?.toLowerCase())
       );
-
-      // Also check siteConfig leaders if ID starts with leader- or matches email
-      if (matchedMembers.length < memberIds.length) {
-        const leaders = [siteConfig.leader, siteConfig.facultyContact].filter(Boolean);
-        for (const leader of leaders) {
-          const leaderId = `leader-${leader.name?.toLowerCase().replace(/\s+/g, '-')}`;
-          const leaderEmail = (leader.email || siteConfig.email || '').toLowerCase();
-          if ((memberIds.includes(leaderId) || memberIds.includes(leaderEmail)) && !matchedMembers.some(m => m.email?.toLowerCase() === leaderEmail)) {
-            matchedMembers.push({
-              id: leaderId,
-              name: leader.name,
-              email: leaderEmail,
-              role: leader.role,
-              domain: leader.department || 'Executive Leadership'
-            });
-          }
-        }
-      }
 
       if (matchedMembers.length === 0) {
         return NextResponse.json(
@@ -423,16 +405,20 @@ export async function POST(request: Request) {
       // Process batch with safe rate-limited iteration (30ms spacing)
       for (const member of deduplicatedMembers) {
         try {
-          const memberName = member.name?.trim() || 'Founding Member';
-          const memberRole = member.role?.trim() || 'Core Team Lead';
-          const memberDomain = member.domain?.trim() || 'Cloud & Technology';
+          const memberName = member.fullName?.trim() || member.name?.trim() || 'Founding Member';
+          const memberRole = member.role?.trim() || 'Founding Member';
+          const memberDomain = member.domain?.trim() || member.skills || 'Cloud & Technology';
           const memberEmail = member.email?.trim() || '';
+          const formToken = member.formToken || '';
+          const formLink = formToken ? `https://www.awssbgcuup.tech/founding-members/form/${formToken}` : '';
 
           const vars: Record<string, any> = {
             memberName,
             memberRole,
             memberDomain,
             memberEmail,
+            formLink,
+            formToken,
             studentName: memberName,
             name: memberName,
             fullName: memberName,
@@ -441,15 +427,15 @@ export async function POST(request: Request) {
             domain: memberDomain,
             email: memberEmail,
             messageContent: customNotes || contentText || 'Important update regarding AWS SBG CU-UP founding team operations.',
-            announcementTitle: subject || baseTemplate.subject || 'Leadership Update',
-            meetingAgenda: subject || metadata?.meetingAgenda || 'Strategic Leadership & Operations Sync',
+            announcementTitle: subject || baseTemplate.subject || 'Founding Members Update',
+            meetingAgenda: subject || metadata?.meetingAgenda || 'Founding Members Operations Sync',
             meetingTime: metadata?.meetingTime || 'To be coordinated with team',
             meetingVenue: metadata?.meetingVenue || 'Auditorium Block A / Google Meet',
             meetingLink: metadata?.meetingLink || 'https://www.awssbgcuup.tech/leadership',
             eventTitle: metadata?.eventTitle || 'AWS Community Workshop',
             eventDate: metadata?.eventDate || 'Upcoming',
             eventVenue: metadata?.eventVenue || 'Chandigarh University – UP',
-            updateSubject: subject || 'Internal Core Team Memo'
+            updateSubject: subject || 'Internal Founding Members Memo'
           };
 
           let rawBodyHtml = contentHtml || baseTemplate.bodyHtml;
@@ -599,14 +585,14 @@ export async function POST(request: Request) {
       }
     } else if (memberId) {
       try {
-        const allMembers = await db.coreTeam.getAll();
+        const allMembers = await db.foundingMembers.getAll();
         const member = allMembers.find((m: any) => m.id === memberId || m.email?.toLowerCase() === memberId?.toLowerCase());
         if (member) {
           resolvedRecipient = member.email;
-          resolvedStudentName = member.name;
+          resolvedStudentName = member.fullName || member.name;
         }
       } catch (dbErr) {
-        console.error('Failed to query core team member for email dispatch:', dbErr);
+        console.error('Failed to query founding member for email dispatch:', dbErr);
       }
     }
 

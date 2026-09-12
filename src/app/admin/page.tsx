@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { siteConfig } from '@/data/siteConfig';
 import AdminExamsManager from '@/components/AdminExamsManager';
 import AdminEmailManager from '@/components/AdminEmailManager';
+import AdminFoundingMembersManager from '@/components/AdminFoundingMembersManager';
 import AdminSendStudentEmailModal from '@/components/AdminSendStudentEmailModal';
 import AdminBulkSendStudentEmailModal from '@/components/AdminBulkSendStudentEmailModal';
 
@@ -106,7 +107,7 @@ export default function AdminDashboard() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   // Tabs structure matching user specifications
-  const [activeTab, setActiveTab] = useState<'Dashboard' | 'Registrations' | 'EventRegistrations' | 'Verification' | 'Collaborations' | 'Events' | 'Announcements' | 'Resources' | 'Opportunities' | 'CoreTeam' | 'Content' | 'Settings' | 'ContactMessages' | 'Feedback' | 'Exams' | 'Emails'>('Dashboard');
+  const [activeTab, setActiveTab] = useState<'Dashboard' | 'Registrations' | 'EventRegistrations' | 'Verification' | 'Collaborations' | 'Events' | 'Announcements' | 'Resources' | 'Opportunities' | 'CoreTeam' | 'FoundingMembers' | 'Content' | 'Settings' | 'ContactMessages' | 'Feedback' | 'Exams' | 'Emails'>('Dashboard');
 
   // Stats / Dashboard data
   const [stats, setStats] = useState<any>({
@@ -1942,6 +1943,27 @@ export default function AdminDashboard() {
                   </svg>
                   {!isSidebarCollapsed && <span>Core Team</span>}
                 </button>
+                <button
+                  id="sidebar-nav-founding-members"
+                  onClick={() => {
+                    setActiveTab('FoundingMembers');
+                    if (typeof window !== 'undefined' && window.innerWidth < 768) setIsSidebarCollapsed(true);
+                  }}
+                  className={getNavClass('FoundingMembers')}
+                  title="Founding Members Form Links & Details"
+                >
+                  <svg className="h-4 w-4 flex-shrink-0 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                  {!isSidebarCollapsed && (
+                    <span className="flex items-center justify-between w-full">
+                      <span>Founding Members</span>
+                      <span className="text-[8px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono font-bold">
+                        FORM / CMS
+                      </span>
+                    </span>
+                  )}
+                </button>
                 <button onClick={() => setActiveTab('Content')} className={getNavClass('Content')}>
                   <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -2261,6 +2283,11 @@ export default function AdminDashboard() {
           {/* TAB: CENTRAL EMAIL & NOTIFICATION ENGINE */}
           {activeTab === 'Emails' && (
             <AdminEmailManager token={token || 'awssbg-admin-session-token-secure-hash'} />
+          )}
+
+          {/* TAB: FOUNDING MEMBERS CMS & FORM LINKS */}
+          {activeTab === 'FoundingMembers' && (
+            <AdminFoundingMembersManager token={token || 'awssbg-admin-session-token-secure-hash'} />
           )}
 
           {/* TAB 2: REGISTRATIONS TABLE */}

@@ -1199,6 +1199,7 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
                         'memberRole',
                         'memberDomain',
                         'memberEmail',
+                        'formLink',
                         'meetingLink',
                         'updateDetails',
                         'actionItems',

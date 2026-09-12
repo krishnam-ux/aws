@@ -623,51 +623,54 @@ test('Bulk Send Email to Multiple Selected Registrations with Individual Persona
 });
 
 test('Founding Members Database & Recipient Resolution', async () => {
-  const teamMembers = await db.coreTeam.getAll();
-  assert.ok(teamMembers.length >= 5, 'Founding team members must exist in database');
+  const foundingMembers = await db.foundingMembers.getAll();
+  assert.ok(foundingMembers.length >= 4, 'Founding members must exist in db.foundingMembers');
 
-  const krishnam = teamMembers.find((m: any) => m.name.toLowerCase().includes('krishnam'));
-  assert.ok(krishnam, 'Krishnam Dwivedi must exist in coreTeam database');
-  assert.equal(krishnam?.name, 'Krishnam Dwivedi');
-  assert.equal(krishnam?.email, 'krishnamdwivedi17@gmail.com');
-  assert.ok(krishnam?.role.includes('Technical Lead'));
-  assert.equal(krishnam?.domain, 'Cloud & Infrastructure');
+  const firstMember = foundingMembers[0];
+  assert.ok(firstMember, 'First founding member must exist');
+  assert.ok(firstMember.fullName || firstMember.name, 'First founding member must have name');
+  assert.ok(firstMember.email, 'First founding member must have email');
+  assert.ok(firstMember.role, 'First founding member must have role');
+  assert.ok(firstMember.formToken, 'Member must have a formToken');
 
-  // Verify all members have email, name, role, domain
-  for (const member of teamMembers) {
-    assert.ok(member.name, 'Member must have a name');
+  // Verify all members have email, name/fullName, role, formToken
+  for (const member of foundingMembers) {
+    assert.ok(member.fullName || member.name, 'Member must have a name');
     assert.ok(member.email, 'Member must have an email');
     assert.ok(member.role, 'Member must have a role');
+    assert.ok(member.formToken, 'Member must have a unique form token');
   }
 });
 
 test('Founding Members Dynamic Variable Interpolation & Fallbacks', () => {
   const template =
-    '<p>Dear <strong>{{memberName}}</strong>,</p><p>As our <strong>{{memberRole}}</strong> leading <strong>{{memberDomain}}</strong>, your email is {{memberEmail}}.</p>';
+    '<p>Dear <strong>{{memberName}}</strong>,</p><p>As our <strong>{{memberRole}}</strong> leading <strong>{{memberDomain}}</strong>, your email is {{memberEmail}} and your form link is <a href="{{formLink}}">{{formLink}}</a>.</p>';
 
   const vars = {
     memberName: 'Krishnam Dwivedi',
-    memberRole: 'Technical Lead',
+    memberRole: 'Founding Lead',
     memberDomain: 'Cloud & Infrastructure',
-    memberEmail: 'krishnamdwivedi17@gmail.com'
+    memberEmail: 'krishnamdwivedi17@gmail.com',
+    formLink: 'https://www.awssbgcuup.tech/founding-members/form/fm_tok_abc123'
   };
 
   const rendered = interpolateVariables(template, vars);
   assert.ok(rendered.includes('Dear <strong>Krishnam Dwivedi</strong>,'));
   assert.ok(rendered.includes('leading <strong>Cloud & Infrastructure</strong>'));
-  assert.ok(rendered.includes('Technical Lead'));
+  assert.ok(rendered.includes('Founding Lead'));
   assert.ok(rendered.includes('krishnamdwivedi17@gmail.com'));
+  assert.ok(rendered.includes('https://www.awssbgcuup.tech/founding-members/form/fm_tok_abc123'));
   assert.equal(rendered.match(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g), null, 'Must have zero unresolved curly braces');
 
   // Test aliases (e.g. name / studentName pointing to memberName)
   const template2 = '<p>Hello {{studentName}}, role: {{role}}, domain: {{domain}}</p>';
   const rendered2 = interpolateVariables(template2, {
     memberName: 'Ayush Pandey',
-    role: 'Events & Operations Lead',
+    role: 'Founding Member',
     domain: 'Event Management'
   });
   assert.ok(rendered2.includes('Hello Ayush Pandey'));
-  assert.ok(rendered2.includes('role: Events & Operations Lead'));
+  assert.ok(rendered2.includes('role: Founding Member'));
   assert.ok(rendered2.includes('domain: Event Management'));
 });
 
@@ -690,24 +693,26 @@ test('Founding Members Email Templates Verification', () => {
 
 test('Founding Members Batch Send with Authoritative Database Resolution', async () => {
   const batchId = `batch_founding_${Date.now()}`;
-  const teamMembers = await db.coreTeam.getAll();
-  const selectedMembers = teamMembers.slice(0, 3);
+  const foundingMembers = await db.foundingMembers.getAll();
+  const selectedMembers = foundingMembers.slice(0, 3);
   assert.equal(selectedMembers.length, 3);
 
   const tpl = DEFAULT_EMAIL_TEMPLATES.find((t) => t.type === 'founding_members_announcement')!;
   const from = 'communication@awssbgcuup.tech';
 
   for (const member of selectedMembers) {
-    const memberName = member.name;
+    const memberName = member.fullName || member.name;
     const memberRole = member.role || 'Founding Core Lead';
     const memberDomain = member.domain || 'Cloud Innovations';
     const memberEmail = member.email;
+    const formLink = `https://www.awssbgcuup.tech/founding-members/form/${member.formToken}`;
 
     const vars = {
       memberName,
       memberRole,
       memberDomain,
       memberEmail,
+      formLink,
       studentName: memberName,
       role: memberRole,
       domain: memberDomain,
@@ -755,7 +760,7 @@ test('Founding Members Batch Send with Authoritative Database Resolution', async
   for (const member of selectedMembers) {
     const log = batchLogs.find((l) => l.recipient === member.email);
     assert.ok(log, `Log record must exist for ${member.email}`);
-    assert.equal(log?.metadata?.memberName, member.name);
+    assert.equal(log?.metadata?.memberName, member.fullName || member.name);
     assert.equal(log?.category, 'TEAM');
     assert.equal(log?.type, 'founding_members_announcement');
   }
