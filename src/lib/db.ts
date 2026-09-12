@@ -593,7 +593,9 @@ function isRealtimeCollection(filename: string): boolean {
     filename === 'exam_audit_logs.json' ||
     filename === 'email_logs.json' ||
     filename === 'email_templates.json' ||
-    filename === 'email_automation_settings.json'
+    filename === 'email_automation_settings.json' ||
+    filename === 'founding_members.json' ||
+    filename === 'founding_member_form_config.json'
   );
 }
 
@@ -2457,6 +2459,29 @@ export const db = {
       });
     }
   },
+  foundingMemberFormConfig: {
+    getConfig: async (): Promise<any> => {
+      const defaultConfig = {
+        id: 'founding-members-default-form',
+        title: 'Founding Members Registration Form',
+        description: 'Official registration and profile record for Founding Members of AWS Student Builder Group (CU-UP).',
+        status: 'Published',
+        publishedUrl: 'https://www.awssbgcuup.tech/founding-members/form',
+        version: 1,
+        updatedAt: new Date().toISOString(),
+        questions: []
+      };
+      return await readJsonFile<any>('founding_member_form_config.json', defaultConfig);
+    },
+    saveConfig: async (config: any): Promise<void> => {
+      return withCollectionLock('founding_member_form_config.json', async () => {
+        await writeJsonFile('founding_member_form_config.json', {
+          ...config,
+          updatedAt: new Date().toISOString()
+        });
+      });
+    }
+  },
   foundingMembers: {
     getAll: async (): Promise<any[]> => {
       return await readJsonFile<any[]>('founding_members.json', []);
@@ -2464,6 +2489,12 @@ export const db = {
     getById: async (id: string): Promise<any | null> => {
       const list = await db.foundingMembers.getAll();
       return list.find((m: any) => m.id === id) || null;
+    },
+    getByMemberId: async (memberId: string): Promise<any | null> => {
+      if (!memberId) return null;
+      const list = await db.foundingMembers.getAll();
+      const norm = String(memberId).trim().toUpperCase();
+      return list.find((m: any) => String(m.memberId || '').trim().toUpperCase() === norm) || null;
     },
     getByToken: async (token: string): Promise<any | null> => {
       if (!token) return null;
@@ -2475,9 +2506,36 @@ export const db = {
       const norm = String(email || '').trim().toLowerCase();
       return list.find((m: any) => String(m.email || '').trim().toLowerCase() === norm) || null;
     },
+    getNextMemberId: async (): Promise<string> => {
+      const list = await db.foundingMembers.getAll();
+      let maxNum = 0;
+      for (const m of list) {
+        const idStr = String(m.memberId || '');
+        const match = idStr.match(/FMB-CUUP-(\d+)/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (!isNaN(num) && num > maxNum) {
+            maxNum = num;
+          }
+        }
+      }
+      const nextNum = maxNum + 1;
+      return `FMB-CUUP-${String(nextNum).padStart(3, '0')}`;
+    },
     insertOne: async (member: any): Promise<void> => {
       return withCollectionLock('founding_members.json', async () => {
         const list = await db.foundingMembers.getAll();
+        if (!member.memberId) {
+          let maxNum = 0;
+          for (const m of list) {
+            const match = String(m.memberId || '').match(/FMB-CUUP-(\d+)/i);
+            if (match) {
+              const num = parseInt(match[1], 10);
+              if (!isNaN(num) && num > maxNum) maxNum = num;
+            }
+          }
+          member.memberId = `FMB-CUUP-${String(maxNum + 1).padStart(3, '0')}`;
+        }
         list.push(member);
         await writeJsonFile('founding_members.json', list);
       });

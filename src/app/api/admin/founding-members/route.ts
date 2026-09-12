@@ -74,9 +74,11 @@ export async function POST(request: Request) {
       const tokenBytes = crypto.randomBytes(16).toString('hex');
       const uniqueToken = `fm_tok_${tokenBytes}`;
       const now = new Date().toISOString();
+      const permanentMemberId = await db.foundingMembers.getNextMemberId();
 
       const newMember: FoundingMember = {
         id: `fm-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
+        memberId: permanentMemberId,
         fullName: member.fullName.trim(),
         name: member.fullName.trim(),
         email: member.email.trim().toLowerCase(),
@@ -94,9 +96,11 @@ export async function POST(request: Request) {
         skills: member.skills?.trim() || '',
         experience: member.experience?.trim() || '',
         bio: member.bio?.trim() || '',
+        customAnswers: member.customAnswers || {},
         formToken: uniqueToken,
-        formSubmitted: false,
-        status: member.status || 'Invited',
+        formSubmitted: Boolean(member.formSubmitted),
+        formSubmittedAt: member.formSubmitted ? now : undefined,
+        status: member.status || 'Active',
         notes: member.notes?.trim() || '',
         createdAt: now,
         updatedAt: now
@@ -136,6 +140,7 @@ export async function POST(request: Request) {
         ...member,
         name: member.fullName || member.name || existing.name,
         fullName: member.fullName || member.name || existing.fullName,
+        memberId: existing.memberId || member.memberId || (await db.foundingMembers.getNextMemberId()),
         updatedAt: new Date().toISOString()
       };
 
@@ -167,6 +172,29 @@ export async function POST(request: Request) {
         {
           success: true,
           message: 'Founding Member deleted successfully.'
+        },
+        { headers: noStoreHeaders }
+      );
+    }
+
+    // 3b. Batch Delete Founding Members
+    if (action === 'delete_batch') {
+      const { memberIds } = body;
+      if (!Array.isArray(memberIds) || memberIds.length === 0) {
+        return NextResponse.json(
+          { error: 'Array of member IDs is required for batch deletion.' },
+          { status: 400, headers: noStoreHeaders }
+        );
+      }
+
+      for (const id of memberIds) {
+        await db.foundingMembers.deleteById(id);
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: `Deleted ${memberIds.length} founding member(s) successfully.`
         },
         { headers: noStoreHeaders }
       );

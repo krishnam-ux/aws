@@ -1,7 +1,8 @@
 [
   {
     "id": "fm-001",
-    "fullName": "Founding Member Alpha Verified",
+    "memberId": "FMB-CUUP-001",
+    "fullName": "Founding Member Alpha",
     "name": "Founding Member Alpha",
     "email": "founding1@culko.in",
     "phone": "+91 98765 43210",
@@ -16,13 +17,14 @@
     "bio": "Passionate cloud builder and AWS community foundational contributor.",
     "formToken": "fm_tok_8f7b3c2e1a9d4e5f6a7b8c9d0e1f2a3b",
     "formSubmitted": true,
-    "status": "Invited",
+    "status": "Active",
     "createdAt": "2026-08-01T10:00:00.000Z",
-    "updatedAt": "2026-09-12T19:38:12.239Z",
-    "formSubmittedAt": "2026-09-12T19:38:12.237Z"
+    "updatedAt": "2026-09-12T19:56:36.130Z",
+    "formSubmittedAt": "2026-09-12T19:56:36.126Z"
   },
   {
     "id": "fm-002",
+    "memberId": "FMB-CUUP-002",
     "fullName": "Founding Member Beta",
     "name": "Founding Member Beta",
     "email": "founding2@culko.in",
@@ -44,6 +46,7 @@
   },
   {
     "id": "fm-003",
+    "memberId": "FMB-CUUP-003",
     "fullName": "Founding Member Gamma",
     "name": "Founding Member Gamma",
     "email": "founding3@culko.in",
@@ -65,6 +68,7 @@
   },
   {
     "id": "fm-004",
+    "memberId": "FMB-CUUP-004",
     "fullName": "Founding Member Delta",
     "name": "Founding Member Delta",
     "email": "founding4@culko.in",

@@ -103,5 +103,20 @@
     "date": "2026-09-12T19:38:07.210Z",
     "attendance": "Registered",
     "certificateId": null
+  },
+  {
+    "id": "reg-krishnam-test-101",
+    "eventId": "event-aws-cloud-day",
+    "eventName": "AWS Cloud Day 2026",
+    "name": "Krishnam Dwivedi",
+    "email": "krishnamdwivedi17@gmail.com",
+    "studentId": "22BCS10101",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "program": "B.Tech CSE",
+    "year": "3rd Year",
+    "status": "Approved",
+    "date": "2026-09-12T19:56:31.085Z",
+    "attendance": "Registered",
+    "certificateId": null
   }
 ]

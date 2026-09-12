@@ -1,0 +1,205 @@
+{
+  "id": "founding-members-default-form",
+  "title": "Founding Members Registration Form",
+  "description": "Official registration and profile record for Founding Members of AWS Student Builder Group (CU-UP).",
+  "status": "Published",
+  "publishedUrl": "https://www.awssbgcuup.tech/founding-members/form",
+  "version": 1,
+  "updatedAt": "2026-09-12T19:56:35.662Z",
+  "questions": [
+    {
+      "id": "fullName",
+      "type": "text",
+      "label": "Full Name",
+      "placeholder": "e.g. John Doe",
+      "helpText": "Your official full legal / university name.",
+      "required": true,
+      "enabled": true,
+      "step": 1,
+      "order": 1
+    },
+    {
+      "id": "email",
+      "type": "email",
+      "label": "Official / Primary Email Address",
+      "placeholder": "member@culko.in or personal email",
+      "helpText": "Primary contact email used to identify and match your founding member profile.",
+      "required": true,
+      "enabled": true,
+      "step": 1,
+      "order": 2
+    },
+    {
+      "id": "phone",
+      "type": "phone",
+      "label": "WhatsApp / Phone Number",
+      "placeholder": "+91 98765 43210",
+      "helpText": "For official group communications and announcements.",
+      "required": true,
+      "enabled": true,
+      "step": 1,
+      "order": 3
+    },
+    {
+      "id": "photoUrl",
+      "type": "photo",
+      "label": "Profile Photograph",
+      "placeholder": "",
+      "helpText": "Upload a professional passport or headshot photo (PNG/JPG/WEBP).",
+      "required": false,
+      "enabled": true,
+      "step": 1,
+      "order": 4
+    },
+    {
+      "id": "university",
+      "type": "text",
+      "label": "University / Institute Name",
+      "placeholder": "Chandigarh University",
+      "helpText": "Your academic institution.",
+      "required": true,
+      "enabled": true,
+      "step": 2,
+      "order": 5
+    },
+    {
+      "id": "courseBranch",
+      "type": "text",
+      "label": "Course / Branch / Degree",
+      "placeholder": "e.g. B.Tech CSE (Cloud Computing)",
+      "helpText": "Your current academic degree program.",
+      "required": true,
+      "enabled": true,
+      "step": 2,
+      "order": 6
+    },
+    {
+      "id": "yearSemester",
+      "type": "text",
+      "label": "Academic Year & Semester",
+      "placeholder": "e.g. 3rd Year / 6th Semester",
+      "helpText": "Current standing in your degree.",
+      "required": true,
+      "enabled": true,
+      "step": 2,
+      "order": 7
+    },
+    {
+      "id": "studentId",
+      "type": "text",
+      "label": "Student ID / Roll Number (UID)",
+      "placeholder": "e.g. 23BCS1001",
+      "helpText": "University issued student identification number.",
+      "required": true,
+      "enabled": true,
+      "step": 2,
+      "order": 8
+    },
+    {
+      "id": "domain",
+      "type": "dropdown",
+      "label": "Primary Domain / Track of Focus",
+      "placeholder": "Select your domain track",
+      "helpText": "Your core area of specialization within AWS SBG.",
+      "required": true,
+      "enabled": true,
+      "options": [
+        "Cloud & Infrastructure",
+        "AI / ML & Data",
+        "DevOps & SRE",
+        "Full-Stack Web & Mobile",
+        "Security & Governance",
+        "Community, Events & Operations",
+        "Content & Technical Documentation",
+        "Design & Creative Media"
+      ],
+      "step": 3,
+      "order": 9
+    },
+    {
+      "id": "linkedin",
+      "type": "url",
+      "label": "LinkedIn Profile URL",
+      "placeholder": "https://linkedin.com/in/username",
+      "helpText": "Professional networking profile.",
+      "required": false,
+      "enabled": true,
+      "step": 3,
+      "order": 10
+    },
+    {
+      "id": "github",
+      "type": "url",
+      "label": "GitHub Profile URL",
+      "placeholder": "https://github.com/username",
+      "helpText": "Open source and code repository profile.",
+      "required": false,
+      "enabled": true,
+      "step": 3,
+      "order": 11
+    },
+    {
+      "id": "portfolio",
+      "type": "url",
+      "label": "Personal Portfolio / Website",
+      "placeholder": "https://yourportfolio.dev",
+      "helpText": "Personal website, blog, or interactive portfolio.",
+      "required": false,
+      "enabled": true,
+      "step": 3,
+      "order": 12
+    },
+    {
+      "id": "skills",
+      "type": "textarea",
+      "label": "Core Technical Skills & Tools",
+      "placeholder": "e.g. AWS Core Services, IAM, S3, EC2, Lambda, Docker, Next.js, Python, TypeScript...",
+      "helpText": "List your key technical tools, cloud architectures, and languages.",
+      "required": true,
+      "enabled": true,
+      "step": 4,
+      "order": 13
+    },
+    {
+      "id": "experience",
+      "type": "textarea",
+      "label": "Experience & Contributions to AWS Community",
+      "placeholder": "Describe your background, hands-on projects, workshops conducted, or community involvement...",
+      "helpText": "Highlight your foundational contributions.",
+      "required": true,
+      "enabled": true,
+      "step": 4,
+      "order": 14
+    },
+    {
+      "id": "q_cert_prep",
+      "type": "dropdown",
+      "label": "AWS Certification Status / Preparation",
+      "placeholder": "Select your certification readiness",
+      "helpText": "Share your current AWS certification status.",
+      "required": false,
+      "enabled": true,
+      "options": [
+        "AWS Certified Cloud Practitioner (CLF-C02)",
+        "Preparing for Cloud Practitioner (CLF-C02)",
+        "AWS Certified Solutions Architect - Associate (SAA-C03)",
+        "Preparing for Solutions Architect Associate",
+        "AWS Certified Developer - Associate (DVA-C02)",
+        "Not certified yet, planning soon"
+      ],
+      "step": 4,
+      "order": 15
+    },
+    {
+      "id": "bio",
+      "type": "textarea",
+      "label": "Bio & Vision for the Group (Optional)",
+      "placeholder": "Share what drives you as a Founding Member and your aspirations for our cloud community...",
+      "helpText": "Optional closing remarks.",
+      "required": false,
+      "enabled": true,
+      "step": 4,
+      "order": 16
+    }
+  ]
+}

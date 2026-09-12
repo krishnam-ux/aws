@@ -23,6 +23,7 @@ test('Founding Member CRUD and Token Lookup Operations', async () => {
 
   const newMember: FoundingMember = {
     id: testId,
+    memberId: 'FMB-CUUP-999',
     fullName: 'Test Candidate',
     email: 'test.founding@cumail.in',
     phone: '+91 9876543210',
