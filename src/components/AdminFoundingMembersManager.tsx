@@ -191,18 +191,55 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
   }, [effectiveToken]);
 
   // Authenticated PDF Blob Downloader
-  const downloadPdfBlob = async (endpoint: string, defaultFilename: string) => {
+  const downloadPdfBlob = async (
+    tokenParams: { scope: 'single' | 'selected' | 'all'; id?: string; ids?: string[]; all?: boolean },
+    defaultFilename: string
+  ) => {
     try {
       setDownloadingPdf(true);
       showToast('Generating official PDF dossier...', 'info');
 
-      // Append auth token as query fallback as well for full compatibility
-      const separator = endpoint.includes('?') ? '&' : '?';
-      const authenticatedUrl = `${endpoint}${separator}token=${encodeURIComponent(effectiveToken)}`;
+      // 1. Request short-lived signed download token from server
+      let downloadUrl = '/api/admin/founding-members/pdf';
+      try {
+        const tokenRes = await fetch('/api/admin/founding-members/pdf', {
+          method: 'POST',
+          headers: getHeaders(),
+          credentials: 'include',
+          body: JSON.stringify({
+            action: 'get_download_token',
+            id: tokenParams.id,
+            ids: tokenParams.ids,
+            all: tokenParams.all
+          })
+        });
 
-      const res = await fetch(authenticatedUrl, {
+        if (tokenRes.ok) {
+          const tokenData = await tokenRes.json();
+          if (tokenData.downloadUrl) {
+            downloadUrl = tokenData.downloadUrl;
+          }
+        }
+      } catch (e) {
+        console.warn('Fallback to direct authenticated GET request:', e);
+      }
+
+      // If token generation had a fallback, construct fallback URL
+      if (downloadUrl === '/api/admin/founding-members/pdf') {
+        if (tokenParams.id) {
+          downloadUrl += `?id=${encodeURIComponent(tokenParams.id)}`;
+        } else if (tokenParams.ids) {
+          downloadUrl += `?ids=${encodeURIComponent(tokenParams.ids.join(','))}`;
+        } else if (tokenParams.all) {
+          downloadUrl += '?all=true';
+        }
+      }
+
+      // 2. Fetch the PDF binary with Authorization header & credentials
+      const res = await fetch(downloadUrl, {
         method: 'GET',
-        headers: getHeaders()
+        headers: getHeaders(),
+        credentials: 'include'
       });
 
       if (!res.ok) {
@@ -239,7 +276,7 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
   const downloadSinglePdf = (member: FoundingMember) => {
     const safeName = (member.fullName || member.name || 'member').replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
     const defaultName = `FoundingMember_${member.memberId || 'FMB'}_${safeName}.pdf`;
-    downloadPdfBlob(`/api/admin/founding-members/pdf?id=${encodeURIComponent(member.id)}`, defaultName);
+    downloadPdfBlob({ scope: 'single', id: member.id }, defaultName);
   };
 
   const downloadSelectedPdf = () => {
@@ -247,9 +284,8 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
       showToast('Please select at least one founding member to export PDF.', 'info');
       return;
     }
-    const idsParam = selectedMemberIds.join(',');
     const defaultName = `FoundingMembers_Selected_${selectedMemberIds.length}_Profiles.pdf`;
-    downloadPdfBlob(`/api/admin/founding-members/pdf?ids=${encodeURIComponent(idsParam)}`, defaultName);
+    downloadPdfBlob({ scope: 'selected', ids: selectedMemberIds }, defaultName);
   };
 
   const downloadAllPdf = () => {
@@ -258,7 +294,7 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
       return;
     }
     const defaultName = `FoundingMembers_All_${members.length}_Profiles.pdf`;
-    downloadPdfBlob(`/api/admin/founding-members/pdf?all=true`, defaultName);
+    downloadPdfBlob({ scope: 'all', all: true }, defaultName);
   };
 
   // Copy Single Shared Form Link

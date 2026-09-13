@@ -248,12 +248,20 @@ export default function AdminDashboard() {
     const savedToken = sessionStorage.getItem('adminToken');
     if (savedToken) {
       setToken(savedToken);
+      if (typeof document !== 'undefined') {
+        document.cookie = `admin_token=${savedToken}; path=/; SameSite=Lax; max-age=86400`;
+        document.cookie = `adminToken=${savedToken}; path=/; SameSite=Lax; max-age=86400`;
+      }
     }
   }, []);
 
   // Fetch initial data on login
   useEffect(() => {
     if (token) {
+      if (typeof document !== 'undefined') {
+        document.cookie = `admin_token=${token}; path=/; SameSite=Lax; max-age=86400`;
+        document.cookie = `adminToken=${token}; path=/; SameSite=Lax; max-age=86400`;
+      }
       fetchStats();
       fetchTabItems();
     }
@@ -273,11 +281,16 @@ export default function AdminDashboard() {
       const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ action: 'login', username, password })
       });
       const data = await response.json();
       if (response.ok && data.success) {
         sessionStorage.setItem('adminToken', data.token);
+        if (typeof document !== 'undefined') {
+          document.cookie = `admin_token=${data.token}; path=/; SameSite=Lax; max-age=86400`;
+          document.cookie = `adminToken=${data.token}; path=/; SameSite=Lax; max-age=86400`;
+        }
         setToken(data.token);
       } else {
         setLoginError(data.error || 'Invalid username or password.');
@@ -291,6 +304,10 @@ export default function AdminDashboard() {
 
   const handleLogout = () => {
     sessionStorage.removeItem('adminToken');
+    if (typeof document !== 'undefined') {
+      document.cookie = 'admin_token=; path=/; max-age=0';
+      document.cookie = 'adminToken=; path=/; max-age=0';
+    }
     setToken(null);
   };
 

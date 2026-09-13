@@ -198,17 +198,44 @@ test('PDF Authorization & Download Security - 401 Rejections & Secure Admin Acce
   const unauthJson = await unauthRes.json();
   assert.ok(unauthJson.error?.includes('Unauthorized'));
 
-  // 2. Direct Browser Request with Query Parameter Token (for direct download links)
-  const queryTokenReq = new Request(
-    `http://localhost/api/admin/founding-members/pdf?id=${targetMember.id}&token=${ADMIN_TOKEN}`
-  );
-  const queryTokenRes = await pdfGet(queryTokenReq);
-  assert.equal(queryTokenRes.status, 200, 'Authenticated request with query token must return 200');
-  assert.equal(queryTokenRes.headers.get('Content-Type'), 'application/pdf');
-  const queryBlob = await queryTokenRes.arrayBuffer();
-  assert.ok(queryBlob.byteLength > 1000, 'PDF buffer must be valid size');
+  // 2. Cookie header authentication (admin_token)
+  const cookieReq = new Request(`http://localhost/api/admin/founding-members/pdf?id=${targetMember.id}`, {
+    headers: { cookie: `admin_token=${ADMIN_TOKEN}` }
+  });
+  const cookieRes = await pdfGet(cookieReq);
+  assert.equal(cookieRes.status, 200, 'Cookie authenticated request must return 200');
+  assert.equal(cookieRes.headers.get('Content-Type'), 'application/pdf');
 
-  // 3. Authenticated Bearer Header Request for Single Member
+  // 3. Short-lived signed download token generation via authenticated POST
+  const tokenGenReq = new Request('http://localhost/api/admin/founding-members/pdf', {
+    method: 'POST',
+    headers: { ...ADMIN_AUTH_HEADER, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'get_download_token', id: targetMember.id })
+  });
+  const tokenGenRes = await pdfPost(tokenGenReq);
+  const tokenGenData = await tokenGenRes.json();
+  assert.equal(tokenGenRes.status, 200);
+  assert.equal(tokenGenData.success, true);
+  assert.ok(tokenGenData.downloadToken);
+  assert.ok(tokenGenData.downloadUrl);
+
+  // 4. Download PDF using the short-lived signed download token (no admin headers)
+  const signedDownloadReq = new Request(`http://localhost${tokenGenData.downloadUrl}`);
+  const signedDownloadRes = await pdfGet(signedDownloadReq);
+  assert.equal(signedDownloadRes.status, 200, 'Signed download token request must return 200');
+  assert.equal(signedDownloadRes.headers.get('Content-Type'), 'application/pdf');
+  const pdfBytes = new Uint8Array(await signedDownloadRes.arrayBuffer());
+  assert.ok(pdfBytes.length > 1000, 'PDF buffer must be substantial');
+  assert.equal(String.fromCharCode(...pdfBytes.subarray(0, 4)), '%PDF', 'PDF buffer must begin with %PDF magic bytes');
+
+  // 5. Tampered signed token MUST be rejected with 401 Unauthorized
+  const tamperedTokenReq = new Request(
+    `http://localhost/api/admin/founding-members/pdf?id=${targetMember.id}&downloadToken=${tokenGenData.downloadToken}tampered`
+  );
+  const tamperedTokenRes = await pdfGet(tamperedTokenReq);
+  assert.equal(tamperedTokenRes.status, 401, 'Tampered signed token must be rejected with 401');
+
+  // 6. Authenticated Bearer Header Request for Single Member
   const singleHeaderReq = new Request(`http://localhost/api/admin/founding-members/pdf?id=${targetMember.id}`, {
     headers: ADMIN_AUTH_HEADER
   });
@@ -216,7 +243,7 @@ test('PDF Authorization & Download Security - 401 Rejections & Secure Admin Acce
   assert.equal(singleRes.status, 200);
   assert.equal(singleRes.headers.get('Content-Type'), 'application/pdf');
 
-  // 4. Authenticated Selected Members PDF Download
+  // 7. Authenticated Selected Members PDF Download
   const selectedIds = members.slice(0, 2).map((m) => m.id).join(',');
   const selectedReq = new Request(`http://localhost/api/admin/founding-members/pdf?ids=${selectedIds}`, {
     headers: ADMIN_AUTH_HEADER
@@ -225,7 +252,7 @@ test('PDF Authorization & Download Security - 401 Rejections & Secure Admin Acce
   assert.equal(selectedRes.status, 200);
   assert.equal(selectedRes.headers.get('Content-Type'), 'application/pdf');
 
-  // 5. Authenticated All Members PDF Download
+  // 8. Authenticated All Members PDF Download
   const allReq = new Request(`http://localhost/api/admin/founding-members/pdf?all=true`, {
     headers: ADMIN_AUTH_HEADER
   });
@@ -233,7 +260,7 @@ test('PDF Authorization & Download Security - 401 Rejections & Secure Admin Acce
   assert.equal(allRes.status, 200);
   assert.equal(allRes.headers.get('Content-Type'), 'application/pdf');
 
-  // 6. Authenticated Batch POST PDF Download
+  // 9. Authenticated Batch POST PDF Download
   const batchPostReq = new Request('http://localhost/api/admin/founding-members/pdf', {
     method: 'POST',
     headers: { ...ADMIN_AUTH_HEADER, 'Content-Type': 'application/json' },

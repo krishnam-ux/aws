@@ -162,7 +162,20 @@ export async function POST(request: Request) {
 
       const inputHash = hashPassword(password, admin.salt);
       if (inputHash === admin.passwordHash) {
-        return NextResponse.json({ success: true, token: SECURE_TOKEN });
+        const response = NextResponse.json({ success: true, token: SECURE_TOKEN });
+        response.cookies.set('admin_token', SECURE_TOKEN, {
+          path: '/',
+          httpOnly: false,
+          sameSite: 'lax',
+          maxAge: 86400
+        });
+        response.cookies.set('adminToken', SECURE_TOKEN, {
+          path: '/',
+          httpOnly: false,
+          sameSite: 'lax',
+          maxAge: 86400
+        });
+        return response;
       } else {
         return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 });
       }
