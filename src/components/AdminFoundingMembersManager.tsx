@@ -185,10 +185,37 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
     }
   };
 
+  // Sync admin authentication cookies whenever effectiveToken is active
   useEffect(() => {
+    if (typeof document !== 'undefined' && effectiveToken) {
+      document.cookie = `admin_token=${effectiveToken}; path=/; SameSite=Lax; max-age=86400`;
+      document.cookie = `adminToken=${effectiveToken}; path=/; SameSite=Lax; max-age=86400`;
+    }
     loadMembers();
     loadFormConfig();
   }, [effectiveToken]);
+
+  // Helper to trigger client-side file download from Blob
+  const triggerBlobDownload = (blob: Blob, disposition: string | null, fallbackFilename: string) => {
+    let filename = fallbackFilename;
+    if (disposition) {
+      const match = disposition.match(/filename\*=UTF-8''(.+)|filename="?([^";]+)"?/i);
+      if (match) {
+        filename = decodeURIComponent(match[1] || match[2] || fallbackFilename);
+      }
+    }
+    const blobUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    }, 150);
+  };
 
   // Authenticated PDF Blob Downloader
   const downloadPdfBlob = async (
@@ -199,73 +226,57 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
       setDownloadingPdf(true);
       showToast('Generating official PDF dossier...', 'info');
 
-      // 1. Request short-lived signed download token from server
-      let downloadUrl = '/api/admin/founding-members/pdf';
-      try {
-        const tokenRes = await fetch('/api/admin/founding-members/pdf', {
-          method: 'POST',
-          headers: getHeaders(),
-          credentials: 'include',
-          body: JSON.stringify({
-            action: 'get_download_token',
-            id: tokenParams.id,
-            ids: tokenParams.ids,
-            all: tokenParams.all
-          })
-        });
+      // 1. Direct authenticated POST request to /api/admin/founding-members/pdf
+      const postRes = await fetch('/api/admin/founding-members/pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${effectiveToken}`
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          id: tokenParams.id,
+          ids: tokenParams.ids,
+          memberIds: tokenParams.ids || (tokenParams.id ? [tokenParams.id] : undefined),
+          all: tokenParams.all
+        })
+      });
 
-        if (tokenRes.ok) {
-          const tokenData = await tokenRes.json();
-          if (tokenData.downloadUrl) {
-            downloadUrl = tokenData.downloadUrl;
-          }
-        }
-      } catch (e) {
-        console.warn('Fallback to direct authenticated GET request:', e);
-      }
-
-      // If token generation had a fallback, construct fallback URL
-      if (downloadUrl === '/api/admin/founding-members/pdf') {
-        if (tokenParams.id) {
-          downloadUrl += `?id=${encodeURIComponent(tokenParams.id)}`;
-        } else if (tokenParams.ids) {
-          downloadUrl += `?ids=${encodeURIComponent(tokenParams.ids.join(','))}`;
-        } else if (tokenParams.all) {
-          downloadUrl += '?all=true';
+      if (postRes.ok) {
+        const contentType = postRes.headers.get('Content-Type') || '';
+        if (contentType.includes('application/pdf')) {
+          const blob = await postRes.blob();
+          triggerBlobDownload(blob, postRes.headers.get('Content-Disposition'), defaultFilename);
+          showToast(`Downloaded ${defaultFilename} successfully!`, 'success');
+          return;
         }
       }
 
-      // 2. Fetch the PDF binary with Authorization header & credentials
-      const res = await fetch(downloadUrl, {
+      // 2. Fallback: Authenticated GET request with Bearer header & query token parameter
+      const queryParam = tokenParams.id
+        ? `id=${encodeURIComponent(tokenParams.id)}`
+        : tokenParams.ids
+        ? `ids=${encodeURIComponent(tokenParams.ids.join(','))}`
+        : 'all=true';
+
+      const fallbackUrl = `/api/admin/founding-members/pdf?${queryParam}&token=${encodeURIComponent(effectiveToken)}`;
+      const getRes = await fetch(fallbackUrl, {
         method: 'GET',
-        headers: getHeaders(),
+        headers: {
+          Authorization: `Bearer ${effectiveToken}`
+        },
         credentials: 'include'
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Unauthorized: Failed to download PDF.' }));
+      if (!getRes.ok) {
+        const err = await getRes.json().catch(() => ({ error: 'Unauthorized: Failed to download PDF.' }));
         showToast(err.error || 'Unauthorized: could not download PDF', 'error');
         return;
       }
 
-      const blob = await res.blob();
-      let filename = defaultFilename;
-      const disposition = res.headers.get('Content-Disposition') || '';
-      const match = disposition.match(/filename="?([^"]+)"?/);
-      if (match && match[1]) {
-        filename = match[1];
-      }
-
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(blobUrl);
-
-      showToast(`Downloaded ${filename} successfully!`, 'success');
+      const getBlob = await getRes.blob();
+      triggerBlobDownload(getBlob, getRes.headers.get('Content-Disposition'), defaultFilename);
+      showToast(`Downloaded ${defaultFilename} successfully!`, 'success');
     } catch (err: any) {
       showToast(err.message || 'Error downloading PDF', 'error');
     } finally {

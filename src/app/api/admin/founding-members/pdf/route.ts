@@ -59,13 +59,13 @@ export function verifySignedDownloadToken(tokenString: string, requestedScope?: 
 
 function isAuthorized(request: Request, requestedScope?: 'single' | 'selected' | 'all', requestedId?: string): boolean {
   // 1. Authorization header (Bearer token)
-  const authHeader = request.headers.get('Authorization');
+  const authHeader = request.headers.get('Authorization') || request.headers.get('authorization');
   if (authHeader && authHeader.startsWith('Bearer ') && authHeader.substring(7).trim() === SECURE_TOKEN) {
     return true;
   }
 
   // 2. Cookie header
-  const cookieHeader = request.headers.get('cookie') || '';
+  const cookieHeader = request.headers.get('cookie') || request.headers.get('Cookie') || '';
   if (
     cookieHeader.includes(`admin_token=${SECURE_TOKEN}`) ||
     cookieHeader.includes(`adminToken=${SECURE_TOKEN}`)
@@ -85,7 +85,8 @@ function isAuthorized(request: Request, requestedScope?: 'single' | 'selected' |
       searchParams.get('token') ||
       searchParams.get('auth') ||
       searchParams.get('adminToken') ||
-      searchParams.get('authToken');
+      searchParams.get('authToken') ||
+      searchParams.get('key');
 
     if (tokenParam) {
       const trimmed = tokenParam.trim();
@@ -220,7 +221,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const { action, memberIds, all, id, ids } = body;
 
     // Action A: Generate a secure, short-lived signed download token for direct browser navigation
@@ -246,7 +247,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // Action B: Batch PDF Buffer generation via POST body
+    // Action B: Batch / Direct PDF Buffer generation via POST body
     const formConfig = await db.foundingMemberFormConfig.getConfig();
     const allMembers: FoundingMember[] = await db.foundingMembers.getAll();
 
@@ -254,14 +255,28 @@ export async function POST(request: Request) {
 
     if (all) {
       targetMembers = allMembers;
-    } else if (Array.isArray(memberIds) && memberIds.length > 0) {
-      targetMembers = allMembers.filter(
-        (m) => memberIds.includes(m.id) || memberIds.includes(m.memberId)
-      );
     } else {
-      return NextResponse.json(
-        { error: 'memberIds array or all:true is required.' },
-        { status: 400, headers: { 'Cache-Control': 'no-store' } }
+      const idList: string[] = [];
+      if (id && typeof id === 'string') idList.push(id.trim());
+      if (Array.isArray(ids)) {
+        idList.push(...ids.map((x) => String(x).trim()));
+      } else if (typeof ids === 'string' && ids.trim()) {
+        idList.push(...ids.split(',').map((x) => x.trim()));
+      }
+      if (Array.isArray(memberIds)) {
+        idList.push(...memberIds.map((x) => String(x).trim()));
+      }
+
+      const uniqueIds = Array.from(new Set(idList.filter(Boolean)));
+      if (uniqueIds.length === 0) {
+        return NextResponse.json(
+          { error: 'id, ids array, memberIds array, or all:true is required.' },
+          { status: 400, headers: { 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      targetMembers = allMembers.filter(
+        (m) => uniqueIds.includes(m.id) || uniqueIds.includes(m.memberId)
       );
     }
 
@@ -272,8 +287,28 @@ export async function POST(request: Request) {
       );
     }
 
+    if (targetMembers.length === 1 && !all) {
+      const member = targetMembers[0];
+      const pdfBuffer = await generateSingleFoundingMemberPdf(member, { formConfig });
+      const safeName = (member.fullName || member.name || 'member')
+        .replace(/[^a-zA-Z0-9]/g, '_')
+        .toLowerCase();
+      const filename = `FoundingMember_${member.memberId || 'FMB'}_${safeName}.pdf`;
+
+      return new NextResponse(pdfBuffer as any, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+        }
+      });
+    }
+
     const pdfBuffer = await generateMultipleFoundingMembersPdf(targetMembers, { formConfig });
-    const filename = `FoundingMembers_${targetMembers.length}_Profiles.pdf`;
+    const filename = all
+      ? `FoundingMembers_All_${targetMembers.length}_Profiles.pdf`
+      : `FoundingMembers_Selected_${targetMembers.length}_Profiles.pdf`;
 
     return new NextResponse(pdfBuffer as any, {
       status: 200,
@@ -284,9 +319,9 @@ export async function POST(request: Request) {
       }
     });
   } catch (err: any) {
-    console.error('Error generating batch PDF:', err);
+    console.error('Error generating PDF via POST:', err);
     return NextResponse.json(
-      { error: err.message || 'Error creating batch PDF document.' },
+      { error: err.message || 'Error creating PDF document.' },
       { status: 500, headers: { 'Cache-Control': 'no-store' } }
     );
   }
