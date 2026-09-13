@@ -21,7 +21,7 @@ export default function FoundingMembersPublicFormPage() {
     phone: '',
     university: 'Chandigarh University',
     courseBranch: '',
-    yearSemester: '',
+    yearSemester: '3rd Year / 6th Semester',
     studentId: '',
     photoUrl: '',
     linkedin: '',
@@ -148,7 +148,7 @@ export default function FoundingMembersPublicFormPage() {
     setSubmitError(null);
     if (step === 1) {
       if (!formData.fullName.trim()) {
-        setSubmitError('Please enter your full legal/university name.');
+        setSubmitError('Please enter your full legal / university name.');
         return false;
       }
       if (!formData.email.trim() || !formData.email.includes('@')) {
@@ -156,7 +156,7 @@ export default function FoundingMembersPublicFormPage() {
         return false;
       }
       if (!formData.phone.trim()) {
-        setSubmitError('Please enter your contact/WhatsApp phone number.');
+        setSubmitError('Please enter your contact / WhatsApp phone number.');
         return false;
       }
     } else if (step === 2) {
@@ -165,7 +165,7 @@ export default function FoundingMembersPublicFormPage() {
         return false;
       }
       if (!formData.courseBranch.trim()) {
-        setSubmitError('Please enter your Course & Branch (e.g. B.Tech CSE Cloud Computing).');
+        setSubmitError('Please enter your Course & Branch.');
         return false;
       }
       if (!formData.yearSemester.trim()) {
@@ -275,6 +275,17 @@ export default function FoundingMembersPublicFormPage() {
       ].includes(q.id)
   );
 
+  // Dynamic values with fallbacks
+  const formTitle = formConfig?.title || 'Founding Members Information Form';
+  const formSubtitle = formConfig?.subtitle || 'Official Registration & Credentials Dossier';
+  const formDesc = formConfig?.description || 'Official registration and profile record for Founding Members of AWS Student Builder Group at Chandigarh University – Uttar Pradesh.';
+  const formPurpose = formConfig?.purpose || 'This form is used to collect and maintain official information of AWS Student Builder Group at Chandigarh University – Uttar Pradesh Founding Members.';
+  const formInstructions = formConfig?.instructions || 'Please fill out your official profile, academic records, domain track, and technical expertise. Your primary email will be used to identify your record.';
+  const formHeaderBadge = formConfig?.headerText || '⭐ AWS STUDENT BUILDER GROUP • CU-UP';
+  const submitBtnText = formConfig?.submitButtonText || 'Submit Founding Member Profile';
+  const successTitleText = formConfig?.successTitle || 'Profile Recorded Successfully!';
+  const successMsgText = formConfig?.successMessage || 'Thank you. Your Founding Member details and domain credentials have been recorded in the central community directory.';
+
   return (
     <div className="min-h-screen bg-[#07131F] text-slate-100 font-sans selection:bg-[#FF9900]/30 selection:text-white py-10 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* 3D Glassmorphic Backdrop Gradients */}
@@ -282,21 +293,44 @@ export default function FoundingMembersPublicFormPage() {
       <div className="absolute bottom-20 right-10 w-[500px] h-[400px] bg-blue-500/10 blur-[150px] rounded-full pointer-events-none -z-10" />
 
       <div className="max-w-3xl mx-auto space-y-7">
-        {/* Brand Header */}
-        <div className="text-center space-y-3">
+        {/* Dynamic Brand Header & Form Purpose Banner */}
+        <div className="text-center space-y-3.5">
           <div className="inline-flex items-center space-x-2 bg-white/5 border border-white/10 px-4 py-1.5 rounded-full text-xs font-mono text-[#FF9900] shadow-sm backdrop-blur-md">
-            <span>⭐</span>
-            <span className="font-bold">AWS STUDENT BUILDER GROUP</span>
-            <span className="text-slate-500">•</span>
-            <span>CU-UP</span>
+            <span>{formHeaderBadge}</span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold text-white tracking-tight">
-            Founding Member Registration &amp; Dossier
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
-            Welcome to the official Founding Members directory portal. Please submit your profile credentials, domain expertise, and contributions to complete your permanent record.
+          <div className="space-y-1">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[#FF9900] block font-bold">
+              {formSubtitle}
+            </span>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold text-white tracking-tight">
+              {formTitle}
+            </h1>
+          </div>
+
+          <p className="text-xs sm:text-sm text-slate-350 max-w-xl mx-auto leading-relaxed">
+            {formDesc}
           </p>
+
+          {/* Dynamic Purpose & Instructions Card */}
+          {formPurpose && (
+            <div className="bg-[#0D2235]/80 border border-[#FF9900]/30 rounded-2xl p-4 text-left text-xs max-w-2xl mx-auto space-y-2 shadow-lg backdrop-blur-md">
+              <div className="flex items-start space-x-2.5">
+                <span className="text-base text-[#FF9900] mt-0.5">ℹ️</span>
+                <div className="space-y-1">
+                  <span className="font-bold text-white block text-[11px] uppercase tracking-wider">
+                    Purpose &amp; Instructions
+                  </span>
+                  <p className="text-slate-300 leading-relaxed">{formPurpose}</p>
+                  {formInstructions && (
+                    <p className="text-slate-400 text-[11px] leading-relaxed pt-1 border-t border-white/10 mt-1">
+                      {formInstructions}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Loading State */}
@@ -320,7 +354,7 @@ export default function FoundingMembersPublicFormPage() {
           </div>
         )}
 
-        {/* Success Confirmation Modal / Screen */}
+        {/* Success Confirmation Screen */}
         {!loadingConfig && isPublished && submitSuccess && submittedMember && (
           <div className="bg-[#0D2235]/95 border border-emerald-500/40 rounded-3xl p-8 sm:p-10 shadow-2xl space-y-6 text-center animate-fadeIn backdrop-blur-2xl relative overflow-hidden">
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
@@ -335,10 +369,10 @@ export default function FoundingMembersPublicFormPage() {
                 Official Submission Verified
               </span>
               <h2 className="text-2xl sm:text-3xl font-bold text-white font-display">
-                Profile Recorded Successfully!
+                {successTitleText}
               </h2>
               <p className="text-xs sm:text-sm text-slate-350 max-w-lg mx-auto leading-relaxed">
-                Thank you, <strong>{submittedMember.fullName}</strong>. Your Founding Member credentials have been registered in the centralized directory.
+                {successMsgText} (Registered: <strong>{submittedMember.fullName}</strong>)
               </p>
             </div>
 
@@ -360,7 +394,7 @@ export default function FoundingMembersPublicFormPage() {
                 </button>
               </div>
               <p className="text-[11px] text-slate-400">
-                Keep this ID for your official AWS SBG records and event certificates.
+                Keep this permanent ID for your official AWS SBG records and credential certificates.
               </p>
             </div>
 
@@ -376,7 +410,7 @@ export default function FoundingMembersPublicFormPage() {
                 </span>
               </div>
               <div className="text-[11px] text-slate-400 flex items-center justify-between">
-                <span>Timestamp: {new Date(submittedMember.formSubmittedAt).toLocaleString()}</span>
+                <span>Recorded: {new Date(submittedMember.formSubmittedAt).toLocaleString()}</span>
                 <span className="text-emerald-400 font-bold">Status: Active</span>
               </div>
             </div>
@@ -467,7 +501,7 @@ export default function FoundingMembersPublicFormPage() {
                         <span>👤 Step 1: Personal &amp; Identification</span>
                       </h2>
                       <p className="text-xs text-slate-400 mt-0.5">
-                        Your email is used as the unique key to identify and match your founding member record.
+                        Your primary email is used to uniquely identify and match your founding member record.
                       </p>
                     </div>
                     <span className="text-[10px] font-mono text-[#FF9900] bg-[#FF9900]/10 px-2.5 py-1 rounded-full border border-[#FF9900]/30 font-bold">
@@ -816,7 +850,7 @@ export default function FoundingMembersPublicFormPage() {
                         </label>
                         {q.helpText && <p className="text-[10px] text-slate-400">{q.helpText}</p>}
 
-                        {/* Text / URL / Email / Phone / Number */}
+                        {/* Text / URL / Email / Phone / Number / Date */}
                         {(q.type === 'text' ||
                           q.type === 'email' ||
                           q.type === 'phone' ||
@@ -1024,7 +1058,7 @@ export default function FoundingMembersPublicFormPage() {
                     disabled={submitting}
                     className="px-8 py-3 bg-gradient-to-r from-[#FF9900] to-orange-600 hover:from-[#E08800] hover:to-orange-700 text-white text-xs font-extrabold rounded-lg shadow-xl shadow-orange-500/25 transition-all cursor-pointer disabled:opacity-50 flex items-center space-x-2"
                   >
-                    <span>{submitting ? 'Recording Credentials...' : '✓ Submit Founding Member Profile'}</span>
+                    <span>{submitting ? 'Recording Credentials...' : `✓ ${submitBtnText}`}</span>
                   </button>
                 )}
               </div>

@@ -9,21 +9,45 @@ export const revalidate = 0;
 const SECURE_TOKEN = 'awssbg-admin-session-token-secure-hash';
 
 function isAuthorized(request: Request): boolean {
+  // 1. Authorization header (Bearer token)
   const authHeader = request.headers.get('Authorization');
-  if (authHeader && authHeader.startsWith('Bearer ') && authHeader.substring(7) === SECURE_TOKEN) {
+  if (authHeader && authHeader.startsWith('Bearer ') && authHeader.substring(7).trim() === SECURE_TOKEN) {
     return true;
   }
+
+  // 2. Cookie header
   const cookieHeader = request.headers.get('cookie') || '';
-  if (cookieHeader.includes(`admin_token=${SECURE_TOKEN}`)) {
+  if (
+    cookieHeader.includes(`admin_token=${SECURE_TOKEN}`) ||
+    cookieHeader.includes(`adminToken=${SECURE_TOKEN}`)
+  ) {
     return true;
   }
+
+  // 3. Query Parameter token validation (for direct browser downloads / window.open)
+  try {
+    const { searchParams } = new URL(request.url);
+    const tokenParam =
+      searchParams.get('token') ||
+      searchParams.get('auth') ||
+      searchParams.get('adminToken') ||
+      searchParams.get('authToken');
+
+    if (tokenParam && tokenParam.trim() === SECURE_TOKEN) {
+      return true;
+    }
+  } catch {}
+
   return false;
 }
 
 export async function GET(request: Request) {
   try {
     if (!isAuthorized(request)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized: Admin authentication required to download Founding Member PDF dossiers.' },
+        { status: 401, headers: { 'Cache-Control': 'no-store' } }
+      );
     }
 
     const { searchParams } = new URL(request.url);
@@ -40,7 +64,10 @@ export async function GET(request: Request) {
         allMembers.find((m) => m.id === id || m.memberId === id) || null;
 
       if (!member) {
-        return NextResponse.json({ error: 'Founding Member not found' }, { status: 404 });
+        return NextResponse.json(
+          { error: `Founding Member not found with ID ${id}` },
+          { status: 404, headers: { 'Cache-Control': 'no-store' } }
+        );
       }
 
       const pdfBuffer = await generateSingleFoundingMemberPdf(member, { formConfig });
@@ -67,7 +94,10 @@ export async function GET(request: Request) {
       );
 
       if (selectedMembers.length === 0) {
-        return NextResponse.json({ error: 'No matching founding members found' }, { status: 404 });
+        return NextResponse.json(
+          { error: 'No matching founding members found for provided IDs.' },
+          { status: 404, headers: { 'Cache-Control': 'no-store' } }
+        );
       }
 
       const pdfBuffer = await generateMultipleFoundingMembersPdf(selectedMembers, { formConfig });
@@ -86,7 +116,10 @@ export async function GET(request: Request) {
     // 3. All Founding Members PDF
     if (all || (!id && !idsParam)) {
       if (allMembers.length === 0) {
-        return NextResponse.json({ error: 'No founding members found in database' }, { status: 404 });
+        return NextResponse.json(
+          { error: 'No founding members found in database.' },
+          { status: 404, headers: { 'Cache-Control': 'no-store' } }
+        );
       }
 
       const pdfBuffer = await generateMultipleFoundingMembersPdf(allMembers, { formConfig });
@@ -102,12 +135,15 @@ export async function GET(request: Request) {
       });
     }
 
-    return NextResponse.json({ error: 'Invalid PDF export parameters' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Invalid PDF export parameters. Please specify id, ids, or all=true.' },
+      { status: 400, headers: { 'Cache-Control': 'no-store' } }
+    );
   } catch (err: any) {
     console.error('Error generating founding members PDF:', err);
     return NextResponse.json(
-      { error: err.message || 'Error creating PDF document' },
-      { status: 500 }
+      { error: err.message || 'Error creating PDF document.' },
+      { status: 500, headers: { 'Cache-Control': 'no-store' } }
     );
   }
 }
@@ -115,7 +151,10 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     if (!isAuthorized(request)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized: Admin authentication required.' },
+        { status: 401, headers: { 'Cache-Control': 'no-store' } }
+      );
     }
 
     const body = await request.json();
@@ -133,11 +172,17 @@ export async function POST(request: Request) {
         (m) => memberIds.includes(m.id) || memberIds.includes(m.memberId)
       );
     } else {
-      return NextResponse.json({ error: 'memberIds array or all:true is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'memberIds array or all:true is required.' },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } }
+      );
     }
 
     if (targetMembers.length === 0) {
-      return NextResponse.json({ error: 'No matching founding members found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'No matching founding members found.' },
+        { status: 404, headers: { 'Cache-Control': 'no-store' } }
+      );
     }
 
     const pdfBuffer = await generateMultipleFoundingMembersPdf(targetMembers, { formConfig });
@@ -154,8 +199,8 @@ export async function POST(request: Request) {
   } catch (err: any) {
     console.error('Error generating batch PDF:', err);
     return NextResponse.json(
-      { error: err.message || 'Error creating batch PDF document' },
-      { status: 500 }
+      { error: err.message || 'Error creating batch PDF document.' },
+      { status: 500, headers: { 'Cache-Control': 'no-store' } }
     );
   }
 }

@@ -9,7 +9,7 @@ const SECURE_TOKEN = 'awssbg-admin-session-token-secure-hash';
 
 function isAuthorized(request: Request): boolean {
   const authHeader = request.headers.get('Authorization');
-  if (authHeader && authHeader.startsWith('Bearer ') && authHeader.substring(7) === SECURE_TOKEN) {
+  if (authHeader && authHeader.startsWith('Bearer ') && authHeader.substring(7).trim() === SECURE_TOKEN) {
     return true;
   }
   const cookieHeader = request.headers.get('cookie') || '';
@@ -55,11 +55,11 @@ export async function POST(request: Request) {
 
     const currentConfig: FoundingMemberFormConfig = await db.foundingMemberFormConfig.getConfig();
 
-    // 1. Full Config Save / Update
+    // 1. Full Config Save / Update (Basic Info + Questions)
     if (action === 'save_config' || action === 'update_all') {
-      if (!config || !Array.isArray(config.questions)) {
+      if (!config) {
         return NextResponse.json(
-          { error: 'Valid configuration object with questions array is required.' },
+          { error: 'Valid configuration object is required.' },
           { status: 400, headers: noStoreHeaders }
         );
       }
@@ -67,6 +67,19 @@ export async function POST(request: Request) {
       const updatedConfig: FoundingMemberFormConfig = {
         ...currentConfig,
         ...config,
+        title: config.title?.trim() || currentConfig.title,
+        subtitle: config.subtitle !== undefined ? config.subtitle.trim() : currentConfig.subtitle,
+        description: config.description?.trim() || currentConfig.description,
+        purpose: config.purpose !== undefined ? config.purpose.trim() : currentConfig.purpose,
+        introMessage: config.introMessage !== undefined ? config.introMessage.trim() : currentConfig.introMessage,
+        instructions: config.instructions !== undefined ? config.instructions.trim() : currentConfig.instructions,
+        organizationName: config.organizationName !== undefined ? config.organizationName.trim() : currentConfig.organizationName,
+        headerText: config.headerText !== undefined ? config.headerText.trim() : currentConfig.headerText,
+        footerText: config.footerText !== undefined ? config.footerText.trim() : currentConfig.footerText,
+        submitButtonText: config.submitButtonText !== undefined ? config.submitButtonText.trim() : currentConfig.submitButtonText,
+        successTitle: config.successTitle !== undefined ? config.successTitle.trim() : currentConfig.successTitle,
+        successMessage: config.successMessage !== undefined ? config.successMessage.trim() : currentConfig.successMessage,
+        questions: Array.isArray(config.questions) ? config.questions : currentConfig.questions,
         version: (currentConfig.version || 1) + 1,
         updatedAt: new Date().toISOString()
       };
@@ -76,7 +89,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: true,
-          message: 'Form configuration saved successfully.',
+          message: 'Form configuration and basic information saved successfully.',
           config: updatedConfig
         },
         { headers: noStoreHeaders }
@@ -192,14 +205,14 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: true,
-          message: 'Question updated successfully.',
+          message: `Question "${questions[idx].label}" updated successfully.`,
           config: updatedConfig
         },
         { headers: noStoreHeaders }
       );
     }
 
-    // 5. Delete a Question
+    // 5. Delete a Question (archives without destroying historical answers)
     if (action === 'delete_question') {
       const targetQId = questionId || question?.id;
       if (!targetQId) {
@@ -225,7 +238,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: true,
-          message: 'Question removed from form configuration.',
+          message: 'Question removed from active form. Historical submissions remain preserved.',
           config: updatedConfig
         },
         { headers: noStoreHeaders }
@@ -253,7 +266,6 @@ export async function POST(request: Request) {
         }
       });
 
-      // Append any missing questions
       questionsMap.forEach((q) => {
         newQuestions.push({ ...q, order: newQuestions.length + 1 });
       });

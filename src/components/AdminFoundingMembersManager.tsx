@@ -32,12 +32,16 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
       : null) ||
     'awssbg-admin-session-token-secure-hash';
 
-  // Active Tab: 'directory' vs 'form-builder'
+  // Active Main Tab: 'directory' vs 'form-builder'
   const [activeTab, setActiveTab] = useState<'directory' | 'form-builder'>('directory');
+
+  // Form Builder Sub-Section: 'questions' vs 'basic-info'
+  const [formBuilderSubTab, setFormBuilderSubTab] = useState<'questions' | 'basic-info'>('questions');
 
   // State: Members Directory
   const [members, setMembers] = useState<FoundingMember[]>([]);
   const [loading, setLoading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
   // Filter & Search states
@@ -46,14 +50,32 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
   const [domainFilter, setDomainFilter] = useState<string>('All');
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
 
-  // State: Form Builder
+  // State: Form Builder Config
   const [formConfig, setFormConfig] = useState<FoundingMemberFormConfig | null>(null);
   const [loadingConfig, setLoadingConfig] = useState(false);
+  const [savingConfig, setSavingConfig] = useState(false);
+
+  // Form Basic Info Editor state
+  const [basicInfoForm, setBasicInfoForm] = useState({
+    title: '',
+    subtitle: '',
+    description: '',
+    purpose: '',
+    introMessage: '',
+    instructions: '',
+    organizationName: '',
+    headerText: '',
+    footerText: '',
+    submitButtonText: '',
+    successTitle: '',
+    successMessage: ''
+  });
 
   // Modals State
   const [viewMember, setViewMember] = useState<FoundingMember | null>(null);
   const [editMember, setEditMember] = useState<FoundingMember | null>(null);
   const [deleteConfirmMember, setDeleteConfirmMember] = useState<FoundingMember | null>(null);
+  const [deleteConfirmQuestion, setDeleteConfirmQuestion] = useState<FormQuestion | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<FormQuestion | null>(null);
@@ -137,7 +159,24 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
       });
       if (res.ok) {
         const data = await res.json();
-        setFormConfig(data.config || null);
+        const cfg: FoundingMemberFormConfig = data.config;
+        setFormConfig(cfg);
+        if (cfg) {
+          setBasicInfoForm({
+            title: cfg.title || '',
+            subtitle: cfg.subtitle || '',
+            description: cfg.description || '',
+            purpose: cfg.purpose || '',
+            introMessage: cfg.introMessage || '',
+            instructions: cfg.instructions || '',
+            organizationName: cfg.organizationName || '',
+            headerText: cfg.headerText || '',
+            footerText: cfg.footerText || '',
+            submitButtonText: cfg.submitButtonText || '',
+            successTitle: cfg.successTitle || '',
+            successMessage: cfg.successMessage || ''
+          });
+        }
       }
     } catch (err: any) {
       console.error('Failed to load form config:', err);
@@ -150,6 +189,77 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
     loadMembers();
     loadFormConfig();
   }, [effectiveToken]);
+
+  // Authenticated PDF Blob Downloader
+  const downloadPdfBlob = async (endpoint: string, defaultFilename: string) => {
+    try {
+      setDownloadingPdf(true);
+      showToast('Generating official PDF dossier...', 'info');
+
+      // Append auth token as query fallback as well for full compatibility
+      const separator = endpoint.includes('?') ? '&' : '?';
+      const authenticatedUrl = `${endpoint}${separator}token=${encodeURIComponent(effectiveToken)}`;
+
+      const res = await fetch(authenticatedUrl, {
+        method: 'GET',
+        headers: getHeaders()
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Unauthorized: Failed to download PDF.' }));
+        showToast(err.error || 'Unauthorized: could not download PDF', 'error');
+        return;
+      }
+
+      const blob = await res.blob();
+      let filename = defaultFilename;
+      const disposition = res.headers.get('Content-Disposition') || '';
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      if (match && match[1]) {
+        filename = match[1];
+      }
+
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+
+      showToast(`Downloaded ${filename} successfully!`, 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Error downloading PDF', 'error');
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
+  const downloadSinglePdf = (member: FoundingMember) => {
+    const safeName = (member.fullName || member.name || 'member').replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+    const defaultName = `FoundingMember_${member.memberId || 'FMB'}_${safeName}.pdf`;
+    downloadPdfBlob(`/api/admin/founding-members/pdf?id=${encodeURIComponent(member.id)}`, defaultName);
+  };
+
+  const downloadSelectedPdf = () => {
+    if (selectedMemberIds.length === 0) {
+      showToast('Please select at least one founding member to export PDF.', 'info');
+      return;
+    }
+    const idsParam = selectedMemberIds.join(',');
+    const defaultName = `FoundingMembers_Selected_${selectedMemberIds.length}_Profiles.pdf`;
+    downloadPdfBlob(`/api/admin/founding-members/pdf?ids=${encodeURIComponent(idsParam)}`, defaultName);
+  };
+
+  const downloadAllPdf = () => {
+    if (members.length === 0) {
+      showToast('No founding members in directory to export.', 'info');
+      return;
+    }
+    const defaultName = `FoundingMembers_All_${members.length}_Profiles.pdf`;
+    downloadPdfBlob(`/api/admin/founding-members/pdf?all=true`, defaultName);
+  };
 
   // Copy Single Shared Form Link
   const copySharedFormLink = () => {
@@ -216,34 +326,6 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  // Download PDF Actions
-  const downloadSinglePdf = (member: FoundingMember) => {
-    const url = `/api/admin/founding-members/pdf?id=${encodeURIComponent(member.id)}`;
-    window.open(url, '_blank');
-    showToast(`Downloading PDF dossier for ${member.fullName || member.name}...`);
-  };
-
-  const downloadSelectedPdf = () => {
-    if (selectedMemberIds.length === 0) {
-      showToast('Please select at least one founding member to export PDF.', 'info');
-      return;
-    }
-    const idsParam = selectedMemberIds.join(',');
-    const url = `/api/admin/founding-members/pdf?ids=${encodeURIComponent(idsParam)}`;
-    window.open(url, '_blank');
-    showToast(`Generating combined PDF for ${selectedMemberIds.length} members...`);
-  };
-
-  const downloadAllPdf = () => {
-    if (members.length === 0) {
-      showToast('No founding members in directory to export.', 'info');
-      return;
-    }
-    const url = `/api/admin/founding-members/pdf?all=true`;
-    window.open(url, '_blank');
-    showToast(`Generating official PDF book for all ${members.length} Founding Members...`);
   };
 
   // Selection handlers
@@ -357,7 +439,38 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
     }
   };
 
-  // Form Builder Handlers
+  // Form Builder: Save Basic Info
+  const handleSaveBasicInfo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formConfig) return;
+
+    try {
+      setSavingConfig(true);
+      const updatedConfig: FoundingMemberFormConfig = {
+        ...formConfig,
+        ...basicInfoForm
+      };
+
+      const res = await fetch('/api/admin/founding-members/form-config', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ action: 'save_config', config: updatedConfig })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast('Form Basic Information updated successfully!');
+        setFormConfig(data.config);
+      } else {
+        showToast(data.error || 'Failed to save form information', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Error saving form info', 'error');
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
+  // Form Builder: Toggle Publish Status
   const handleToggleFormPublish = async () => {
     if (!formConfig) return;
     const newStatus = formConfig.status === 'Published' ? 'Draft' : 'Published';
@@ -467,19 +580,20 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
     }
   };
 
-  const handleDeleteQuestion = async (q: FormQuestion) => {
-    if (!confirm(`Are you sure you want to remove question "${q.label}"? Historical submitted answers will remain preserved in existing member records.`)) return;
+  const handleDeleteQuestionConfirmed = async () => {
+    if (!deleteConfirmQuestion) return;
 
     try {
       setLoadingConfig(true);
       const res = await fetch('/api/admin/founding-members/form-config', {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify({ action: 'delete_question', questionId: q.id })
+        body: JSON.stringify({ action: 'delete_question', questionId: deleteConfirmQuestion.id })
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        showToast(`Question removed.`);
+        showToast(`Question "${deleteConfirmQuestion.label}" removed. Historical submitted data preserved.`);
+        setDeleteConfirmQuestion(null);
         setFormConfig(data.config);
       } else {
         showToast(data.error || 'Failed to delete question', 'error');
@@ -568,7 +682,7 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
 
   return (
     <div className="space-y-6 font-sans">
-      {/* 1. Top Section & Navigation Bar */}
+      {/* 1. Header & Navigation Bar */}
       <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-sm p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E2E8F0] pb-4">
           <div className="flex items-center space-x-3">
@@ -583,7 +697,7 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
                 </span>
               </h2>
               <p className="text-xs text-[#64748B]">
-                Manage dedicated Founding Member records, customize dynamic questions in Form Builder, and export official PDF dossiers.
+                Manage dedicated Founding Member records, edit form information &amp; questions, and download official PDF dossiers.
               </p>
             </div>
           </div>
@@ -651,7 +765,7 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
                   : 'bg-amber-100 text-amber-800'
               }`}
             >
-              {formConfig?.status || 'Published'}
+              ● {formConfig?.status || 'Published'}
             </span>
           </button>
         </div>
@@ -763,7 +877,7 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
 
               <button
                 onClick={downloadSelectedPdf}
-                disabled={selectedMemberIds.length === 0}
+                disabled={selectedMemberIds.length === 0 || downloadingPdf}
                 className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-xs font-bold rounded-lg shadow-xs cursor-pointer flex items-center space-x-1"
               >
                 <span>📑</span>
@@ -772,6 +886,7 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
 
               <button
                 onClick={downloadAllPdf}
+                disabled={downloadingPdf}
                 className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg shadow-xs cursor-pointer flex items-center space-x-1"
               >
                 <span>📚</span>
@@ -894,8 +1009,9 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
                         <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
                           <button
                             onClick={() => downloadSinglePdf(member)}
-                            title="Download official PDF profile"
-                            className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded text-[10px] cursor-pointer"
+                            disabled={downloadingPdf}
+                            title="Download official authenticated PDF profile"
+                            className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold rounded text-[11px] cursor-pointer shadow-2xs"
                           >
                             📄 PDF
                           </button>
@@ -938,16 +1054,16 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
       )}
 
       {/* ======================================================== */}
-      {/* TAB 2: DYNAMIC FORM BUILDER */}
+      {/* TAB 2: DYNAMIC FORM BUILDER & EDITOR */}
       {/* ======================================================== */}
       {activeTab === 'form-builder' && (
         <div className="space-y-5">
-          {/* Form Header & Status Bar */}
+          {/* Top Form Builder Controls */}
           <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-sm p-5 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
               <div>
                 <h3 className="font-display font-extrabold text-base text-slate-900 flex items-center gap-2">
-                  <span>📝 Dynamic Founding Members Form Builder</span>
+                  <span>📝 Founding Members Form Builder &amp; Editor</span>
                   <span
                     className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase ${
                       formConfig?.status === 'Published'
@@ -959,7 +1075,7 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
                   </span>
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Configure questions, field types, validation, and reorder steps. All published questions appear immediately on the shared form and in dynamic PDFs.
+                  Edit form title, purpose, description, instructions, questions, and field types. One single shared form serves all Founding Members.
                 </p>
               </div>
 
@@ -990,9 +1106,36 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
                       : 'bg-emerald-600 hover:bg-emerald-700 text-white'
                   }`}
                 >
-                  {formConfig?.status === 'Published' ? 'Unpublish (Set to Draft)' : '🚀 Publish Form'}
+                  {formConfig?.status === 'Published' ? '🟡 Unpublish (Set to Draft)' : '🚀 Publish Form'}
                 </button>
               </div>
+            </div>
+
+            {/* Sub-Tabs: Questions List vs Edit Form Basic Information */}
+            <div className="flex items-center space-x-2 border-b border-slate-100 pt-1">
+              <button
+                type="button"
+                onClick={() => setFormBuilderSubTab('questions')}
+                className={`px-3.5 py-2 text-xs font-bold border-b-2 cursor-pointer transition-all ${
+                  formBuilderSubTab === 'questions'
+                    ? 'border-[#FF9900] text-[#FF9900]'
+                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                📋 Question Management ({formConfig?.questions?.length || 0})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFormBuilderSubTab('basic-info')}
+                className={`px-3.5 py-2 text-xs font-bold border-b-2 cursor-pointer transition-all ${
+                  formBuilderSubTab === 'basic-info'
+                    ? 'border-[#FF9900] text-[#FF9900]'
+                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                ✏️ Edit Form Basic Info &amp; Purpose
+              </button>
             </div>
 
             {/* Published URL Link Bar */}
@@ -1024,128 +1167,291 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
             </div>
           </div>
 
-          {/* Questions List */}
-          <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-sm p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h4 className="font-display font-bold text-sm text-slate-900">
-                Configured Questions ({formConfig?.questions?.length || 0})
-              </h4>
-              <span className="text-[10px] text-slate-500 font-mono">
-                12 Supported Types • Drag &amp; Reorder Supported
-              </span>
-            </div>
+          {/* SUB-SECTION 1: EDIT FORM BASIC INFORMATION */}
+          {formBuilderSubTab === 'basic-info' && (
+            <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-sm p-6 space-y-5 animate-fadeIn text-xs">
+              <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+                <div>
+                  <h4 className="font-display font-extrabold text-sm text-slate-900">
+                    Edit Form Title, Purpose, Instructions &amp; Branding
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    These texts are dynamically presented on the public <code>/founding-members/form</code> and embedded in PDFs.
+                  </p>
+                </div>
+              </div>
 
-            <div className="space-y-2.5">
-              {(formConfig?.questions || []).map((q, idx) => {
-                const typeMeta = FIELD_TYPE_LABELS[q.type] || { name: q.type, icon: '❓' };
-                const isCore = [
-                  'fullName',
-                  'email',
-                  'phone',
-                  'university',
-                  'courseBranch',
-                  'yearSemester',
-                  'studentId',
-                  'domain',
-                  'skills',
-                  'experience'
-                ].includes(q.id);
+              <form onSubmit={handleSaveBasicInfo} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
+                      Form Title <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={basicInfoForm.title}
+                      onChange={(e) => setBasicInfoForm({ ...basicInfoForm, title: e.target.value })}
+                      placeholder="e.g. Founding Members Information Form"
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs font-semibold focus:ring-1 focus:ring-[#FF9900]"
+                    />
+                  </div>
 
-                return (
-                  <div
-                    key={q.id}
-                    className={`p-3.5 rounded-xl border flex flex-wrap items-center justify-between gap-3 text-xs transition-all ${
-                      q.enabled ? 'bg-white border-slate-200' : 'bg-slate-50/80 border-dashed border-slate-300 opacity-60'
-                    }`}
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
+                      Form Subtitle
+                    </label>
+                    <input
+                      type="text"
+                      value={basicInfoForm.subtitle}
+                      onChange={(e) => setBasicInfoForm({ ...basicInfoForm, subtitle: e.target.value })}
+                      placeholder="e.g. Official Registration &amp; Credentials Dossier"
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs focus:ring-1 focus:ring-[#FF9900]"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
+                    Form Description ("What is this form for?") <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    rows={2}
+                    required
+                    value={basicInfoForm.description}
+                    onChange={(e) => setBasicInfoForm({ ...basicInfoForm, description: e.target.value })}
+                    placeholder="Brief description of the form's role..."
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs leading-relaxed focus:ring-1 focus:ring-[#FF9900]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
+                    Purpose of the Form <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={basicInfoForm.purpose}
+                    onChange={(e) => setBasicInfoForm({ ...basicInfoForm, purpose: e.target.value })}
+                    placeholder="Explain why this form is required and how the data is utilized..."
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs leading-relaxed focus:ring-1 focus:ring-[#FF9900]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
+                      Instructions for Members
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={basicInfoForm.instructions}
+                      onChange={(e) => setBasicInfoForm({ ...basicInfoForm, instructions: e.target.value })}
+                      placeholder="Specific steps or requirements..."
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs leading-relaxed focus:ring-1 focus:ring-[#FF9900]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
+                      Organization Name
+                    </label>
+                    <input
+                      type="text"
+                      value={basicInfoForm.organizationName}
+                      onChange={(e) => setBasicInfoForm({ ...basicInfoForm, organizationName: e.target.value })}
+                      placeholder="AWS Student Builder Group at Chandigarh University – Uttar Pradesh"
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs focus:ring-1 focus:ring-[#FF9900]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
+                      Header Badge Text
+                    </label>
+                    <input
+                      type="text"
+                      value={basicInfoForm.headerText}
+                      onChange={(e) => setBasicInfoForm({ ...basicInfoForm, headerText: e.target.value })}
+                      placeholder="⭐ AWS STUDENT BUILDER GROUP • CU-UP"
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
+                      Submit Button Text
+                    </label>
+                    <input
+                      type="text"
+                      value={basicInfoForm.submitButtonText}
+                      onChange={(e) => setBasicInfoForm({ ...basicInfoForm, submitButtonText: e.target.value })}
+                      placeholder="Submit Founding Member Profile"
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs font-semibold"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
+                      Success Message Title
+                    </label>
+                    <input
+                      type="text"
+                      value={basicInfoForm.successTitle}
+                      onChange={(e) => setBasicInfoForm({ ...basicInfoForm, successTitle: e.target.value })}
+                      placeholder="Profile Recorded Successfully!"
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
+                    Success / Thank-You Message
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={basicInfoForm.successMessage}
+                    onChange={(e) => setBasicInfoForm({ ...basicInfoForm, successMessage: e.target.value })}
+                    placeholder="Custom thank-you and next steps message..."
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs leading-relaxed"
+                  />
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => loadFormConfig()}
+                    className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg font-bold hover:bg-slate-50 cursor-pointer"
                   >
-                    {/* Left: Reorder & Info */}
-                    <div className="flex items-center space-x-3">
-                      {/* Move Up / Down Buttons */}
-                      <div className="flex flex-col space-y-1">
-                        <button
-                          type="button"
-                          onClick={() => handleReorderQuestion(idx, 'up')}
-                          disabled={idx === 0}
-                          className="text-[10px] p-0.5 text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
-                        >
-                          ▲
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleReorderQuestion(idx, 'down')}
-                          disabled={idx === (formConfig?.questions?.length || 0) - 1}
-                          className="text-[10px] p-0.5 text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
-                        >
-                          ▼
-                        </button>
-                      </div>
+                    Reset Form
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingConfig}
+                    className="px-6 py-2 bg-[#FF9900] hover:bg-[#E08800] text-white font-bold rounded-lg shadow-xs cursor-pointer flex items-center space-x-1.5"
+                  >
+                    <span>{savingConfig ? 'Saving Changes...' : '💾 Save Form Basic Information'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
 
-                      <span className="font-mono text-[10px] text-slate-400 font-bold w-4">#{idx + 1}</span>
+          {/* SUB-SECTION 2: QUESTIONS LIST */}
+          {formBuilderSubTab === 'questions' && (
+            <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-sm p-5 space-y-4 animate-fadeIn">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h4 className="font-display font-bold text-sm text-slate-900">
+                  Configured Questions ({formConfig?.questions?.length || 0})
+                </h4>
+                <span className="text-[10px] text-slate-500 font-mono">
+                  12 Field Types Supported • Every Question is Editable &amp; Deletable
+                </span>
+              </div>
 
-                      {/* Type icon */}
-                      <span className="text-base p-1.5 bg-slate-100 rounded-lg">{typeMeta.icon}</span>
+              <div className="space-y-2.5">
+                {(formConfig?.questions || []).map((q, idx) => {
+                  const typeMeta = FIELD_TYPE_LABELS[q.type] || { name: q.type, icon: '❓' };
+                  return (
+                    <div
+                      key={q.id}
+                      className={`p-3.5 rounded-xl border flex flex-wrap items-center justify-between gap-3 text-xs transition-all ${
+                        q.enabled ? 'bg-white border-slate-200' : 'bg-slate-50/80 border-dashed border-slate-300 opacity-60'
+                      }`}
+                    >
+                      {/* Left: Reorder & Info */}
+                      <div className="flex items-center space-x-3">
+                        {/* Move Up / Down Buttons */}
+                        <div className="flex flex-col space-y-1">
+                          <button
+                            type="button"
+                            onClick={() => handleReorderQuestion(idx, 'up')}
+                            disabled={idx === 0}
+                            title="Move question up"
+                            className="text-[10px] p-0.5 text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
+                          >
+                            ▲
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleReorderQuestion(idx, 'down')}
+                            disabled={idx === (formConfig?.questions?.length || 0) - 1}
+                            title="Move question down"
+                            className="text-[10px] p-0.5 text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
+                          >
+                            ▼
+                          </button>
+                        </div>
 
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-bold text-slate-900">{q.label}</span>
-                          {q.required && (
-                            <span className="text-[9px] bg-red-50 text-red-700 border border-red-200 px-1.5 py-0.2 rounded font-bold">
-                              Required
+                        <span className="font-mono text-[10px] text-slate-400 font-bold w-4">#{idx + 1}</span>
+
+                        {/* Type icon */}
+                        <span className="text-base p-1.5 bg-slate-100 rounded-lg">{typeMeta.icon}</span>
+
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-bold text-slate-900">{q.label}</span>
+                            {q.required ? (
+                              <span className="text-[9px] bg-red-50 text-red-700 border border-red-200 px-1.5 py-0.2 rounded font-bold">
+                                Required
+                              </span>
+                            ) : (
+                              <span className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-medium">
+                                Optional
+                              </span>
+                            )}
+                            <span className="text-[9px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.2 rounded font-bold">
+                              {typeMeta.name}
                             </span>
-                          )}
-                          <span className="text-[9px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.2 rounded font-bold">
-                            {typeMeta.name}
-                          </span>
-                          {isCore && (
-                            <span className="text-[9px] bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.2 rounded font-semibold">
-                              Standard Profile Field
+                          </div>
+                          {q.helpText && <span className="text-[11px] text-slate-500 block mt-0.5">{q.helpText}</span>}
+                          {q.options && q.options.length > 0 && (
+                            <span className="text-[10px] text-slate-400 font-mono block mt-0.5">
+                              Options: {q.options.join(', ')}
                             </span>
                           )}
                         </div>
-                        {q.helpText && <span className="text-[11px] text-slate-500 block mt-0.5">{q.helpText}</span>}
-                        {q.options && q.options.length > 0 && (
-                          <span className="text-[10px] text-slate-400 font-mono block mt-0.5">
-                            Options: {q.options.join(', ')}
-                          </span>
-                        )}
                       </div>
-                    </div>
 
-                    {/* Right: Actions */}
-                    <div className="flex items-center space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => handleToggleQuestionEnabled(q)}
-                        className={`px-2 py-1 rounded text-[10px] font-bold cursor-pointer ${
-                          q.enabled ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-slate-200 text-slate-600'
-                        }`}
-                      >
-                        {q.enabled ? 'Enabled' : 'Disabled'}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setEditingQuestion({ ...q })}
-                        className="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-bold rounded text-[11px] cursor-pointer"
-                      >
-                        ✏️ Edit
-                      </button>
-
-                      {!isCore && (
+                      {/* Right: Actions */}
+                      <div className="flex items-center space-x-2">
                         <button
                           type="button"
-                          onClick={() => handleDeleteQuestion(q)}
+                          onClick={() => handleToggleQuestionEnabled(q)}
+                          className={`px-2 py-1 rounded text-[10px] font-bold cursor-pointer ${
+                            q.enabled ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-slate-200 text-slate-600'
+                          }`}
+                        >
+                          {q.enabled ? 'Enabled' : 'Disabled'}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setEditingQuestion({ ...q })}
+                          className="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-bold rounded text-[11px] cursor-pointer"
+                        >
+                          ✏️ Edit
+                        </button>
+
+                        {/* Visible Delete Question Button on every question */}
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmQuestion(q)}
                           className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded text-[11px] cursor-pointer"
                         >
                           🗑️ Delete
                         </button>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -1194,6 +1500,7 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
                 </div>
                 <button
                   onClick={() => downloadSinglePdf(viewMember)}
+                  disabled={downloadingPdf}
                   className="px-3.5 py-1.5 bg-[#FF9900] hover:bg-[#E08800] text-white font-bold rounded-lg text-xs cursor-pointer shadow-xs flex items-center space-x-1"
                 >
                   <span>📄</span>
@@ -1315,7 +1622,47 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
       )}
 
       {/* ======================================================== */}
-      {/* MODAL: DELETE CONFIRMATION */}
+      {/* MODAL: DELETE QUESTION CONFIRMATION */}
+      {/* ======================================================== */}
+      {deleteConfirmQuestion && (
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs text-xs font-sans">
+          <div className="bg-white rounded-2xl border border-red-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-shake">
+            <div className="flex items-center space-x-3 text-red-600">
+              <span className="text-2xl">🗑️</span>
+              <h3 className="font-display font-extrabold text-base text-slate-900">
+                Delete Question?
+              </h3>
+            </div>
+            <p className="text-slate-600 leading-relaxed">
+              Are you sure you want to remove question <strong>"{deleteConfirmQuestion.label}"</strong> from the form?
+            </p>
+            <p className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+              🛡️ Note: Historical submitted answers for this question will remain preserved in existing Founding Member records and dynamic PDFs.
+            </p>
+
+            <div className="pt-3 border-t border-slate-100 flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmQuestion(null)}
+                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg font-bold hover:bg-slate-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={loadingConfig}
+                onClick={handleDeleteQuestionConfirmed}
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-xs cursor-pointer"
+              >
+                Delete Question
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL: DELETE MEMBER CONFIRMATION */}
       {/* ======================================================== */}
       {deleteConfirmMember && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs text-xs font-sans">
@@ -1652,7 +1999,7 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
               {/* Label */}
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
-                  Question Label <span className="text-red-500">*</span>
+                  Question Label / Title <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -1681,11 +2028,11 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
               {/* Help Text */}
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
-                  Help / Description Text
+                  Description / Help Text
                 </label>
                 <input
                   type="text"
-                  placeholder="Brief guidance for the member filling this question..."
+                  placeholder="Guidance for member filling this question..."
                   value={newQuestionForm.helpText}
                   onChange={(e) => setNewQuestionForm({ ...newQuestionForm, helpText: e.target.value })}
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs"
@@ -1773,7 +2120,7 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
             <form onSubmit={handleUpdateQuestion} className="space-y-3.5">
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
-                  Question Label
+                  Question Label / Title
                 </label>
                 <input
                   type="text"
@@ -1798,7 +2145,7 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
 
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
-                  Help / Description Text
+                  Description / Help Text
                 </label>
                 <input
                   type="text"
@@ -1873,7 +2220,7 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
       )}
 
       {/* ======================================================== */}
-      {/* MODAL: FORM PREVIEW */}
+      {/* MODAL: LIVE FORM PREVIEW */}
       {/* ======================================================== */}
       {isPreviewModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm text-xs font-sans">
@@ -1881,10 +2228,10 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
             <div className="flex items-start justify-between border-b border-white/10 pb-4">
               <div>
                 <span className="text-[10px] font-mono text-[#FF9900] uppercase tracking-wider font-bold">
-                  Interactive Preview Mode
+                  Live Preview Mode
                 </span>
                 <h3 className="font-display font-extrabold text-lg text-white">
-                  Founding Member Form Preview
+                  {formConfig?.title || 'Founding Members Information Form'}
                 </h3>
               </div>
               <button
@@ -1895,7 +2242,29 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
               </button>
             </div>
 
-            {/* Simulated Form Body */}
+            {/* Simulated Live Form Header */}
+            <div className="text-center space-y-2 py-2">
+              <div className="inline-flex items-center space-x-2 bg-white/5 border border-white/10 px-3 py-1 rounded-full text-[11px] font-mono text-[#FF9900]">
+                {formConfig?.headerText || '⭐ AWS STUDENT BUILDER GROUP • CU-UP'}
+              </div>
+              <span className="text-[10px] font-mono uppercase text-[#FF9900] block font-bold">
+                {formConfig?.subtitle || 'Official Registration &amp; Credentials Dossier'}
+              </span>
+              <p className="text-xs text-slate-350 max-w-lg mx-auto leading-relaxed">
+                {formConfig?.description}
+              </p>
+              {formConfig?.purpose && (
+                <div className="p-3 bg-[#0D2235] border border-[#FF9900]/30 rounded-xl text-left text-[11px] space-y-1">
+                  <span className="font-bold text-white block text-[10px] uppercase">Purpose &amp; Instructions</span>
+                  <p className="text-slate-300">{formConfig.purpose}</p>
+                  {formConfig.instructions && (
+                    <p className="text-slate-400 pt-1 border-t border-white/10 mt-1">{formConfig.instructions}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Simulated Question Fields */}
             <div className="space-y-4">
               {(formConfig?.questions || [])
                 .filter((q) => q.enabled)
@@ -1955,7 +2324,10 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
                 })}
             </div>
 
-            <div className="pt-3 border-t border-white/10 flex justify-end">
+            <div className="p-3 bg-[#0D2235] border border-white/10 rounded-xl flex items-center justify-between">
+              <span className="text-[10px] text-slate-400">
+                Button Label: <strong>{formConfig?.submitButtonText || 'Submit Founding Member Profile'}</strong>
+              </span>
               <button
                 type="button"
                 onClick={() => setIsPreviewModalOpen(false)}

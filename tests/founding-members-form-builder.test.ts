@@ -3,6 +3,11 @@ import assert from 'node:assert/strict';
 import { db } from '../src/lib/db';
 import { FoundingMember, FoundingMemberFormConfig, FormQuestion } from '../src/types/foundingMember';
 import { generateSingleFoundingMemberPdf, generateMultipleFoundingMembersPdf } from '../src/lib/foundingMemberPdf';
+import { GET as pdfGet, POST as pdfPost } from '../src/app/api/admin/founding-members/pdf/route';
+import { GET as formConfigGet, POST as formConfigPost } from '../src/app/api/admin/founding-members/form-config/route';
+
+const ADMIN_TOKEN = 'awssbg-admin-session-token-secure-hash';
+const ADMIN_AUTH_HEADER = { Authorization: `Bearer ${ADMIN_TOKEN}` };
 
 test('Founding Members ID Generation - FMB-CUUP-XXX Format & Sequential Persistence', async () => {
   const nextId = await db.foundingMembers.getNextMemberId();
@@ -16,77 +21,227 @@ test('Founding Members ID Generation - FMB-CUUP-XXX Format & Sequential Persiste
   }
 });
 
-test('Form Builder Configuration - CRUD, Reordering, and Status Toggles', async () => {
+test('Form Builder Configuration - Form Basic Information Editing & Persistence', async () => {
   const initialConfig = await db.foundingMemberFormConfig.getConfig();
   assert.ok(initialConfig, 'Form config should exist');
-  assert.ok(Array.isArray(initialConfig.questions), 'Questions must be an array');
-  assert.ok(initialConfig.questions.length >= 10, 'Initial default questions should be present');
 
+  const updateReq = new Request('http://localhost/api/admin/founding-members/form-config', {
+    method: 'POST',
+    headers: { ...ADMIN_AUTH_HEADER, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'save_config',
+      config: {
+        title: 'AWS Founding Members Registration 2026',
+        subtitle: 'Official Onboarding Portal',
+        description: 'Updated comprehensive description for founding members.',
+        purpose: 'This form records verified technical specializations and cloud portfolio assets.',
+        instructions: 'Please provide exact GitHub handles and active LinkedIn profile URLs.',
+        organizationName: 'AWS Student Builder Group - CU Uttar Pradesh',
+        headerText: 'FOUNDING BUILDERS REGISTRATION',
+        footerText: 'AWS Cloud Community Portal © 2026',
+        submitButtonText: 'Submit My Official Dossier',
+        successTitle: 'Dossier Successfully Submitted!',
+        successMessage: 'Your Founding Member profile has been updated in the cloud registry.'
+      }
+    })
+  });
+
+  const res = await formConfigPost(updateReq);
+  const data = await res.json();
+  assert.equal(res.status, 200, 'Config update should succeed');
+  assert.equal(data.success, true);
+  assert.equal(data.config.title, 'AWS Founding Members Registration 2026');
+  assert.equal(data.config.subtitle, 'Official Onboarding Portal');
+  assert.equal(data.config.description, 'Updated comprehensive description for founding members.');
+  assert.equal(data.config.purpose, 'This form records verified technical specializations and cloud portfolio assets.');
+  assert.equal(data.config.instructions, 'Please provide exact GitHub handles and active LinkedIn profile URLs.');
+  assert.equal(data.config.submitButtonText, 'Submit My Official Dossier');
+  assert.equal(data.config.successTitle, 'Dossier Successfully Submitted!');
+
+  // Verify persistence via GET endpoint
+  const getReq = new Request('http://localhost/api/admin/founding-members/form-config', {
+    headers: ADMIN_AUTH_HEADER
+  });
+  const getRes = await formConfigGet(getReq);
+  const getData = await getRes.json();
+  assert.equal(getRes.status, 200);
+  assert.equal(getData.config.purpose, 'This form records verified technical specializations and cloud portfolio assets.');
+});
+
+test('Form Builder Configuration - CRUD, Reordering, Enable/Disable, Required/Optional & Delete', async () => {
+  const initialConfig = await db.foundingMemberFormConfig.getConfig();
   const testQuestionId = `q_unit_test_${Date.now()}`;
   const testQuestion: FormQuestion = {
     id: testQuestionId,
     type: 'dropdown',
-    label: 'Unit Test Favorite AWS Service',
-    placeholder: 'Pick a service',
+    label: 'What is your primary cloud domain?',
+    placeholder: 'Pick a domain',
     helpText: 'Used for automated test verification',
     required: true,
     enabled: true,
-    options: ['EC2', 'S3', 'Lambda', 'Bedrock'],
+    options: ['Cloud Architecture', 'DevOps & CI/CD', 'Machine Learning & Bedrock', 'Serverless'],
     step: 4,
-    order: initialConfig.questions.length + 1
+    order: (initialConfig.questions?.length || 0) + 1
   };
 
-  try {
-    // 1. Add Question
-    const updatedQuestions = [...initialConfig.questions, testQuestion];
-    await db.foundingMemberFormConfig.saveConfig({
-      ...initialConfig,
-      questions: updatedQuestions
-    });
+  // 1. Add Question via API
+  const addReq = new Request('http://localhost/api/admin/founding-members/form-config', {
+    method: 'POST',
+    headers: { ...ADMIN_AUTH_HEADER, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'add_question',
+      question: testQuestion
+    })
+  });
+  const addRes = await formConfigPost(addReq);
+  const addData = await addRes.json();
+  assert.equal(addRes.status, 200);
+  assert.equal(addData.success, true);
+  const foundAdded = addData.config.questions.find((q: FormQuestion) => q.id === testQuestionId);
+  assert.ok(foundAdded);
+  assert.equal(foundAdded.label, 'What is your primary cloud domain?');
+  assert.equal(foundAdded.required, true);
+  assert.equal(foundAdded.enabled, true);
 
-    let configAfterAdd = await db.foundingMemberFormConfig.getConfig();
-    const addedQ = configAfterAdd.questions.find((q: FormQuestion) => q.id === testQuestionId);
-    assert.ok(addedQ, 'Added question must exist in config');
-    assert.equal(addedQ?.label, 'Unit Test Favorite AWS Service');
-    assert.equal(addedQ?.options?.length, 4);
+  // 2. Edit Question (Label, Required -> Optional, Options)
+  const editReq = new Request('http://localhost/api/admin/founding-members/form-config', {
+    method: 'POST',
+    headers: { ...ADMIN_AUTH_HEADER, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'edit_question',
+      questionId: testQuestionId,
+      question: {
+        label: 'Which technical domain are you interested in?',
+        required: false,
+        enabled: false,
+        options: ['Cloud Architecture', 'DevOps & CI/CD', 'AI/ML']
+      }
+    })
+  });
+  const editRes = await formConfigPost(editReq);
+  const editData = await editRes.json();
+  assert.equal(editRes.status, 200);
+  const foundEdited = editData.config.questions.find((q: FormQuestion) => q.id === testQuestionId);
+  assert.equal(foundEdited.label, 'Which technical domain are you interested in?');
+  assert.equal(foundEdited.required, false);
+  assert.equal(foundEdited.enabled, false);
+  assert.equal(foundEdited.options.length, 3);
 
-    // 2. Edit Question
-    const editedQuestions = configAfterAdd.questions.map((q: FormQuestion) =>
-      q.id === testQuestionId ? { ...q, label: 'Unit Test Updated Label', required: false } : q
-    );
-    await db.foundingMemberFormConfig.saveConfig({
-      ...configAfterAdd,
-      questions: editedQuestions
-    });
+  // 3. Reorder Questions
+  const allQIds = editData.config.questions.map((q: FormQuestion) => q.id);
+  const reversedQIds = [testQuestionId, ...allQIds.filter((id: string) => id !== testQuestionId)];
+  const reorderReq = new Request('http://localhost/api/admin/founding-members/form-config', {
+    method: 'POST',
+    headers: { ...ADMIN_AUTH_HEADER, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'reorder',
+      questionIds: reversedQIds
+    })
+  });
+  const reorderRes = await formConfigPost(reorderReq);
+  const reorderData = await reorderRes.json();
+  assert.equal(reorderRes.status, 200);
+  assert.equal(reorderData.config.questions[0].id, testQuestionId);
+  assert.equal(reorderData.config.questions[0].order, 1);
 
-    let configAfterEdit = await db.foundingMemberFormConfig.getConfig();
-    const editedQ = configAfterEdit.questions.find((q: FormQuestion) => q.id === testQuestionId);
-    assert.equal(editedQ?.label, 'Unit Test Updated Label');
-    assert.equal(editedQ?.required, false);
+  // 4. Delete Question via API (Verify active removal without data destruction)
+  const deleteReq = new Request('http://localhost/api/admin/founding-members/form-config', {
+    method: 'POST',
+    headers: { ...ADMIN_AUTH_HEADER, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'delete_question',
+      questionId: testQuestionId
+    })
+  });
+  const deleteRes = await formConfigPost(deleteReq);
+  const deleteData = await deleteRes.json();
+  assert.equal(deleteRes.status, 200);
+  assert.equal(deleteData.success, true);
+  const foundDeleted = deleteData.config.questions.find((q: FormQuestion) => q.id === testQuestionId);
+  assert.equal(foundDeleted, undefined, 'Deleted question must be removed from active form config');
 
-    // 3. Status Toggle (Draft / Published)
-    await db.foundingMemberFormConfig.saveConfig({
-      ...configAfterEdit,
+  // 5. Status Toggle (Draft / Published)
+  const setDraftReq = new Request('http://localhost/api/admin/founding-members/form-config', {
+    method: 'POST',
+    headers: { ...ADMIN_AUTH_HEADER, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'set_status',
       status: 'Draft'
-    });
-    let configDraft = await db.foundingMemberFormConfig.getConfig();
-    assert.equal(configDraft.status, 'Draft');
+    })
+  });
+  const draftRes = await formConfigPost(setDraftReq);
+  const draftData = await draftRes.json();
+  assert.equal(draftData.status, 'Draft');
 
-    await db.foundingMemberFormConfig.saveConfig({
-      ...configDraft,
+  const setPubReq = new Request('http://localhost/api/admin/founding-members/form-config', {
+    method: 'POST',
+    headers: { ...ADMIN_AUTH_HEADER, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'set_status',
       status: 'Published'
-    });
-    let configPublished = await db.foundingMemberFormConfig.getConfig();
-    assert.equal(configPublished.status, 'Published');
-  } finally {
-    // Cleanup question
-    const configToClean = await db.foundingMemberFormConfig.getConfig();
-    const cleanedQuestions = configToClean.questions.filter((q: FormQuestion) => q.id !== testQuestionId);
-    await db.foundingMemberFormConfig.saveConfig({
-      ...configToClean,
-      questions: cleanedQuestions
-    });
-  }
+    })
+  });
+  const pubRes = await formConfigPost(setPubReq);
+  const pubData = await pubRes.json();
+  assert.equal(pubData.status, 'Published');
+});
+
+test('PDF Authorization & Download Security - 401 Rejections & Secure Admin Access', async () => {
+  const members = await db.foundingMembers.getAll();
+  assert.ok(members.length > 0, 'Founding members must exist');
+  const targetMember = members[0];
+
+  // 1. Unauthenticated request MUST be rejected with 401 Unauthorized
+  const unauthReq = new Request(`http://localhost/api/admin/founding-members/pdf?id=${targetMember.id}`);
+  const unauthRes = await pdfGet(unauthReq);
+  assert.equal(unauthRes.status, 401, 'Unauthenticated request must return 401 Unauthorized');
+  const unauthJson = await unauthRes.json();
+  assert.ok(unauthJson.error?.includes('Unauthorized'));
+
+  // 2. Direct Browser Request with Query Parameter Token (for direct download links)
+  const queryTokenReq = new Request(
+    `http://localhost/api/admin/founding-members/pdf?id=${targetMember.id}&token=${ADMIN_TOKEN}`
+  );
+  const queryTokenRes = await pdfGet(queryTokenReq);
+  assert.equal(queryTokenRes.status, 200, 'Authenticated request with query token must return 200');
+  assert.equal(queryTokenRes.headers.get('Content-Type'), 'application/pdf');
+  const queryBlob = await queryTokenRes.arrayBuffer();
+  assert.ok(queryBlob.byteLength > 1000, 'PDF buffer must be valid size');
+
+  // 3. Authenticated Bearer Header Request for Single Member
+  const singleHeaderReq = new Request(`http://localhost/api/admin/founding-members/pdf?id=${targetMember.id}`, {
+    headers: ADMIN_AUTH_HEADER
+  });
+  const singleRes = await pdfGet(singleHeaderReq);
+  assert.equal(singleRes.status, 200);
+  assert.equal(singleRes.headers.get('Content-Type'), 'application/pdf');
+
+  // 4. Authenticated Selected Members PDF Download
+  const selectedIds = members.slice(0, 2).map((m) => m.id).join(',');
+  const selectedReq = new Request(`http://localhost/api/admin/founding-members/pdf?ids=${selectedIds}`, {
+    headers: ADMIN_AUTH_HEADER
+  });
+  const selectedRes = await pdfGet(selectedReq);
+  assert.equal(selectedRes.status, 200);
+  assert.equal(selectedRes.headers.get('Content-Type'), 'application/pdf');
+
+  // 5. Authenticated All Members PDF Download
+  const allReq = new Request(`http://localhost/api/admin/founding-members/pdf?all=true`, {
+    headers: ADMIN_AUTH_HEADER
+  });
+  const allRes = await pdfGet(allReq);
+  assert.equal(allRes.status, 200);
+  assert.equal(allRes.headers.get('Content-Type'), 'application/pdf');
+
+  // 6. Authenticated Batch POST PDF Download
+  const batchPostReq = new Request('http://localhost/api/admin/founding-members/pdf', {
+    method: 'POST',
+    headers: { ...ADMIN_AUTH_HEADER, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ memberIds: members.slice(0, 2).map((m) => m.id) })
+  });
+  const batchPostRes = await pdfPost(batchPostReq);
+  assert.equal(batchPostRes.status, 200);
+  assert.equal(batchPostRes.headers.get('Content-Type'), 'application/pdf');
 });
 
 test('Shared Form Submission Flow - Identification by Email & Core Team Isolation', async () => {
@@ -198,7 +353,10 @@ test('Dynamic PDF Generation - Single & Multi-Member Profiles with Photo and Dyn
   assert.equal(singlePdfBuffer.subarray(0, 4).toString(), '%PDF', 'Buffer must have PDF magic header');
 
   // 2. Multiple Members PDF Buffer
-  const multiPdfBuffer = await generateMultipleFoundingMembersPdf([dummyMember, { ...dummyMember, memberId: 'FMB-CUUP-998', fullName: 'Bob DevOps' }], { formConfig });
+  const multiPdfBuffer = await generateMultipleFoundingMembersPdf(
+    [dummyMember, { ...dummyMember, memberId: 'FMB-CUUP-998', fullName: 'Bob DevOps' }],
+    { formConfig }
+  );
   assert.ok(multiPdfBuffer && multiPdfBuffer.length > singlePdfBuffer.length, 'Multi PDF buffer must be generated and larger than single');
   assert.equal(multiPdfBuffer.subarray(0, 4).toString(), '%PDF', 'Multi Buffer must have PDF magic header');
 });

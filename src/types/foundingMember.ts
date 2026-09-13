@@ -28,12 +28,23 @@ export interface FormQuestion {
 export interface FoundingMemberFormConfig {
   id: string;
   title: string;
+  subtitle?: string;
   description: string;
+  purpose?: string;
+  introMessage?: string;
+  instructions?: string;
+  organizationName?: string;
+  headerText?: string;
+  footerText?: string;
+  submitButtonText?: string;
+  successTitle?: string;
+  successMessage?: string;
   status: 'Published' | 'Draft';
   publishedUrl: string;
   version: number;
   updatedAt: string;
   questions: FormQuestion[];
+  draftConfig?: Partial<FoundingMemberFormConfig> | null;
 }
 
 export interface FoundingMember {

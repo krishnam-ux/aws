@@ -1,5 +1,84 @@
 [
   {
+    "id": "sec_1789281923960_aa0fcd",
+    "attemptId": "att-admin-lock-1789281923918",
+    "examId": "exam-admin-lock-flow-1789281923913",
+    "studentName": "Bob Invigilator Subject",
+    "rollNumber": "ROLL-BOB-99",
+    "eventType": "EXAM_UNLOCKED",
+    "severity": "INFO",
+    "metadata": {
+      "unlockMethod": "ADMIN_MANUAL",
+      "adminUser": "admin",
+      "reason": "Physical inspection completed and secondary display disconnected",
+      "lockedSeconds": 0,
+      "totalLockedSeconds": 0
+    },
+    "timestamp": "2026-09-13T06:45:23.960Z"
+  },
+  {
+    "id": "sec_1789281923937_859664",
+    "attemptId": "att-admin-lock-1789281923918",
+    "examId": "exam-admin-lock-flow-1789281923913",
+    "studentName": "Bob Invigilator Subject",
+    "rollNumber": "ROLL-BOB-99",
+    "eventType": "EXAM_LOCKED",
+    "severity": "WARNING",
+    "metadata": {
+      "reason": "Suspicious dual-monitor detected by proctor",
+      "source": "ADMIN",
+      "lockCount": 1,
+      "pausedRemainingSeconds": 1200
+    },
+    "timestamp": "2026-09-13T06:45:23.937Z"
+  },
+  {
+    "id": "sec_1789281923902_171363",
+    "attemptId": "att_1789281923793_4027b0d4",
+    "examId": "exam-lock-lifecycle-1789281923777",
+    "studentName": "Alice Security Candidate",
+    "rollNumber": "SEC-1789281923787",
+    "eventType": "EXAM_UNLOCKED",
+    "severity": "INFO",
+    "metadata": {
+      "unlockMethod": "STUDENT_PASSWORD",
+      "adminUser": "STUDENT",
+      "reason": "Verified Unlock Password",
+      "lockedSeconds": 0,
+      "totalLockedSeconds": 0
+    },
+    "timestamp": "2026-09-13T06:45:23.902Z"
+  },
+  {
+    "id": "sec_1789281923873_eb042a",
+    "attemptId": "att_1789281923793_4027b0d4",
+    "examId": "exam-lock-lifecycle-1789281923777",
+    "studentName": "Alice Security Candidate",
+    "rollNumber": "SEC-1789281923787",
+    "eventType": "EXAM_LOCKED",
+    "severity": "WARNING",
+    "metadata": {
+      "reason": "ESC_FULLSCREEN_EXIT",
+      "source": "SYSTEM",
+      "lockCount": 1,
+      "pausedRemainingSeconds": 1800
+    },
+    "timestamp": "2026-09-13T06:45:23.873Z"
+  },
+  {
+    "id": "sec_1789281923855_9367e9",
+    "attemptId": "att_1789281923793_4027b0d4",
+    "examId": "exam-lock-lifecycle-1789281923777",
+    "studentName": "Alice Security Candidate",
+    "rollNumber": "SEC-1789281923787",
+    "eventType": "ESC_FULLSCREEN_EXIT",
+    "severity": "WARNING",
+    "metadata": {
+      "key": "Escape"
+    },
+    "timestamp": "2026-09-13T06:45:23.855Z"
+  },
+  {
     "id": "sec_1789242994668_9dcd7b",
     "attemptId": "att-admin-lock-1789242994645",
     "examId": "exam-admin-lock-flow-1789242994642",
