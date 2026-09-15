@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import {
   Exam,
   ExamAttempt,
+  ExamCandidate,
   ExamSecurityEvent,
   ExamAuditLog,
   Question,
@@ -23,6 +24,131 @@ export function generateAttemptId(): string {
 
 export function generateUnlockPassword(): string {
   return `UNLOCK-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+}
+
+/**
+ * Generate cryptographically secure random password for candidates.
+ * Format: AWS-XXXX-XXXX (e.g. AWS-7k9Q-m2X8)
+ * Non-predictable, high-entropy, excludes ambiguous characters.
+ */
+export function generateCandidatePassword(): string {
+  const charset = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  const bytes = crypto.randomBytes(8);
+  let segment1 = '';
+  let segment2 = '';
+  for (let i = 0; i < 4; i++) {
+    segment1 += charset[bytes[i] % charset.length];
+  }
+  for (let i = 4; i < 8; i++) {
+    segment2 += charset[bytes[i] % charset.length];
+  }
+  return `AWS-${segment1}-${segment2}`;
+}
+
+/**
+ * Automatically provision candidate credentials for an approved exam registration.
+ */
+export async function provisionExamCandidate(params: {
+  examId: string;
+  studentName: string;
+  rollNumber: string;
+  email: string;
+  customPassword?: string;
+}): Promise<ExamCandidate> {
+  const cleanEmail = params.email.trim().toLowerCase();
+  const cleanRoll = params.rollNumber.trim().toUpperCase();
+  const cleanName = params.studentName.trim();
+  const existing = await db.examCandidates.getByEmailAndExam(cleanEmail, params.examId);
+  const password = params.customPassword || generateCandidatePassword();
+
+  if (existing) {
+    const updated = await db.examCandidates.updateOne(existing.id, {
+      studentName: cleanName,
+      rollNumber: cleanRoll,
+      password: params.customPassword ? password : existing.password,
+      status: 'Active',
+      updatedAt: new Date().toISOString()
+    });
+    return updated || existing;
+  }
+
+  const newCandidate: ExamCandidate = {
+    id: `cand_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
+    examId: params.examId,
+    studentName: cleanName,
+    rollNumber: cleanRoll,
+    email: cleanEmail,
+    password,
+    status: 'Active',
+    emailSentStatus: 'Not Sent',
+    lastPasswordUpdate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  await db.examCandidates.insertOne(newCandidate);
+  return newCandidate;
+}
+
+/**
+ * Regenerate candidate password and invalidate the previous one.
+ */
+export async function regenerateCandidatePassword(candidateId: string): Promise<ExamCandidate | null> {
+  const candidate = await db.examCandidates.getById(candidateId);
+  if (!candidate) return null;
+
+  const newPassword = generateCandidatePassword();
+  const updated = await db.examCandidates.updateOne(candidateId, {
+    password: newPassword,
+    lastPasswordUpdate: new Date().toISOString(),
+    emailSentStatus: 'Not Sent'
+  });
+
+  return updated;
+}
+
+/**
+ * Send candidate credentials email via Resend integration.
+ */
+export async function sendCandidateCredentialsEmail(
+  candidate: ExamCandidate,
+  exam: Exam,
+  siteUrl?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { triggerExamCredentialsEmail } = await import('@/lib/email/automations');
+
+    const result = await triggerExamCredentialsEmail({
+      studentName: candidate.studentName,
+      email: candidate.email,
+      exam: {
+        id: exam.id,
+        title: exam.title,
+        examCode: exam.examCode,
+        password: candidate.password,
+        durationMinutes: exam.durationMinutes
+      }
+    });
+
+    if (result && result.success === false) {
+      await db.examCandidates.updateOne(candidate.id, {
+        emailSentStatus: 'Failed'
+      });
+      return { success: false, error: result.error || 'Failed to dispatch email.' };
+    }
+
+    await db.examCandidates.updateOne(candidate.id, {
+      emailSentStatus: 'Sent',
+      emailSentAt: new Date().toISOString()
+    });
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error sending candidate credentials email:', err);
+    await db.examCandidates.updateOne(candidate.id, {
+      emailSentStatus: 'Failed'
+    });
+    return { success: false, error: err.message || 'Email dispatch error.' };
+  }
 }
 
 /**

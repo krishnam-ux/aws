@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, InvalidEvent, useState } from 'react';
+import { isValidGoogleDriveUrl } from '@/lib/opportunityApplication';
 
 type OpportunityApplicationFormProps = {
   opportunityId: string;
@@ -11,7 +12,20 @@ type OpportunityApplicationFormProps = {
   variant: 'career' | 'opportunity';
 };
 
-type FieldName = 'name' | 'email' | 'phone' | 'university' | 'program' | 'graduationYear' | 'studentId' | 'resume' | 'linkedin' | 'github' | 'skills' | 'experience' | 'motivation';
+type FieldName =
+  | 'name'
+  | 'email'
+  | 'phone'
+  | 'university'
+  | 'program'
+  | 'graduationYear'
+  | 'studentId'
+  | 'linkedin'
+  | 'videoUrl'
+  | 'skills'
+  | 'experience'
+  | 'motivation';
+
 type FieldErrors = Partial<Record<FieldName, string>>;
 
 const fieldMessages: Record<FieldName, string> = {
@@ -22,9 +36,8 @@ const fieldMessages: Record<FieldName, string> = {
   program: 'Please enter your course or program.',
   graduationYear: 'Please enter your year.',
   studentId: 'Please enter your student ID.',
-  resume: 'Please upload your resume/CV.',
   linkedin: 'Please enter your LinkedIn profile URL.',
-  github: 'Please enter your GitHub profile URL.',
+  videoUrl: 'Please enter a valid Google Drive sharing link for your introduction video.',
   skills: 'Please enter your skills.',
   experience: 'Please enter your experience.',
   motivation: 'Please explain why you want to join.',
@@ -58,10 +71,13 @@ export default function OpportunityApplicationForm({
     if (!value('program')) nextErrors.program = fieldMessages.program;
     if (!value('graduationYear')) nextErrors.graduationYear = fieldMessages.graduationYear;
     if (!value('studentId')) nextErrors.studentId = fieldMessages.studentId;
-    const resume = data.get('resume');
-    if (!(resume instanceof File) || resume.size === 0) nextErrors.resume = fieldMessages.resume;
     if (!value('linkedin')) nextErrors.linkedin = fieldMessages.linkedin;
-    if (!value('github')) nextErrors.github = fieldMessages.github;
+
+    const videoUrl = value('videoUrl');
+    if (!videoUrl || !isValidGoogleDriveUrl(videoUrl)) {
+      nextErrors.videoUrl = fieldMessages.videoUrl;
+    }
+
     if (!value('skills')) nextErrors.skills = fieldMessages.skills;
     if (!value('experience')) nextErrors.experience = fieldMessages.experience;
     if (!value('motivation')) nextErrors.motivation = fieldMessages.motivation;
@@ -163,12 +179,51 @@ export default function OpportunityApplicationForm({
         <div>
           <h2 className="mb-4 text-lg font-bold text-brand-navy">Professional Information</h2>
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="block text-sm font-medium text-slate-700 md:col-span-2">Resume / CV Upload <span className="text-red-600" aria-hidden="true">*</span><input type="file" name="resume" accept=".pdf,.doc,.docx" required className={inputClass('resume')} aria-invalid={Boolean(errors.resume)} /> <ErrorText message={errors.resume} /></label>
-            <label className="block text-sm font-medium text-slate-700">LinkedIn <span className="text-red-600" aria-hidden="true">*</span><input type="url" name="linkedin" required className={inputClass('linkedin')} aria-invalid={Boolean(errors.linkedin)} /> <ErrorText message={errors.linkedin} /></label>
-            <label className="block text-sm font-medium text-slate-700">GitHub <span className="text-red-600" aria-hidden="true">*</span><input type="url" name="github" required className={inputClass('github')} aria-invalid={Boolean(errors.github)} /> <ErrorText message={errors.github} /></label>
-            <label className="block text-sm font-medium text-slate-700">Portfolio / Website<input type="url" name="portfolio" className="form-input-field mt-1" /></label>
-            <label className="block text-sm font-medium text-slate-700 md:col-span-2">Skills <span className="text-red-600" aria-hidden="true">*</span><textarea name="skills" required className={`${inputClass('skills')} min-h-24`} aria-invalid={Boolean(errors.skills)} /> <ErrorText message={errors.skills} /></label>
-            <label className="block text-sm font-medium text-slate-700 md:col-span-2">{isCareer ? 'Previous Experience' : 'Experience'} <span className="text-red-600" aria-hidden="true">*</span><textarea name="experience" required className={`${inputClass('experience')} min-h-24`} aria-invalid={Boolean(errors.experience)} /> <ErrorText message={errors.experience} /></label>
+            <label className="block text-sm font-medium text-slate-700">LinkedIn <span className="text-red-600" aria-hidden="true">*</span><input type="url" name="linkedin" placeholder="https://linkedin.com/in/..." required className={inputClass('linkedin')} aria-invalid={Boolean(errors.linkedin)} /> <ErrorText message={errors.linkedin} /></label>
+            <label className="block text-sm font-medium text-slate-700">Portfolio / Website<input type="url" name="portfolio" placeholder="https://..." className="form-input-field mt-1" /></label>
+            <label className="block text-sm font-medium text-slate-700 md:col-span-2">Skills <span className="text-red-600" aria-hidden="true">*</span><textarea name="skills" placeholder="AWS, Python, React, Cloud Architecture..." required className={`${inputClass('skills')} min-h-24`} aria-invalid={Boolean(errors.skills)} /> <ErrorText message={errors.skills} /></label>
+            <label className="block text-sm font-medium text-slate-700 md:col-span-2">{isCareer ? 'Previous Experience' : 'Experience'} <span className="text-red-600" aria-hidden="true">*</span><textarea name="experience" placeholder="Describe your relevant projects, internships, or experience..." required className={`${inputClass('experience')} min-h-24`} aria-invalid={Boolean(errors.experience)} /> <ErrorText message={errors.experience} /></label>
+
+            {/* Short Introduction Video - Google Drive Link */}
+            <div className="md:col-span-2 space-y-2 pt-2">
+              <div className="rounded-xl border border-blue-200/80 bg-gradient-to-r from-blue-50/70 to-indigo-50/40 p-4 text-xs text-slate-700 shadow-sm">
+                <div className="flex items-start gap-2.5">
+                  <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700">
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div className="leading-relaxed">
+                    <p className="font-semibold text-slate-900">Video Submission Guide</p>
+                    <p className="mt-0.5 text-slate-600">
+                      Please upload your short introduction video to Google Drive and set General Access to <strong>&lsquo;Anyone with the link&rsquo;</strong>. Then paste the sharing link here.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <label className="block text-sm font-medium text-slate-700">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <svg className="h-4 w-4 text-aws-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <span>Short Introduction Video – Google Drive Link</span>
+                  <span className="text-red-600 font-bold" aria-hidden="true">*</span>
+                </div>
+                <input
+                  type="url"
+                  name="videoUrl"
+                  required
+                  placeholder="https://drive.google.com/..."
+                  className={inputClass('videoUrl')}
+                  aria-invalid={Boolean(errors.videoUrl)}
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  Paste your Google Drive link here. Please make sure the video access is set to &lsquo;Anyone with the link can view.&rsquo;
+                </p>
+                <ErrorText message={errors.videoUrl} />
+              </label>
+            </div>
           </div>
         </div>
 
@@ -188,3 +243,4 @@ export default function OpportunityApplicationForm({
     </form>
   );
 }
+

@@ -111,6 +111,24 @@ export interface ExamSecurityEvent {
   timestamp: string;
 }
 
+export type CandidateCredentialStatus = 'Active' | 'Revoked' | 'Pending';
+
+export interface ExamCandidate {
+  id: string;
+  examId: string;
+  studentName: string;
+  rollNumber: string;
+  email: string;
+  password: string;
+  status: CandidateCredentialStatus;
+  emailSentStatus: 'Sent' | 'Not Sent' | 'Failed';
+  emailSentAt?: string;
+  lastPasswordUpdate?: string;
+  registeredAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type AdminActionType =
   | 'VERIFY'
   | 'UNLOCK'
@@ -127,12 +145,15 @@ export type AdminActionType =
   | 'UNLOCK_LOCKED_CANDIDATE'
   | 'MANUAL_LOCK_CANDIDATE'
   | 'REGENERATE_UNLOCK_PASSWORD'
+  | 'GENERATE_CREDENTIALS'
+  | 'REGENERATE_PASSWORD'
+  | 'SEND_CREDENTIALS'
+  | 'REVOKE_CREDENTIALS'
   | 'CREATE_EXAM'
   | 'UPDATE_EXAM'
   | 'DELETE_EXAM'
   | 'DELETE_ALL_EXAMS'
   | 'RESET_ATTEMPT';
-
 
 export interface ExamAuditLog {
   id: string;

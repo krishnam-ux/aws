@@ -1617,12 +1617,12 @@ AWS SBG CU-UP Recruitment Committee`
   // 10. Exam Credentials & Instructions
   {
     id: 'tpl-exam_instructions',
-    name: 'Exam Credentials & Access Key',
+    name: 'Your Secure Examination Credentials',
     type: 'exam_instructions',
     category: 'EXAMS',
-    subject: 'Exam Entry Credentials: {{examName}}',
-    description: 'Sent to verified candidates with their exam entry code, password, and lobby link.',
-    variables: ['studentName', 'examName', 'examCode', 'examPassword', 'durationMinutes', 'examUrl'],
+    subject: 'Your Secure Examination Credentials: {{examName}}',
+    description: 'Sent to candidate with their exam login ID, password, date/time, SEB requirement, and instructions.',
+    variables: ['studentName', 'examName', 'examCode', 'examPassword', 'durationMinutes', 'examUrl', 'eventDate', 'eventTime'],
     isActive: true,
     updatedAt: new Date().toISOString(),
     bodyHtml: `<!-- HERO SECTION -->
@@ -1630,16 +1630,16 @@ AWS SBG CU-UP Recruitment Committee`
   <tr>
     <td align="left" valign="top">
       <div style="font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #FF9900; text-transform: uppercase; margin-bottom: 8px;">
-        EXAM ACCESS CREDENTIALS
+        OFFICIAL EXAMINATION PORTAL • CONFIDENTIAL
       </div>
-      <h1 class="hero-title-mobile" style="margin: 0 0 16px 0; font-size: 32px; font-weight: 800; color: #FFFFFF; line-height: 1.2; letter-spacing: -0.5px;">
-        Assessment <span style="color: #FF9900;">Access Key</span>
+      <h1 class="hero-title-mobile" style="margin: 0 0 16px 0; font-size: 30px; font-weight: 800; color: #FFFFFF; line-height: 1.2; letter-spacing: -0.5px;">
+        Your Secure Examination <span style="color: #FF9900;">Credentials</span>
       </h1>
       <div style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin-bottom: 8px;">
         Dear {{studentName}},
       </div>
-      <div style="font-size: 14px; line-height: 1.6; color: #CBD5E1; max-width: 480px;">
-        Your confidential credentials for <strong>{{examName}}</strong> are ready. Use these credentials to enter the Exam Lobby.
+      <div style="font-size: 14px; line-height: 1.6; color: #CBD5E1; max-width: 520px;">
+        Your official assessment credentials for <strong>{{examName}}</strong> have been provisioned by administrators. Use these credentials to sign in to your dedicated candidate dashboard.
       </div>
     </td>
   </tr>
@@ -1653,14 +1653,33 @@ AWS SBG CU-UP Recruitment Committee`
       <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); padding: 24px; margin-bottom: 20px;">
         <tr>
           <td>
-            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">
-              {{examName}}
+            <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-bottom: 14px; border-bottom: 1px solid #F1F5F9; padding-bottom: 10px;">
+              Examination Access Keys
             </div>
             <table width="100%" border="0" cellspacing="0" cellpadding="0">
-              ${renderMetaRow('🔑', 'Exam ID / Code', '{{examCode}}', true)}
+              ${renderMetaRow('📋', 'Assessment Title', '{{examName}}')}
+              ${renderMetaRow('🔑', 'Exam ID / Login ID', '{{examCode}}', true)}
               ${renderMetaRow('🔒', 'Access Password', '{{examPassword}}', true)}
-              ${renderMetaRow('⏱️', 'Duration', '{{durationMinutes}} Minutes')}
+              ${renderMetaRow('⏱️', 'Allocated Duration', '{{durationMinutes}} Minutes')}
+              ${renderMetaRow('🌐', 'Portal Login URL', '{{examUrl}}')}
             </table>
+          </td>
+        </tr>
+      </table>
+
+      <!-- SEB & LOCKDOWN CALLOUT -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#EFF6FF" style="background-color: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;">
+        <tr>
+          <td width="42" valign="top" style="width: 42px; padding-right: 14px;">
+            <div style="width: 38px; height: 38px; background-color: #DBEAFE; border: 1px solid #93C5FD; border-radius: 10px; text-align: center; line-height: 38px; font-size: 20px;">🔐</div>
+          </td>
+          <td valign="middle">
+            <div style="font-size: 14px; font-weight: 800; color: #1E40AF; margin-bottom: 3px;">
+              Safe Exam Browser (SEB) &amp; Environment Policy
+            </div>
+            <div style="font-size: 13px; color: #334155; line-height: 1.5;">
+              If required for your assessment session, you must download the approved <strong>.seb</strong> configuration from the portal and launch the exam inside Safe Exam Browser. Fullscreen enforcement and anti-tamper security policies will be active throughout the session.
+            </div>
           </td>
         </tr>
       </table>
@@ -1673,10 +1692,10 @@ AWS SBG CU-UP Recruitment Committee`
           </td>
           <td valign="middle">
             <div style="font-size: 14px; font-weight: 800; color: #9A3412; margin-bottom: 3px;">
-              Important Proctor Instructions
+              Proctor &amp; Verification Instructions
             </div>
             <div style="font-size: 13px; color: #334155; line-height: 1.5;">
-              Join the Exam Lobby at least 10 minutes early. Proctors will verify your identity before unlocking your assessment workstation.
+              Sign in to your candidate dashboard at least 10 minutes prior to scheduled start. Proctors will verify your identity in the exam lobby before authorizing your assessment session.
             </div>
           </td>
         </tr>
@@ -1687,25 +1706,35 @@ AWS SBG CU-UP Recruitment Committee`
         <tr>
           <td align="center">
             <a href="{{examUrl}}" target="_blank" class="btn-cta-primary" style="display: inline-block; background-color: #FF9900; background: linear-gradient(135deg, #FF9900 0%, #EA580C 100%); color: #FFFFFF !important; font-size: 15px; font-weight: 800; text-decoration: none; padding: 15px 40px; border-radius: 8px; box-shadow: 0 4px 14px rgba(255, 153, 0, 0.35); text-align: center;">
-              Open Exam Lobby &rarr;
+              Open Candidate Portal &rarr;
             </a>
           </td>
         </tr>
       </table>
+
+      <!-- SUPPORT CONTACT -->
+      <div style="font-size: 12px; color: #64748B; text-align: center; margin-top: 12px;">
+        Need technical assistance? Contact your invigilator desk or write to <a href="mailto:notifications@awssbgcuup.tech" style="color: #2563EB; text-decoration: underline;">notifications@awssbgcuup.tech</a>.
+      </div>
     </td>
   </tr>
 </table>`,
     bodyText: `Dear {{studentName}},
 
-Exam Credentials for "{{examName}}":
-- Exam Code: {{examCode}}
+Your Secure Examination Credentials:
+- Assessment: {{examName}}
+- Exam / Login ID: {{examCode}}
 - Password: {{examPassword}}
 - Duration: {{durationMinutes}} Minutes
+- Portal Login URL: {{examUrl}}
 
-Access the lobby at: {{examUrl}}
+Important Instructions:
+1. Sign in to your Candidate Dashboard at least 10 minutes before the exam window.
+2. Ensure you have the approved Safe Exam Browser installed if configured.
+3. Identity verification will be completed in the Exam Lobby prior to unlock.
 
 Best regards,
-AWS SBG CU-UP Examination Board`
+Examination Board • AWS Student Builder Group (CU-UP)`
   },
 
   // 11. Exam Reminder

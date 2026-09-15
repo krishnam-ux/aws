@@ -4,7 +4,10 @@ import assert from 'node:assert/strict';
 import {
   buildOpportunitySuccessUrl,
   hasDuplicateOpportunityApplication,
+  isValidGoogleDriveUrl,
 } from '../src/lib/opportunityApplication';
+import { db } from '../src/lib/db';
+import { POST as careerAppPost } from '../src/app/api/career-applications/route';
 
 test('blocks duplicate submissions only for the same opportunity and normalized email', () => {
   const applications = [
@@ -46,3 +49,127 @@ test('uses the current request origin when building the success redirect URL', (
     if (previous === undefined) delete process.env.NEXT_PUBLIC_SITE_URL; else process.env.NEXT_PUBLIC_SITE_URL = previous;
   }
 });
+
+test('isValidGoogleDriveUrl correctly validates various Google Drive link formats', () => {
+  // Valid links
+  assert.equal(isValidGoogleDriveUrl('https://drive.google.com/file/d/1A2B3C4D5E/view?usp=sharing'), true);
+  assert.equal(isValidGoogleDriveUrl('https://drive.google.com/open?id=1A2B3C4D5E'), true);
+  assert.equal(isValidGoogleDriveUrl('https://drive.google.com/drive/folders/1A2B3C4D5E'), true);
+  assert.equal(isValidGoogleDriveUrl('https://drive.google.com/file/d/1A2B3C4D5E'), true);
+  assert.equal(isValidGoogleDriveUrl('https://docs.google.com/file/d/1A2B3C4D5E/edit'), true);
+  assert.equal(isValidGoogleDriveUrl('drive.google.com/file/d/1A2B3C4D5E/view'), true);
+
+  // Invalid links
+  assert.equal(isValidGoogleDriveUrl(''), false);
+  assert.equal(isValidGoogleDriveUrl(null), false);
+  assert.equal(isValidGoogleDriveUrl(undefined), false);
+  assert.equal(isValidGoogleDriveUrl('https://dropbox.com/s/12345'), false);
+  assert.equal(isValidGoogleDriveUrl('https://youtube.com/watch?v=12345'), false);
+  assert.equal(isValidGoogleDriveUrl('https://example.com/drive.google.com'), false);
+  assert.equal(isValidGoogleDriveUrl('just some text'), false);
+  assert.equal(isValidGoogleDriveUrl('https://drive.google.com/'), false);
+});
+
+test('opportunity application submission requires Google Drive video link and works without resume or github', async () => {
+  // Ensure an active opportunity exists with a future deadline
+  const careers = await db.careers.getAll();
+  assert.ok(careers.length > 0, 'At least one career/opportunity must exist in test environment');
+  const opportunity = careers[0];
+  await db.careers.updateOne(opportunity.id, {
+    published: true,
+    internalApplications: true,
+    status: 'Open',
+    applicationDeadline: '2026-12-31T23:59:59.000Z'
+  });
+
+  // 1. Missing video link should fail
+  const formMissingVideo = new FormData();
+  formMissingVideo.append('opportunityId', opportunity.id);
+  formMissingVideo.append('opportunitySlug', opportunity.slug);
+  formMissingVideo.append('name', 'Aditi Rao');
+  formMissingVideo.append('email', `aditi.${Date.now()}@cumail.in`);
+  formMissingVideo.append('phone', '9876543210');
+  formMissingVideo.append('university', 'Chandigarh University');
+  formMissingVideo.append('program', 'B.Tech CSE');
+  formMissingVideo.append('graduationYear', '2026');
+  formMissingVideo.append('studentId', '22BCS1122');
+  formMissingVideo.append('linkedin', 'https://linkedin.com/in/aditirao');
+  formMissingVideo.append('skills', 'AWS, Python');
+  formMissingVideo.append('experience', 'Cloud project intern');
+  formMissingVideo.append('motivation', 'Passionate about AWS cloud');
+  formMissingVideo.append('consent', 'on');
+
+  const req1 = new Request('http://localhost:3000/api/career-applications', {
+    method: 'POST',
+    body: formMissingVideo,
+  });
+  const res1 = await careerAppPost(req1);
+  assert.equal(res1.status, 400);
+  const json1 = await res1.json();
+  assert.ok(json1.fieldErrors?.videoUrl);
+
+  // 2. Invalid Google Drive link should fail
+  const formInvalidVideo = new FormData();
+  formInvalidVideo.append('opportunityId', opportunity.id);
+  formInvalidVideo.append('opportunitySlug', opportunity.slug);
+  formInvalidVideo.append('name', 'Aditi Rao');
+  formInvalidVideo.append('email', `aditi.invalid.${Date.now()}@cumail.in`);
+  formInvalidVideo.append('phone', '9876543210');
+  formInvalidVideo.append('university', 'Chandigarh University');
+  formInvalidVideo.append('program', 'B.Tech CSE');
+  formInvalidVideo.append('graduationYear', '2026');
+  formInvalidVideo.append('studentId', '22BCS1122');
+  formInvalidVideo.append('linkedin', 'https://linkedin.com/in/aditirao');
+  formInvalidVideo.append('videoUrl', 'https://dropbox.com/s/invalid-video');
+  formInvalidVideo.append('skills', 'AWS, Python');
+  formInvalidVideo.append('experience', 'Cloud project intern');
+  formInvalidVideo.append('motivation', 'Passionate about AWS cloud');
+  formInvalidVideo.append('consent', 'on');
+
+  const req2 = new Request('http://localhost:3000/api/career-applications', {
+    method: 'POST',
+    body: formInvalidVideo,
+  });
+  const res2 = await careerAppPost(req2);
+  assert.equal(res2.status, 400);
+
+  // 3. Valid Google Drive video link WITHOUT resume and WITHOUT github should succeed
+  const testEmail = `aditi.valid.${Date.now()}@cumail.in`;
+  const validDriveLink = 'https://drive.google.com/file/d/1X2Y3Z-intro-video-sample/view?usp=sharing';
+
+  const formValid = new FormData();
+  formValid.append('opportunityId', opportunity.id);
+  formValid.append('opportunitySlug', opportunity.slug);
+  formValid.append('name', 'Aditi Rao');
+  formValid.append('email', testEmail);
+  formValid.append('phone', '9876543210');
+  formValid.append('university', 'Chandigarh University');
+  formValid.append('program', 'B.Tech CSE');
+  formValid.append('graduationYear', '2026');
+  formValid.append('studentId', '22BCS1122');
+  formValid.append('linkedin', 'https://linkedin.com/in/aditirao');
+  formValid.append('videoUrl', validDriveLink);
+  formValid.append('skills', 'AWS, Python, DynamoDB');
+  formValid.append('experience', 'Cloud project intern at Tech Corp');
+  formValid.append('motivation', 'Passionate about AWS cloud architectures');
+  formValid.append('consent', 'on');
+
+  const req3 = new Request('http://localhost:3000/api/career-applications', {
+    method: 'POST',
+    body: formValid,
+  });
+  const res3 = await careerAppPost(req3);
+  // Status is 303 redirect to opportunity page
+  assert.equal(res3.status, 303);
+
+  // Verify stored in DB
+  const apps = await db.careerApplications.getByOpportunityId(opportunity.id);
+  const stored = apps.find((a: any) => a.email.toLowerCase() === testEmail.toLowerCase());
+  assert.ok(stored, 'Application must be saved in database');
+  assert.equal(stored.videoUrl, validDriveLink);
+  assert.equal(stored.name, 'Aditi Rao');
+
+  // Clean up
+  await db.careerApplications.deleteOne(stored.id);
+});
+

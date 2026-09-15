@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { buildOpportunitySuccessUrl, hasDuplicateOpportunityApplication } from '@/lib/opportunityApplication';
+import { buildOpportunitySuccessUrl, hasDuplicateOpportunityApplication, isValidGoogleDriveUrl } from '@/lib/opportunityApplication';
 import { triggerOpportunityApplicationReceived } from '@/lib/email/automations';
 
 export const dynamic = 'force-dynamic';
@@ -20,6 +20,7 @@ export async function POST(request: Request) {
     const linkedin = String(form.get('linkedin') || '').trim();
     const github = String(form.get('github') || '').trim();
     const portfolio = String(form.get('portfolio') || '').trim();
+    const videoUrl = String(form.get('videoUrl') || '').trim();
     const skills = String(form.get('skills') || '').trim();
     const experience = String(form.get('experience') || '').trim();
     const motivation = String(form.get('motivation') || '').trim();
@@ -36,9 +37,10 @@ export async function POST(request: Request) {
     if (!program) fieldErrors.program = 'Please enter your course or program.';
     if (!graduationYear) fieldErrors.graduationYear = 'Please enter your year.';
     if (!studentId) fieldErrors.studentId = 'Please enter your student ID.';
-    if (!(resume instanceof File) || resume.size === 0) fieldErrors.resume = 'Please upload your resume/CV.';
     if (!linkedin) fieldErrors.linkedin = 'Please enter your LinkedIn profile URL.';
-    if (!github) fieldErrors.github = 'Please enter your GitHub profile URL.';
+    if (!videoUrl || !isValidGoogleDriveUrl(videoUrl)) {
+      fieldErrors.videoUrl = 'Please provide a valid Google Drive sharing link for your introduction video.';
+    }
     if (!skills) fieldErrors.skills = 'Please enter your skills.';
     if (!experience) fieldErrors.experience = 'Please enter your experience.';
     if (!motivation) fieldErrors.motivation = 'Please explain why you want to join.';
@@ -106,6 +108,7 @@ export async function POST(request: Request) {
       graduationYear,
       studentId,
       resumeUrl,
+      videoUrl,
       linkedin,
       github,
       portfolio,

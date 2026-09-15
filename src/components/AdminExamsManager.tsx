@@ -55,6 +55,23 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
   } | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
+  // Candidate Credentials Manager States
+  const [activeManagerTab, setActiveManagerTab] = useState<'proctor' | 'credentials' | 'directory'>('proctor');
+  const [candidateCredentials, setCandidateCredentials] = useState<any[]>([]);
+  const [candidateCredentialsStats, setCandidateCredentialsStats] = useState<any>(null);
+  const [credentialsLoading, setCredentialsLoading] = useState(false);
+  const [credentialsSearch, setCredentialsSearch] = useState('');
+  const [credentialsFilter, setCredentialsFilter] = useState('All');
+  const [revealedPasswords, setRevealedPasswords] = useState<Record<string, boolean>>({});
+  const [isAddCandidateModalOpen, setIsAddCandidateModalOpen] = useState(false);
+  const [newCandidate, setNewCandidate] = useState({
+    studentName: '',
+    email: '',
+    rollNumber: '',
+    customPassword: '',
+    sendEmailNow: true
+  });
+
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 3500);
@@ -147,6 +164,32 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
     }
   }, [effectiveToken, selectedExamId]);
 
+  // Fetch Candidate Credentials
+  const fetchCandidateCredentials = useCallback(async () => {
+    if (!effectiveToken) return;
+    setCredentialsLoading(true);
+    try {
+      const url = selectedExamId
+        ? `/api/admin/exams/candidates?examId=${encodeURIComponent(selectedExamId)}`
+        : '/api/admin/exams/candidates';
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${effectiveToken}`,
+          'Cache-Control': 'no-cache'
+        }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCandidateCredentials(data.candidates || []);
+        setCandidateCredentialsStats(data.stats || null);
+      }
+    } catch (e) {
+      console.error('Fetch candidate credentials error:', e);
+    } finally {
+      setCredentialsLoading(false);
+    }
+  }, [effectiveToken, selectedExamId]);
+
   useEffect(() => {
     fetchExams();
   }, [fetchExams]);
@@ -154,6 +197,230 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
   useEffect(() => {
     fetchLiveData();
   }, [fetchLiveData]);
+
+  useEffect(() => {
+    if (activeManagerTab === 'credentials') {
+      fetchCandidateCredentials();
+    }
+  }, [activeManagerTab, fetchCandidateCredentials, selectedExamId]);
+
+  // Handle Add Candidate
+  const handleCreateCandidate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!effectiveToken || !selectedExamId) return;
+    if (!newCandidate.studentName.trim() || !newCandidate.email.trim() || !newCandidate.rollNumber.trim()) {
+      showToast('Name, Email and Roll Number are required.', 'error');
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const res = await fetch('/api/admin/exams/candidates', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${effectiveToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'create-candidate',
+          examId: selectedExamId,
+          ...newCandidate
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create candidate.');
+
+      showToast(`Candidate ${newCandidate.studentName} created with auto-generated password.`, 'success');
+      setIsAddCandidateModalOpen(false);
+      setNewCandidate({ studentName: '', email: '', rollNumber: '', customPassword: '', sendEmailNow: true });
+      await fetchCandidateCredentials();
+      await fetchLiveData();
+    } catch (err: any) {
+      showToast(err.message || 'Error creating candidate.', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Regenerate Password
+  const handleRegenerateCandidatePassword = async (candId: string) => {
+    if (!effectiveToken) return;
+    if (!confirm('Regenerate password for this candidate? Their previous password will be invalidated immediately.')) return;
+
+    setActionLoading(true);
+    try {
+      const res = await fetch('/api/admin/exams/candidates', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${effectiveToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'regenerate-password',
+          candidateId: candId,
+          sendEmailNow: true
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to regenerate password.');
+
+      showToast('New password generated and emailed to candidate.', 'success');
+      await fetchCandidateCredentials();
+    } catch (err: any) {
+      showToast(err.message || 'Error regenerating password.', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Send Credentials Email
+  const handleSendCandidateCredentials = async (candId: string) => {
+    if (!effectiveToken) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch('/api/admin/exams/candidates', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${effectiveToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'send-credentials',
+          candidateId: candId
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to dispatch email.');
+
+      showToast('Credentials email sent successfully via Resend.', 'success');
+      await fetchCandidateCredentials();
+    } catch (err: any) {
+      showToast(err.message || 'Error sending email.', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Send to All Pending
+  const handleSendAllPendingCredentials = async () => {
+    if (!effectiveToken) return;
+    const pending = candidateCredentials.filter((c) => c.emailSentStatus !== 'Sent');
+    if (pending.length === 0) {
+      showToast('All candidates already have credentials sent.', 'success');
+      return;
+    }
+    if (!confirm(`Send credentials emails to all ${pending.length} pending candidate(s)?`)) return;
+
+    setActionLoading(true);
+    try {
+      const res = await fetch('/api/admin/exams/candidates', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${effectiveToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'send-credentials',
+          candidateIds: pending.map((c) => c.id)
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send bulk credentials.');
+
+      showToast(`Dispatched credentials to ${data.count || pending.length} candidate(s).`, 'success');
+      await fetchCandidateCredentials();
+    } catch (err: any) {
+      showToast(err.message || 'Error sending bulk emails.', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Auto-provision from Event Registrations
+  const handleAutoProvisionFromEvents = async () => {
+    if (!effectiveToken || !selectedExamId) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch('/api/admin/exams/candidates', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${effectiveToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'auto-provision-from-events',
+          examId: selectedExamId
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to auto-provision.');
+
+      showToast(`Auto-provisioned ${data.count || 0} candidate(s) from event registrations.`, 'success');
+      await fetchCandidateCredentials();
+    } catch (err: any) {
+      showToast(err.message || 'Error auto-provisioning.', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Toggle Revoke Access
+  const handleToggleRevokeCandidate = async (candId: string, currentStatus: string) => {
+    if (!effectiveToken) return;
+    const nextAction = currentStatus === 'Revoked' ? 'activate' : 'revoke';
+    setActionLoading(true);
+    try {
+      const res = await fetch('/api/admin/exams/candidates', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${effectiveToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: nextAction,
+          candidateId: candId
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update access status.');
+
+      showToast(`Candidate status updated to ${nextAction === 'activate' ? 'Active' : 'Revoked'}.`, 'success');
+      await fetchCandidateCredentials();
+    } catch (err: any) {
+      showToast(err.message || 'Error updating status.', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Delete Candidate Record
+  const handleDeleteCandidateRecord = async (candId: string, candName: string) => {
+    if (!effectiveToken) return;
+    if (!confirm(`Delete candidate record for "${candName}"?`)) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch('/api/admin/exams/candidates', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${effectiveToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          candidateId: candId
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete candidate.');
+
+      showToast('Candidate record deleted successfully.', 'success');
+      await fetchCandidateCredentials();
+    } catch (err: any) {
+      showToast(err.message || 'Error deleting candidate.', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   // Live polling interval (1.5s for real-time synchronization)
   useEffect(() => {
@@ -600,533 +867,864 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
         )}
       </div>
 
-      {/* 2. STATS BAR (10 Cards) */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-2.5">
-        <div
-          onClick={() => setStatusFilter('All')}
-          className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
-            statusFilter === 'All' ? 'ring-2 ring-[#FF9900] border-[#FF9900]' : 'border-[#E2E8F0] hover:border-slate-300'
-          }`}
-        >
-          <div className="text-[10px] uppercase font-bold text-slate-400">Total</div>
-          <div className="text-lg font-bold text-slate-900 font-mono mt-0.5">{stats.totalCandidates}</div>
+      {/* SUB-NAVIGATION TABS */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setActiveManagerTab('proctor')}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+              activeManagerTab === 'proctor'
+                ? 'bg-[#1E293B] text-white shadow-sm'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <span>🖥️</span>
+            <span>Live Proctoring & Candidate Feed</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${activeManagerTab === 'proctor' ? 'bg-slate-700 text-slate-200' : 'bg-slate-100 text-slate-600'}`}>
+              {stats.totalCandidates}
+            </span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveManagerTab('credentials');
+              fetchCandidateCredentials();
+            }}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+              activeManagerTab === 'credentials'
+                ? 'bg-[#FF9900] text-white shadow-sm'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <span>🔑</span>
+            <span>Candidate Credentials & Access</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${activeManagerTab === 'credentials' ? 'bg-[#E08800] text-white' : 'bg-slate-100 text-slate-600'}`}>
+              {candidateCredentials.length}
+            </span>
+          </button>
         </div>
 
-        <div
-          onClick={() => setStatusFilter('Locked')}
-          className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
-            statusFilter === 'Locked' ? 'ring-2 ring-amber-500 border-amber-500' : 'border-[#E2E8F0] hover:border-amber-300'
-          }`}
-        >
-          <div className="text-[10px] uppercase font-bold text-amber-600">Waiting</div>
-          <div className="text-lg font-bold text-amber-600 font-mono mt-0.5">{stats.waiting}</div>
-        </div>
-
-        <div
-          onClick={() => setStatusFilter('Verified')}
-          className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
-            statusFilter === 'Verified' ? 'ring-2 ring-indigo-500 border-indigo-500' : 'border-[#E2E8F0] hover:border-indigo-300'
-          }`}
-        >
-          <div className="text-[10px] uppercase font-bold text-indigo-600">Verified</div>
-          <div className="text-lg font-bold text-indigo-600 font-mono mt-0.5">{stats.verified}</div>
-        </div>
-
-        <div
-          onClick={() => setStatusFilter('Unlocked')}
-          className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
-            statusFilter === 'Unlocked' ? 'ring-2 ring-emerald-500 border-emerald-500' : 'border-[#E2E8F0] hover:border-emerald-300'
-          }`}
-        >
-          <div className="text-[10px] uppercase font-bold text-emerald-600">Unlocked</div>
-          <div className="text-lg font-bold text-emerald-600 font-mono mt-0.5">{stats.unlocked}</div>
-        </div>
-
-        <div
-          onClick={() => setStatusFilter('In Exam')}
-          className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
-            statusFilter === 'In Exam' ? 'ring-2 ring-blue-500 border-blue-500' : 'border-[#E2E8F0] hover:border-blue-300'
-          }`}
-        >
-          <div className="text-[10px] uppercase font-bold text-blue-600">In Exam</div>
-          <div className="text-lg font-bold text-blue-600 font-mono mt-0.5">{stats.inExam}</div>
-        </div>
-
-        <div
-          onClick={() => setStatusFilter('Exam Locked')}
-          className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
-            statusFilter === 'Exam Locked' ? 'ring-2 ring-rose-600 border-rose-600' : 'border-[#E2E8F0] hover:border-rose-300'
-          }`}
-        >
-          <div className="text-[10px] uppercase font-bold text-rose-600">🔒 Locked</div>
-          <div className="text-lg font-bold text-rose-600 font-mono mt-0.5">{stats.examLocked || 0}</div>
-        </div>
-
-
-        <div
-          onClick={() => setStatusFilter('Submitted')}
-          className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
-            statusFilter === 'Submitted' ? 'ring-2 ring-purple-500 border-purple-500' : 'border-[#E2E8F0] hover:border-purple-300'
-          }`}
-        >
-          <div className="text-[10px] uppercase font-bold text-purple-600">Submitted</div>
-          <div className="text-lg font-bold text-purple-600 font-mono mt-0.5">{stats.submitted}</div>
-        </div>
-
-        <div
-          onClick={() => setStatusFilter('Passed')}
-          className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
-            statusFilter === 'Passed' ? 'ring-2 ring-emerald-600 border-emerald-600' : 'border-[#E2E8F0] hover:border-emerald-300'
-          }`}
-        >
-          <div className="text-[10px] uppercase font-bold text-emerald-700">Passed</div>
-          <div className="text-lg font-bold text-emerald-700 font-mono mt-0.5">{stats.passed}</div>
-        </div>
-
-        <div
-          onClick={() => setStatusFilter('Failed')}
-          className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
-            statusFilter === 'Failed' ? 'ring-2 ring-rose-500 border-rose-500' : 'border-[#E2E8F0] hover:border-rose-300'
-          }`}
-        >
-          <div className="text-[10px] uppercase font-bold text-rose-600">Failed</div>
-          <div className="text-lg font-bold text-rose-600 font-mono mt-0.5">{stats.failed}</div>
-        </div>
-
-        <div
-          onClick={() => setStatusFilter('Violations')}
-          className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
-            statusFilter === 'Violations' ? 'ring-2 ring-rose-600 border-rose-600' : 'border-[#E2E8F0] hover:border-rose-300'
-          }`}
-        >
-          <div className="text-[10px] uppercase font-bold text-rose-600">Violations</div>
-          <div className="text-lg font-bold text-rose-600 font-mono mt-0.5">{stats.securityViolations}</div>
-        </div>
-      </div>
-
-      {/* 3. BULK ACTIONS & SEARCH TOOLBAR */}
-      <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 shadow-sm space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Search & Filter */}
-          <div className="flex items-center space-x-2 flex-grow max-w-md">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search candidate name, roll no, email..."
-              className="w-full px-3 py-1.5 border border-[#E2E8F0] rounded-lg text-xs bg-slate-50 focus:ring-1 focus:ring-[#FF9900]"
-            />
-          </div>
-
-          {/* Bulk Action Buttons */}
+        {activeManagerTab === 'credentials' && (
           <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={() => {
-                fetchLiveData();
-                fetchExams();
-                showToast('Refreshed candidate feed', 'success');
-              }}
+              onClick={() => setIsAddCandidateModalOpen(true)}
+              className="px-3.5 py-1.5 rounded-lg bg-[#FF9900] hover:bg-[#E08800] text-white text-xs font-bold transition shadow-sm flex items-center space-x-1.5 cursor-pointer"
+            >
+              <span>➕</span>
+              <span>Add Candidate</span>
+            </button>
+            <button
+              onClick={handleAutoProvisionFromEvents}
               disabled={actionLoading}
-              className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-300 transition"
-              title="Manually refresh candidates & exam state"
+              className="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 transition flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+              title="Automatically generate login credentials for all approved event registrations"
             >
-              🔄 Refresh
+              <span>⚡</span>
+              <span>Auto-Provision from Registrations</span>
             </button>
+          </div>
+        )}
+      </div>
 
-            <button
-              onClick={() => handleControlAction('unlock-all')}
-              disabled={actionLoading || (stats.waiting + stats.verified === 0)}
-              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition disabled:opacity-40"
+      {activeManagerTab === 'proctor' ? (
+        <>
+          {/* 2. STATS BAR (10 Cards) */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-2.5">
+            <div
+              onClick={() => setStatusFilter('All')}
+              className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
+                statusFilter === 'All' ? 'ring-2 ring-[#FF9900] border-[#FF9900]' : 'border-[#E2E8F0] hover:border-slate-300'
+              }`}
             >
-              🔓 Unlock All in Lobby ({stats.waiting + stats.verified})
-            </button>
+              <div className="text-[10px] uppercase font-bold text-slate-400">Total</div>
+              <div className="text-lg font-bold text-slate-900 font-mono mt-0.5">{stats.totalCandidates}</div>
+            </div>
 
-            <button
-              onClick={() => handleControlAction('start-all')}
-              disabled={actionLoading || stats.unlocked === 0}
-              className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition disabled:opacity-40"
+            <div
+              onClick={() => setStatusFilter('Locked')}
+              className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
+                statusFilter === 'Locked' ? 'ring-2 ring-amber-500 border-amber-500' : 'border-[#E2E8F0] hover:border-amber-300'
+              }`}
             >
-              🚀 Start All Unlocked ({stats.unlocked})
-            </button>
+              <div className="text-[10px] uppercase font-bold text-amber-600">Waiting</div>
+              <div className="text-lg font-bold text-amber-600 font-mono mt-0.5">{stats.waiting}</div>
+            </div>
 
-            {selectedCandidateIds.length > 0 && (
-              <>
-                <button
-                  onClick={() => handleControlAction('bulk-unlock', { candidateIds: selectedCandidateIds })}
-                  disabled={actionLoading}
-                  className="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold transition"
-                >
-                  Unlock Selected ({selectedCandidateIds.length})
-                </button>
+            <div
+              onClick={() => setStatusFilter('Verified')}
+              className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
+                statusFilter === 'Verified' ? 'ring-2 ring-indigo-500 border-indigo-500' : 'border-[#E2E8F0] hover:border-indigo-300'
+              }`}
+            >
+              <div className="text-[10px] uppercase font-bold text-indigo-600">Verified</div>
+              <div className="text-lg font-bold text-indigo-600 font-mono mt-0.5">{stats.verified}</div>
+            </div>
 
-                <button
-                  onClick={() => handleControlAction('start-selected', { candidateIds: selectedCandidateIds })}
-                  disabled={actionLoading}
-                  className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition"
-                >
-                  Start Selected ({selectedCandidateIds.length})
-                </button>
+            <div
+              onClick={() => setStatusFilter('Unlocked')}
+              className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
+                statusFilter === 'Unlocked' ? 'ring-2 ring-emerald-500 border-emerald-500' : 'border-[#E2E8F0] hover:border-emerald-300'
+              }`}
+            >
+              <div className="text-[10px] uppercase font-bold text-emerald-600">Unlocked</div>
+              <div className="text-lg font-bold text-emerald-600 font-mono mt-0.5">{stats.unlocked}</div>
+            </div>
 
+            <div
+              onClick={() => setStatusFilter('In Exam')}
+              className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
+                statusFilter === 'In Exam' ? 'ring-2 ring-blue-500 border-blue-500' : 'border-[#E2E8F0] hover:border-blue-300'
+              }`}
+            >
+              <div className="text-[10px] uppercase font-bold text-blue-600">In Exam</div>
+              <div className="text-lg font-bold text-blue-600 font-mono mt-0.5">{stats.inExam}</div>
+            </div>
+
+            <div
+              onClick={() => setStatusFilter('Exam Locked')}
+              className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
+                statusFilter === 'Exam Locked' ? 'ring-2 ring-rose-600 border-rose-600' : 'border-[#E2E8F0] hover:border-rose-300'
+              }`}
+            >
+              <div className="text-[10px] uppercase font-bold text-rose-600">🔒 Locked</div>
+              <div className="text-lg font-bold text-rose-600 font-mono mt-0.5">{stats.examLocked || 0}</div>
+            </div>
+
+            <div
+              onClick={() => setStatusFilter('Submitted')}
+              className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
+                statusFilter === 'Submitted' ? 'ring-2 ring-purple-500 border-purple-500' : 'border-[#E2E8F0] hover:border-purple-300'
+              }`}
+            >
+              <div className="text-[10px] uppercase font-bold text-purple-600">Submitted</div>
+              <div className="text-lg font-bold text-purple-600 font-mono mt-0.5">{stats.submitted}</div>
+            </div>
+
+            <div
+              onClick={() => setStatusFilter('Passed')}
+              className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
+                statusFilter === 'Passed' ? 'ring-2 ring-emerald-600 border-emerald-600' : 'border-[#E2E8F0] hover:border-emerald-300'
+              }`}
+            >
+              <div className="text-[10px] uppercase font-bold text-emerald-700">Passed</div>
+              <div className="text-lg font-bold text-emerald-700 font-mono mt-0.5">{stats.passed}</div>
+            </div>
+
+            <div
+              onClick={() => setStatusFilter('Failed')}
+              className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
+                statusFilter === 'Failed' ? 'ring-2 ring-rose-500 border-rose-500' : 'border-[#E2E8F0] hover:border-rose-300'
+              }`}
+            >
+              <div className="text-[10px] uppercase font-bold text-rose-600">Failed</div>
+              <div className="text-lg font-bold text-rose-600 font-mono mt-0.5">{stats.failed}</div>
+            </div>
+
+            <div
+              onClick={() => setStatusFilter('Violations')}
+              className={`bg-white border rounded-xl p-3 text-center cursor-pointer transition ${
+                statusFilter === 'Violations' ? 'ring-2 ring-rose-600 border-rose-600' : 'border-[#E2E8F0] hover:border-rose-300'
+              }`}
+            >
+              <div className="text-[10px] uppercase font-bold text-rose-600">Violations</div>
+              <div className="text-lg font-bold text-rose-600 font-mono mt-0.5">{stats.securityViolations}</div>
+            </div>
+          </div>
+
+          {/* 3. BULK ACTIONS & SEARCH TOOLBAR */}
+          <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 shadow-sm space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              {/* Search & Filter */}
+              <div className="flex items-center space-x-2 flex-grow max-w-md">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search candidate name, roll no, email..."
+                  className="w-full px-3 py-1.5 border border-[#E2E8F0] rounded-lg text-xs bg-slate-50 focus:ring-1 focus:ring-[#FF9900]"
+                />
+              </div>
+
+              {/* Bulk Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => {
-                    if (confirm(`Remove the ${selectedCandidateIds.length} selected candidate attempt(s)? This will delete their exam attempts.`)) {
-                      handleControlAction('delete-candidates', { candidateIds: selectedCandidateIds });
-                    }
+                    fetchLiveData();
+                    fetchExams();
+                    showToast('Refreshed candidate feed', 'success');
                   }}
                   disabled={actionLoading}
-                  className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition shadow-sm"
+                  className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-300 transition"
+                  title="Manually refresh candidates & exam state"
                 >
-                  🗑️ Delete Selected ({selectedCandidateIds.length})
+                  🔄 Refresh
                 </button>
-              </>
-            )}
 
-            {stats.waiting > 0 && (
-              <button
-                onClick={() => {
-                  if (confirm(`Remove all ${stats.waiting} waiting candidate(s) currently in the lobby?`)) {
-                    handleControlAction('delete-waiting');
-                  }
-                }}
-                disabled={actionLoading}
-                className="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold border border-amber-300 transition"
-              >
-                Clear Waiting ({stats.waiting})
-              </button>
-            )}
+                <button
+                  onClick={() => handleControlAction('unlock-all')}
+                  disabled={actionLoading || (stats.waiting + stats.verified === 0)}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition disabled:opacity-40"
+                >
+                  🔓 Unlock All in Lobby ({stats.waiting + stats.verified})
+                </button>
 
-            {stats.totalCandidates > 0 && (
-              <button
-                onClick={() => {
-                  const input = prompt(`WARNING: This will delete ALL ${stats.totalCandidates} candidate attempt(s) for this exam. Exam and questions will be kept. Type "RESET" to confirm:`);
-                  if (input === 'RESET') {
-                    handleControlAction('delete-all-candidates');
-                  }
-                }}
-                disabled={actionLoading}
-                className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 transition"
-                title="Delete all candidate attempts for this exam"
-              >
-                Reset Candidates
-              </button>
-            )}
+                <button
+                  onClick={() => handleControlAction('start-all')}
+                  disabled={actionLoading || stats.unlocked === 0}
+                  className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition disabled:opacity-40"
+                >
+                  🚀 Start All Unlocked ({stats.unlocked})
+                </button>
 
-            <a
-              href={`/api/admin/exams/export?examId=${encodeURIComponent(selectedExamId)}`}
-              download
-              className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-300 transition"
-            >
-              📥 Export CSV
-            </a>
-          </div>
-        </div>
-      </div>
+                {selectedCandidateIds.length > 0 && (
+                  <>
+                    <button
+                      onClick={() => handleControlAction('bulk-unlock', { candidateIds: selectedCandidateIds })}
+                      disabled={actionLoading}
+                      className="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold transition"
+                    >
+                      Unlock Selected ({selectedCandidateIds.length})
+                    </button>
 
-      {/* 4. CANDIDATES TABLE */}
-      <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-slate-50 border-b border-[#E2E8F0] text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
-              <tr>
-                <th className="p-3 w-8">
-                  <input
-                    type="checkbox"
-                    checked={
-                      filteredCandidates.length > 0 &&
-                      selectedCandidateIds.length === filteredCandidates.length
-                    }
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedCandidateIds(filteredCandidates.map((c) => c.id));
-                      } else {
-                        setSelectedCandidateIds([]);
+                    <button
+                      onClick={() => handleControlAction('start-selected', { candidateIds: selectedCandidateIds })}
+                      disabled={actionLoading}
+                      className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition"
+                    >
+                      Start Selected ({selectedCandidateIds.length})
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        if (confirm(`Remove the ${selectedCandidateIds.length} selected candidate attempt(s)? This will delete their exam attempts.`)) {
+                          handleControlAction('delete-candidates', { candidateIds: selectedCandidateIds });
+                        }
+                      }}
+                      disabled={actionLoading}
+                      className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition shadow-sm"
+                    >
+                      🗑️ Delete Selected ({selectedCandidateIds.length})
+                    </button>
+                  </>
+                )}
+
+                {stats.waiting > 0 && (
+                  <button
+                    onClick={() => {
+                      if (confirm(`Remove all ${stats.waiting} waiting candidate(s) currently in the lobby?`)) {
+                        handleControlAction('delete-waiting');
                       }
                     }}
-                    className="rounded border-slate-300"
-                  />
-                </th>
-                <th className="p-3">Candidate</th>
-                <th className="p-3">Roll / Student ID</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Remaining Time</th>
-                <th className="p-3">Score / Result</th>
-                <th className="p-3">Security Logs</th>
-                <th className="p-3">Submission</th>
-                <th className="p-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#E2E8F0]">
-              {filteredCandidates.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="p-8 text-center text-slate-400">
-                    No candidates found for the selected filter.
-                  </td>
-                </tr>
-              ) : (
-                filteredCandidates.map((candidate) => {
-                  const isSelected = selectedCandidateIds.includes(candidate.id);
-                  const isLocked = candidate.status === 'LOCKED';
-                  const isVerified = candidate.status === 'VERIFIED';
-                  const isUnlocked = candidate.status === 'UNLOCKED';
-                  const isInExam = candidate.status === 'IN_EXAM';
-                  const isExamLocked = candidate.status === 'EXAM_LOCKED';
-                  const isSubmitted = candidate.status === 'SUBMITTED';
-                  const isReviewRequired = candidate.status === 'REVIEW_REQUIRED';
+                    disabled={actionLoading}
+                    className="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold border border-amber-300 transition"
+                  >
+                    Clear Waiting ({stats.waiting})
+                  </button>
+                )}
 
-                  let statusBadgeClass = 'bg-slate-100 text-slate-600 border-slate-200';
-                  if (isLocked) statusBadgeClass = 'bg-amber-50 text-amber-700 border-amber-200 font-bold';
-                  if (isVerified) statusBadgeClass = 'bg-indigo-50 text-indigo-700 border-indigo-200 font-bold';
-                  if (isUnlocked) statusBadgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200 font-bold';
-                  if (isInExam) statusBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200 font-bold animate-pulse';
-                  if (isExamLocked) statusBadgeClass = 'bg-rose-600 text-white border-rose-700 font-bold animate-pulse';
-                  if (isSubmitted) statusBadgeClass = candidate.passed ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-bold' : 'bg-rose-100 text-rose-800 border-rose-300 font-bold';
-                  if (isReviewRequired) statusBadgeClass = 'bg-rose-600 text-white border-rose-700 font-bold';
+                {stats.totalCandidates > 0 && (
+                  <button
+                    onClick={() => {
+                      const input = prompt(`WARNING: This will delete ALL ${stats.totalCandidates} candidate attempt(s) for this exam. Exam and questions will be kept. Type "RESET" to confirm:`);
+                      if (input === 'RESET') {
+                        handleControlAction('delete-all-candidates');
+                      }
+                    }}
+                    disabled={actionLoading}
+                    className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 transition"
+                    title="Delete all candidate attempts for this exam"
+                  >
+                    Reset Candidates
+                  </button>
+                )}
 
-                  return (
-                    <tr key={candidate.id} className="hover:bg-slate-50/80 transition">
-                      <td className="p-3">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedCandidateIds([...selectedCandidateIds, candidate.id]);
-                            } else {
-                              setSelectedCandidateIds(selectedCandidateIds.filter((id) => id !== candidate.id));
-                            }
-                          }}
-                          className="rounded border-slate-300"
-                        />
-                      </td>
-                      <td className="p-3 font-medium text-slate-900">
-                        <div>{candidate.studentName}</div>
-                        <div className="text-[10px] text-slate-400">{candidate.email}</div>
-                      </td>
-                      <td className="p-3 font-mono text-slate-800 font-semibold uppercase">
-                        {candidate.rollNumber}
-                      </td>
-                      <td className="p-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] border ${statusBadgeClass}`}>
-                          {isExamLocked
-                            ? `🔒 LOCKED ${candidate.lockCount ? `(${candidate.lockCount}x)` : ''}`
-                            : candidate.status}
-                        </span>
-                      </td>
-                      <td className="p-3 font-mono font-bold text-slate-700">
-                        {isInExam ? (
-                          <span
-                            className={
-                              candidate.remainingSeconds < 180
-                                ? 'text-rose-600 animate-pulse'
-                                : candidate.remainingSeconds < 600
-                                ? 'text-amber-600'
-                                : 'text-emerald-600'
-                            }
-                          >
-                            ⏱ {formatTime(candidate.remainingSeconds)}
-                          </span>
-                        ) : isExamLocked ? (
-                          <span className="text-rose-600 font-bold">
-                            ⏱ {formatTime(candidate.remainingSeconds)} (PAUSED)
-                          </span>
-                        ) : isSubmitted || isReviewRequired ? (
-                          <span className="text-slate-400 font-normal">Completed</span>
-                        ) : (
-                          <span className="text-slate-400 font-normal">Not Started</span>
-                        )}
-                      </td>
-                      <td className="p-3">
-                        {isSubmitted || isReviewRequired ? (
-                          <div>
-                            <span className={`font-bold font-mono ${candidate.passed ? 'text-emerald-600' : 'text-rose-600'}`}>
-                              {candidate.score} / {candidate.totalMarks} ({candidate.percentage}%)
-                            </span>
-                            <div className="text-[10px]">
-                              {candidate.passed ? (
-                                <span className="text-emerald-700 font-semibold">✓ PASSED</span>
-                              ) : (
-                                <span className="text-rose-600 font-semibold">✕ FAILED</span>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-slate-400">
-                            {candidate.answeredCount || 0} / {candidate.totalQuestions || 0} ans
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-3">
-                        {isExamLocked ? (
-                          <span className="px-2 py-0.5 rounded bg-rose-100 border border-rose-300 text-rose-800 font-bold text-[10px]">
-                            🔒 {candidate.lockReason || 'Interrupted'}
-                          </span>
-                        ) : (candidate.securityViolationsCount || 0) > 0 ? (
-                          <span className="px-2 py-0.5 rounded bg-rose-50 border border-rose-200 text-rose-700 font-bold text-[10px]">
-                            ⚠️ {candidate.securityViolationsCount} violations
-                          </span>
-                        ) : (
-                          <span className="text-emerald-600 text-[10px]">✓ Clean</span>
-                        )}
-                      </td>
-                      <td className="p-3 text-[10px] text-slate-500 uppercase">
-                        {candidate.submissionReason || '—'}
-                      </td>
-                      <td className="p-3 text-right">
-                        <div className="flex items-center justify-end space-x-1.5">
-                          {isLocked && (
-                            <>
-                              <button
-                                onClick={() => handleControlAction('verify', { candidateId: candidate.id })}
-                                className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[11px] font-semibold border border-indigo-200"
-                              >
-                                Verify
-                              </button>
-                              <button
-                                onClick={() => handleControlAction('unlock', { candidateId: candidate.id })}
-                                className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded text-[11px] font-semibold border border-emerald-200"
-                              >
-                                Unlock
-                              </button>
-                            </>
-                          )}
+                <a
+                  href={`/api/admin/exams/export?examId=${encodeURIComponent(selectedExamId)}`}
+                  download
+                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-300 transition"
+                >
+                  📥 Export CSV
+                </a>
+              </div>
+            </div>
+          </div>
 
-                          {isVerified && (
-                            <button
-                              onClick={() => handleControlAction('unlock', { candidateId: candidate.id })}
-                              className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-semibold"
-                            >
-                              Unlock
-                            </button>
-                          )}
-
-                          {isUnlocked && (
-                            <>
-                              <button
-                                onClick={() => handleControlAction('start', { candidateId: candidate.id })}
-                                className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[11px] font-semibold"
-                              >
-                                Start
-                              </button>
-                              <button
-                                onClick={() => handleControlAction('lock', { candidateId: candidate.id })}
-                                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-semibold border border-slate-300"
-                              >
-                                Lock
-                              </button>
-                            </>
-                          )}
-
-                          {isExamLocked && (
-                            <>
-                              <button
-                                onClick={() => {
-                                  const reason = prompt(
-                                    'Enter reason to unlock candidate session:',
-                                    'Fullscreen accidentally exited'
-                                  );
-                                  if (reason !== null) {
-                                    handleControlAction('unlock-locked-candidate', {
-                                      candidateId: candidate.id,
-                                      notes: reason
-                                    });
-                                  }
-                                }}
-                                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-bold shadow-sm"
-                                title="Unlock and resume candidate exam session"
-                              >
-                                🔓 Unlock
-                              </button>
-                              <button
-                                onClick={() => handleControlAction('force-submit', { candidateId: candidate.id })}
-                                className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-[11px] font-semibold"
-                              >
-                                Force Submit
-                              </button>
-                            </>
-                          )}
-
-                          {isInExam && (
-                            <>
-                              <button
-                                onClick={() => {
-                                  setIsExtendingTimeId(candidate.id);
-                                }}
-                                className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded text-[11px] font-semibold border border-amber-200"
-                              >
-                                +Time
-                              </button>
-                              <button
-                                onClick={() => {
-                                  const reason = prompt('Reason to lock candidate exam session:', 'Proctor Manual Lock');
-                                  if (reason !== null) {
-                                    handleControlAction('manual-lock-candidate', {
-                                      candidateId: candidate.id,
-                                      notes: reason
-                                    });
-                                  }
-                                }}
-                                className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded text-[11px] font-semibold border border-rose-200"
-                                title="Manually lock candidate session"
-                              >
-                                🔒 Lock
-                              </button>
-                              <button
-                                onClick={() => handleControlAction('force-submit', { candidateId: candidate.id })}
-                                className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-[11px] font-semibold"
-                              >
-                                Force Submit
-                              </button>
-                            </>
-                          )}
-
-                          {(isSubmitted || isReviewRequired) && (
-                            <button
-                              onClick={() => {
-                                const note = prompt('Enter selection notes (optional):', 'Selected & Qualified by Proctor');
-                                if (note !== null) {
-                                  handleControlAction('mark-selected', { candidateId: candidate.id, notes: note });
-                                }
-                              }}
-                              className="px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded text-[11px] font-semibold border border-purple-200"
-                              title="Mark candidate as Selected/Qualified and send selection email"
-                            >
-                              Select & Notify
-                            </button>
-                          )}
-
-
-                          <button
-                            onClick={() => handleInspectAttempt(candidate.id)}
-                            className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-semibold border border-slate-300"
-                          >
-                            Details
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setCandidateToDelete({
-                                id: candidate.id,
-                                studentName: candidate.studentName,
-                                rollNumber: candidate.rollNumber,
-                                status: candidate.status
-                              });
-                              setDeleteConfirmText('');
-                            }}
-                            className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded text-[11px] font-semibold border border-rose-200 transition"
-                            title="Remove Candidate Record & Attempt"
-                          >
-                            🗑️ Delete
-                          </button>
-                        </div>
+          {/* 4. CANDIDATES TABLE */}
+          <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-700">
+                <thead className="bg-slate-50 border-b border-[#E2E8F0] text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+                  <tr>
+                    <th className="p-3 w-8">
+                      <input
+                        type="checkbox"
+                        checked={
+                          filteredCandidates.length > 0 &&
+                          selectedCandidateIds.length === filteredCandidates.length
+                        }
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedCandidateIds(filteredCandidates.map((c) => c.id));
+                          } else {
+                            setSelectedCandidateIds([]);
+                          }
+                        }}
+                        className="rounded border-slate-300"
+                      />
+                    </th>
+                    <th className="p-3">Candidate</th>
+                    <th className="p-3">Roll / Student ID</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3">Remaining Time</th>
+                    <th className="p-3">Score / Result</th>
+                    <th className="p-3">Security Logs</th>
+                    <th className="p-3">Submission</th>
+                    <th className="p-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E2E8F0]">
+                  {filteredCandidates.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="p-8 text-center text-slate-400">
+                        No candidates found for the selected filter.
                       </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                  ) : (
+                    filteredCandidates.map((candidate) => {
+                      const isSelected = selectedCandidateIds.includes(candidate.id);
+                      const isLocked = candidate.status === 'LOCKED';
+                      const isVerified = candidate.status === 'VERIFIED';
+                      const isUnlocked = candidate.status === 'UNLOCKED';
+                      const isInExam = candidate.status === 'IN_EXAM';
+                      const isExamLocked = candidate.status === 'EXAM_LOCKED';
+                      const isSubmitted = candidate.status === 'SUBMITTED';
+                      const isReviewRequired = candidate.status === 'REVIEW_REQUIRED';
+
+                      let statusBadgeClass = 'bg-slate-100 text-slate-600 border-slate-200';
+                      if (isLocked) statusBadgeClass = 'bg-amber-50 text-amber-700 border-amber-200 font-bold';
+                      if (isVerified) statusBadgeClass = 'bg-indigo-50 text-indigo-700 border-indigo-200 font-bold';
+                      if (isUnlocked) statusBadgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200 font-bold';
+                      if (isInExam) statusBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200 font-bold animate-pulse';
+                      if (isExamLocked) statusBadgeClass = 'bg-rose-600 text-white border-rose-700 font-bold animate-pulse';
+                      if (isSubmitted) statusBadgeClass = candidate.passed ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-bold' : 'bg-rose-100 text-rose-800 border-rose-300 font-bold';
+                      if (isReviewRequired) statusBadgeClass = 'bg-rose-600 text-white border-rose-700 font-bold';
+
+                      return (
+                        <tr key={candidate.id} className="hover:bg-slate-50/80 transition">
+                          <td className="p-3">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedCandidateIds([...selectedCandidateIds, candidate.id]);
+                                } else {
+                                  setSelectedCandidateIds(selectedCandidateIds.filter((id) => id !== candidate.id));
+                                }
+                              }}
+                              className="rounded border-slate-300"
+                            />
+                          </td>
+                          <td className="p-3 font-medium text-slate-900">
+                            <div>{candidate.studentName}</div>
+                            <div className="text-[10px] text-slate-400">{candidate.email}</div>
+                          </td>
+                          <td className="p-3 font-mono text-slate-800 font-semibold uppercase">
+                            {candidate.rollNumber}
+                          </td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] border ${statusBadgeClass}`}>
+                              {isExamLocked
+                                ? `🔒 LOCKED ${candidate.lockCount ? `(${candidate.lockCount}x)` : ''}`
+                                : candidate.status}
+                            </span>
+                          </td>
+                          <td className="p-3 font-mono font-bold text-slate-700">
+                            {isInExam ? (
+                              <span
+                                className={
+                                  candidate.remainingSeconds < 180
+                                    ? 'text-rose-600 animate-pulse'
+                                    : candidate.remainingSeconds < 600
+                                    ? 'text-amber-600'
+                                    : 'text-emerald-600'
+                                }
+                              >
+                                ⏱ {formatTime(candidate.remainingSeconds)}
+                              </span>
+                            ) : isExamLocked ? (
+                              <span className="text-rose-600 font-bold">
+                                ⏱ {formatTime(candidate.remainingSeconds)} (PAUSED)
+                              </span>
+                            ) : isSubmitted || isReviewRequired ? (
+                              <span className="text-slate-400 font-normal">Completed</span>
+                            ) : (
+                              <span className="text-slate-400 font-normal">Not Started</span>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            {isSubmitted || isReviewRequired ? (
+                              <div>
+                                <span className={`font-bold font-mono ${candidate.passed ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                  {candidate.score} / {candidate.totalMarks} ({candidate.percentage}%)
+                                </span>
+                                <div className="text-[10px]">
+                                  {candidate.passed ? (
+                                    <span className="text-emerald-700 font-semibold">✓ PASSED</span>
+                                  ) : (
+                                    <span className="text-rose-600 font-semibold">✕ FAILED</span>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400">
+                                {candidate.answeredCount || 0} / {candidate.totalQuestions || 0} ans
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            {isExamLocked ? (
+                              <span className="px-2 py-0.5 rounded bg-rose-100 border border-rose-300 text-rose-800 font-bold text-[10px]">
+                                🔒 {candidate.lockReason || 'Interrupted'}
+                              </span>
+                            ) : (candidate.securityViolationsCount || 0) > 0 ? (
+                              <span className="px-2 py-0.5 rounded bg-rose-50 border border-rose-200 text-rose-700 font-bold text-[10px]">
+                                ⚠️ {candidate.securityViolationsCount} violations
+                              </span>
+                            ) : (
+                              <span className="text-emerald-600 text-[10px]">✓ Clean</span>
+                            )}
+                          </td>
+                          <td className="p-3 text-[10px] text-slate-500 uppercase">
+                            {candidate.submissionReason || '—'}
+                          </td>
+                          <td className="p-3 text-right">
+                            <div className="flex items-center justify-end space-x-1.5">
+                              {isLocked && (
+                                <>
+                                  <button
+                                    onClick={() => handleControlAction('verify', { candidateId: candidate.id })}
+                                    className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[11px] font-semibold border border-indigo-200"
+                                  >
+                                    Verify
+                                  </button>
+                                  <button
+                                    onClick={() => handleControlAction('unlock', { candidateId: candidate.id })}
+                                    className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded text-[11px] font-semibold border border-emerald-200"
+                                  >
+                                    Unlock
+                                  </button>
+                                </>
+                              )}
+
+                              {isVerified && (
+                                <button
+                                  onClick={() => handleControlAction('unlock', { candidateId: candidate.id })}
+                                  className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-semibold"
+                                >
+                                  Unlock
+                                </button>
+                              )}
+
+                              {isUnlocked && (
+                                <>
+                                  <button
+                                    onClick={() => handleControlAction('start', { candidateId: candidate.id })}
+                                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[11px] font-semibold"
+                                  >
+                                    Start
+                                  </button>
+                                  <button
+                                    onClick={() => handleControlAction('lock', { candidateId: candidate.id })}
+                                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-semibold border border-slate-300"
+                                  >
+                                    Lock
+                                  </button>
+                                </>
+                              )}
+
+                              {isExamLocked && (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      const reason = prompt(
+                                        'Enter reason to unlock candidate session:',
+                                        'Fullscreen accidentally exited'
+                                      );
+                                      if (reason !== null) {
+                                        handleControlAction('unlock-locked-candidate', {
+                                          candidateId: candidate.id,
+                                          notes: reason
+                                        });
+                                      }
+                                    }}
+                                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-bold shadow-sm"
+                                    title="Unlock and resume candidate exam session"
+                                  >
+                                    🔓 Unlock
+                                  </button>
+                                  <button
+                                    onClick={() => handleControlAction('force-submit', { candidateId: candidate.id })}
+                                    className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-[11px] font-semibold"
+                                  >
+                                    Force Submit
+                                  </button>
+                                </>
+                              )}
+
+                              {isInExam && (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setIsExtendingTimeId(candidate.id);
+                                    }}
+                                    className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded text-[11px] font-semibold border border-amber-200"
+                                  >
+                                    +Time
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      const reason = prompt('Reason to lock candidate exam session:', 'Proctor Manual Lock');
+                                      if (reason !== null) {
+                                        handleControlAction('manual-lock-candidate', {
+                                          candidateId: candidate.id,
+                                          notes: reason
+                                        });
+                                      }
+                                    }}
+                                    className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded text-[11px] font-semibold border border-rose-200"
+                                    title="Manually lock candidate session"
+                                  >
+                                    🔒 Lock
+                                  </button>
+                                  <button
+                                    onClick={() => handleControlAction('force-submit', { candidateId: candidate.id })}
+                                    className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-[11px] font-semibold"
+                                  >
+                                    Force Submit
+                                  </button>
+                                </>
+                              )}
+
+                              {(isSubmitted || isReviewRequired) && (
+                                <button
+                                  onClick={() => {
+                                    const note = prompt('Enter selection notes (optional):', 'Selected & Qualified by Proctor');
+                                    if (note !== null) {
+                                      handleControlAction('mark-selected', { candidateId: candidate.id, notes: note });
+                                    }
+                                  }}
+                                  className="px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded text-[11px] font-semibold border border-purple-200"
+                                  title="Mark candidate as Selected/Qualified and send selection email"
+                                >
+                                  Select & Notify
+                                </button>
+                              )}
+
+                              <button
+                                onClick={() => handleInspectAttempt(candidate.id)}
+                                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-semibold border border-slate-300"
+                              >
+                                Details
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  setCandidateToDelete({
+                                    id: candidate.id,
+                                    studentName: candidate.studentName,
+                                    rollNumber: candidate.rollNumber,
+                                    status: candidate.status
+                                  });
+                                  setDeleteConfirmText('');
+                                }}
+                                className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded text-[11px] font-semibold border border-rose-200 transition"
+                                title="Remove Candidate Record & Attempt"
+                              >
+                                🗑️ Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      ) : (
+        /* CANDIDATE CREDENTIALS & ACCESS VIEW */
+        <div className="space-y-4">
+          {/* Credentials Stats Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div
+              onClick={() => setCredentialsFilter('All')}
+              className={`bg-white border rounded-xl p-3.5 text-center cursor-pointer transition ${
+                credentialsFilter === 'All' ? 'ring-2 ring-[#FF9900] border-[#FF9900]' : 'border-[#E2E8F0] hover:border-slate-300'
+              }`}
+            >
+              <div className="text-[10px] uppercase font-bold text-slate-400">Total Registered</div>
+              <div className="text-xl font-bold text-slate-900 font-mono mt-0.5">
+                {candidateCredentialsStats?.totalCandidates ?? candidateCredentials.length}
+              </div>
+            </div>
+
+            <div
+              onClick={() => setCredentialsFilter('Active')}
+              className={`bg-white border rounded-xl p-3.5 text-center cursor-pointer transition ${
+                credentialsFilter === 'Active' ? 'ring-2 ring-emerald-500 border-emerald-500' : 'border-[#E2E8F0] hover:border-emerald-300'
+              }`}
+            >
+              <div className="text-[10px] uppercase font-bold text-emerald-600">Active Access</div>
+              <div className="text-xl font-bold text-emerald-600 font-mono mt-0.5">
+                {candidateCredentialsStats?.activeCount ?? candidateCredentials.filter((c) => c.status === 'Active').length}
+              </div>
+            </div>
+
+            <div
+              onClick={() => setCredentialsFilter('Revoked')}
+              className={`bg-white border rounded-xl p-3.5 text-center cursor-pointer transition ${
+                credentialsFilter === 'Revoked' ? 'ring-2 ring-rose-500 border-rose-500' : 'border-[#E2E8F0] hover:border-rose-300'
+              }`}
+            >
+              <div className="text-[10px] uppercase font-bold text-rose-600">Revoked / Inactive</div>
+              <div className="text-xl font-bold text-rose-600 font-mono mt-0.5">
+                {candidateCredentialsStats?.revokedCount ?? candidateCredentials.filter((c) => c.status === 'Revoked').length}
+              </div>
+            </div>
+
+            <div
+              onClick={() => setCredentialsFilter('Sent')}
+              className={`bg-white border rounded-xl p-3.5 text-center cursor-pointer transition ${
+                credentialsFilter === 'Sent' ? 'ring-2 ring-indigo-500 border-indigo-500' : 'border-[#E2E8F0] hover:border-indigo-300'
+              }`}
+            >
+              <div className="text-[10px] uppercase font-bold text-indigo-600">Credentials Emailed</div>
+              <div className="text-xl font-bold text-indigo-600 font-mono mt-0.5">
+                {candidateCredentialsStats?.emailSentCount ?? candidateCredentials.filter((c) => c.emailSentStatus === 'Sent').length}
+              </div>
+            </div>
+
+            <div
+              onClick={() => setCredentialsFilter('Pending')}
+              className={`bg-white border rounded-xl p-3.5 text-center cursor-pointer transition ${
+                credentialsFilter === 'Pending' ? 'ring-2 ring-amber-500 border-amber-500' : 'border-[#E2E8F0] hover:border-amber-300'
+              }`}
+            >
+              <div className="text-[10px] uppercase font-bold text-amber-600">Pending Email</div>
+              <div className="text-xl font-bold text-amber-600 font-mono mt-0.5">
+                {candidateCredentialsStats?.emailPendingCount ?? candidateCredentials.filter((c) => c.emailSentStatus !== 'Sent').length}
+              </div>
+            </div>
+          </div>
+
+          {/* Search & Actions Toolbar */}
+          <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 shadow-sm space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center space-x-2 flex-grow max-w-md">
+                <input
+                  type="text"
+                  value={credentialsSearch}
+                  onChange={(e) => setCredentialsSearch(e.target.value)}
+                  placeholder="Search candidate name, email, roll number..."
+                  className="w-full px-3 py-1.5 border border-[#E2E8F0] rounded-lg text-xs bg-slate-50 focus:ring-1 focus:ring-[#FF9900]"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => {
+                    fetchCandidateCredentials();
+                    showToast('Candidate credentials refreshed', 'success');
+                  }}
+                  disabled={credentialsLoading}
+                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-300 transition cursor-pointer"
+                >
+                  🔄 {credentialsLoading ? 'Loading...' : 'Refresh'}
+                </button>
+
+                <button
+                  onClick={handleSendAllPendingCredentials}
+                  disabled={actionLoading || candidateCredentials.filter((c) => c.emailSentStatus !== 'Sent').length === 0}
+                  className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition disabled:opacity-40 cursor-pointer shadow-sm"
+                >
+                  ✉️ Email All Pending ({candidateCredentials.filter((c) => c.emailSentStatus !== 'Sent').length})
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Credentials Table */}
+          <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-700">
+                <thead className="bg-slate-50 border-b border-[#E2E8F0] text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+                  <tr>
+                    <th className="p-3">Candidate</th>
+                    <th className="p-3">Roll Number</th>
+                    <th className="p-3">University Email (User ID)</th>
+                    <th className="p-3">Generated Password</th>
+                    <th className="p-3">Account Status</th>
+                    <th className="p-3">Email Status</th>
+                    <th className="p-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E2E8F0]">
+                  {candidateCredentials
+                    .filter((cand) => {
+                      const q = credentialsSearch.toLowerCase();
+                      const matches =
+                        cand.studentName?.toLowerCase().includes(q) ||
+                        cand.email?.toLowerCase().includes(q) ||
+                        cand.rollNumber?.toLowerCase().includes(q);
+                      if (!matches) return false;
+
+                      if (credentialsFilter === 'All') return true;
+                      if (credentialsFilter === 'Active') return cand.status === 'Active';
+                      if (credentialsFilter === 'Revoked') return cand.status === 'Revoked';
+                      if (credentialsFilter === 'Sent') return cand.emailSentStatus === 'Sent';
+                      if (credentialsFilter === 'Pending') return cand.emailSentStatus !== 'Sent';
+                      return true;
+                    })
+                    .map((cand) => {
+                      const isRevealed = !!revealedPasswords[cand.id];
+                      const isActive = cand.status === 'Active';
+                      const isEmailSent = cand.emailSentStatus === 'Sent';
+
+                      return (
+                        <tr key={cand.id} className="hover:bg-slate-50/80 transition">
+                          <td className="p-3">
+                            <div className="font-bold text-slate-900">{cand.studentName}</div>
+                            <div className="text-[10px] text-slate-400 font-mono">ID: {cand.id.substring(0, 16)}...</div>
+                          </td>
+                          <td className="p-3 font-mono font-bold text-slate-800 uppercase">
+                            {cand.rollNumber}
+                          </td>
+                          <td className="p-3 font-medium text-slate-900">
+                            {cand.email}
+                          </td>
+                          <td className="p-3">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-mono font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                                {isRevealed ? cand.passwordPlain || '••••••••••••' : '••••••••••••'}
+                              </span>
+                              <button
+                                onClick={() => {
+                                  setRevealedPasswords({
+                                    ...revealedPasswords,
+                                    [cand.id]: !isRevealed
+                                  });
+                                }}
+                                className="p-1 text-slate-500 hover:text-slate-800 transition cursor-pointer"
+                                title={isRevealed ? 'Hide Password' : 'Show Password'}
+                              >
+                                {isRevealed ? '🙈' : '👁️'}
+                              </button>
+                              {cand.passwordPlain && (
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(cand.passwordPlain);
+                                    showToast(`Password for ${cand.studentName} copied!`, 'success');
+                                  }}
+                                  className="px-1.5 py-0.5 text-[10px] bg-slate-100 hover:bg-slate-200 font-semibold rounded text-slate-700 border border-slate-300 transition cursor-pointer"
+                                  title="Copy candidate password"
+                                >
+                                  📋 Copy
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                isActive
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  : 'bg-rose-50 text-rose-700 border-rose-200'
+                              }`}
+                            >
+                              {isActive ? '● Active' : '✕ Revoked'}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                isEmailSent
+                                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                                  : 'bg-amber-50 text-amber-700 border-amber-200'
+                              }`}
+                            >
+                              {isEmailSent ? '✉️ Sent' : '⏳ Pending'}
+                            </span>
+                            {cand.emailSentAt && (
+                              <div className="text-[9px] text-slate-400 mt-0.5">
+                                {new Date(cand.emailSentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-3 text-right">
+                            <div className="flex items-center justify-end space-x-1.5">
+                              <button
+                                onClick={() => handleSendCandidateCredentials(cand.id)}
+                                disabled={actionLoading}
+                                className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[11px] font-semibold border border-indigo-200 transition cursor-pointer"
+                                title="Send credentials email via Resend"
+                              >
+                                ✉️ Email
+                              </button>
+
+                              <button
+                                onClick={() => handleRegenerateCandidatePassword(cand.id)}
+                                disabled={actionLoading}
+                                className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded text-[11px] font-semibold border border-amber-200 transition cursor-pointer"
+                                title="Regenerate password and send email"
+                              >
+                                🔄 Reset Pass
+                              </button>
+
+                              <button
+                                onClick={() => handleToggleRevokeCandidate(cand.id, cand.status)}
+                                disabled={actionLoading}
+                                className={`px-2 py-1 rounded text-[11px] font-semibold border transition cursor-pointer ${
+                                  isActive
+                                    ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
+                                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+                                }`}
+                                title={isActive ? 'Revoke login access' : 'Activate login access'}
+                              >
+                                {isActive ? '🔒 Revoke' : '🔓 Activate'}
+                              </button>
+
+                              <button
+                                onClick={() => handleDeleteCandidateRecord(cand.id, cand.studentName)}
+                                disabled={actionLoading}
+                                className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded text-[11px] font-semibold border border-rose-200 transition cursor-pointer"
+                                title="Delete candidate credential record"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+
+                  {candidateCredentials.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="p-8 text-center text-slate-400 space-y-2">
+                        <div className="text-2xl">🔑</div>
+                        <p className="font-semibold text-slate-600">No candidate credentials provisioned yet for this exam.</p>
+                        <p className="text-xs text-slate-400">Click &ldquo;Add Candidate&rdquo; or &ldquo;Auto-Provision from Registrations&rdquo; to generate login credentials.</p>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* DELETE CANDIDATE CONFIRMATION MODAL */}
       {candidateToDelete && (
@@ -1923,6 +2521,126 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
                 })}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ADD CANDIDATE MODAL */}
+      {isAddCandidateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 my-8 border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 font-display flex items-center gap-2">
+                  <span>➕</span> Add Exam Candidate & Provision Credentials
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Generate secure candidate credentials for {currentExam?.title || 'Selected Exam'}.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsAddCandidateModalOpen(false)}
+                className="text-slate-400 hover:text-slate-700 text-lg font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateCandidate} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Full Student Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Alex Sharma"
+                  value={newCandidate.studentName}
+                  onChange={(e) => setNewCandidate({ ...newCandidate, studentName: e.target.value })}
+                  className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 focus:ring-1 focus:ring-[#FF9900]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    University Email (User ID) <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="student@cumail.in"
+                    value={newCandidate.email}
+                    onChange={(e) => setNewCandidate({ ...newCandidate, email: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 focus:ring-1 focus:ring-[#FF9900]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Roll / Student ID <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 21BCS1001"
+                    value={newCandidate.rollNumber}
+                    onChange={(e) => setNewCandidate({ ...newCandidate, rollNumber: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 text-xs font-mono uppercase text-slate-900 focus:ring-1 focus:ring-[#FF9900]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Custom Password / Access Token <span className="text-slate-400 font-normal">(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Leave blank for auto-generated AWS-XXXX-XXXX"
+                  value={newCandidate.customPassword}
+                  onChange={(e) => setNewCandidate({ ...newCandidate, customPassword: e.target.value })}
+                  className="w-full border border-slate-300 rounded-lg p-2.5 text-xs font-mono text-slate-900 focus:ring-1 focus:ring-[#FF9900]"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  If left blank, a cryptographically secure token formatted as <code className="bg-slate-100 px-1 py-0.5 rounded font-mono">AWS-XXXX-XXXX</code> will be generated automatically.
+                </p>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newCandidate.sendEmailNow}
+                    onChange={(e) => setNewCandidate({ ...newCandidate, sendEmailNow: e.target.checked })}
+                    className="rounded border-slate-300 text-[#FF9900] focus:ring-[#FF9900]"
+                  />
+                  <span className="text-xs font-semibold text-slate-800">
+                    Send Credentials Email to candidate immediately via Resend
+                  </span>
+                </label>
+                <p className="text-[11px] text-slate-500 ml-5 mt-0.5">
+                  Sends an official email with User ID (registered email), Generated Password, Exam Code, and Direct Candidate Portal link.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setIsAddCandidateModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="px-5 py-2 bg-[#FF9900] hover:bg-[#E08800] disabled:opacity-50 text-white font-bold rounded-lg shadow-sm transition cursor-pointer"
+                >
+                  {actionLoading ? 'Provisioning...' : 'Provision Candidate & Password'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

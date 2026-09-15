@@ -4553,8 +4553,28 @@ export default function AdminDashboard() {
                   <p className="text-slate-650 leading-relaxed font-sans bg-slate-50 p-3 rounded border border-slate-100 whitespace-pre-wrap">{viewItem.additionalInformation || 'No additional information provided.'}</p>
                 </div>
                 <div className="space-y-2 rounded border border-slate-200 bg-slate-50 p-3">
-                  <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Resume</span>
-                  {viewItem.resumeUrl ? (
+                  <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Introduction Video</span>
+                  {viewItem.videoUrl ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <a
+                        href={viewItem.videoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded bg-brand-navy px-3 py-1.5 text-[11px] font-bold text-white hover:bg-slate-800 transition-colors"
+                      >
+                        <span>Open Google Drive Video</span>
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    </div>
+                  ) : (
+                    <p className="text-slate-600 text-xs">Not provided</p>
+                  )}
+                </div>
+                {viewItem.resumeUrl ? (
+                  <div className="space-y-2 rounded border border-slate-200 bg-slate-50 p-3">
+                    <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Resume</span>
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
@@ -4571,10 +4591,8 @@ export default function AdminDashboard() {
                         Download Resume
                       </button>
                     </div>
-                  ) : (
-                    <p className="text-slate-600">No resume uploaded</p>
-                  )}
-                </div>
+                  </div>
+                ) : null}
                 <div className="space-y-1">
                   <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Admin Notes</span>
                   <textarea

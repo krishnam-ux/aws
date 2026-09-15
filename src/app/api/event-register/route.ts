@@ -162,6 +162,36 @@ export async function POST(request: Request) {
       console.error('Non-blocking error dispatching event registration email:', emailErr);
     }
 
+    // Automatic Exam Candidate Credential Provisioning:
+    // If the registered event is an assessment/exam or linked to an exam, auto-generate candidate credentials
+    try {
+      const allExams = await db.exams.getAll();
+      if (allExams.length > 0) {
+        const linkedExam = allExams.find(
+          (ex: any) =>
+            ex.id === event.id ||
+            ex.title?.toLowerCase().trim() === event.title?.toLowerCase().trim() ||
+            ex.examCode?.toLowerCase().trim() === event.id?.toLowerCase().trim() ||
+            event.category === 'Exam' ||
+            event.category === 'Certification' ||
+            event.title?.toLowerCase().includes('exam') ||
+            event.title?.toLowerCase().includes('certification')
+        ) || allExams[0];
+
+        if (linkedExam) {
+          const { provisionExamCandidate } = await import('@/lib/exam');
+          await provisionExamCandidate({
+            examId: linkedExam.id,
+            studentName: fullName,
+            rollNumber: studentId || `CU-${Date.now().toString().slice(-6)}`,
+            email
+          });
+        }
+      }
+    } catch (candErr) {
+      console.error('Non-blocking candidate credential provisioning error:', candErr);
+    }
+
     return NextResponse.json({
       success: true,
       registrationId: regId,

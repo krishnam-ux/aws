@@ -388,6 +388,7 @@ async function ensureCareerApplicationsTable() {
         graduation_year VARCHAR(50),
         student_id VARCHAR(255),
         resume_url TEXT,
+        video_url TEXT,
         linkedin VARCHAR(255),
         github VARCHAR(255),
         portfolio VARCHAR(255),
@@ -403,6 +404,7 @@ async function ensureCareerApplicationsTable() {
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS video_url TEXT`;
     await sql`CREATE INDEX IF NOT EXISTS idx_career_applications_opportunity_id ON career_applications(opportunity_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_career_applications_email ON career_applications(email)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_career_applications_status ON career_applications(status)`;
@@ -1297,6 +1299,19 @@ export const db = {
       return await readJsonFile<any[]>('event_registrations.json', []);
     },
 
+    getById: async (id: string): Promise<any | null> => {
+      if (!id) return null;
+      const list = await db.eventRegistrations.getAll();
+      return list.find((r: any) => r.id === id) || null;
+    },
+
+    getByEmail: async (email: string): Promise<any[]> => {
+      if (!email) return [];
+      const clean = String(email).trim().toLowerCase();
+      const list = await db.eventRegistrations.getAll();
+      return list.filter((r: any) => String(r.email || '').trim().toLowerCase() === clean);
+    },
+
     insertOne: async (reg: any): Promise<void> => {
       invalidateMemoryCache('event_registrations.json');
       if (sql) {
@@ -2020,6 +2035,7 @@ export const db = {
           graduationYear: r.graduation_year || '',
           studentId: r.student_id || '',
           resumeUrl: r.resume_url || '',
+          videoUrl: r.video_url || r.videoUrl || '',
           linkedin: r.linkedin || '',
           github: r.github || '',
           portfolio: r.portfolio || '',
@@ -2050,11 +2066,11 @@ export const db = {
         await sql`
           INSERT INTO career_applications (
             id, opportunity_id, name, email, phone, university, program, graduation_year, student_id,
-            resume_url, linkedin, github, portfolio, skills, experience, motivation, cover_letter,
+            resume_url, video_url, linkedin, github, portfolio, skills, experience, motivation, cover_letter,
             additional_information, consent, status, admin_notes, created_at, updated_at
           ) VALUES (
             ${application.id}, ${application.opportunityId}, ${application.name}, ${application.email}, ${application.phone || ''}, ${application.university || ''}, ${application.program || ''}, ${application.graduationYear || ''}, ${application.studentId || ''},
-            ${application.resumeUrl || ''}, ${application.linkedin || ''}, ${application.github || ''}, ${application.portfolio || ''}, ${application.skills || ''}, ${application.experience || ''}, ${application.motivation || ''}, ${application.coverLetter || ''}, ${application.additionalInformation || ''},
+            ${application.resumeUrl || ''}, ${application.videoUrl || ''}, ${application.linkedin || ''}, ${application.github || ''}, ${application.portfolio || ''}, ${application.skills || ''}, ${application.experience || ''}, ${application.motivation || ''}, ${application.coverLetter || ''}, ${application.additionalInformation || ''},
             ${Boolean(application.consent)}, ${application.status || 'New'}, ${application.adminNotes || ''}, ${application.createdAt || new Date().toISOString()}, ${application.updatedAt || new Date().toISOString()}
           )
         `;
@@ -2356,6 +2372,73 @@ export const db = {
     saveAll: async (data: any[]): Promise<void> => {
       return withCollectionLock('exam_audit_logs.json', async () => {
         await writeJsonFile('exam_audit_logs.json', data);
+      });
+    }
+  },
+  examCandidates: {
+    getAll: async (): Promise<any[]> => {
+      return await readJsonFile<any[]>('exam_candidates.json', []);
+    },
+    getById: async (id: string): Promise<any | null> => {
+      if (!id) return null;
+      const candidates = await db.examCandidates.getAll();
+      return candidates.find((c: any) => c.id === id) || null;
+    },
+    getByExamId: async (examId: string): Promise<any[]> => {
+      if (!examId) return [];
+      const candidates = await db.examCandidates.getAll();
+      return candidates.filter((c: any) => c.examId === examId);
+    },
+    getByEmail: async (email: string): Promise<any[]> => {
+      if (!email) return [];
+      const clean = email.trim().toLowerCase();
+      const candidates = await db.examCandidates.getAll();
+      return candidates.filter((c: any) => c.email?.toLowerCase() === clean);
+    },
+    getByEmailAndExam: async (email: string, examId: string): Promise<any | null> => {
+      if (!email || !examId) return null;
+      const clean = email.trim().toLowerCase();
+      const candidates = await db.examCandidates.getAll();
+      return candidates.find((c: any) => c.email?.toLowerCase() === clean && c.examId === examId) || null;
+    },
+    insertOne: async (candidate: any): Promise<void> => {
+      return withCollectionLock('exam_candidates.json', async () => {
+        const candidates = await db.examCandidates.getAll();
+        candidates.unshift(candidate);
+        await writeJsonFile('exam_candidates.json', candidates);
+      });
+    },
+    updateOne: async (id: string, fields: Partial<any>): Promise<any | null> => {
+      return withCollectionLock('exam_candidates.json', async () => {
+        const candidates = await db.examCandidates.getAll();
+        const idx = candidates.findIndex((c: any) => c.id === id);
+        if (idx !== -1) {
+          candidates[idx] = { ...candidates[idx], ...fields, updatedAt: new Date().toISOString() };
+          await writeJsonFile('exam_candidates.json', candidates);
+          return candidates[idx];
+        }
+        return null;
+      });
+    },
+    deleteById: async (id: string): Promise<void> => {
+      return withCollectionLock('exam_candidates.json', async () => {
+        let candidates = await db.examCandidates.getAll();
+        candidates = candidates.filter((c: any) => c.id !== id);
+        await writeJsonFile('exam_candidates.json', candidates);
+      });
+    },
+    deleteByExamId: async (examId: string): Promise<number> => {
+      return withCollectionLock('exam_candidates.json', async () => {
+        let candidates = await db.examCandidates.getAll();
+        const before = candidates.length;
+        candidates = candidates.filter((c: any) => c.examId !== examId);
+        await writeJsonFile('exam_candidates.json', candidates);
+        return before - candidates.length;
+      });
+    },
+    saveAll: async (data: any[]): Promise<void> => {
+      return withCollectionLock('exam_candidates.json', async () => {
+        await writeJsonFile('exam_candidates.json', data);
       });
     }
   },

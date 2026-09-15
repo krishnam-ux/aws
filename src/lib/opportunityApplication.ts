@@ -60,3 +60,31 @@ export function hasDuplicateOpportunityApplication(
     return normalizeEmail(application.email) === normalizedEmail;
   });
 }
+
+export function isValidGoogleDriveUrl(value?: string | null): boolean {
+  if (!value || typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+
+  try {
+    const withProto = trimmed.startsWith('http://') || trimmed.startsWith('https://')
+      ? trimmed
+      : `https://${trimmed}`;
+    const parsed = new URL(withProto);
+
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    if (host !== 'drive.google.com' && host !== 'docs.google.com') {
+      return false;
+    }
+
+    const path = parsed.pathname.trim();
+    if ((path === '' || path === '/') && !parsed.search) {
+      return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
