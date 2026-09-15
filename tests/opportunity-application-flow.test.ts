@@ -239,3 +239,27 @@ test('historical applications with resume and github are preserved and returned 
   await db.careerApplications.deleteOne(historicalId);
 });
 
+test('opportunity benefits are dynamically loaded from data and contain all 10 expected benefits', async () => {
+  const careers = await db.careers.getAll();
+  assert.ok(careers.length > 0, 'Opportunities must exist');
+  const opportunity = careers.find((c: any) => c.id === 'opp-core-members') || careers[0];
+  
+  assert.ok(opportunity.benefits, 'Opportunity must have benefits defined');
+  const benefitsList = opportunity.benefits
+    .split(/\n|\r\n|;/)
+    .map((item: string) => item.replace(/^[•\*\-\s\d\.\:\-\»\>\–\—\•]+/, '').trim())
+    .filter(Boolean);
+
+  assert.equal(benefitsList.length, 10, 'Must contain all 10 specified benefits');
+  assert.ok(benefitsList[0].includes('Real Event Hosting & Speaking Experience'));
+  assert.ok(benefitsList[1].includes('Improve Public Speaking & Communication Skills'));
+  assert.ok(benefitsList[2].includes('Build Leadership & Confidence'));
+  assert.ok(benefitsList[3].includes('Networking Opportunities with Students & Industry Speakers'));
+  assert.ok(benefitsList[4].includes('Exciting Prizes & Recognition for Outstanding Contributions'));
+  assert.ok(benefitsList[5].includes('Gifts & Community Rewards'));
+  assert.ok(benefitsList[6].includes('Potential Internship & Career Opportunities'));
+  assert.ok(benefitsList[7].includes('Certificates & Recognition for active contribution'));
+  assert.ok(benefitsList[8].includes('Opportunity to represent and contribute to AWS Student Builder Group events'));
+  assert.ok(benefitsList[9].includes('Platform to showcase your skills, ideas, and talent'));
+});
+

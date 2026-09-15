@@ -263,21 +263,30 @@ export default async function OpportunityDetailsPage({
 
             {/* Benefits card */}
             <div className="bg-white rounded-xl border border-slate-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.02)] p-6 sm:p-8">
-              <h2 className="text-lg font-bold text-brand-navy mb-4 pb-2 border-b border-slate-100">
-                Benefits / What you'll gain
+              <h2 className="text-lg font-bold text-brand-navy mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
+                <span>🎁</span>
+                <span>Benefits / What You'll Gain</span>
               </h2>
-              <ul className="space-y-3 text-sm sm:text-base text-slate-650 font-sans">
-                {toList(career.benefits).length > 0 ? (
-                  toList(career.benefits).map((item) => (
-                    <li key={item} className="flex items-start gap-2.5">
-                      <span className="text-aws-orange shrink-0 mt-1">&bull;</span>
-                      <span>{normalizeBullet(item)}</span>
-                    </li>
-                  ))
-                ) : (
-                  <li className="text-slate-400 italic">No benefits listed.</li>
-                )}
-              </ul>
+              {toList(career.benefits).length > 0 ? (
+                <div className="grid grid-cols-1 gap-2.5">
+                  {toList(career.benefits).map((item, idx) => {
+                    const text = normalizeBullet(item);
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-start gap-3 p-3 rounded-lg bg-slate-50/80 border border-slate-150/70 hover:border-slate-300 hover:bg-slate-50 transition-colors"
+                      >
+                        <span className="text-aws-orange shrink-0 mt-0.5 font-bold text-sm select-none">✓</span>
+                        <span className="text-sm sm:text-[15px] text-slate-700 font-medium leading-relaxed break-words">
+                          {text}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-slate-400 italic text-sm">No benefits listed.</p>
+              )}
             </div>
 
             {/* Additional info card */}

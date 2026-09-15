@@ -958,7 +958,7 @@ const DEFAULT_OPPORTUNITIES = [
     requiredSkills: 'Leadership potential\nCommunication and teamwork\nInterest in cloud, AI, and student community building\nWillingness to contribute time and ideas',
     preferredSkills: 'Event coordination\nDesign, content, or technical support\nPublic speaking and community engagement',
     eligibility: 'Open to current students of Chandigarh University – Uttar Pradesh\nStrong interest in cloud, technology, and community building\nMust be willing to contribute actively',
-    benefits: 'Leadership experience\nCommunity-building exposure\nNetworking and skill development\nOpportunity to shape the AWS Student Builder Group',
+    benefits: '🎤 Real Event Hosting & Speaking Experience\n🗣️ Improve Public Speaking & Communication Skills\n🚀 Build Leadership & Confidence\n🤝 Networking Opportunities with Students & Industry Speakers\n🏆 Exciting Prizes & Recognition for Outstanding Contributions\n🎁 Gifts & Community Rewards\n💼 Potential Internship & Career Opportunities based on performance and eligibility\n📜 Certificates & Recognition for active contribution\n🌐 Opportunity to represent and contribute to AWS Student Builder Group events\n💡 Platform to showcase your skills, ideas, and talent',
     additionalInformation: 'This opportunity is designed for students eager to contribute to a growing student-led technology community. Applications are open for a limited time and will be reviewed by the organizing team.',
     applicationDeadline: '2026-08-25T23:59:59.000Z',
     status: 'Open',

@@ -3171,6 +3171,16 @@ export default function AdminDashboard() {
                           className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
                         />
                       </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <label className="font-bold text-slate-700 uppercase tracking-wider block">Benefits / What You'll Gain</label>
+                        <textarea
+                          rows={3}
+                          value={editOpportunity ? (editOpportunity.benefits || '') : opportunityForm.benefits}
+                          onChange={(e) => editOpportunity ? setEditOpportunity({ ...editOpportunity, benefits: e.target.value }) : setOpportunityForm({ ...opportunityForm, benefits: e.target.value })}
+                          placeholder="One benefit per line..."
+                          className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                        />
+                      </div>
                     </div>
                     <div className="flex gap-3">
                       <button type="submit" className="px-4 py-2 bg-[#FF9900] hover:bg-[#E08800] text-white text-xs font-bold rounded shadow-sm cursor-pointer transition-colors">

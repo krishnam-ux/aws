@@ -29,6 +29,10 @@ function toList(value?: string) {
     .filter(Boolean);
 }
 
+function normalizeBullet(item: string): string {
+  return item.replace(/^[•\*\-\s\d\.\:\-\»\>\–\—\•]+/, '').trim();
+}
+
 export default async function CareerDetailsPage({
   params,
   searchParams,
@@ -158,10 +162,30 @@ export default async function CareerDetailsPage({
             </div>
 
             <div className="tech-card-new p-6">
-              <h2 className="text-xl font-bold text-brand-navy mb-4">Benefits / What you'll gain</h2>
-              <ul className="list-disc list-inside space-y-2 text-slate-700 leading-relaxed">
-                {toList(career.benefits).length > 0 ? toList(career.benefits).map((item) => <li key={item}>{item}</li>) : <li>No benefits listed.</li>}
-              </ul>
+              <h2 className="text-xl font-bold text-brand-navy mb-5 flex items-center gap-2">
+                <span>🎁</span>
+                <span>Benefits / What You'll Gain</span>
+              </h2>
+              {toList(career.benefits).length > 0 ? (
+                <div className="grid grid-cols-1 gap-2.5">
+                  {toList(career.benefits).map((item, idx) => {
+                    const text = normalizeBullet(item);
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-200/70"
+                      >
+                        <span className="text-aws-orange shrink-0 mt-0.5 font-bold text-sm select-none">✓</span>
+                        <span className="text-sm text-slate-700 font-medium leading-relaxed break-words">
+                          {text}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-slate-500 italic text-sm">No benefits listed.</p>
+              )}
             </div>
 
             <div className="tech-card-new p-6">
