@@ -20,6 +20,7 @@ import { GET as adminExportGet } from '../src/app/api/admin/exams/export/route';
 const ADMIN_HEADER = { Authorization: 'Bearer awssbg-admin-session-token-secure-hash' };
 
 test('E2E Exam API: Full Student and Admin Flow', async () => {
+  await db.settings.setExamPortalPublished(true);
   const testExamId = `exam-e2e-${Date.now()}`;
   const testRoll = `23BCS-${Date.now()}`;
 

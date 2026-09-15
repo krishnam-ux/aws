@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import EventGallery, { EventPhoto } from '@/components/EventGallery';
+import { formatDisplayDate } from '@/lib/eventDateUtils';
 
 interface CommunityEvent {
   id: string;
@@ -227,7 +228,7 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
 
                       <div className="space-y-1">
                         <span className="text-[10px] font-bold text-slate-550 uppercase tracking-widest block font-display">
-                          {event.date || event.month}
+                          {formatDisplayDate(event.date, event.month)}
                         </span>
                         <h3 className="font-display font-bold text-base text-slate-900 leading-snug group-hover:text-brand-navy transition-colors">
                           {event.title}
@@ -306,7 +307,7 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
 
                       <div className="space-y-1">
                         <span className="text-[10px] font-bold text-slate-550 uppercase tracking-widest block font-display">
-                          {event.date || event.month}
+                          {formatDisplayDate(event.date, event.month)}
                         </span>
                         <h3 className="font-display font-bold text-base text-slate-900 leading-snug group-hover:text-brand-navy transition-colors">
                           {event.title}
@@ -397,7 +398,7 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
 
                       <div className="space-y-1">
                         <span className="text-[10px] font-bold text-slate-550 uppercase tracking-widest block font-display">
-                          {event.date || event.month}
+                          {formatDisplayDate(event.date, event.month)}
                         </span>
                         <h3 className="font-display font-bold text-base text-slate-900 leading-snug group-hover:text-brand-navy transition-colors">
                           {event.title}
@@ -480,7 +481,7 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
                   <span className="text-[10px] font-mono text-slate-400 font-bold">{selectedEvent.number}</span>
                 </div>
                 <span className="text-[10px] font-bold text-slate-550 uppercase tracking-widest block font-display">
-                  {selectedEvent.date || selectedEvent.month} Schedule
+                  {formatDisplayDate(selectedEvent.date, selectedEvent.month)} Schedule
                 </span>
                 <h3 className="font-display font-bold text-lg text-slate-900 leading-snug">
                   {selectedEvent.title}

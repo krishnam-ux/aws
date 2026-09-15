@@ -15,8 +15,38 @@ function ExamPortalContent({ initialExamId }: ExamPortalPageProps) {
   // Dynamic Exam ID extracted from prop, route params (/exam/[examId]), or search params (?examId=...)
   const routeExamId = initialExamId || (params?.examId as string) || searchParams?.get('examId') || '';
 
+  // Portal Publication State
+  const [portalPublished, setPortalPublished] = useState<boolean | null>(null);
+  const [statusLoading, setStatusLoading] = useState(true);
+
   // Phase state: AUTH -> LOBBY -> EXAM -> EXAM_LOCKED -> SUBMITTED
   const [phase, setPhase] = useState<'AUTH' | 'LOBBY' | 'EXAM' | 'EXAM_LOCKED' | 'SUBMITTED'>('AUTH');
+
+  // Check Public Portal Publication Status
+  useEffect(() => {
+    let isMounted = true;
+    async function checkStatus() {
+      try {
+        const res = await fetch('/api/exam/status', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted) {
+            setPortalPublished(Boolean(data.published));
+          }
+        } else {
+          if (isMounted) setPortalPublished(false);
+        }
+      } catch (err) {
+        if (isMounted) setPortalPublished(false);
+      } finally {
+        if (isMounted) setStatusLoading(false);
+      }
+    }
+    checkStatus();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Auth Form State
   const [examId, setExamId] = useState(routeExamId);
@@ -550,6 +580,112 @@ function ExamPortalContent({ initialExamId }: ExamPortalPageProps) {
 
   const questions = examData?.questions || [];
   const currentQuestion = questions[currentQIndex];
+
+  // --------------------------------------------------------------------------
+  // RENDER: LOADING STATUS
+  // --------------------------------------------------------------------------
+  if (statusLoading) {
+    return (
+      <main className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 text-slate-400 text-xs font-sans">
+        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+        <p className="font-semibold text-slate-300 tracking-wide">Checking Assessment Gateway Availability...</p>
+      </main>
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // RENDER: UNPUBLISHED / UNAVAILABLE STATE
+  // --------------------------------------------------------------------------
+  if (portalPublished === false) {
+    return (
+      <main className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
+        {/* Ambient background glows */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-2xl mx-auto w-full my-auto z-10">
+          {/* Status Badge */}
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-semibold mb-6">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+              <span>OFFICIAL ASSESSMENT GATEWAY • CURRENTLY UNAVAILABLE</span>
+            </div>
+
+            {/* Glowing Icon */}
+            <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/60 shadow-2xl shadow-black/80 mb-6 group">
+              <div className="absolute inset-0 rounded-3xl bg-indigo-500/10 blur-xl group-hover:bg-indigo-500/20 transition-all duration-300"></div>
+              <svg className="w-10 h-10 text-slate-300 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white font-display">
+              Exam Portal is Currently Unavailable
+            </h1>
+            <p className="text-sm text-slate-400 max-w-lg mx-auto mt-3 leading-relaxed">
+              There are no active or scheduled certification assessments open for public candidate access at this time. Assessment sessions are enabled exclusively during designated examination windows announced by community administrators.
+            </p>
+          </div>
+
+          {/* Info Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mb-8">
+            <div className="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 text-left backdrop-blur-sm">
+              <div className="text-lg mb-1.5">🗓️</div>
+              <h2 className="text-xs font-bold text-slate-200 uppercase tracking-wide">Scheduled Slots</h2>
+              <p className="text-[11px] text-slate-400 mt-1 leading-normal">
+                Exams are unlocked by invigilators during official testing sessions.
+              </p>
+            </div>
+
+            <div className="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 text-left backdrop-blur-sm">
+              <div className="text-lg mb-1.5">📢</div>
+              <h2 className="text-xs font-bold text-slate-200 uppercase tracking-wide">Stay Informed</h2>
+              <p className="text-[11px] text-slate-400 mt-1 leading-normal">
+                Join our WhatsApp community for upcoming exam schedule announcements.
+              </p>
+            </div>
+
+            <div className="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 text-left backdrop-blur-sm">
+              <div className="text-lg mb-1.5">🛡️</div>
+              <h2 className="text-xs font-bold text-slate-200 uppercase tracking-wide">Verify Certificates</h2>
+              <p className="text-[11px] text-slate-400 mt-1 leading-normal">
+                Prior certificates remain valid and verifiable on the verification page.
+              </p>
+            </div>
+          </div>
+
+          {/* Action CTAs */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a
+              href="/"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 text-xs font-bold transition shadow-lg shadow-orange-500/20 text-center cursor-pointer"
+            >
+              Return to Home
+            </a>
+            <a
+              href="/events"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition text-center cursor-pointer"
+            >
+              Explore Events & Workshops
+            </a>
+            <a
+              href="https://chat.whatsapp.com/HuEI5i4I8KkEya47yBKynD"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition text-center cursor-pointer"
+            >
+              Join WhatsApp Community ↗
+            </a>
+          </div>
+        </div>
+
+        {/* Footer info */}
+        <div className="text-center text-[11px] text-slate-500 pt-8 z-10">
+          Official Assessment & Verification Gateway • AWS Student Builder Group at Chandigarh University – Uttar Pradesh
+        </div>
+      </main>
+    );
+  }
 
   // --------------------------------------------------------------------------
   // RENDER PHASE 1: AUTH / ENTRANCE

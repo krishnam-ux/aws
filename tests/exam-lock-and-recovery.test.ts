@@ -91,6 +91,7 @@ test('Security & Recovery: Independent Exam Unlock Passwords & Regeneration', as
 });
 
 test('Lockdown Violation: Fullscreen Interruption triggers EXAM_LOCKED and Strips Questions', async () => {
+  await db.settings.setExamPortalPublished(true);
   const examId = `exam-lock-lifecycle-${Date.now()}`;
   const unlockPassword = 'UNLOCK-TEST-PROCTOR-99';
 

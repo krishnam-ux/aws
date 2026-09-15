@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { siteConfig } from '@/data/siteConfig';
 import { db } from '@/lib/db';
+import { formatDisplayDate } from '@/lib/eventDateUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -386,7 +387,7 @@ export default async function Home() {
 
                       <div className="space-y-1">
                         <span className="text-[10px] font-bold text-slate-505 uppercase tracking-widest block font-display">
-                          {event.date || event.month}
+                          {formatDisplayDate(event.date, event.month)}
                         </span>
                         <h3 className="font-display font-bold text-base text-slate-900 leading-snug group-hover:text-brand-navy transition-colors">
                           {event.title}

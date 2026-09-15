@@ -10,6 +10,7 @@ import { Exam, ExamAttempt } from '../src/types/exam';
 const ADMIN_HEADER = { Authorization: 'Bearer awssbg-admin-session-token-secure-hash' };
 
 test('Audit & Verification: Resilient Exam Lookup & Immediate Accessibility', async () => {
+  await db.settings.setExamPortalPublished(true);
   const testExamId = 'exam-resilience-mock-test';
   const testExamCode = 'AWS-RESIL-01';
 

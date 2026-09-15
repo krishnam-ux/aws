@@ -1213,6 +1213,15 @@ export const db = {
       const settings = await readSettingsStore();
       await writeSettingsStore({ ...settings, feedbackPagePublished: Boolean(published) });
     },
+    getExamPortalPublished: async (): Promise<boolean> => {
+      const settings = await readSettingsStore();
+      const value = settings.examPortalPublished;
+      return value === undefined ? false : Boolean(value);
+    },
+    setExamPortalPublished: async (published: boolean): Promise<void> => {
+      const settings = await readSettingsStore();
+      await writeSettingsStore({ ...settings, examPortalPublished: Boolean(published) });
+    },
     get: async (key: string, defaultValue: any = null): Promise<any> => {
       const settings = await readSettingsStore();
       return settings[key] !== undefined ? settings[key] : defaultValue;

@@ -7,6 +7,46 @@ import AdminEmailManager from '@/components/AdminEmailManager';
 import AdminFoundingMembersManager from '@/components/AdminFoundingMembersManager';
 import AdminSendStudentEmailModal from '@/components/AdminSendStudentEmailModal';
 import AdminBulkSendStudentEmailModal from '@/components/AdminBulkSendStudentEmailModal';
+import {
+  getEventMonthName,
+  formatDisplayDate,
+  validateEventPayload,
+  isValidCalendarDate,
+  isValidTimeString,
+  isEndTimeAfterStartTime
+} from '@/lib/eventDateUtils';
+
+const initialEventFormState = {
+  title: '',
+  month: 'September',
+  date: '',
+  time: '10:00 AM',
+  endTime: '12:00 PM',
+  venue: 'Chandigarh University – Uttar Pradesh',
+  city: 'Lucknow',
+  fullVenueAddress: '',
+  format: 'Hands-on Technical Workshop',
+  eventFormat: 'Hands-on Technical Workshop',
+  description: '',
+  overview: '',
+  focus: '',
+  outcome: '',
+  whatYouWillLearn: '',
+  aboutTheEvent: '',
+  requirements: '',
+  additionalInfo: '',
+  speaker: 'TBA',
+  registrationLink: '',
+  status: 'Draft',
+  registrationStatus: 'Not Open',
+  maxRegistrations: -1,
+  registrationDeadline: '',
+  image: '',
+  collaborations: [] as string[],
+  customCollab: '',
+  customCollabLogo: '',
+  gallery: [] as EventPhoto[]
+};
 
 interface EventPhoto {
   id: string;
@@ -198,9 +238,7 @@ export default function AdminDashboard() {
   const [createType, setCreateType] = useState<'Event' | 'Announcement' | 'Resource' | 'TeamMember' | null>(null);
 
   // Form Fields
-  const [eventForm, setEventForm] = useState<any>({
-    title: '', month: 'August', date: '', time: 'TBA', venue: 'TBA', description: '', focus: '', outcome: '', speaker: 'TBA', registrationLink: '', status: 'Draft', registrationStatus: 'Not Open', image: '', format: 'Hands-on Technical Workshop', whatYouWillLearn: '', collaborations: [], customCollab: '', customCollabLogo: '', gallery: []
-  });
+  const [eventForm, setEventForm] = useState<any>({ ...initialEventFormState });
   const [announcementForm, setAnnouncementForm] = useState<any>({
     title: '', category: 'General', description: '', status: 'Published', image: ''
   });
@@ -235,8 +273,11 @@ export default function AdminDashboard() {
   // Action status indicators
   const [actionSuccess, setActionSuccess] = useState('');
   const [actionError, setActionError] = useState('');
+  const [eventCreateError, setEventCreateError] = useState('');
+  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
   const [eventEditError, setEventEditError] = useState('');
   const [isSavingEvent, setIsSavingEvent] = useState(false);
+  const [statusErrorState, setStatusErrorState] = useState<Record<string, string>>({});
   const [isUploadingGallery, setIsUploadingGallery] = useState(false);
   const [galleryUploadError, setGalleryUploadError] = useState('');
   const [galleryUploadProgress, setGalleryUploadProgress] = useState('');
@@ -644,6 +685,7 @@ export default function AdminDashboard() {
 
     setEvents(prevEvents.map((e: CommunityEvent) => e.id === eventId ? mergedEvent : e));
     setStatusSaveState(prev => ({ ...prev, [stateKey]: 'saving' }));
+    setStatusErrorState(prev => ({ ...prev, [stateKey]: '' }));
     setActionError('');
     setActionSuccess('');
 
@@ -659,19 +701,23 @@ export default function AdminDashboard() {
         }, 2000);
       } else {
         setEvents(prevEvents);
+        const errorMsg = res?.error || 'Update failed. Please try again.';
         setStatusSaveState(prev => ({ ...prev, [stateKey]: 'failed' }));
-        setActionError(res?.error || 'Update failed. Please try again.');
+        setStatusErrorState(prev => ({ ...prev, [stateKey]: errorMsg }));
+        setActionError(errorMsg);
         setTimeout(() => {
           setStatusSaveState(prev => ({ ...prev, [stateKey]: null }));
-        }, 4000);
+        }, 5000);
       }
-    } catch (err) {
+    } catch (err: any) {
       setEvents(prevEvents);
+      const errorMsg = err?.message || 'Update failed. Please try again.';
       setStatusSaveState(prev => ({ ...prev, [stateKey]: 'failed' }));
-      setActionError('Update failed. Please try again.');
+      setStatusErrorState(prev => ({ ...prev, [stateKey]: errorMsg }));
+      setActionError(errorMsg);
       setTimeout(() => {
         setStatusSaveState(prev => ({ ...prev, [stateKey]: null }));
-      }, 4000);
+      }, 5000);
     }
   };
 
@@ -1181,18 +1227,19 @@ export default function AdminDashboard() {
     setEditEvent({
       ...event,
       title: event.title || '',
+      month: event.month || getEventMonthName(event.date, 'September'),
       description: event.description || event.overview || '',
       overview: event.overview || event.description || '',
       focus: event.focus || '',
       outcome: event.outcome || '',
       date: event.date || '',
-      time: event.time || '',
-      endTime: event.endTime || '',
-      venue: event.venue || '',
+      time: event.time || '10:00 AM',
+      endTime: event.endTime || '12:00 PM',
+      venue: event.venue || 'Chandigarh University – Uttar Pradesh',
       fullVenueAddress: event.fullVenueAddress || '',
-      city: event.city || '',
-      format: event.format || event.eventFormat || '',
-      eventFormat: event.eventFormat || event.format || '',
+      city: event.city || 'Lucknow',
+      format: event.format || event.eventFormat || 'Hands-on Technical Workshop',
+      eventFormat: event.eventFormat || event.format || 'Hands-on Technical Workshop',
       status: event.status || 'Draft',
       registrationStatus: event.registrationStatus || 'Not Open',
       maxRegistrations: event.maxRegistrations ?? -1,
@@ -1211,31 +1258,22 @@ export default function AdminDashboard() {
     setEventEditError('');
   };
 
-  const validateEventForm = (eventData: any) => {
-    if (!eventData.title || !eventData.title.trim()) {
-      return 'Title cannot be empty.';
-    }
-    if (!eventData.date || Number.isNaN(new Date(eventData.date).getTime())) {
-      return 'Date must be valid.';
-    }
-    if (!eventData.time || !eventData.time.trim()) {
-      return 'Event time is required.';
-    }
-    if (!eventData.venue || !eventData.venue.trim()) {
-      return 'Venue should not be empty.';
-    }
-    if (!eventData.status || !['Draft', 'Planned', 'Upcoming', 'Ongoing', 'Completed', 'Cancelled', 'Unpublished'].includes(eventData.status)) {
-      return 'Event status is invalid.';
-    }
-    if (!eventData.registrationStatus || !['Open', 'Not Open', 'Closed', 'Full'].includes(eventData.registrationStatus)) {
-      return 'Registration status is invalid.';
-    }
-    return '';
+  const validateEventForm = (eventData: any, isNew: boolean = false) => {
+    const res = validateEventPayload(eventData, { isNew });
+    return res.valid ? '' : (res.error || 'Please fill in all required event fields.');
   };
 
   // 2. Events CRUD
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
+    setEventCreateError('');
+
+    const validationError = validateEventForm(eventForm, true);
+    if (validationError) {
+      setEventCreateError(validationError);
+      return;
+    }
+
     const collabs = (eventForm.collaborations || []).filter((c: string) => c !== 'Other');
     if ((eventForm.collaborations || []).includes('Other') && eventForm.customCollab) {
       collabs.push(eventForm.customCollab);
@@ -1243,19 +1281,33 @@ export default function AdminDashboard() {
     const hasOther = (eventForm.collaborations || []).includes('Other');
     const formatted = {
       ...eventForm,
+      month: getEventMonthName(eventForm.date, eventForm.month || 'September'),
       collaborations: collabs,
       customCollabLogo: hasOther ? eventForm.customCollabLogo : '',
       whatYouWillLearn: typeof eventForm.whatYouWillLearn === 'string'
-        ? eventForm.whatYouWillLearn.split('\n').filter((l: string) => l.trim().length > 0)
+        ? eventForm.whatYouWillLearn.split('\n').map((l: string) => l.trim()).filter(Boolean)
         : eventForm.whatYouWillLearn,
       gallery: Array.isArray(eventForm.gallery) ? eventForm.gallery : []
     };
     delete formatted.customCollab;
-    const res = await apiCall({ action: 'create-event', event: formatted });
-    if (res && res.success) {
-      fetchTabItems();
-      setCreateType(null);
-      setEventForm({ title: '', month: 'August', date: '', time: 'TBA', venue: 'TBA', description: '', focus: '', outcome: '', speaker: 'TBA', registrationLink: '', status: 'Draft', registrationStatus: 'Not Open', image: '', format: 'Hands-on Technical Workshop', whatYouWillLearn: '', collaborations: [], customCollab: '', customCollabLogo: '', gallery: [] });
+
+    setIsCreatingEvent(true);
+    try {
+      const res = await apiCall({ action: 'create-event', event: formatted });
+      if (res && res.success) {
+        setActionSuccess('Event created successfully.');
+        setTimeout(() => setActionSuccess(''), 3000);
+        await fetchTabItems();
+        await fetchStats();
+        setCreateType(null);
+        setEventForm({ ...initialEventFormState });
+      } else {
+        setEventCreateError(res?.error || 'Unable to create event. Please try again.');
+      }
+    } catch (err: any) {
+      setEventCreateError('Unable to create event. Please try again.');
+    } finally {
+      setIsCreatingEvent(false);
     }
   };
 
@@ -1263,7 +1315,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!editEvent) return;
 
-    const validationError = validateEventForm(editEvent);
+    const validationError = validateEventForm(editEvent, false);
     if (validationError) {
       setEventEditError(validationError);
       return;
@@ -1278,6 +1330,7 @@ export default function AdminDashboard() {
       ...editEvent,
       id: editEvent.id,
       title: editEvent.title.trim(),
+      month: getEventMonthName(editEvent.date, editEvent.month || 'September'),
       description: editEvent.description || editEvent.overview || '',
       overview: editEvent.overview || editEvent.description || '',
       focus: editEvent.focus || '',
@@ -1318,6 +1371,7 @@ export default function AdminDashboard() {
         setActionSuccess('Event updated successfully.');
         setTimeout(() => setActionSuccess(''), 3000);
         await fetchTabItems();
+        await fetchStats();
         setEditEvent(null);
       } else {
         setEventEditError(res?.error || 'Unable to update event. Please try again.');
@@ -2699,7 +2753,7 @@ export default function AdminDashboard() {
                       .map((event) => (
                         <tr key={event.id} className="hover:bg-slate-50">
                           <td className="px-4 py-3 font-semibold text-[#111827]">{event.title}</td>
-                          <td className="px-4 py-3 font-medium text-slate-700">{event.month}</td>
+                          <td className="px-4 py-3 font-medium text-slate-700">{event.month || getEventMonthName(event.date, 'September')}</td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             <div className="flex flex-col space-y-1">
                               <select
@@ -2725,7 +2779,9 @@ export default function AdminDashboard() {
                                 <span className="text-[10px] text-emerald-600 font-bold">Saved</span>
                               )}
                               {statusSaveState[`${event.id}-status`] === 'failed' && (
-                                <span className="text-[10px] text-red-650 font-bold">Update failed. Please try again.</span>
+                                <span className="text-[10px] text-red-650 font-bold">
+                                  {statusErrorState[`${event.id}-status`] || 'Update failed. Please try again.'}
+                                </span>
                               )}
                             </div>
                           </td>
@@ -2751,7 +2807,9 @@ export default function AdminDashboard() {
                                 <span className="text-[10px] text-emerald-600 font-bold">Saved</span>
                               )}
                               {statusSaveState[`${event.id}-registrationStatus`] === 'failed' && (
-                                <span className="text-[10px] text-red-650 font-bold">Update failed. Please try again.</span>
+                                <span className="text-[10px] text-red-650 font-bold">
+                                  {statusErrorState[`${event.id}-registrationStatus`] || 'Update failed. Please try again.'}
+                                </span>
                               )}
                             </div>
                           </td>
@@ -4597,53 +4655,146 @@ export default function AdminDashboard() {
 
             <div className="space-y-3 font-sans">
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Event Title</label>
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Event Title *</label>
                 <input
                   type="text"
                   required
                   value={eventForm.title}
                   onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
+                  placeholder="e.g. AWS Core Services Workshop"
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Month</label>
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Event Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={eventForm.date}
+                    onChange={(e) => {
+                      const d = e.target.value;
+                      setEventForm({
+                        ...eventForm,
+                        date: d,
+                        month: getEventMonthName(d, eventForm.month || 'September')
+                      });
+                    }}
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Display Month</label>
                   <select
                     value={eventForm.month}
                     onChange={(e) => setEventForm({ ...eventForm, month: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none bg-white"
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none bg-white font-medium"
                   >
                     {['August', 'September', 'October', 'November', 'December', 'January', 'February', 'March', 'April', 'May', 'June', 'July'].map(m => (
                       <option key={m} value={m}>{m}</option>
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Format</label>
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Start Time *</label>
                   <input
                     type="text"
-                    value={eventForm.format}
-                    onChange={(e) => setEventForm({ ...eventForm, format: e.target.value })}
+                    required
+                    value={eventForm.time}
+                    onChange={(e) => setEventForm({ ...eventForm, time: e.target.value })}
+                    placeholder="10:00 AM"
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">End Time *</label>
+                  <input
+                    type="text"
+                    required
+                    value={eventForm.endTime}
+                    onChange={(e) => setEventForm({ ...eventForm, endTime: e.target.value })}
+                    placeholder="12:00 PM"
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Venue *</label>
+                  <input
+                    type="text"
+                    required
+                    value={eventForm.venue}
+                    onChange={(e) => setEventForm({ ...eventForm, venue: e.target.value })}
+                    placeholder="e.g. Auditorium Block A or Online"
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">City / Location</label>
+                  <input
+                    type="text"
+                    value={eventForm.city}
+                    onChange={(e) => setEventForm({ ...eventForm, city: e.target.value })}
+                    placeholder="e.g. Lucknow or Online"
                     className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Description / Overview</label>
-                <textarea
-                  rows={2}
-                  required
-                  value={eventForm.description}
-                  onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Full Venue Address (Optional)</label>
+                <input
+                  type="text"
+                  value={eventForm.fullVenueAddress || ''}
+                  onChange={(e) => setEventForm({ ...eventForm, fullVenueAddress: e.target.value })}
+                  placeholder="e.g. Campus Auditorium, Block A, Lucknow"
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Key Focus Topics</label>
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Event Format *</label>
+                <input
+                  type="text"
+                  required
+                  value={eventForm.format}
+                  onChange={(e) => setEventForm({ ...eventForm, format: e.target.value, eventFormat: e.target.value })}
+                  placeholder="e.g. Hands-on Technical Workshop"
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Description / Overview *</label>
+                <textarea
+                  rows={2}
+                  required
+                  value={eventForm.description}
+                  onChange={(e) => setEventForm({ ...eventForm, description: e.target.value, overview: e.target.value })}
+                  placeholder="Brief summary of the session..."
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">About the Event (Detailed)</label>
+                <textarea
+                  rows={3}
+                  value={eventForm.aboutTheEvent || ''}
+                  onChange={(e) => setEventForm({ ...eventForm, aboutTheEvent: e.target.value })}
+                  placeholder="Full description and agenda for attendees..."
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Key Focus Topics *</label>
                 <input
                   type="text"
                   required
@@ -4655,12 +4806,13 @@ export default function AdminDashboard() {
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Learning Outcome</label>
+                <label className="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Learning Outcome *</label>
                 <input
                   type="text"
                   required
                   value={eventForm.outcome}
                   onChange={(e) => setEventForm({ ...eventForm, outcome: e.target.value })}
+                  placeholder="What attendees will learn and build..."
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                 />
               </div>
@@ -4671,7 +4823,7 @@ export default function AdminDashboard() {
                   rows={3}
                   value={eventForm.whatYouWillLearn}
                   onChange={(e) => setEventForm({ ...eventForm, whatYouWillLearn: e.target.value })}
-                  placeholder="e.g. Designing instances&#10;Triggering functions"
+                  placeholder="e.g. Designing virtual compute instances&#10;Setting up secure storage containers"
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                 />
               </div>
@@ -4685,6 +4837,7 @@ export default function AdminDashboard() {
                     className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none bg-white font-medium"
                   >
                     <option value="Draft">Draft</option>
+                    <option value="Planned">Planned</option>
                     <option value="Upcoming">Upcoming</option>
                     <option value="Ongoing">Ongoing</option>
                     <option value="Completed">Completed</option>
@@ -4877,12 +5030,18 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            {eventCreateError && (
+              <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 rounded text-[10px] font-medium">
+                {eventCreateError}
+              </div>
+            )}
+
             <div className="pt-4 border-t border-[#E2E8F0] flex justify-end space-x-3">
               <button type="button" onClick={() => setCreateType(null)} className="px-4 py-1.5 bg-[#F6F8FA] border border-[#E2E8F0] rounded font-semibold cursor-pointer hover:bg-slate-100">
                 Cancel
               </button>
-              <button type="submit" className="px-4 py-1.5 bg-[#FF9900] hover:bg-[#E08800] text-white font-bold rounded cursor-pointer transition-colors">
-                Create
+              <button type="submit" disabled={isCreatingEvent} className="px-4 py-1.5 bg-[#FF9900] hover:bg-[#E08800] text-white font-bold rounded cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                {isCreatingEvent ? 'Creating...' : 'Create Event'}
               </button>
             </div>
           </form>
@@ -4987,7 +5146,14 @@ export default function AdminDashboard() {
                   <input
                     type="date"
                     value={editEvent.date || ''}
-                    onChange={(e) => setEditEvent({ ...editEvent, date: e.target.value })}
+                    onChange={(e) => {
+                      const d = e.target.value;
+                      setEditEvent({
+                        ...editEvent,
+                        date: d,
+                        month: getEventMonthName(d, editEvent.month || 'September')
+                      });
+                    }}
                     className="w-full px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none"
                   />
                 </div>

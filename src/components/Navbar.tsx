@@ -63,6 +63,29 @@ export default function Navbar() {
     setIsOpen(false);
   }, [pathname]);
 
+  const [isExamPublished, setIsExamPublished] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadStatus() {
+      try {
+        const res = await fetch('/api/exam/status', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && typeof data.published === 'boolean') {
+            setIsExamPublished(data.published);
+          }
+        }
+      } catch (err) {
+        // Fallback to unpublished
+      }
+    }
+    loadStatus();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   if (pathname?.startsWith('/admin')) {
     return null;
   }
@@ -72,7 +95,7 @@ export default function Navbar() {
     { label: 'About', href: '/about' },
     { label: 'Activities', href: '/activities' },
     { label: 'Events', href: '/events' },
-    { label: 'Exams', href: '/exam' },
+    ...(isExamPublished ? [{ label: 'Exams', href: '/exam' }] : []),
     { label: 'Resources', href: '/resources' },
     { label: 'Verification', href: '/verification' },
     { label: 'Leadership', href: '/leadership' },

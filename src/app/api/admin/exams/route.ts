@@ -49,7 +49,10 @@ export async function GET(request: Request) {
       };
     });
 
-    return NextResponse.json({ exams: examsWithStats }, { headers: noStoreHeaders });
+    return NextResponse.json({
+      exams: examsWithStats,
+      portalPublished: await db.settings.getExamPortalPublished()
+    }, { headers: noStoreHeaders });
   } catch (error: any) {
     console.error('Admin exams fetch error:', error);
     return NextResponse.json(
@@ -69,7 +72,24 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { action, exam, examId } = body;
+    const { action, exam, examId, published } = body;
+
+    if (action === 'get-portal-status') {
+      const isPublished = await db.settings.getExamPortalPublished();
+      return NextResponse.json({ success: true, published: isPublished }, { headers: noStoreHeaders });
+    }
+
+    if (action === 'set-portal-status') {
+      if (typeof published !== 'boolean') {
+        return NextResponse.json(
+          { error: 'Published status must be a boolean.' },
+          { status: 400, headers: noStoreHeaders }
+        );
+      }
+      await db.settings.setExamPortalPublished(published);
+      await logAdminAudit('all', 'admin', 'UPDATE_EXAM', { examPortalPublished: published });
+      return NextResponse.json({ success: true, published }, { headers: noStoreHeaders });
+    }
 
     if (action === 'create' || action === 'update') {
       if (!exam || !exam.title?.trim() || !exam.examCode?.trim()) {

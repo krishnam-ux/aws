@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import EventGallery, { EventPhoto } from '@/components/EventGallery';
+import { formatDisplayDate } from '@/lib/eventDateUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -267,7 +268,7 @@ export default async function EventDetailPage({ params }: PageProps) {
                 </div>
                 <div>
                   <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px]">Date</span>
-                  <span className="text-slate-800 font-semibold">{event.date || event.month || 'TBA'}</span>
+                  <span className="text-slate-800 font-semibold">{formatDisplayDate(event.date, event.month)}</span>
                 </div>
               </div>
 

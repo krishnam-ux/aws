@@ -10,12 +10,18 @@ import {
   isCertificateEligible,
   normalizeAttendanceStatus
 } from '@/lib/certificates';
+import {
+  ALLOWED_EVENT_STATUSES,
+  ALLOWED_REGISTRATION_STATUSES,
+  getEventMonthName,
+  formatDisplayDate,
+  validateEventPayload,
+  normalizeLegacyEventDate
+} from '@/lib/eventDateUtils';
 
 export const dynamic = 'force-dynamic';
 
 const SECURE_TOKEN = 'awssbg-admin-session-token-secure-hash';
-const ALLOWED_EVENT_STATUSES = ['Draft', 'Planned', 'Upcoming', 'Ongoing', 'Completed', 'Cancelled', 'Unpublished'];
-const ALLOWED_REGISTRATION_STATUSES = ['Open', 'Not Open', 'Closed', 'Full'];
 
 function mergeEventUpdate(existingEvent: any, incomingEvent: any): any {
   const merged: Record<string, any> = { ...(existingEvent || {}) };
@@ -27,36 +33,28 @@ function mergeEventUpdate(existingEvent: any, incomingEvent: any): any {
   return merged;
 }
 
-function normalizeEventPayload(event: any): any {
+function normalizeEventPayload(event: any, options: { isNew?: boolean } = {}): any {
   if (!event || typeof event !== 'object') {
-    throw new Error('Event payload is required.');
+    const err: any = new Error('Event payload is required.');
+    err.field = 'general';
+    throw err;
   }
 
   const merged = mergeEventUpdate({}, event);
+  const validation = validateEventPayload(merged, options);
+  if (!validation.valid) {
+    const err: any = new Error(validation.error || 'Event validation failed.');
+    err.field = validation.field;
+    err.errors = validation.errors;
+    throw err;
+  }
+
   const safeTitle = String(merged.title ?? '').trim();
-  if (!safeTitle) {
-    throw new Error('Title cannot be empty.');
-  }
-
-  const normalizedDate = String(merged.date ?? '').trim();
-  if (!normalizedDate || Number.isNaN(new Date(normalizedDate).getTime())) {
-    throw new Error('Date must be valid.');
-  }
-
-  const normalizedVenue = String(merged.venue ?? '').trim();
-  if (!normalizedVenue) {
-    throw new Error('Venue should not be empty.');
-  }
-
+  const safeDate = String(merged.date ?? '').trim();
+  const safeMonth = getEventMonthName(safeDate, merged.month || 'September');
+  const normalizedVenue = String(merged.venue ?? 'TBA').trim();
   const status = String(merged.status ?? 'Draft');
-  if (!ALLOWED_EVENT_STATUSES.includes(status)) {
-    throw new Error('Event status is invalid.');
-  }
-
   const registrationStatus = String(merged.registrationStatus ?? 'Not Open');
-  if (!ALLOWED_REGISTRATION_STATUSES.includes(registrationStatus)) {
-    throw new Error('Registration status is invalid.');
-  }
 
   const whatYouWillLearn = Array.isArray(event.whatYouWillLearn)
     ? event.whatYouWillLearn
@@ -75,11 +73,12 @@ function normalizeEventPayload(event: any): any {
 
   return {
     ...event,
-    id: String(event.id).trim(),
+    id: event.id ? String(event.id).trim() : undefined,
     title: safeTitle,
+    month: safeMonth,
     description: String(event.description ?? event.overview ?? '').trim(),
     overview: String(event.overview ?? event.description ?? '').trim(),
-    date: normalizedDate,
+    date: safeDate,
     time: String(event.time ?? '').trim(),
     endTime: String(event.endTime ?? '').trim(),
     venue: normalizedVenue,
@@ -555,22 +554,32 @@ export async function POST(request: Request) {
     }
     if (action === 'create-event') {
       const { event } = body;
-      const events = await db.events.getAll();
-      const newEvent = {
-        status: 'Draft',
-        registrationStatus: 'Not Open',
-        ...event,
-        id: `event-${Date.now()}`,
-        number: `Event 0${events.length + 1}`
-      };
-      events.push(newEvent);
-      await db.events.saveAll(events);
-      return NextResponse.json({ success: true, event: newEvent });
+      try {
+        const normalized = normalizeEventPayload(event, { isNew: true });
+        const events = await db.events.getAll();
+        const newEvent = {
+          status: 'Draft',
+          registrationStatus: 'Not Open',
+          ...normalized,
+          id: `event-${Date.now()}`,
+          number: `Event 0${events.length + 1}`
+        };
+        events.push(newEvent);
+        await db.events.saveAll(events);
+        return NextResponse.json({ success: true, event: newEvent });
+      } catch (err: any) {
+        return NextResponse.json({
+          success: false,
+          error: err.message || 'Unable to create event.',
+          field: err.field,
+          errors: err.errors
+        }, { status: 400 });
+      }
     }
     if (action === 'update-event') {
       const { event } = body;
       if (!event || !event.id) {
-        return NextResponse.json({ error: 'Event ID is required.' }, { status: 400 });
+        return NextResponse.json({ error: 'Event ID is required.', field: 'id' }, { status: 400 });
       }
 
       try {
@@ -581,7 +590,7 @@ export async function POST(request: Request) {
         }
 
         const mergedEvent = mergeEventUpdate(events[idx], event);
-        const normalizedEvent = normalizeEventPayload(mergedEvent);
+        const normalizedEvent = normalizeEventPayload(mergedEvent, { isNew: false });
         const updatedEvent = { ...events[idx], ...normalizedEvent };
         if (!updatedEvent.status) updatedEvent.status = 'Draft';
         if (!updatedEvent.registrationStatus) updatedEvent.registrationStatus = 'Not Open';
@@ -590,7 +599,12 @@ export async function POST(request: Request) {
         await db.events.saveAll(events);
         return NextResponse.json({ success: true, event: updatedEvent });
       } catch (err: any) {
-        return NextResponse.json({ success: false, error: err.message || 'Unable to update event.' }, { status: 400 });
+        return NextResponse.json({
+          success: false,
+          error: err.message || 'Unable to update event.',
+          field: err.field,
+          errors: err.errors
+        }, { status: 400 });
       }
     }
     if (action === 'delete-event') {
@@ -985,6 +999,29 @@ export async function POST(request: Request) {
 
       try {
         await db.settings.setFeedbackPagePublished(published);
+        return NextResponse.json({ success: true, published });
+      } catch (err: any) {
+        return NextResponse.json({ error: err.message }, { status: 500 });
+      }
+    }
+
+    // 12c. Exam Portal Administrative Actions
+    const isGetExamVisibilityAction = action === 'get-exam-portal-status' || action === 'get_exam_portal_status';
+    const isSetExamVisibilityAction = action === 'set-exam-portal-status' || action === 'set_exam_portal_status';
+
+    if (isGetExamVisibilityAction) {
+      const published = await db.settings.getExamPortalPublished();
+      return NextResponse.json({ published });
+    }
+
+    if (isSetExamVisibilityAction) {
+      const { published } = body;
+      if (typeof published !== 'boolean') {
+        return NextResponse.json({ error: 'Published flag must be a boolean.' }, { status: 400 });
+      }
+
+      try {
+        await db.settings.setExamPortalPublished(published);
         return NextResponse.json({ success: true, published });
       } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });

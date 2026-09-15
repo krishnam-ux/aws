@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { triggerEventReminder } from './automations';
 import { normalizeEmail } from './validation';
+import { parseEventDateTimeToMs } from '@/lib/eventDateUtils';
 
 export interface ScheduledReminderRunResult {
   eventsProcessed: number;
@@ -30,10 +31,8 @@ export async function runScheduledEmailReminders(): Promise<ScheduledReminderRun
     const now = Date.now();
 
     for (const event of publishedEvents) {
-      if (!event.date) continue;
-
-      const eventStartMs = new Date(`${event.date} ${event.time || '10:00 AM'}`).getTime();
-      if (isNaN(eventStartMs)) continue;
+      const eventStartMs = parseEventDateTimeToMs(event.date, event.time);
+      if (!eventStartMs || isNaN(eventStartMs)) continue;
 
       const diffMs = eventStartMs - now;
       const diffHours = diffMs / (1000 * 60 * 60);

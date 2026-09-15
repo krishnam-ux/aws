@@ -35,6 +35,10 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
   const [isExtendingTimeId, setIsExtendingTimeId] = useState<string | null>(null);
   const [extendMinutes, setExtendMinutes] = useState(5);
 
+  // Exam Portal Visibility State
+  const [isPortalPublished, setIsPortalPublished] = useState(false);
+  const [isTogglingPortal, setIsTogglingPortal] = useState(false);
+
   // Delete Exam & Directory States
   const [examToDelete, setExamToDelete] = useState<Exam | null>(null);
   const [deleteExamConfirmText, setDeleteExamConfirmText] = useState('');
@@ -56,6 +60,42 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  // Toggle Public Exam Portal Visibility
+  const handleTogglePortalStatus = async (nextState: boolean) => {
+    if (!effectiveToken) return;
+    setIsTogglingPortal(true);
+    try {
+      const res = await fetch('/api/admin/exams', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${effectiveToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'set-portal-status',
+          published: nextState
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsPortalPublished(nextState);
+        showToast(
+          nextState
+            ? 'Exam Portal published successfully. Public /exam is now live.'
+            : 'Exam Portal unpublished. Public /exam is now in unavailable state.',
+          'success'
+        );
+      } else {
+        showToast(data.error || 'Failed to update portal visibility.', 'error');
+      }
+    } catch (e) {
+      console.error('Toggle portal status error:', e);
+      showToast('Network error while updating portal status.', 'error');
+    } finally {
+      setIsTogglingPortal(false);
+    }
+  };
+
   // Fetch Exams List
   const fetchExams = useCallback(async () => {
     if (!effectiveToken) return;
@@ -67,10 +107,15 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
         }
       });
       const data = await res.json();
-      if (res.ok && data.exams) {
-        setExams(data.exams);
-        if (!selectedExamId && data.exams.length > 0) {
-          setSelectedExamId(data.exams[0].id);
+      if (res.ok) {
+        if (data.exams) {
+          setExams(data.exams);
+          if (!selectedExamId && data.exams.length > 0) {
+            setSelectedExamId(data.exams[0].id);
+          }
+        }
+        if (typeof data.portalPublished === 'boolean') {
+          setIsPortalPublished(data.portalPublished);
         }
       }
     } catch (e) {
@@ -335,6 +380,43 @@ export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
           <span>{toastMessage.text}</span>
         </div>
       )}
+
+      {/* Exam Portal Visibility Toggle Banner */}
+      <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-sm p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">Public Exam Portal Visibility</p>
+            <div className="flex items-center gap-2">
+              <span className={`inline-block h-2.5 w-2.5 rounded-full ${isPortalPublished ? 'bg-emerald-500' : 'bg-red-500'}`} />
+              <span className="text-sm font-bold text-slate-800">
+                {isPortalPublished ? '🟢 Published (Public Access Active)' : '🔴 Unpublished (Portal Unavailable)'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500">
+              {isPortalPublished
+                ? 'The /exam portal is currently live and the Exams tab is visible in the public navigation bar.'
+                : 'The /exam portal is temporarily disabled with an unavailable message and hidden from the navigation bar.'}
+            </p>
+          </div>
+          <button
+            onClick={() => handleTogglePortalStatus(!isPortalPublished)}
+            disabled={isTogglingPortal}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+              isPortalPublished
+                ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
+            }`}
+          >
+            {isTogglingPortal ? (
+              'Updating...'
+            ) : isPortalPublished ? (
+              '🔴 Unpublish Exam Portal'
+            ) : (
+              '🟢 Publish Exam Portal'
+            )}
+          </button>
+        </div>
+      </div>
 
       {/* Top Header & Exam Switcher */}
       <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-sm space-y-4">

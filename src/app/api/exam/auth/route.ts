@@ -11,6 +11,14 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { examId, password, studentName, rollNumber, email } = body;
 
+    const isPortalPublished = await db.settings.getExamPortalPublished();
+    if (!isPortalPublished) {
+      return NextResponse.json(
+        { error: 'The examination portal is currently unpublished by administrators.' },
+        { status: 403, headers: { 'Cache-Control': 'no-store, max-age=0' } }
+      );
+    }
+
     if (!examId || typeof examId !== 'string' || !examId.trim()) {
       return NextResponse.json(
         { error: 'Exam ID or Code is required.' },
