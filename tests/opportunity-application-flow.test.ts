@@ -8,6 +8,9 @@ import {
 } from '../src/lib/opportunityApplication';
 import { db } from '../src/lib/db';
 import { POST as careerAppPost } from '../src/app/api/career-applications/route';
+import { POST as adminPost } from '../src/app/api/admin/route';
+
+const ADMIN_HEADER = { Authorization: 'Bearer awssbg-admin-session-token-secure-hash' };
 
 test('blocks duplicate submissions only for the same opportunity and normalized email', () => {
   const applications = [
@@ -106,7 +109,7 @@ test('opportunity application submission requires Google Drive video link and wo
   const res1 = await careerAppPost(req1);
   assert.equal(res1.status, 400);
   const json1 = await res1.json();
-  assert.ok(json1.fieldErrors?.videoUrl);
+  assert.ok(json1.fieldErrors?.introductionVideoUrl || json1.fieldErrors?.videoUrl);
 
   // 2. Invalid Google Drive link should fail
   const formInvalidVideo = new FormData();
@@ -120,7 +123,7 @@ test('opportunity application submission requires Google Drive video link and wo
   formInvalidVideo.append('graduationYear', '2026');
   formInvalidVideo.append('studentId', '22BCS1122');
   formInvalidVideo.append('linkedin', 'https://linkedin.com/in/aditirao');
-  formInvalidVideo.append('videoUrl', 'https://dropbox.com/s/invalid-video');
+  formInvalidVideo.append('introductionVideoUrl', 'https://dropbox.com/s/invalid-video');
   formInvalidVideo.append('skills', 'AWS, Python');
   formInvalidVideo.append('experience', 'Cloud project intern');
   formInvalidVideo.append('motivation', 'Passionate about AWS cloud');
@@ -133,8 +136,8 @@ test('opportunity application submission requires Google Drive video link and wo
   const res2 = await careerAppPost(req2);
   assert.equal(res2.status, 400);
 
-  // 3. Valid Google Drive video link WITHOUT resume and WITHOUT github should succeed
-  const testEmail = `aditi.valid.${Date.now()}@cumail.in`;
+  // 3. Valid Google Drive video link with canonical field introductionVideoUrl
+  const testEmail = `aditi.canonical.${Date.now()}@cumail.in`;
   const validDriveLink = 'https://drive.google.com/file/d/1X2Y3Z-intro-video-sample/view?usp=sharing';
 
   const formValid = new FormData();
@@ -148,7 +151,7 @@ test('opportunity application submission requires Google Drive video link and wo
   formValid.append('graduationYear', '2026');
   formValid.append('studentId', '22BCS1122');
   formValid.append('linkedin', 'https://linkedin.com/in/aditirao');
-  formValid.append('videoUrl', validDriveLink);
+  formValid.append('introductionVideoUrl', validDriveLink);
   formValid.append('skills', 'AWS, Python, DynamoDB');
   formValid.append('experience', 'Cloud project intern at Tech Corp');
   formValid.append('motivation', 'Passionate about AWS cloud architectures');
@@ -159,17 +162,80 @@ test('opportunity application submission requires Google Drive video link and wo
     body: formValid,
   });
   const res3 = await careerAppPost(req3);
-  // Status is 303 redirect to opportunity page
   assert.equal(res3.status, 303);
 
-  // Verify stored in DB
+  // Verify stored in DB has both canonical introductionVideoUrl and videoUrl
   const apps = await db.careerApplications.getByOpportunityId(opportunity.id);
   const stored = apps.find((a: any) => a.email.toLowerCase() === testEmail.toLowerCase());
   assert.ok(stored, 'Application must be saved in database');
+  assert.equal(stored.introductionVideoUrl, validDriveLink);
   assert.equal(stored.videoUrl, validDriveLink);
   assert.equal(stored.name, 'Aditi Rao');
 
+  // 4. Admin API security & retrieval
+  // Unauthorized request must be rejected
+  const unauthReq = new Request('http://localhost/api/admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'get-career-applications', opportunityId: opportunity.id })
+  });
+  const unauthRes = await adminPost(unauthReq);
+  assert.equal(unauthRes.status, 401, 'Unauthorized requests must be rejected with 401');
+
+  // Authorized admin request returns application with introductionVideoUrl
+  const authReq = new Request('http://localhost/api/admin', {
+    method: 'POST',
+    headers: { ...ADMIN_HEADER, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'get-career-applications', opportunityId: opportunity.id })
+  });
+  const authRes = await adminPost(authReq);
+  assert.equal(authRes.status, 200);
+  const adminApps = await authRes.json();
+  const adminStored = adminApps.find((a: any) => a.id === stored.id);
+  assert.ok(adminStored, 'Admin API must return the stored application');
+  assert.equal(adminStored.introductionVideoUrl, validDriveLink);
+  assert.equal(adminStored.videoUrl, validDriveLink);
+
   // Clean up
   await db.careerApplications.deleteOne(stored.id);
+});
+
+test('historical applications with resume and github are preserved and returned intact', async () => {
+  const careers = await db.careers.getAll();
+  const opportunity = careers[0];
+  const historicalId = `hist-app-${Date.now()}`;
+  const historicalEmail = `historical.${Date.now()}@cumail.in`;
+
+  await db.careerApplications.insertOne({
+    id: historicalId,
+    opportunityId: opportunity.id,
+    name: 'Historical Candidate',
+    email: historicalEmail,
+    phone: '9988776655',
+    university: 'Chandigarh University',
+    program: 'B.Tech',
+    graduationYear: '2025',
+    studentId: 'HIST-2025',
+    resumeUrl: '/uploads/resumes/hist-sample.pdf',
+    introductionVideoUrl: 'https://drive.google.com/file/d/HISTORICAL_VIDEO_ID/view',
+    videoUrl: 'https://drive.google.com/file/d/HISTORICAL_VIDEO_ID/view',
+    linkedin: 'https://linkedin.com/in/historical',
+    github: 'https://github.com/historical',
+    skills: 'Java, Cloud',
+    experience: 'Previous intern',
+    motivation: 'Historical motivation',
+    consent: true,
+    status: 'Reviewed'
+  });
+
+  const allApps = await db.careerApplications.getAll();
+  const fetched = allApps.find((a: any) => a.id === historicalId);
+  assert.ok(fetched, 'Historical record must be retrieved');
+  assert.equal(fetched.resumeUrl, '/uploads/resumes/hist-sample.pdf');
+  assert.equal(fetched.github, 'https://github.com/historical');
+  assert.equal(fetched.introductionVideoUrl, 'https://drive.google.com/file/d/HISTORICAL_VIDEO_ID/view');
+
+  // Clean up
+  await db.careerApplications.deleteOne(historicalId);
 });
 

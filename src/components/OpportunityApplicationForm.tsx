@@ -21,7 +21,7 @@ type FieldName =
   | 'graduationYear'
   | 'studentId'
   | 'linkedin'
-  | 'videoUrl'
+  | 'introductionVideoUrl'
   | 'skills'
   | 'experience'
   | 'motivation';
@@ -37,7 +37,7 @@ const fieldMessages: Record<FieldName, string> = {
   graduationYear: 'Please enter your year.',
   studentId: 'Please enter your student ID.',
   linkedin: 'Please enter your LinkedIn profile URL.',
-  videoUrl: 'Please enter a valid Google Drive sharing link for your introduction video.',
+  introductionVideoUrl: 'Please enter a valid Google Drive sharing link for your introduction video.',
   skills: 'Please enter your skills.',
   experience: 'Please enter your experience.',
   motivation: 'Please explain why you want to join.',
@@ -73,9 +73,9 @@ export default function OpportunityApplicationForm({
     if (!value('studentId')) nextErrors.studentId = fieldMessages.studentId;
     if (!value('linkedin')) nextErrors.linkedin = fieldMessages.linkedin;
 
-    const videoUrl = value('videoUrl');
-    if (!videoUrl || !isValidGoogleDriveUrl(videoUrl)) {
-      nextErrors.videoUrl = fieldMessages.videoUrl;
+    const introductionVideoUrl = value('introductionVideoUrl') || value('videoUrl');
+    if (!introductionVideoUrl || !isValidGoogleDriveUrl(introductionVideoUrl)) {
+      nextErrors.introductionVideoUrl = fieldMessages.introductionVideoUrl;
     }
 
     if (!value('skills')) nextErrors.skills = fieldMessages.skills;
@@ -212,16 +212,16 @@ export default function OpportunityApplicationForm({
                 </div>
                 <input
                   type="url"
-                  name="videoUrl"
+                  name="introductionVideoUrl"
                   required
                   placeholder="https://drive.google.com/..."
-                  className={inputClass('videoUrl')}
-                  aria-invalid={Boolean(errors.videoUrl)}
+                  className={inputClass('introductionVideoUrl')}
+                  aria-invalid={Boolean(errors.introductionVideoUrl)}
                 />
                 <p className="mt-1 text-xs text-slate-500">
                   Paste your Google Drive link here. Please make sure the video access is set to &lsquo;Anyone with the link can view.&rsquo;
                 </p>
-                <ErrorText message={errors.videoUrl} />
+                <ErrorText message={errors.introductionVideoUrl} />
               </label>
             </div>
           </div>

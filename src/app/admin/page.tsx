@@ -4552,41 +4552,57 @@ export default function AdminDashboard() {
                   <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Additional Information</span>
                   <p className="text-slate-650 leading-relaxed font-sans bg-slate-50 p-3 rounded border border-slate-100 whitespace-pre-wrap">{viewItem.additionalInformation || 'No additional information provided.'}</p>
                 </div>
-                <div className="space-y-2 rounded border border-slate-200 bg-slate-50 p-3">
-                  <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Introduction Video</span>
-                  {viewItem.videoUrl ? (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <a
-                        href={viewItem.videoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded bg-brand-navy px-3 py-1.5 text-[11px] font-bold text-white hover:bg-slate-800 transition-colors"
-                      >
-                        <span>Open Google Drive Video</span>
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </a>
-                    </div>
-                  ) : (
-                    <p className="text-slate-600 text-xs">Not provided</p>
-                  )}
+                {/* SHORT INTRODUCTION VIDEO CARD */}
+                <div className="space-y-2.5 rounded border border-slate-200 bg-slate-50 p-3.5">
+                  <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">
+                    🎥 Short Introduction Video
+                  </span>
+                  {(() => {
+                    const rawUrl = (viewItem.introductionVideoUrl || viewItem.videoUrl || '').trim();
+                    if (!rawUrl) {
+                      return <p className="text-slate-500 text-xs italic">Not provided</p>;
+                    }
+                    const isGoogleDriveOrSafe = rawUrl.startsWith('http://') || rawUrl.startsWith('https://') || rawUrl.includes('drive.google.com') || rawUrl.includes('docs.google.com');
+                    if (!isGoogleDriveOrSafe) {
+                      return <p className="text-amber-600 text-xs font-medium">Invalid or unavailable link</p>;
+                    }
+                    const targetUrl = rawUrl.startsWith('http://') || rawUrl.startsWith('https://') ? rawUrl : `https://${rawUrl}`;
+                    return (
+                      <div className="space-y-2 pt-0.5">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <a
+                            href={targetUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 rounded bg-brand-navy px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-slate-800 transition-colors"
+                          >
+                            <span>▶ Open Introduction Video ↗</span>
+                          </a>
+                        </div>
+                        <p className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          Google Drive video submitted by applicant
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
+                {/* HISTORICAL RESUME (Only shown if application has historical resumeUrl) */}
                 {viewItem.resumeUrl ? (
-                  <div className="space-y-2 rounded border border-slate-200 bg-slate-50 p-3">
-                    <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Resume</span>
-                    <div className="flex flex-wrap gap-2">
+                  <div className="space-y-2 rounded border border-slate-200 bg-slate-50 p-3.5">
+                    <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Resume (Historical)</span>
+                    <div className="flex flex-wrap gap-2 pt-0.5">
                       <button
                         type="button"
                         onClick={() => getResumeFile(viewItem, false)}
-                        className="rounded bg-brand-navy px-3 py-1.5 text-[11px] font-bold text-white hover:bg-slate-800"
+                        className="rounded bg-brand-navy px-3 py-1.5 text-[11px] font-bold text-white hover:bg-slate-800 transition-colors"
                       >
                         View Resume
                       </button>
                       <button
                         type="button"
                         onClick={() => getResumeFile(viewItem, true)}
-                        className="rounded border border-slate-300 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-100"
+                        className="rounded border border-slate-300 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-100 transition-colors"
                       >
                         Download Resume
                       </button>
@@ -6006,7 +6022,16 @@ export default function AdminDashboard() {
 
                     return filteredApplications.map((app) => (
                       <tr key={app.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 font-semibold text-[#111827]">{app.name}</td>
+                        <td className="px-4 py-3 font-semibold text-[#111827]">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span>{app.name}</span>
+                            {(app.introductionVideoUrl || app.videoUrl) ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200" title="Introduction Video submitted">
+                                🎥 Video
+                              </span>
+                            ) : null}
+                          </div>
+                        </td>
                         <td className="px-4 py-3 font-mono text-[11px] select-all">{app.email}</td>
                         <td className="px-4 py-3">{app.university || '—'}</td>
                         <td className="px-4 py-3">{app.program ? `${app.program}${app.graduationYear ? ` (${app.graduationYear})` : ''}` : '—'}</td>

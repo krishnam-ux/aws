@@ -388,6 +388,7 @@ async function ensureCareerApplicationsTable() {
         graduation_year VARCHAR(50),
         student_id VARCHAR(255),
         resume_url TEXT,
+        introduction_video_url TEXT,
         video_url TEXT,
         linkedin VARCHAR(255),
         github VARCHAR(255),
@@ -404,6 +405,7 @@ async function ensureCareerApplicationsTable() {
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS introduction_video_url TEXT`;
     await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS video_url TEXT`;
     await sql`CREATE INDEX IF NOT EXISTS idx_career_applications_opportunity_id ON career_applications(opportunity_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_career_applications_email ON career_applications(email)`;
@@ -2035,7 +2037,8 @@ export const db = {
           graduationYear: r.graduation_year || '',
           studentId: r.student_id || '',
           resumeUrl: r.resume_url || '',
-          videoUrl: r.video_url || r.videoUrl || '',
+          introductionVideoUrl: r.introduction_video_url || r.video_url || r.introductionVideoUrl || r.videoUrl || '',
+          videoUrl: r.introduction_video_url || r.video_url || r.introductionVideoUrl || r.videoUrl || '',
           linkedin: r.linkedin || '',
           github: r.github || '',
           portfolio: r.portfolio || '',
@@ -2051,7 +2054,12 @@ export const db = {
           updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString()
         }));
       }
-      return await readJsonFile<any[]>('career_applications.json', []);
+      const data = await readJsonFile<any[]>('career_applications.json', []);
+      return data.map((item: any) => ({
+        ...item,
+        introductionVideoUrl: item.introductionVideoUrl || item.videoUrl || '',
+        videoUrl: item.introductionVideoUrl || item.videoUrl || ''
+      }));
     },
     getByOpportunityId: async (opportunityId: string): Promise<any[]> => {
       const rows = await db.careerApplications.getAll();
@@ -2061,23 +2069,28 @@ export const db = {
       if (hasConfiguredDatabase() && !sql) {
         throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
       }
+      const videoLink = application.introductionVideoUrl || application.videoUrl || '';
       if (sql) {
         await ensureCareerApplicationsTable();
         await sql`
           INSERT INTO career_applications (
             id, opportunity_id, name, email, phone, university, program, graduation_year, student_id,
-            resume_url, video_url, linkedin, github, portfolio, skills, experience, motivation, cover_letter,
+            resume_url, introduction_video_url, video_url, linkedin, github, portfolio, skills, experience, motivation, cover_letter,
             additional_information, consent, status, admin_notes, created_at, updated_at
           ) VALUES (
             ${application.id}, ${application.opportunityId}, ${application.name}, ${application.email}, ${application.phone || ''}, ${application.university || ''}, ${application.program || ''}, ${application.graduationYear || ''}, ${application.studentId || ''},
-            ${application.resumeUrl || ''}, ${application.videoUrl || ''}, ${application.linkedin || ''}, ${application.github || ''}, ${application.portfolio || ''}, ${application.skills || ''}, ${application.experience || ''}, ${application.motivation || ''}, ${application.coverLetter || ''}, ${application.additionalInformation || ''},
+            ${application.resumeUrl || ''}, ${videoLink}, ${videoLink}, ${application.linkedin || ''}, ${application.github || ''}, ${application.portfolio || ''}, ${application.skills || ''}, ${application.experience || ''}, ${application.motivation || ''}, ${application.coverLetter || ''}, ${application.additionalInformation || ''},
             ${Boolean(application.consent)}, ${application.status || 'New'}, ${application.adminNotes || ''}, ${application.createdAt || new Date().toISOString()}, ${application.updatedAt || new Date().toISOString()}
           )
         `;
         return;
       }
       const data = await readJsonFile<any[]>('career_applications.json', []);
-      data.unshift(application);
+      data.unshift({
+        ...application,
+        introductionVideoUrl: videoLink,
+        videoUrl: videoLink
+      });
       await writeJsonFile('career_applications.json', data);
     },
     updateOne: async (id: string, fields: Partial<any>): Promise<void> => {

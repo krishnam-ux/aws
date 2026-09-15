@@ -826,7 +826,7 @@ export async function POST(request: Request) {
           application.linkedin || '',
           application.github || '',
           application.portfolio || '',
-          application.videoUrl || '',
+          application.introductionVideoUrl || application.videoUrl || '',
           application.skills || '',
           application.experience || '',
           application.motivation || '',
