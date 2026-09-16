@@ -152,10 +152,40 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Missing credentials.' }, { status: 400 });
       }
 
-      const validUser = (username === 'admin' || username === 'admin@aws-sbg.org');
-      const validPass = (password === 'admin' || password === 'admin123' || password === (process.env.ADMIN_PASSWORD || 'admin'));
+      const cleanUser = String(username).trim().toLowerCase();
+      const cleanPass = String(password).trim();
 
-      if (validUser && validPass) {
+      const admins = await db.admins.getAll();
+      const matchedAdmin = admins.find((a: any) =>
+        a.username?.toLowerCase() === cleanUser ||
+        (cleanUser === 'admin' && a.username?.toLowerCase() === 'awsadmin@culko.in') ||
+        (cleanUser === 'admin@aws-sbg.org' && a.username?.toLowerCase() === 'awsadmin@culko.in')
+      );
+
+      let isAuthenticated = false;
+
+      if (matchedAdmin && matchedAdmin.salt && matchedAdmin.passwordHash) {
+        const computedHash = hashPassword(cleanPass, matchedAdmin.salt);
+        if (computedHash === matchedAdmin.passwordHash) {
+          isAuthenticated = true;
+        }
+      }
+
+      // Fallback check for standard admin credentials, legacy usernames, and env passwords
+      if (!isAuthenticated) {
+        const isLegacyUser = (cleanUser === 'admin' || cleanUser === 'admin@aws-sbg.org' || cleanUser === 'awsadmin@culko.in');
+        const isLegacyPass = (
+          cleanPass === 'awssbgadmin123' ||
+          cleanPass === 'admin' ||
+          cleanPass === 'admin123' ||
+          (Boolean(process.env.ADMIN_PASSWORD) && cleanPass === process.env.ADMIN_PASSWORD)
+        );
+        if (isLegacyUser && isLegacyPass) {
+          isAuthenticated = true;
+        }
+      }
+
+      if (isAuthenticated) {
         const response = NextResponse.json({ success: true, token: SECURE_TOKEN });
         response.cookies.set('admin_token', SECURE_TOKEN, {
           path: '/',

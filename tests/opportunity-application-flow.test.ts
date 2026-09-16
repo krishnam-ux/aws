@@ -263,3 +263,37 @@ test('opportunity benefits are dynamically loaded from data and contain all 10 e
   assert.ok(benefitsList[9].includes('Platform to showcase your skills, ideas, and talent'));
 });
 
+test('admin login authentication works for awsadmin@culko.in and rejects invalid passwords', async () => {
+  // 1. Success with standard production credentials
+  const req1 = new Request('http://localhost/api/admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'login', username: 'awsadmin@culko.in', password: 'awssbgadmin123' })
+  });
+  const res1 = await adminPost(req1);
+  assert.equal(res1.status, 200);
+  const data1 = await res1.json();
+  assert.equal(data1.success, true);
+  assert.ok(data1.token);
+
+  // 2. Success with username alias 'admin'
+  const req2 = new Request('http://localhost/api/admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'login', username: 'admin', password: 'admin123' })
+  });
+  const res2 = await adminPost(req2);
+  assert.equal(res2.status, 200);
+
+  // 3. Rejection on invalid password
+  const req3 = new Request('http://localhost/api/admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'login', username: 'awsadmin@culko.in', password: 'wrong-password-999' })
+  });
+  const res3 = await adminPost(req3);
+  assert.equal(res3.status, 401);
+  const data3 = await res3.json();
+  assert.equal(data3.error, 'Invalid credentials.');
+});
+
