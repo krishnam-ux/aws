@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import Link from 'next/link';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface MaintenanceScreenProps {
   headline?: string;
@@ -14,6 +14,23 @@ export default function MaintenanceScreen({
   message = "We're currently performing scheduled maintenance and improvements. Please check back shortly.",
   estimatedReturn
 }: MaintenanceScreenProps) {
+  const router = useRouter();
+
+  // Secret shortcut for IT Team / Admins: Win + Shift + K or Ctrl + Shift + K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        router.push('/admin');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [router]);
+
   return (
     <div className="min-h-screen bg-[#070D18] text-slate-100 flex flex-col justify-between font-sans selection:bg-[#FF9900] selection:text-slate-950 relative overflow-hidden">
       {/* Background ambient lighting */}
@@ -109,22 +126,16 @@ export default function MaintenanceScreen({
           </p>
 
           {/* Action Links */}
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <div className="pt-2 flex items-center justify-center">
             <a
               href="https://chat.whatsapp.com/HuEI5i4I8KkEya47yBKynD"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-[#FF9900] to-amber-600 hover:from-amber-500 hover:to-orange-600 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-orange-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-[#FF9900] to-amber-600 hover:from-amber-500 hover:to-orange-600 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-orange-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>Join WhatsApp Community</span>
               <span>&rarr;</span>
             </a>
-            <Link
-              href="/admin"
-              className="w-full sm:w-auto px-4 py-2.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5"
-            >
-              <span>🔒 Admin Access</span>
-            </Link>
           </div>
         </div>
       </main>
@@ -135,12 +146,8 @@ export default function MaintenanceScreen({
           <div>
             &copy; {new Date().getFullYear()} AWS Student Builder Group at Chandigarh University – Uttar Pradesh.
           </div>
-          <div className="flex items-center gap-3">
+          <div>
             <span>All rights reserved.</span>
-            <span>•</span>
-            <Link href="/admin" className="text-slate-500 hover:text-[#FF9900] transition-colors font-medium">
-              Administrator Portal
-            </Link>
           </div>
         </div>
       </footer>
