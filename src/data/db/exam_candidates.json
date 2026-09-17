@@ -1,5 +1,109 @@
 [
   {
+    "id": "cand_1789668545831_9ba619",
+    "examId": "exam-toggle-test-1789668545704",
+    "studentName": "Test Student",
+    "rollNumber": "23BCS99999",
+    "email": "test@cumail.in",
+    "password": "AWS-gsdB-VACF",
+    "status": "Active",
+    "emailSentStatus": "Not Sent",
+    "lastPasswordUpdate": "2026-09-17T18:09:05.834Z",
+    "createdAt": "2026-09-17T18:09:05.834Z",
+    "updatedAt": "2026-09-17T18:09:05.834Z"
+  },
+  {
+    "id": "cand_1789668537169_c1c138",
+    "examId": "exam-lock-lifecycle-1789668536963",
+    "studentName": "Alice Security Candidate",
+    "rollNumber": "SEC-1789668537099",
+    "email": "alice.sec@cumail.in",
+    "password": "candidate-entry-pass",
+    "status": "Active",
+    "emailSentStatus": "Not Sent",
+    "lastPasswordUpdate": "2026-09-17T18:08:57.184Z",
+    "createdAt": "2026-09-17T18:08:57.184Z",
+    "updatedAt": "2026-09-17T18:08:57.184Z"
+  },
+  {
+    "id": "cand_1789668519897_651bb2",
+    "examId": "exam-e2e-1789668519810",
+    "studentName": "Priyanka Sharma",
+    "rollNumber": "23BCS-1789668519810",
+    "email": "priyanka@cumail.in",
+    "password": "pass-e2e-2026",
+    "status": "Active",
+    "emailSentStatus": "Not Sent",
+    "lastPasswordUpdate": "2026-09-17T18:08:39.897Z",
+    "createdAt": "2026-09-17T18:08:39.897Z",
+    "updatedAt": "2026-09-17T18:08:39.897Z"
+  },
+  {
+    "id": "cand_1789668514270_eb099b",
+    "examId": "exam-admin-lock-flow-1789667544912",
+    "studentName": "Test Student",
+    "rollNumber": "2024BCS9999",
+    "email": "test.student@example.com",
+    "password": "AWS-zBA5-7BVB",
+    "status": "Active",
+    "emailSentStatus": "Not Sent",
+    "lastPasswordUpdate": "2026-09-17T18:08:34.270Z",
+    "createdAt": "2026-09-17T18:08:34.270Z",
+    "updatedAt": "2026-09-17T18:08:34.270Z"
+  },
+  {
+    "id": "cand_1789667550412_9de273",
+    "examId": "exam-toggle-test-1789667550262",
+    "studentName": "Test Student",
+    "rollNumber": "23BCS99999",
+    "email": "test@cumail.in",
+    "password": "AWS-d5V2-RhHG",
+    "status": "Active",
+    "emailSentStatus": "Not Sent",
+    "lastPasswordUpdate": "2026-09-17T17:52:30.412Z",
+    "createdAt": "2026-09-17T17:52:30.412Z",
+    "updatedAt": "2026-09-17T17:52:30.412Z"
+  },
+  {
+    "id": "cand_1789667543335_be38a4",
+    "examId": "exam-lock-lifecycle-1789667543223",
+    "studentName": "Alice Security Candidate",
+    "rollNumber": "SEC-1789667543279",
+    "email": "alice.sec@cumail.in",
+    "password": "candidate-entry-pass",
+    "status": "Active",
+    "emailSentStatus": "Not Sent",
+    "lastPasswordUpdate": "2026-09-17T17:52:23.336Z",
+    "createdAt": "2026-09-17T17:52:23.336Z",
+    "updatedAt": "2026-09-17T17:52:23.336Z"
+  },
+  {
+    "id": "cand_1789667523037_3a2bb1",
+    "examId": "exam-e2e-1789667522883",
+    "studentName": "Priyanka Sharma",
+    "rollNumber": "23BCS-1789667522883",
+    "email": "priyanka@cumail.in",
+    "password": "pass-e2e-2026",
+    "status": "Active",
+    "emailSentStatus": "Not Sent",
+    "lastPasswordUpdate": "2026-09-17T17:52:03.037Z",
+    "createdAt": "2026-09-17T17:52:03.037Z",
+    "updatedAt": "2026-09-17T17:52:03.037Z"
+  },
+  {
+    "id": "cand_1789667514729_d9a237",
+    "examId": "exam-admin-lock-flow-1789662731749",
+    "studentName": "Test Student",
+    "rollNumber": "2024BCS9999",
+    "email": "test.student@example.com",
+    "password": "AWS-J45Q-bweV",
+    "status": "Active",
+    "emailSentStatus": "Not Sent",
+    "lastPasswordUpdate": "2026-09-17T17:51:54.729Z",
+    "createdAt": "2026-09-17T17:51:54.729Z",
+    "updatedAt": "2026-09-17T17:51:54.729Z"
+  },
+  {
     "id": "cand_1789662734889_bdf1ce",
     "examId": "exam-toggle-test-1789662734820",
     "studentName": "Test Student",
@@ -648,7 +752,7 @@
     "emailSentStatus": "Not Sent",
     "lastPasswordUpdate": "2026-09-15T12:37:32.327Z",
     "createdAt": "2026-09-15T12:37:32.327Z",
-    "updatedAt": "2026-09-17T16:32:04.973Z"
+    "updatedAt": "2026-09-17T18:08:42.947Z"
   },
   {
     "id": "cand_1789475851653_9b0d7b",

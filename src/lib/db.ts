@@ -3242,5 +3242,49 @@ export const db = {
         return updated;
       });
     }
+  },
+  maintenanceSettings: {
+    getSettings: async (): Promise<{
+      maintenanceMode: boolean;
+      headline: string;
+      message: string;
+      estimatedReturn?: string;
+      updatedAt?: string;
+      updatedBy?: string;
+    }> => {
+      const defaultSettings = {
+        maintenanceMode: process.env.MAINTENANCE_MODE === 'true',
+        headline: 'Website Temporarily Unavailable',
+        message: "We're currently performing scheduled maintenance and improvements. Please check back shortly.",
+        estimatedReturn: '',
+        updatedAt: new Date().toISOString(),
+        updatedBy: 'system'
+      };
+      const saved = await readJsonFile<any>('maintenance_settings.json', null);
+      if (!saved) {
+        return defaultSettings;
+      }
+      // If environment variable explicitly forces true, respect emergency fallback
+      if (process.env.MAINTENANCE_MODE === 'true') {
+        return { ...saved, maintenanceMode: true };
+      }
+      return {
+        ...defaultSettings,
+        ...saved,
+        maintenanceMode: typeof saved.maintenanceMode === 'boolean' ? saved.maintenanceMode : false
+      };
+    },
+    updateSettings: async (settings: Partial<any>): Promise<any> => {
+      return withCollectionLock('maintenance_settings.json', async () => {
+        const current = await db.maintenanceSettings.getSettings();
+        const updated = {
+          ...current,
+          ...settings,
+          updatedAt: new Date().toISOString()
+        };
+        await writeJsonFile('maintenance_settings.json', updated);
+        return updated;
+      });
+    }
   }
 };

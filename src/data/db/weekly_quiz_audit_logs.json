@@ -1,5 +1,49 @@
 [
   {
+    "id": "wqa_1789668581119_8b6feb",
+    "quizId": "quiz-aws-week-01",
+    "attemptId": "wq_att_test_admin_ctrl",
+    "adminUser": "awsadmin@culko.in",
+    "action": "EXTEND_TIME",
+    "details": {
+      "extraMinutes": 5
+    },
+    "timestamp": "2026-09-17T18:09:41.119Z"
+  },
+  {
+    "id": "wqa_1789668581059_b46db8",
+    "quizId": "quiz-aws-week-01",
+    "attemptId": "wq_att_test_admin_ctrl",
+    "adminUser": "awsadmin@culko.in",
+    "action": "PAUSE_QUIZ",
+    "details": {
+      "remainingSeconds": 600
+    },
+    "timestamp": "2026-09-17T18:09:41.059Z"
+  },
+  {
+    "id": "wqa_1789667577120_00f5b2",
+    "quizId": "quiz-aws-week-01",
+    "attemptId": "wq_att_test_admin_ctrl",
+    "adminUser": "awsadmin@culko.in",
+    "action": "EXTEND_TIME",
+    "details": {
+      "extraMinutes": 5
+    },
+    "timestamp": "2026-09-17T17:52:57.121Z"
+  },
+  {
+    "id": "wqa_1789667577063_91e293",
+    "quizId": "quiz-aws-week-01",
+    "attemptId": "wq_att_test_admin_ctrl",
+    "adminUser": "awsadmin@culko.in",
+    "action": "PAUSE_QUIZ",
+    "details": {
+      "remainingSeconds": 600
+    },
+    "timestamp": "2026-09-17T17:52:57.064Z"
+  },
+  {
     "id": "wqa_1789662750073_e44ee8",
     "quizId": "quiz-aws-week-01",
     "attemptId": "wq_att_test_admin_ctrl",

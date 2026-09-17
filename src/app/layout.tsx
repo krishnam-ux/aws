@@ -3,6 +3,8 @@ import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import MaintenanceGate from "@/components/MaintenanceGate";
+import { db } from "@/lib/db";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -44,22 +46,41 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  let initialMaintenance = {
+    maintenanceMode: false,
+    headline: 'Website Temporarily Unavailable',
+    message: "We're currently performing scheduled maintenance and improvements. Please check back shortly.",
+    estimatedReturn: ''
+  };
+
+  try {
+    const settings = await db.maintenanceSettings.getSettings();
+    initialMaintenance = {
+      maintenanceMode: Boolean(settings.maintenanceMode),
+      headline: settings.headline || initialMaintenance.headline,
+      message: settings.message || initialMaintenance.message,
+      estimatedReturn: settings.estimatedReturn || ''
+    };
+  } catch (e) {}
+
   return (
     <html
       lang="en"
       className={`${inter.variable} ${outfit.variable} h-full scroll-smooth`}
     >
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-sans antialiased">
-        <Navbar />
-        <main className="flex-grow flex flex-col relative bg-slate-50">
-          {children}
-        </main>
-        <Footer />
+        <MaintenanceGate initialMaintenance={initialMaintenance}>
+          <Navbar />
+          <main className="flex-grow flex flex-col relative bg-slate-50">
+            {children}
+          </main>
+          <Footer />
+        </MaintenanceGate>
       </body>
     </html>
   );

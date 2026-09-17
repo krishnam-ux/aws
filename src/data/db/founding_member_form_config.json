@@ -14,8 +14,8 @@
   "successMessage": "Your Founding Member profile has been updated in the cloud registry.",
   "status": "Published",
   "publishedUrl": "https://www.awssbgcuup.tech/founding-members/form",
-  "version": 155,
-  "updatedAt": "2026-09-17T16:32:19.320Z",
+  "version": 169,
+  "updatedAt": "2026-09-17T18:09:16.120Z",
   "questions": [
     {
       "id": "fullName",

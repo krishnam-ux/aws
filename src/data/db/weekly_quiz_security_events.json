@@ -1,5 +1,53 @@
 [
   {
+    "id": "wqe_1789668580926_8fff3b",
+    "attemptId": "wq_att_test_sec_events",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_test_02",
+    "studentName": "Integrity Test Candidate",
+    "email": "integritytest@cumail.in",
+    "eventType": "TAB_FOCUS_RESTORED",
+    "severity": "INFO",
+    "metadata": {},
+    "timestamp": "2026-09-17T18:09:40.926Z"
+  },
+  {
+    "id": "wqe_1789668580892_1aee91",
+    "attemptId": "wq_att_test_sec_events",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_test_02",
+    "studentName": "Integrity Test Candidate",
+    "email": "integritytest@cumail.in",
+    "eventType": "TAB_FOCUS_LOST",
+    "severity": "WARNING",
+    "metadata": {},
+    "timestamp": "2026-09-17T18:09:40.892Z"
+  },
+  {
+    "id": "wqe_1789667576970_b44278",
+    "attemptId": "wq_att_test_sec_events",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_test_02",
+    "studentName": "Integrity Test Candidate",
+    "email": "integritytest@cumail.in",
+    "eventType": "TAB_FOCUS_RESTORED",
+    "severity": "INFO",
+    "metadata": {},
+    "timestamp": "2026-09-17T17:52:56.970Z"
+  },
+  {
+    "id": "wqe_1789667576952_6d0f97",
+    "attemptId": "wq_att_test_sec_events",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_test_02",
+    "studentName": "Integrity Test Candidate",
+    "email": "integritytest@cumail.in",
+    "eventType": "TAB_FOCUS_LOST",
+    "severity": "WARNING",
+    "metadata": {},
+    "timestamp": "2026-09-17T17:52:56.952Z"
+  },
+  {
     "id": "wqe_1789662749966_58356d",
     "attemptId": "wq_att_test_sec_events",
     "quizId": "quiz-aws-week-01",

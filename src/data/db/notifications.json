@@ -1,5 +1,65 @@
 [
   {
+    "id": "notif_1789668550035_26adba",
+    "title": "Exam Result - AWS Certified Cloud Practitioner Unit Assessment",
+    "description": "Result scorecard delivered for Abhay Kumar (23BCS1001)",
+    "message": "Score: 0% - Status: FAILED",
+    "recipientEmail": "fail.test@cumail.in",
+    "type": "exam_result",
+    "status": "unread",
+    "createdAt": "2026-09-17T18:09:10.035Z"
+  },
+  {
+    "id": "notif_1789668549907_33b767",
+    "title": "Exam Result - AWS Certified Cloud Practitioner Unit Assessment",
+    "description": "Result scorecard delivered for Abhay Kumar (23BCS1001)",
+    "message": "Score: 100% - Status: PASSED",
+    "recipientEmail": "abhay@cumail.in",
+    "type": "exam_result",
+    "status": "unread",
+    "createdAt": "2026-09-17T18:09:09.908Z"
+  },
+  {
+    "id": "notif_1789668520157_80b98c",
+    "title": "Exam Result - AWS Certified Developer Assessment",
+    "description": "Result scorecard delivered for Priyanka Sharma (23BCS-1789668519810)",
+    "message": "Score: 100% - Status: PASSED",
+    "recipientEmail": "priyanka@cumail.in",
+    "type": "exam_result",
+    "status": "unread",
+    "createdAt": "2026-09-17T18:08:40.157Z"
+  },
+  {
+    "id": "notif_1789667554034_7a558d",
+    "title": "Exam Result - AWS Certified Cloud Practitioner Unit Assessment",
+    "description": "Result scorecard delivered for Abhay Kumar (23BCS1001)",
+    "message": "Score: 0% - Status: FAILED",
+    "recipientEmail": "fail.test@cumail.in",
+    "type": "exam_result",
+    "status": "unread",
+    "createdAt": "2026-09-17T17:52:34.034Z"
+  },
+  {
+    "id": "notif_1789667553918_ed31de",
+    "title": "Exam Result - AWS Certified Cloud Practitioner Unit Assessment",
+    "description": "Result scorecard delivered for Abhay Kumar (23BCS1001)",
+    "message": "Score: 100% - Status: PASSED",
+    "recipientEmail": "abhay@cumail.in",
+    "type": "exam_result",
+    "status": "unread",
+    "createdAt": "2026-09-17T17:52:33.919Z"
+  },
+  {
+    "id": "notif_1789667523909_084f4b",
+    "title": "Exam Result - AWS Certified Developer Assessment",
+    "description": "Result scorecard delivered for Priyanka Sharma (23BCS-1789667522883)",
+    "message": "Score: 100% - Status: PASSED",
+    "recipientEmail": "priyanka@cumail.in",
+    "type": "exam_result",
+    "status": "unread",
+    "createdAt": "2026-09-17T17:52:03.910Z"
+  },
+  {
     "id": "notif_1789662736805_a9cb28",
     "title": "Exam Result - AWS Certified Cloud Practitioner Unit Assessment",
     "description": "Result scorecard delivered for Abhay Kumar (23BCS1001)",
@@ -4910,6 +4970,34 @@
     "title": "New Event Registration",
     "description": "Ananya Sen registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
     "date": "2026-09-17T16:32:08.123Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1789667514564",
+    "title": "New Event Registration",
+    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-09-17T17:51:54.564Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1789667537118",
+    "title": "New Event Registration",
+    "description": "Ananya Sen registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-09-17T17:52:17.118Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1789668514143",
+    "title": "New Event Registration",
+    "description": "Test Student registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-09-17T18:08:34.143Z",
+    "status": "unread"
+  },
+  {
+    "id": "notif-1789668529033",
+    "title": "New Event Registration",
+    "description": "Ananya Sen registered for AWS Student Builder Group Inauguration & Cloud Kickstart.",
+    "date": "2026-09-17T18:08:49.033Z",
     "status": "unread"
   }
 ]

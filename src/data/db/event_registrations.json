@@ -580,5 +580,35 @@
     "date": "2026-09-17T16:31:46.582Z",
     "attendance": "Registered",
     "certificateId": null
+  },
+  {
+    "id": "reg-krishnam-test-101",
+    "eventId": "event-aws-cloud-day",
+    "eventName": "AWS Cloud Day 2026",
+    "name": "Krishnam Dwivedi",
+    "email": "krishnamdwivedi17@gmail.com",
+    "studentId": "22BCS10101",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "program": "B.Tech CSE",
+    "year": "3rd Year",
+    "status": "Approved",
+    "date": "2026-09-17T17:51:42.796Z",
+    "attendance": "Registered",
+    "certificateId": null
+  },
+  {
+    "id": "reg-krishnam-test-101",
+    "eventId": "event-aws-cloud-day",
+    "eventName": "AWS Cloud Day 2026",
+    "name": "Krishnam Dwivedi",
+    "email": "krishnamdwivedi17@gmail.com",
+    "studentId": "22BCS10101",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "program": "B.Tech CSE",
+    "year": "3rd Year",
+    "status": "Approved",
+    "date": "2026-09-17T18:08:28.712Z",
+    "attendance": "Registered",
+    "certificateId": null
   }
 ]
