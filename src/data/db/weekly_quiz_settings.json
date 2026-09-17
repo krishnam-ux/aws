@@ -1,0 +1,13 @@
+{
+  "requireWebcam": true,
+  "requireMicrophone": true,
+  "requireFaceDetection": true,
+  "detectMultipleFaces": true,
+  "requireFullscreen": true,
+  "monitorFocus": true,
+  "noFaceThresholdSeconds": 6,
+  "multipleFacesThresholdSeconds": 4,
+  "cameraGracePeriodSeconds": 30,
+  "fullscreenGracePeriodSeconds": 15,
+  "updatedAt": "2026-09-17T13:48:24.635Z"
+}

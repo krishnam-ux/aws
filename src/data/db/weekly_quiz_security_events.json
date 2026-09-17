@@ -1,0 +1,301 @@
+[
+  {
+    "id": "wqe_1789662749966_58356d",
+    "attemptId": "wq_att_test_sec_events",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_test_02",
+    "studentName": "Integrity Test Candidate",
+    "email": "integritytest@cumail.in",
+    "eventType": "TAB_FOCUS_RESTORED",
+    "severity": "INFO",
+    "metadata": {},
+    "timestamp": "2026-09-17T16:32:29.967Z"
+  },
+  {
+    "id": "wqe_1789662749935_da3ad5",
+    "attemptId": "wq_att_test_sec_events",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_test_02",
+    "studentName": "Integrity Test Candidate",
+    "email": "integritytest@cumail.in",
+    "eventType": "TAB_FOCUS_LOST",
+    "severity": "WARNING",
+    "metadata": {},
+    "timestamp": "2026-09-17T16:32:29.936Z"
+  },
+  {
+    "id": "wqe_1789654360066_f6109d",
+    "attemptId": "wq_att_1789653817510_a646eb03",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_rahul_sharma_cumail_in",
+    "studentName": "Rahul Sharma",
+    "email": "rahul.sharma@cumail.in",
+    "eventType": "QUIZ_SUBMITTED",
+    "severity": "INFO",
+    "metadata": {
+      "submissionReason": "MANUAL"
+    },
+    "timestamp": "2026-09-17T14:12:40.103Z"
+  },
+  {
+    "id": "wqe_1789654213474_73ee8c",
+    "attemptId": "wq_att_1789653817510_a646eb03",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_rahul_sharma_cumail_in",
+    "studentName": "Rahul Sharma",
+    "email": "rahul.sharma@cumail.in",
+    "eventType": "TAB_FOCUS_RESTORED",
+    "severity": "INFO",
+    "metadata": {},
+    "timestamp": "2026-09-17T14:10:13.475Z"
+  },
+  {
+    "id": "wqe_1789654208002_0e6d60",
+    "attemptId": "wq_att_1789653817510_a646eb03",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_rahul_sharma_cumail_in",
+    "studentName": "Rahul Sharma",
+    "email": "rahul.sharma@cumail.in",
+    "eventType": "TAB_FOCUS_LOST",
+    "severity": "WARNING",
+    "metadata": {},
+    "timestamp": "2026-09-17T14:10:08.003Z"
+  },
+  {
+    "id": "wqe_1789654102901_0a67b5",
+    "attemptId": "wq_att_1789653817510_a646eb03",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_rahul_sharma_cumail_in",
+    "studentName": "Rahul Sharma",
+    "email": "rahul.sharma@cumail.in",
+    "eventType": "MULTIPLE_FACES_DETECTED",
+    "severity": "WARNING",
+    "durationSeconds": 4,
+    "metadata": {
+      "durationSeconds": 4
+    },
+    "timestamp": "2026-09-17T14:08:22.902Z"
+  },
+  {
+    "id": "wqe_1789654050878_e691ed",
+    "attemptId": "wq_att_1789653817510_a646eb03",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_rahul_sharma_cumail_in",
+    "studentName": "Rahul Sharma",
+    "email": "rahul.sharma@cumail.in",
+    "eventType": "FACE_DETECTION_RECOVERED",
+    "severity": "INFO",
+    "metadata": {},
+    "timestamp": "2026-09-17T14:07:30.879Z"
+  },
+  {
+    "id": "wqe_1789654047893_32af08",
+    "attemptId": "wq_att_1789653817510_a646eb03",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_rahul_sharma_cumail_in",
+    "studentName": "Rahul Sharma",
+    "email": "rahul.sharma@cumail.in",
+    "eventType": "MULTIPLE_FACES_DETECTED",
+    "severity": "WARNING",
+    "durationSeconds": 4,
+    "metadata": {
+      "durationSeconds": 4
+    },
+    "timestamp": "2026-09-17T14:07:27.893Z"
+  },
+  {
+    "id": "wqe_1789654010891_b79e8b",
+    "attemptId": "wq_att_1789653817510_a646eb03",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_rahul_sharma_cumail_in",
+    "studentName": "Rahul Sharma",
+    "email": "rahul.sharma@cumail.in",
+    "eventType": "FACE_DETECTION_RECOVERED",
+    "severity": "INFO",
+    "metadata": {},
+    "timestamp": "2026-09-17T14:06:50.892Z"
+  },
+  {
+    "id": "wqe_1789654004883_570ea6",
+    "attemptId": "wq_att_1789653817510_a646eb03",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_rahul_sharma_cumail_in",
+    "studentName": "Rahul Sharma",
+    "email": "rahul.sharma@cumail.in",
+    "eventType": "MULTIPLE_FACES_DETECTED",
+    "severity": "WARNING",
+    "durationSeconds": 4,
+    "metadata": {
+      "durationSeconds": 4
+    },
+    "timestamp": "2026-09-17T14:06:44.884Z"
+  },
+  {
+    "id": "wqe_1789653922550_6323db",
+    "attemptId": "wq_att_1789653817510_a646eb03",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_rahul_sharma_cumail_in",
+    "studentName": "Rahul Sharma",
+    "email": "rahul.sharma@cumail.in",
+    "eventType": "TAB_FOCUS_RESTORED",
+    "severity": "INFO",
+    "metadata": {},
+    "timestamp": "2026-09-17T14:05:22.552Z"
+  },
+  {
+    "id": "wqe_1789653915893_28c0bc",
+    "attemptId": "wq_att_1789653817510_a646eb03",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_rahul_sharma_cumail_in",
+    "studentName": "Rahul Sharma",
+    "email": "rahul.sharma@cumail.in",
+    "eventType": "TAB_FOCUS_LOST",
+    "severity": "WARNING",
+    "metadata": {},
+    "timestamp": "2026-09-17T14:05:15.894Z"
+  },
+  {
+    "id": "wqe_1789653817543_54b708",
+    "attemptId": "wq_att_1789653817510_a646eb03",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_rahul_sharma_cumail_in",
+    "studentName": "Rahul Sharma",
+    "email": "rahul.sharma@cumail.in",
+    "eventType": "WEBCAM_CONNECTED",
+    "severity": "INFO",
+    "metadata": {},
+    "timestamp": "2026-09-17T14:03:37.544Z"
+  },
+  {
+    "id": "wqe_1789653817531_f3bc13",
+    "attemptId": "wq_att_1789653817510_a646eb03",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_rahul_sharma_cumail_in",
+    "studentName": "Rahul Sharma",
+    "email": "rahul.sharma@cumail.in",
+    "eventType": "WEBCAM_PERMISSION_GRANTED",
+    "severity": "INFO",
+    "metadata": {},
+    "timestamp": "2026-09-17T14:03:37.532Z"
+  },
+  {
+    "id": "wqe_1789653817516_9791ca",
+    "attemptId": "wq_att_1789653817510_a646eb03",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_rahul_sharma_cumail_in",
+    "studentName": "Rahul Sharma",
+    "email": "rahul.sharma@cumail.in",
+    "eventType": "QUIZ_STARTED",
+    "severity": "INFO",
+    "metadata": {},
+    "timestamp": "2026-09-17T14:03:37.517Z"
+  },
+  {
+    "id": "wqe_1789653680300_c292c3",
+    "attemptId": "wq_att_1789652809592_75998df8",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_student_culko_in",
+    "studentName": "Test Student",
+    "email": "student@culko.in",
+    "eventType": "TAB_FOCUS_LOST",
+    "severity": "WARNING",
+    "metadata": {},
+    "timestamp": "2026-09-17T14:01:20.302Z"
+  },
+  {
+    "id": "wqe_1789653286944_037cd7",
+    "attemptId": "wq_att_test_sec_events",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_test_02",
+    "studentName": "Integrity Test Candidate",
+    "email": "integritytest@cumail.in",
+    "eventType": "TAB_FOCUS_RESTORED",
+    "severity": "INFO",
+    "metadata": {},
+    "timestamp": "2026-09-17T13:54:46.945Z"
+  },
+  {
+    "id": "wqe_1789653286924_283824",
+    "attemptId": "wq_att_test_sec_events",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_test_02",
+    "studentName": "Integrity Test Candidate",
+    "email": "integritytest@cumail.in",
+    "eventType": "TAB_FOCUS_LOST",
+    "severity": "WARNING",
+    "metadata": {},
+    "timestamp": "2026-09-17T13:54:46.925Z"
+  },
+  {
+    "id": "wqe_1789653266269_fde3db",
+    "attemptId": "wq_att_1789652809592_75998df8",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_student_culko_in",
+    "studentName": "Test Student",
+    "email": "student@culko.in",
+    "eventType": "TAB_FOCUS_LOST",
+    "severity": "WARNING",
+    "metadata": {},
+    "timestamp": "2026-09-17T13:54:26.285Z"
+  },
+  {
+    "id": "wqe_1789652809642_374416",
+    "attemptId": "wq_att_1789652809592_75998df8",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_student_culko_in",
+    "studentName": "Test Student",
+    "email": "student@culko.in",
+    "eventType": "WEBCAM_CONNECTED",
+    "severity": "INFO",
+    "metadata": {},
+    "timestamp": "2026-09-17T13:46:49.643Z"
+  },
+  {
+    "id": "wqe_1789652809620_c7e53e",
+    "attemptId": "wq_att_1789652809592_75998df8",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_student_culko_in",
+    "studentName": "Test Student",
+    "email": "student@culko.in",
+    "eventType": "WEBCAM_PERMISSION_GRANTED",
+    "severity": "INFO",
+    "metadata": {},
+    "timestamp": "2026-09-17T13:46:49.621Z"
+  },
+  {
+    "id": "wqe_1789652809603_848018",
+    "attemptId": "wq_att_1789652809592_75998df8",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_student_culko_in",
+    "studentName": "Test Student",
+    "email": "student@culko.in",
+    "eventType": "QUIZ_STARTED",
+    "severity": "INFO",
+    "metadata": {},
+    "timestamp": "2026-09-17T13:46:49.604Z"
+  },
+  {
+    "id": "wqe_1789652516132_aeef5a",
+    "attemptId": "wq_att_test_sec_events",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_test_02",
+    "studentName": "Integrity Test Candidate",
+    "email": "integritytest@cumail.in",
+    "eventType": "TAB_FOCUS_RESTORED",
+    "severity": "INFO",
+    "metadata": {},
+    "timestamp": "2026-09-17T13:41:56.132Z"
+  },
+  {
+    "id": "wqe_1789652516119_6434a2",
+    "attemptId": "wq_att_test_sec_events",
+    "quizId": "quiz-aws-week-01",
+    "candidateId": "cand_test_02",
+    "studentName": "Integrity Test Candidate",
+    "email": "integritytest@cumail.in",
+    "eventType": "TAB_FOCUS_LOST",
+    "severity": "WARNING",
+    "metadata": {},
+    "timestamp": "2026-09-17T13:41:56.119Z"
+  }
+]

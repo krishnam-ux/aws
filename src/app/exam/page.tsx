@@ -1040,6 +1040,32 @@ function ExamPortalContent({ initialExamId }: ExamPortalPageProps) {
                   </div>
                 </div>
 
+                {/* Weekly AWS Quiz Quick Link Banner */}
+                <div className="p-4 rounded-xl bg-gradient-to-r from-[#FF9900]/15 via-slate-900 to-slate-900 border border-[#FF9900]/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#FF9900] text-slate-950 font-black text-sm flex items-center justify-center shadow-md shrink-0">
+                      🎥
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-white">Weekly AWS Quiz</span>
+                        <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                          PROCTORED
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        Post-session weekly assessments with live camera proctoring.
+                      </div>
+                    </div>
+                  </div>
+                  <a
+                    href="/quiz"
+                    className="w-full sm:w-auto px-4 py-2 bg-[#FF9900] hover:bg-[#E08800] text-slate-950 text-xs font-extrabold rounded-lg shadow-sm transition-all text-center whitespace-nowrap"
+                  >
+                    Enter Weekly Quiz &rarr;
+                  </a>
+                </div>
+
                 {/* Primary Examination Card */}
                 <div className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">

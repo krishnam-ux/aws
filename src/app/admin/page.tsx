@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { siteConfig } from '@/data/siteConfig';
 import AdminExamsManager from '@/components/AdminExamsManager';
+import AdminWeeklyQuizProctoring from '@/components/AdminWeeklyQuizProctoring';
 import AdminEmailManager from '@/components/AdminEmailManager';
 import AdminFoundingMembersManager from '@/components/AdminFoundingMembersManager';
 import AdminSendStudentEmailModal from '@/components/AdminSendStudentEmailModal';
@@ -147,7 +148,7 @@ export default function AdminDashboard() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   // Tabs structure matching user specifications
-  const [activeTab, setActiveTab] = useState<'Dashboard' | 'Registrations' | 'EventRegistrations' | 'Verification' | 'Collaborations' | 'Events' | 'Announcements' | 'Resources' | 'Opportunities' | 'CoreTeam' | 'FoundingMembers' | 'Content' | 'Settings' | 'ContactMessages' | 'Feedback' | 'Exams' | 'Emails'>('Dashboard');
+  const [activeTab, setActiveTab] = useState<'Dashboard' | 'Registrations' | 'EventRegistrations' | 'Verification' | 'Collaborations' | 'Events' | 'Announcements' | 'Resources' | 'Opportunities' | 'CoreTeam' | 'FoundingMembers' | 'Content' | 'Settings' | 'ContactMessages' | 'Feedback' | 'Exams' | 'Emails' | 'WeeklyQuizProctoring'>('Dashboard');
 
   // Stats / Dashboard data
   const [stats, setStats] = useState<any>({
@@ -1914,18 +1915,31 @@ export default function AdminDashboard() {
               <div className="space-y-1">
                 {!isSidebarCollapsed && (
                   <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest px-3 flex items-center justify-between">
-                    <span>Certifications</span>
+                    <span>Assessments</span>
                     <span className="text-[8px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono font-bold">PROCTOR</span>
                   </span>
                 )}
+                <button onClick={() => setActiveTab('WeeklyQuizProctoring')} className={getNavClass('WeeklyQuizProctoring')}>
+                  <div className="relative flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm">🎥</span>
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+                  </div>
+                  {!isSidebarCollapsed && (
+                    <span className="flex items-center justify-between w-full">
+                      <span className="font-bold">Weekly Quiz Proctoring</span>
+                      <span className="text-[8px] bg-orange-500/20 text-[#FF9900] px-1.5 py-0.5 rounded font-mono font-bold">
+                        LIVE
+                      </span>
+                    </span>
+                  )}
+                </button>
                 <button onClick={() => setActiveTab('Exams')} className={getNavClass('Exams')}>
                   <svg className="h-4 w-4 flex-shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                   {!isSidebarCollapsed && (
                     <span className="flex items-center justify-between w-full">
-                      <span>Exams & Live Control</span>
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span>Certification Exams (SEB)</span>
                     </span>
                   )}
                 </button>
@@ -2156,10 +2170,16 @@ export default function AdminDashboard() {
                 </h3>
                 <div className="flex flex-wrap gap-3">
                   <button
+                    onClick={() => setActiveTab('WeeklyQuizProctoring')}
+                    className="px-3.5 py-1.5 bg-[#FF9900] hover:bg-[#E08800] text-slate-950 text-xs font-bold rounded shadow-sm transition-all cursor-pointer flex items-center space-x-1.5"
+                  >
+                    <span>🎥 Weekly Quiz Live Proctoring</span>
+                  </button>
+                  <button
                     onClick={() => setActiveTab('Exams')}
                     className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded shadow-sm transition-all cursor-pointer flex items-center space-x-1.5"
                   >
-                    <span>🔒 Exam Control Center</span>
+                    <span>🔒 Exam Control Center (SEB)</span>
                   </button>
                   <button
                     onClick={() => setActiveTab('Emails')}
@@ -2344,6 +2364,11 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* TAB: LIVE WEEKLY QUIZ PROCTORING */}
+          {activeTab === 'WeeklyQuizProctoring' && (
+            <AdminWeeklyQuizProctoring token={token || 'awssbg-admin-session-token-secure-hash'} />
           )}
 
           {/* TAB: SECURE CERTIFICATION EXAMS & LIVE CONTROL */}

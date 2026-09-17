@@ -1,5 +1,901 @@
 [
   {
+    "id": "audit_1789662737090_877c1a",
+    "examId": "test-exam-ccp-unit",
+    "adminUser": "admin",
+    "action": "UNLOCK_ALL",
+    "details": {
+      "count": 5
+    },
+    "timestamp": "2026-09-17T16:32:17.090Z"
+  },
+  {
+    "id": "audit_1789662736815_f67d2b",
+    "examId": "test-exam-ccp-unit",
+    "attemptId": "att_1789662736787_80bcf2f5",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "fail.test@cumail.in",
+      "studentName": "Abhay Kumar",
+      "verdict": "FAILED",
+      "score": 0,
+      "percentage": 0
+    },
+    "timestamp": "2026-09-17T16:32:16.815Z"
+  },
+  {
+    "id": "audit_1789662736756_d53fc6",
+    "examId": "test-exam-ccp-unit",
+    "attemptId": "att_1789662736712_6ea4d729",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "abhay@cumail.in",
+      "studentName": "Abhay Kumar",
+      "verdict": "PASSED",
+      "score": 20,
+      "percentage": 100
+    },
+    "timestamp": "2026-09-17T16:32:16.756Z"
+  },
+  {
+    "id": "audit_1789662734735_3cf167",
+    "examId": "all",
+    "adminUser": "admin",
+    "action": "UPDATE_EXAM",
+    "details": {
+      "examPortalPublished": true
+    },
+    "timestamp": "2026-09-17T16:32:14.735Z"
+  },
+  {
+    "id": "audit_1789662734666_de3604",
+    "examId": "all",
+    "adminUser": "admin",
+    "action": "UPDATE_EXAM",
+    "details": {
+      "examPortalPublished": false
+    },
+    "timestamp": "2026-09-17T16:32:14.667Z"
+  },
+  {
+    "id": "audit_1789662731989_3b1c60",
+    "examId": "exam-admin-lock-flow-1789662731749",
+    "attemptId": "att-admin-lock-1789662731782",
+    "adminUser": "admin",
+    "action": "UNLOCK_LOCKED_CANDIDATE",
+    "details": {
+      "candidateId": "att-admin-lock-1789662731782",
+      "studentName": "Bob Invigilator Subject",
+      "rollNumber": "ROLL-BOB-99",
+      "reason": "Physical inspection completed and secondary display disconnected",
+      "previousState": "EXAM_LOCKED",
+      "newState": "IN_EXAM"
+    },
+    "timestamp": "2026-09-17T16:32:11.989Z"
+  },
+  {
+    "id": "audit_1789662731878_fb4e2d",
+    "examId": "exam-admin-lock-flow-1789662731749",
+    "attemptId": "att-admin-lock-1789662731782",
+    "adminUser": "admin",
+    "action": "MANUAL_LOCK_CANDIDATE",
+    "details": {
+      "candidateId": "att-admin-lock-1789662731782",
+      "studentName": "Bob Invigilator Subject",
+      "rollNumber": "ROLL-BOB-99",
+      "reason": "Suspicious dual-monitor detected by proctor",
+      "previousState": "IN_EXAM",
+      "newState": "EXAM_LOCKED"
+    },
+    "timestamp": "2026-09-17T16:32:11.879Z"
+  },
+  {
+    "id": "audit_1789662731320_766f74",
+    "examId": "",
+    "attemptId": "att_1789662731234_5247cbb7",
+    "adminUser": "admin",
+    "action": "UNLOCK",
+    "details": {
+      "candidateId": "att_1789662731234_5247cbb7"
+    },
+    "timestamp": "2026-09-17T16:32:11.321Z"
+  },
+  {
+    "id": "audit_1789662731269_3ad1d0",
+    "examId": "",
+    "attemptId": "att_1789662731234_5247cbb7",
+    "adminUser": "admin",
+    "action": "VERIFY",
+    "details": {
+      "candidateId": "att_1789662731234_5247cbb7"
+    },
+    "timestamp": "2026-09-17T16:32:11.269Z"
+  },
+  {
+    "id": "audit_1789662731068_ebc257",
+    "examId": "exam-unlock-1789662730906-xk6fr",
+    "adminUser": "admin",
+    "action": "REGENERATE_UNLOCK_PASSWORD",
+    "details": {
+      "newPassword": "UNLOCK-18A1AD"
+    },
+    "timestamp": "2026-09-17T16:32:11.068Z"
+  },
+  {
+    "id": "audit_1789662725444_954ff9",
+    "examId": "exam-delete-1789662725116-pzib",
+    "adminUser": "admin",
+    "action": "RESET_ATTEMPT",
+    "details": {
+      "action": "DELETE_ALL_CANDIDATES",
+      "count": 1
+    },
+    "timestamp": "2026-09-17T16:32:05.445Z"
+  },
+  {
+    "id": "audit_1789662725373_1e4d21",
+    "examId": "exam-delete-1789662725116-pzib",
+    "adminUser": "admin",
+    "action": "RESET_ATTEMPT",
+    "details": {
+      "action": "DELETE_WAITING",
+      "count": 1
+    },
+    "timestamp": "2026-09-17T16:32:05.373Z"
+  },
+  {
+    "id": "audit_1789662725330_b81ec1",
+    "examId": "exam-delete-1789662725116-pzib",
+    "attemptId": "att-cand-1-1789662725116",
+    "adminUser": "admin",
+    "action": "RESET_ATTEMPT",
+    "details": {
+      "candidateId": "att-cand-1-1789662725116",
+      "studentName": "Waiting Candidate A",
+      "rollNumber": "23BCS1001-1789662725220"
+    },
+    "timestamp": "2026-09-17T16:32:05.330Z"
+  },
+  {
+    "id": "audit_1789662722911_f5bece",
+    "examId": "exam-e2e-1789662722371",
+    "attemptId": "att_1789662722470_a218cea8",
+    "adminUser": "admin",
+    "action": "START",
+    "details": {
+      "action": "SELECTION_EMAIL_SENT",
+      "recipient": "priyanka@cumail.in",
+      "studentName": "Priyanka Sharma",
+      "notes": "Outstanding technical performance"
+    },
+    "timestamp": "2026-09-17T16:32:02.911Z"
+  },
+  {
+    "id": "audit_1789662722771_1e7075",
+    "examId": "exam-e2e-1789662722371",
+    "attemptId": "att_1789662722470_a218cea8",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "priyanka@cumail.in",
+      "studentName": "Priyanka Sharma",
+      "verdict": "PASSED",
+      "score": 100,
+      "percentage": 100
+    },
+    "timestamp": "2026-09-17T16:32:02.772Z"
+  },
+  {
+    "id": "audit_1789662722570_a8f4f7",
+    "examId": "exam-e2e-1789662722371",
+    "attemptId": "att_1789662722470_a218cea8",
+    "adminUser": "admin",
+    "action": "UNLOCK",
+    "details": {
+      "candidateId": "att_1789662722470_a218cea8"
+    },
+    "timestamp": "2026-09-17T16:32:02.570Z"
+  },
+  {
+    "id": "audit_1789662722536_3c8799",
+    "examId": "exam-e2e-1789662722371",
+    "attemptId": "att_1789662722470_a218cea8",
+    "adminUser": "admin",
+    "action": "VERIFY",
+    "details": {
+      "candidateId": "att_1789662722470_a218cea8"
+    },
+    "timestamp": "2026-09-17T16:32:02.536Z"
+  },
+  {
+    "id": "audit_1789662722413_f3706c",
+    "examId": "exam-e2e-1789662722371",
+    "adminUser": "admin",
+    "action": "CREATE_EXAM",
+    "details": {
+      "title": "AWS Certified Developer Assessment",
+      "questionsCount": 2
+    },
+    "timestamp": "2026-09-17T16:32:02.413Z"
+  },
+  {
+    "id": "audit_1789653273321_5c01d6",
+    "examId": "test-exam-ccp-unit",
+    "adminUser": "admin",
+    "action": "UNLOCK_ALL",
+    "details": {
+      "count": 5
+    },
+    "timestamp": "2026-09-17T13:54:33.321Z"
+  },
+  {
+    "id": "audit_1789653273067_ec74d0",
+    "examId": "test-exam-ccp-unit",
+    "attemptId": "att_1789653273034_949eb339",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "fail.test@cumail.in",
+      "studentName": "Abhay Kumar",
+      "verdict": "FAILED",
+      "score": 0,
+      "percentage": 0
+    },
+    "timestamp": "2026-09-17T13:54:33.067Z"
+  },
+  {
+    "id": "audit_1789653273009_8b5d0a",
+    "examId": "test-exam-ccp-unit",
+    "attemptId": "att_1789653272960_6c5c64c0",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "abhay@cumail.in",
+      "studentName": "Abhay Kumar",
+      "verdict": "PASSED",
+      "score": 20,
+      "percentage": 100
+    },
+    "timestamp": "2026-09-17T13:54:33.009Z"
+  },
+  {
+    "id": "audit_1789653271259_1ebb98",
+    "examId": "all",
+    "adminUser": "admin",
+    "action": "UPDATE_EXAM",
+    "details": {
+      "examPortalPublished": true
+    },
+    "timestamp": "2026-09-17T13:54:31.260Z"
+  },
+  {
+    "id": "audit_1789653271207_76f899",
+    "examId": "all",
+    "adminUser": "admin",
+    "action": "UPDATE_EXAM",
+    "details": {
+      "examPortalPublished": false
+    },
+    "timestamp": "2026-09-17T13:54:31.208Z"
+  },
+  {
+    "id": "audit_1789653269083_2612a2",
+    "examId": "exam-admin-lock-flow-1789653268935",
+    "attemptId": "att-admin-lock-1789653268951",
+    "adminUser": "admin",
+    "action": "UNLOCK_LOCKED_CANDIDATE",
+    "details": {
+      "candidateId": "att-admin-lock-1789653268951",
+      "studentName": "Bob Invigilator Subject",
+      "rollNumber": "ROLL-BOB-99",
+      "reason": "Physical inspection completed and secondary display disconnected",
+      "previousState": "EXAM_LOCKED",
+      "newState": "IN_EXAM"
+    },
+    "timestamp": "2026-09-17T13:54:29.083Z"
+  },
+  {
+    "id": "audit_1789653269018_4480f5",
+    "examId": "exam-admin-lock-flow-1789653268935",
+    "attemptId": "att-admin-lock-1789653268951",
+    "adminUser": "admin",
+    "action": "MANUAL_LOCK_CANDIDATE",
+    "details": {
+      "candidateId": "att-admin-lock-1789653268951",
+      "studentName": "Bob Invigilator Subject",
+      "rollNumber": "ROLL-BOB-99",
+      "reason": "Suspicious dual-monitor detected by proctor",
+      "previousState": "IN_EXAM",
+      "newState": "EXAM_LOCKED"
+    },
+    "timestamp": "2026-09-17T13:54:29.018Z"
+  },
+  {
+    "id": "audit_1789653268694_f4e9a0",
+    "examId": "",
+    "attemptId": "att_1789653268637_c82b46ba",
+    "adminUser": "admin",
+    "action": "UNLOCK",
+    "details": {
+      "candidateId": "att_1789653268637_c82b46ba"
+    },
+    "timestamp": "2026-09-17T13:54:28.694Z"
+  },
+  {
+    "id": "audit_1789653268667_0ebf34",
+    "examId": "",
+    "attemptId": "att_1789653268637_c82b46ba",
+    "adminUser": "admin",
+    "action": "VERIFY",
+    "details": {
+      "candidateId": "att_1789653268637_c82b46ba"
+    },
+    "timestamp": "2026-09-17T13:54:28.668Z"
+  },
+  {
+    "id": "audit_1789653268547_c235cd",
+    "examId": "exam-unlock-1789653268443-qiqvd",
+    "adminUser": "admin",
+    "action": "REGENERATE_UNLOCK_PASSWORD",
+    "details": {
+      "newPassword": "UNLOCK-88590B"
+    },
+    "timestamp": "2026-09-17T13:54:28.547Z"
+  },
+  {
+    "id": "audit_1789653263731_a44780",
+    "examId": "exam-delete-1789653263339-hsyw",
+    "adminUser": "admin",
+    "action": "RESET_ATTEMPT",
+    "details": {
+      "action": "DELETE_ALL_CANDIDATES",
+      "count": 1
+    },
+    "timestamp": "2026-09-17T13:54:23.731Z"
+  },
+  {
+    "id": "audit_1789653263654_0e391b",
+    "examId": "exam-delete-1789653263339-hsyw",
+    "adminUser": "admin",
+    "action": "RESET_ATTEMPT",
+    "details": {
+      "action": "DELETE_WAITING",
+      "count": 1
+    },
+    "timestamp": "2026-09-17T13:54:23.654Z"
+  },
+  {
+    "id": "audit_1789653263589_f97cfa",
+    "examId": "exam-delete-1789653263339-hsyw",
+    "attemptId": "att-cand-1-1789653263339",
+    "adminUser": "admin",
+    "action": "RESET_ATTEMPT",
+    "details": {
+      "candidateId": "att-cand-1-1789653263339",
+      "studentName": "Waiting Candidate A",
+      "rollNumber": "23BCS1001-1789653263479"
+    },
+    "timestamp": "2026-09-17T13:54:23.590Z"
+  },
+  {
+    "id": "audit_1789653260804_fab5b2",
+    "examId": "exam-e2e-1789653260259",
+    "attemptId": "att_1789653260370_50786cc6",
+    "adminUser": "admin",
+    "action": "START",
+    "details": {
+      "action": "SELECTION_EMAIL_SENT",
+      "recipient": "priyanka@cumail.in",
+      "studentName": "Priyanka Sharma",
+      "notes": "Outstanding technical performance"
+    },
+    "timestamp": "2026-09-17T13:54:20.805Z"
+  },
+  {
+    "id": "audit_1789653260656_5f4aa8",
+    "examId": "exam-e2e-1789653260259",
+    "attemptId": "att_1789653260370_50786cc6",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "priyanka@cumail.in",
+      "studentName": "Priyanka Sharma",
+      "verdict": "PASSED",
+      "score": 100,
+      "percentage": 100
+    },
+    "timestamp": "2026-09-17T13:54:20.656Z"
+  },
+  {
+    "id": "audit_1789653260461_079c91",
+    "examId": "exam-e2e-1789653260259",
+    "attemptId": "att_1789653260370_50786cc6",
+    "adminUser": "admin",
+    "action": "UNLOCK",
+    "details": {
+      "candidateId": "att_1789653260370_50786cc6"
+    },
+    "timestamp": "2026-09-17T13:54:20.461Z"
+  },
+  {
+    "id": "audit_1789653260431_7b02b1",
+    "examId": "exam-e2e-1789653260259",
+    "attemptId": "att_1789653260370_50786cc6",
+    "adminUser": "admin",
+    "action": "VERIFY",
+    "details": {
+      "candidateId": "att_1789653260370_50786cc6"
+    },
+    "timestamp": "2026-09-17T13:54:20.431Z"
+  },
+  {
+    "id": "audit_1789653260297_ddb897",
+    "examId": "exam-e2e-1789653260259",
+    "adminUser": "admin",
+    "action": "CREATE_EXAM",
+    "details": {
+      "title": "AWS Certified Developer Assessment",
+      "questionsCount": 2
+    },
+    "timestamp": "2026-09-17T13:54:20.297Z"
+  },
+  {
+    "id": "audit_1789652508932_69cc42",
+    "examId": "test-exam-ccp-unit",
+    "adminUser": "admin",
+    "action": "UNLOCK_ALL",
+    "details": {
+      "count": 5
+    },
+    "timestamp": "2026-09-17T13:41:48.932Z"
+  },
+  {
+    "id": "audit_1789652508827_c873f2",
+    "examId": "test-exam-ccp-unit",
+    "attemptId": "att_1789652508812_e45d7c28",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "fail.test@cumail.in",
+      "studentName": "Abhay Kumar",
+      "verdict": "FAILED",
+      "score": 0,
+      "percentage": 0
+    },
+    "timestamp": "2026-09-17T13:41:48.827Z"
+  },
+  {
+    "id": "audit_1789652508803_2fb88d",
+    "examId": "test-exam-ccp-unit",
+    "attemptId": "att_1789652508778_1db970f8",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "abhay@cumail.in",
+      "studentName": "Abhay Kumar",
+      "verdict": "PASSED",
+      "score": 20,
+      "percentage": 100
+    },
+    "timestamp": "2026-09-17T13:41:48.803Z"
+  },
+  {
+    "id": "audit_1789652507871_289bd8",
+    "examId": "all",
+    "adminUser": "admin",
+    "action": "UPDATE_EXAM",
+    "details": {
+      "examPortalPublished": true
+    },
+    "timestamp": "2026-09-17T13:41:47.872Z"
+  },
+  {
+    "id": "audit_1789652507831_edd6cf",
+    "examId": "all",
+    "adminUser": "admin",
+    "action": "UPDATE_EXAM",
+    "details": {
+      "examPortalPublished": false
+    },
+    "timestamp": "2026-09-17T13:41:47.831Z"
+  },
+  {
+    "id": "audit_1789652506470_ea5493",
+    "examId": "exam-admin-lock-flow-1789652506398",
+    "attemptId": "att-admin-lock-1789652506406",
+    "adminUser": "admin",
+    "action": "UNLOCK_LOCKED_CANDIDATE",
+    "details": {
+      "candidateId": "att-admin-lock-1789652506406",
+      "studentName": "Bob Invigilator Subject",
+      "rollNumber": "ROLL-BOB-99",
+      "reason": "Physical inspection completed and secondary display disconnected",
+      "previousState": "EXAM_LOCKED",
+      "newState": "IN_EXAM"
+    },
+    "timestamp": "2026-09-17T13:41:46.470Z"
+  },
+  {
+    "id": "audit_1789652506431_ac029a",
+    "examId": "exam-admin-lock-flow-1789652506398",
+    "attemptId": "att-admin-lock-1789652506406",
+    "adminUser": "admin",
+    "action": "MANUAL_LOCK_CANDIDATE",
+    "details": {
+      "candidateId": "att-admin-lock-1789652506406",
+      "studentName": "Bob Invigilator Subject",
+      "rollNumber": "ROLL-BOB-99",
+      "reason": "Suspicious dual-monitor detected by proctor",
+      "previousState": "IN_EXAM",
+      "newState": "EXAM_LOCKED"
+    },
+    "timestamp": "2026-09-17T13:41:46.431Z"
+  },
+  {
+    "id": "audit_1789652506269_3c86e1",
+    "examId": "",
+    "attemptId": "att_1789652506239_320eb6ca",
+    "adminUser": "admin",
+    "action": "UNLOCK",
+    "details": {
+      "candidateId": "att_1789652506239_320eb6ca"
+    },
+    "timestamp": "2026-09-17T13:41:46.269Z"
+  },
+  {
+    "id": "audit_1789652506253_5c8703",
+    "examId": "",
+    "attemptId": "att_1789652506239_320eb6ca",
+    "adminUser": "admin",
+    "action": "VERIFY",
+    "details": {
+      "candidateId": "att_1789652506239_320eb6ca"
+    },
+    "timestamp": "2026-09-17T13:41:46.253Z"
+  },
+  {
+    "id": "audit_1789652506187_0a4c0d",
+    "examId": "exam-unlock-1789652506129-qhtea",
+    "adminUser": "admin",
+    "action": "REGENERATE_UNLOCK_PASSWORD",
+    "details": {
+      "newPassword": "UNLOCK-40998B"
+    },
+    "timestamp": "2026-09-17T13:41:46.187Z"
+  },
+  {
+    "id": "audit_1789652503789_f776d5",
+    "examId": "exam-delete-1789652503663-1dat",
+    "adminUser": "admin",
+    "action": "RESET_ATTEMPT",
+    "details": {
+      "action": "DELETE_ALL_CANDIDATES",
+      "count": 1
+    },
+    "timestamp": "2026-09-17T13:41:43.789Z"
+  },
+  {
+    "id": "audit_1789652503763_07e249",
+    "examId": "exam-delete-1789652503663-1dat",
+    "adminUser": "admin",
+    "action": "RESET_ATTEMPT",
+    "details": {
+      "action": "DELETE_WAITING",
+      "count": 1
+    },
+    "timestamp": "2026-09-17T13:41:43.763Z"
+  },
+  {
+    "id": "audit_1789652503738_037187",
+    "examId": "exam-delete-1789652503663-1dat",
+    "attemptId": "att-cand-1-1789652503663",
+    "adminUser": "admin",
+    "action": "RESET_ATTEMPT",
+    "details": {
+      "candidateId": "att-cand-1-1789652503663",
+      "studentName": "Waiting Candidate A",
+      "rollNumber": "23BCS1001-1789652503698"
+    },
+    "timestamp": "2026-09-17T13:41:43.738Z"
+  },
+  {
+    "id": "audit_1789652502592_94d481",
+    "examId": "exam-e2e-1789652502248",
+    "attemptId": "att_1789652502310_b50ca8ec",
+    "adminUser": "admin",
+    "action": "START",
+    "details": {
+      "action": "SELECTION_EMAIL_SENT",
+      "recipient": "priyanka@cumail.in",
+      "studentName": "Priyanka Sharma",
+      "notes": "Outstanding technical performance"
+    },
+    "timestamp": "2026-09-17T13:41:42.592Z"
+  },
+  {
+    "id": "audit_1789652502512_acf26b",
+    "examId": "exam-e2e-1789652502248",
+    "attemptId": "att_1789652502310_b50ca8ec",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "priyanka@cumail.in",
+      "studentName": "Priyanka Sharma",
+      "verdict": "PASSED",
+      "score": 100,
+      "percentage": 100
+    },
+    "timestamp": "2026-09-17T13:41:42.512Z"
+  },
+  {
+    "id": "audit_1789652502378_480449",
+    "examId": "exam-e2e-1789652502248",
+    "attemptId": "att_1789652502310_b50ca8ec",
+    "adminUser": "admin",
+    "action": "UNLOCK",
+    "details": {
+      "candidateId": "att_1789652502310_b50ca8ec"
+    },
+    "timestamp": "2026-09-17T13:41:42.378Z"
+  },
+  {
+    "id": "audit_1789652502355_003b9c",
+    "examId": "exam-e2e-1789652502248",
+    "attemptId": "att_1789652502310_b50ca8ec",
+    "adminUser": "admin",
+    "action": "VERIFY",
+    "details": {
+      "candidateId": "att_1789652502310_b50ca8ec"
+    },
+    "timestamp": "2026-09-17T13:41:42.355Z"
+  },
+  {
+    "id": "audit_1789652502267_fddfd7",
+    "examId": "exam-e2e-1789652502248",
+    "adminUser": "admin",
+    "action": "CREATE_EXAM",
+    "details": {
+      "title": "AWS Certified Developer Assessment",
+      "questionsCount": 2
+    },
+    "timestamp": "2026-09-17T13:41:42.267Z"
+  },
+  {
+    "id": "audit_1789651803145_c9385e",
+    "examId": "test-exam-ccp-unit",
+    "adminUser": "admin",
+    "action": "UNLOCK_ALL",
+    "details": {
+      "count": 5
+    },
+    "timestamp": "2026-09-17T13:30:03.146Z"
+  },
+  {
+    "id": "audit_1789651802958_91f6e5",
+    "examId": "test-exam-ccp-unit",
+    "attemptId": "att_1789651802935_6e714685",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "fail.test@cumail.in",
+      "studentName": "Abhay Kumar",
+      "verdict": "FAILED",
+      "score": 0,
+      "percentage": 0
+    },
+    "timestamp": "2026-09-17T13:30:02.958Z"
+  },
+  {
+    "id": "audit_1789651802917_5cdffc",
+    "examId": "test-exam-ccp-unit",
+    "attemptId": "att_1789651802885_3408ebba",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "abhay@cumail.in",
+      "studentName": "Abhay Kumar",
+      "verdict": "PASSED",
+      "score": 20,
+      "percentage": 100
+    },
+    "timestamp": "2026-09-17T13:30:02.917Z"
+  },
+  {
+    "id": "audit_1789651801399_369219",
+    "examId": "all",
+    "adminUser": "admin",
+    "action": "UPDATE_EXAM",
+    "details": {
+      "examPortalPublished": true
+    },
+    "timestamp": "2026-09-17T13:30:01.399Z"
+  },
+  {
+    "id": "audit_1789651801375_2f037c",
+    "examId": "all",
+    "adminUser": "admin",
+    "action": "UPDATE_EXAM",
+    "details": {
+      "examPortalPublished": false
+    },
+    "timestamp": "2026-09-17T13:30:01.375Z"
+  },
+  {
+    "id": "audit_1789651799931_9f308e",
+    "examId": "exam-admin-lock-flow-1789651799835",
+    "attemptId": "att-admin-lock-1789651799844",
+    "adminUser": "admin",
+    "action": "UNLOCK_LOCKED_CANDIDATE",
+    "details": {
+      "candidateId": "att-admin-lock-1789651799844",
+      "studentName": "Bob Invigilator Subject",
+      "rollNumber": "ROLL-BOB-99",
+      "reason": "Physical inspection completed and secondary display disconnected",
+      "previousState": "EXAM_LOCKED",
+      "newState": "IN_EXAM"
+    },
+    "timestamp": "2026-09-17T13:29:59.931Z"
+  },
+  {
+    "id": "audit_1789651799882_330b7c",
+    "examId": "exam-admin-lock-flow-1789651799835",
+    "attemptId": "att-admin-lock-1789651799844",
+    "adminUser": "admin",
+    "action": "MANUAL_LOCK_CANDIDATE",
+    "details": {
+      "candidateId": "att-admin-lock-1789651799844",
+      "studentName": "Bob Invigilator Subject",
+      "rollNumber": "ROLL-BOB-99",
+      "reason": "Suspicious dual-monitor detected by proctor",
+      "previousState": "IN_EXAM",
+      "newState": "EXAM_LOCKED"
+    },
+    "timestamp": "2026-09-17T13:29:59.882Z"
+  },
+  {
+    "id": "audit_1789651799654_b491b9",
+    "examId": "",
+    "attemptId": "att_1789651799617_296db919",
+    "adminUser": "admin",
+    "action": "UNLOCK",
+    "details": {
+      "candidateId": "att_1789651799617_296db919"
+    },
+    "timestamp": "2026-09-17T13:29:59.654Z"
+  },
+  {
+    "id": "audit_1789651799634_b1de90",
+    "examId": "",
+    "attemptId": "att_1789651799617_296db919",
+    "adminUser": "admin",
+    "action": "VERIFY",
+    "details": {
+      "candidateId": "att_1789651799617_296db919"
+    },
+    "timestamp": "2026-09-17T13:29:59.634Z"
+  },
+  {
+    "id": "audit_1789651799562_49b066",
+    "examId": "exam-unlock-1789651799497-kv5bm",
+    "adminUser": "admin",
+    "action": "REGENERATE_UNLOCK_PASSWORD",
+    "details": {
+      "newPassword": "UNLOCK-060B14"
+    },
+    "timestamp": "2026-09-17T13:29:59.563Z"
+  },
+  {
+    "id": "audit_1789651796569_6fbe7a",
+    "examId": "exam-delete-1789651796419-usgk",
+    "adminUser": "admin",
+    "action": "RESET_ATTEMPT",
+    "details": {
+      "action": "DELETE_ALL_CANDIDATES",
+      "count": 1
+    },
+    "timestamp": "2026-09-17T13:29:56.570Z"
+  },
+  {
+    "id": "audit_1789651796536_564634",
+    "examId": "exam-delete-1789651796419-usgk",
+    "adminUser": "admin",
+    "action": "RESET_ATTEMPT",
+    "details": {
+      "action": "DELETE_WAITING",
+      "count": 1
+    },
+    "timestamp": "2026-09-17T13:29:56.537Z"
+  },
+  {
+    "id": "audit_1789651796504_213b06",
+    "examId": "exam-delete-1789651796419-usgk",
+    "attemptId": "att-cand-1-1789651796419",
+    "adminUser": "admin",
+    "action": "RESET_ATTEMPT",
+    "details": {
+      "candidateId": "att-cand-1-1789651796419",
+      "studentName": "Waiting Candidate A",
+      "rollNumber": "23BCS1001-1789651796461"
+    },
+    "timestamp": "2026-09-17T13:29:56.504Z"
+  },
+  {
+    "id": "audit_1789651794912_9b8b0a",
+    "examId": "exam-e2e-1789651794632",
+    "attemptId": "att_1789651794678_d86ec404",
+    "adminUser": "admin",
+    "action": "START",
+    "details": {
+      "action": "SELECTION_EMAIL_SENT",
+      "recipient": "priyanka@cumail.in",
+      "studentName": "Priyanka Sharma",
+      "notes": "Outstanding technical performance"
+    },
+    "timestamp": "2026-09-17T13:29:54.912Z"
+  },
+  {
+    "id": "audit_1789651794828_e94b84",
+    "examId": "exam-e2e-1789651794632",
+    "attemptId": "att_1789651794678_d86ec404",
+    "adminUser": "system_email_service",
+    "action": "START",
+    "details": {
+      "action": "RESULT_EMAIL_SENT",
+      "recipient": "priyanka@cumail.in",
+      "studentName": "Priyanka Sharma",
+      "verdict": "PASSED",
+      "score": 100,
+      "percentage": 100
+    },
+    "timestamp": "2026-09-17T13:29:54.828Z"
+  },
+  {
+    "id": "audit_1789651794728_a3e64e",
+    "examId": "exam-e2e-1789651794632",
+    "attemptId": "att_1789651794678_d86ec404",
+    "adminUser": "admin",
+    "action": "UNLOCK",
+    "details": {
+      "candidateId": "att_1789651794678_d86ec404"
+    },
+    "timestamp": "2026-09-17T13:29:54.729Z"
+  },
+  {
+    "id": "audit_1789651794710_597f70",
+    "examId": "exam-e2e-1789651794632",
+    "attemptId": "att_1789651794678_d86ec404",
+    "adminUser": "admin",
+    "action": "VERIFY",
+    "details": {
+      "candidateId": "att_1789651794678_d86ec404"
+    },
+    "timestamp": "2026-09-17T13:29:54.710Z"
+  },
+  {
+    "id": "audit_1789651794647_36537b",
+    "examId": "exam-e2e-1789651794632",
+    "adminUser": "admin",
+    "action": "CREATE_EXAM",
+    "details": {
+      "title": "AWS Certified Developer Assessment",
+      "questionsCount": 2
+    },
+    "timestamp": "2026-09-17T13:29:54.647Z"
+  },
+  {
     "id": "audit_1789491715580_fbe928",
     "examId": "exam-unlock-1789491541415-rg7ou",
     "adminUser": "admin",

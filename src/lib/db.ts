@@ -1188,6 +1188,389 @@ const DEFAULT_EXAMS = [
   }
 ];
 
+const DEFAULT_WEEKLY_QUIZZES = [
+  {
+    id: 'quiz-aws-week-01',
+    quizCode: 'AWS-WEEK-01',
+    title: 'Weekly AWS Quiz #01',
+    topic: 'Amazon S3 Storage Classes, Bucket Policies & CloudFront Edge Distribution',
+    description: 'Post-session assessment on S3 storage tiering, lifecycle configurations, cross-region replication, and Amazon CloudFront CDN architecture.',
+    availableFrom: new Date(Date.now() - 86400000).toISOString(),
+    availableUntil: new Date(Date.now() + 7 * 86400000).toISOString(),
+    durationMinutes: 20,
+    totalQuestionsToSelect: 20,
+    passingPercentage: 60,
+    maxAttempts: 1,
+    status: 'Live',
+    settings: {
+      requireWebcam: true,
+      requireMicrophone: true,
+      requireFaceDetection: true,
+      detectMultipleFaces: true,
+      requireFullscreen: true,
+      monitorFocus: true,
+      noFaceThresholdSeconds: 6,
+      multipleFacesThresholdSeconds: 4,
+      cameraGracePeriodSeconds: 30,
+      fullscreenGracePeriodSeconds: 15
+    },
+    questionBank: [
+      {
+        id: 'wq-01',
+        question: 'Which Amazon S3 storage class provides millisecond retrieval latency for data accessed infrequently, without paying retrieval transition penalties of traditional archive tiers?',
+        options: [
+          'S3 Glacier Flexible Retrieval',
+          'S3 Glacier Instant Retrieval',
+          'S3 Glacier Deep Archive',
+          'S3 Standard-Infrequent Access with 1-minute expedited retrieval'
+        ],
+        correctOptionIndex: 1,
+        marks: 5,
+        explanation: 'S3 Glacier Instant Retrieval delivers lowest cost storage for rarely accessed data that requires immediate retrieval in milliseconds.',
+        topicTag: 'S3 Storage Classes'
+      },
+      {
+        id: 'wq-02',
+        question: 'What is a mandatory prerequisite on an Amazon S3 bucket before Cross-Region Replication (CRR) can be enabled?',
+        options: [
+          'Object Lock must be enabled in Governance mode',
+          'Versioning must be explicitly enabled on both source and destination buckets',
+          'Static website hosting must be enabled on both buckets',
+          'SSE-C custom encryption keys must be configured on the destination bucket'
+        ],
+        correctOptionIndex: 1,
+        marks: 5,
+        explanation: 'Both the source and destination S3 buckets must have Versioning enabled for Replication (CRR/SRR) to function.',
+        topicTag: 'S3 Replication'
+      },
+      {
+        id: 'wq-03',
+        question: 'Which Amazon CloudFront feature allows you to securely restrict access to an Amazon S3 origin bucket so that users cannot access S3 objects directly via S3 URLs?',
+        options: [
+          'Origin Access Control (OAC)',
+          'AWS Shield Advanced DDoS bypass token',
+          'CloudFront Key Groups with S3 bucket public IP whitelisting',
+          'S3 Presigned Post credentials embedded in CloudFront response headers'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'Origin Access Control (OAC) is the recommended modern method to restrict access to S3 origins to only authorized CloudFront distributions.',
+        topicTag: 'CloudFront Security'
+      },
+      {
+        id: 'wq-04',
+        question: 'An application needs to process lightweight HTTP request headers and URL rewrites at ultra-low latency (<1ms) across global CloudFront edge locations. Which solution is most cost-effective?',
+        options: [
+          'Lambda@Edge with Node.js runtime',
+          'CloudFront Functions',
+          'AWS Lambda behind an Application Load Balancer',
+          'Amazon API Gateway regional edge endpoint'
+        ],
+        correctOptionIndex: 1,
+        marks: 5,
+        explanation: 'CloudFront Functions is an ultra-lightweight, sub-millisecond compute environment for simple header manipulations and URL rewrites executed across all CloudFront edge locations.',
+        topicTag: 'CloudFront Functions'
+      },
+      {
+        id: 'wq-05',
+        question: 'Under Amazon S3 Object Lock, what is the key difference between Governance Mode and Compliance Mode?',
+        options: [
+          'Governance mode allows authorized IAM users with specific permissions to alter retention or delete the object; Compliance mode cannot be overridden by any user, including the root account',
+          'Compliance mode requires multi-factor authentication for each read operation',
+          'Governance mode only works on unversioned buckets',
+          'Compliance mode deletes objects automatically after 30 days'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'In Governance mode, users with `s3:BypassGovernanceRetention` can override lock settings, whereas in Compliance mode, no user (not even AWS root) can delete the object until the retention period expires.',
+        topicTag: 'S3 Object Lock'
+      },
+      {
+        id: 'wq-06',
+        question: 'When uploading large files (>100 MB to 5 TB) to Amazon S3, what mechanism should you use to maximize upload throughput, support pause/resume, and improve network resilience?',
+        options: [
+          'S3 Single-part PUT with chunked transfer encoding',
+          'S3 Multipart Upload API',
+          'S3 Batch Copy with byte-range headers',
+          'Amazon Kinesis Data Firehose streaming directly into S3'
+        ],
+        correctOptionIndex: 1,
+        marks: 5,
+        explanation: 'The Multipart Upload API allows uploading single objects as a set of parts in parallel, recommended for objects greater than 100 MB.',
+        topicTag: 'S3 Performance'
+      },
+      {
+        id: 'wq-07',
+        question: 'Which Amazon S3 feature automatically moves data between access tiers based on changing access patterns without operational overhead or retrieval fees?',
+        options: [
+          'S3 Intelligent-Tiering',
+          'S3 Lifecycle Transition to Glacier Flexible',
+          'S3 Storage Lens automated archiving',
+          'AWS Glue Data Catalog compaction'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'S3 Intelligent-Tiering automatically optimizes storage costs by moving data across frequent, infrequent, and archive access tiers without retrieval fees.',
+        topicTag: 'S3 Intelligent-Tiering'
+      },
+      {
+        id: 'wq-08',
+        question: 'A builder wants to grant a mobile client temporary, time-limited permission to download a private S3 object directly without creating IAM credentials for the client. What should they generate?',
+        options: [
+          'S3 Pre-signed URL',
+          'STS Temporary Access Key in local storage',
+          'IAM Instance Profile policy document',
+          'S3 Bucket Access Point ARN'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'An S3 Pre-signed URL gives temporary read/write access to a specific object using the credentials of the creator, expiring after a configured duration.',
+        topicTag: 'S3 Security'
+      },
+      {
+        id: 'wq-09',
+        question: 'Which destinations can receive real-time Amazon S3 Event Notifications directly when new objects are created in a bucket?',
+        options: [
+          'Amazon SNS topics, Amazon SQS queues, AWS Lambda functions, and Amazon EventBridge',
+          'Only Amazon DynamoDB streams',
+          'Only Amazon CloudWatch Logs log groups',
+          'AWS Step Functions state machines directly without EventBridge'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'S3 can publish event notifications directly to SNS topics, SQS queues, AWS Lambda functions, or to Amazon EventBridge for advanced routing.',
+        topicTag: 'S3 Event Notifications'
+      },
+      {
+        id: 'wq-10',
+        question: 'How can you enforce that all objects uploaded to an S3 bucket are encrypted in transit via TLS/HTTPS?',
+        options: [
+          'Add a Bucket Policy with a Deny effect when `aws:SecureTransport` is false',
+          'Enable S3 Transfer Acceleration on port 443 only',
+          'Disable HTTP on the AWS VPC gateway endpoint',
+          'Attach an IAM Role with `s3:RequireSSL` permission'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'A bucket policy with `"Effect": "Deny"`, `"Action": "s3:*"`, `"Condition": {"Bool": {"aws:SecureTransport": "false"}}` enforces HTTPS for all operations.',
+        topicTag: 'S3 Security'
+      },
+      {
+        id: 'wq-11',
+        question: 'Which Amazon CloudFront feature provides fine-grained caching control by allowing headers, query strings, and cookies to be defined separately from origin request forwarding parameters?',
+        options: [
+          'CloudFront Cache Policies and Origin Request Policies',
+          'CloudFront Invalidation batches',
+          'CloudFront Field-Level Encryption profiles',
+          'CloudFront Custom SSL SNI configurations'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'Cache Policies define what keys are included in the CloudFront cache key, while Origin Request Policies control what headers/cookies/query strings are forwarded to origin without diluting cache hit ratios.',
+        topicTag: 'CloudFront Caching'
+      },
+      {
+        id: 'wq-12',
+        question: 'What happens when a user requests the deletion of a specific object version in an S3 Versioning-enabled bucket without specifying a Version ID?',
+        options: [
+          'Amazon S3 inserts a Delete Marker, which becomes the current version of the object',
+          'All historical versions of the object are permanently erased',
+          'The request is rejected with a 403 Access Denied error',
+          'The oldest version of the object is removed from storage'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'When deleting without a Version ID in a versioned bucket, S3 places a Delete Marker on top of the version stack. Specifying the exact Version ID permanently removes that specific version.',
+        topicTag: 'S3 Versioning'
+      },
+      {
+        id: 'wq-13',
+        question: 'Which S3 server-side encryption mechanism uses customer-managed keys stored in AWS KMS, providing an audit trail in AWS CloudTrail for every key decryption call?',
+        options: [
+          'SSE-KMS (Server-Side Encryption with AWS Key Management Service)',
+          'SSE-S3 (Server-Side Encryption with Amazon S3 Managed Keys)',
+          'SSE-C (Server-Side Encryption with Customer-Provided Keys)',
+          'Client-side RSA public key encryption'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'SSE-KMS encrypts data using AWS KMS keys and logs key usage events to AWS CloudTrail for security auditability.',
+        topicTag: 'S3 Encryption'
+      },
+      {
+        id: 'wq-14',
+        question: 'A media company wants to distribute paid streaming content through Amazon CloudFront to subscribed users accessing hundreds of protected video segments. Which mechanism is most appropriate?',
+        options: [
+          'CloudFront Signed Cookies',
+          'Individual S3 Pre-signed URLs generated for each video segment',
+          'CloudFront Geo-Restriction with public S3 bucket',
+          'Basic HTTP Authentication headers cached at edge locations'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'CloudFront Signed Cookies provide access to multiple restricted files (such as HLS/DASH video streams containing thousands of chunks) with a single cookie payload.',
+        topicTag: 'CloudFront Security'
+      },
+      {
+        id: 'wq-15',
+        question: 'Which AWS service and feature provides organization-wide visibility into object storage usage, cost-optimization recommendations, and 14-month trend metrics across all buckets in an AWS account?',
+        options: [
+          'S3 Storage Lens',
+          'S3 Inventory CSV exports',
+          'Amazon Athena queries over S3 server access logs',
+          'AWS CloudTrail Insights'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'S3 Storage Lens is a cloud storage analytics tool that delivers organization-wide visibility into object storage usage and activity trends.',
+        topicTag: 'S3 Management'
+      },
+      {
+        id: 'wq-16',
+        question: 'To perform asynchronous batch transformations, metadata updates, or replication across billions of objects in an S3 bucket based on an S3 Inventory manifest, which feature should be used?',
+        options: [
+          'S3 Batch Operations',
+          'AWS Glue Crawler with step functions',
+          'S3 Multi-Region Access Points',
+          'Amazon EMR cluster writing single object PUT requests'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'S3 Batch Operations performs large-scale batch actions (such as copying, tagging, encrypting, or invoking Lambda) across billions of objects using an S3 inventory list.',
+        topicTag: 'S3 Batch Operations'
+      },
+      {
+        id: 'wq-17',
+        question: 'Which Amazon S3 feature speeds up long-distance uploads over the public internet from worldwide clients to a centralized S3 bucket by routing traffic through AWS edge locations?',
+        options: [
+          'S3 Transfer Acceleration',
+          'S3 Express One Zone',
+          'AWS Direct Connect dedicated circuit',
+          'Amazon Route 53 latency-based routing'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'S3 Transfer Acceleration utilizes the globally distributed edge locations in Amazon CloudFront to route traffic over the optimized AWS private network backbone.',
+        topicTag: 'S3 Performance'
+      },
+      {
+        id: 'wq-18',
+        question: 'How can you configure Amazon CloudFront to serve custom HTML error pages (e.g., friendly 404 or 503 pages) instead of default origin error codes, along with customized caching TTLs for errors?',
+        options: [
+          'Configure Custom Error Responses on the CloudFront distribution settings',
+          'Write custom Apache `.htaccess` rewrite rules on S3 static hosting',
+          'Attach an AWS WAF rule that returns custom JSON bodies on 4xx codes',
+          'Configure Route 53 failover health check records pointing to S3'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'CloudFront Custom Error Responses allow mapping HTTP status codes (like 403, 404, 500) to custom error response pages and setting specific error caching minimum TTLs.',
+        topicTag: 'CloudFront Error Handling'
+      },
+      {
+        id: 'wq-19',
+        question: 'What is the purpose of Amazon S3 Block Public Access at the AWS Account level?',
+        options: [
+          'Provides a centralized, overriding safeguard to prevent public access across all current and future S3 buckets in the account regardless of individual bucket policies',
+          'Disables internet gateways in all VPCs within the account',
+          'Blocks all external IP addresses from accessing AWS Management Console',
+          'Forces all buckets to use S3 Glacier storage tier only'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'S3 Block Public Access provides centralized controls for public access across an entire AWS account, overriding any individual permissive bucket or object ACLs/policies.',
+        topicTag: 'S3 Security'
+      },
+      {
+        id: 'wq-20',
+        question: 'When configuring an S3 bucket for Static Website Hosting, what is the key difference between the REST API endpoint and the Website endpoint?',
+        options: [
+          'Website endpoints support index document redirection and custom error documents via HTTP; REST API endpoints require explicit object keys and do not perform HTML redirection',
+          'REST API endpoints only accept TLS 1.0 connections',
+          'Website endpoints can only be accessed from within an AWS VPC',
+          'REST API endpoints do not support bucket policies'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'S3 Website endpoints support index documents (e.g. index.html) and subfolder routing, while standard REST API endpoints require full object paths.',
+        topicTag: 'S3 Static Hosting'
+      },
+      {
+        id: 'wq-21',
+        question: 'Which Amazon CloudFront feature provides additional encryption of sensitive user data (such as credit card numbers or PII) at edge locations before the request reaches the origin application server?',
+        options: [
+          'Field-Level Encryption using asymmetric encryption public keys',
+          'Standard HTTPS TLS handshake termination',
+          'AWS Certificate Manager wildcard SSL/TLS certificates',
+          'Origin Request Policy with Base64 payload encoding'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'Field-Level Encryption in CloudFront allows encrypting sensitive fields using public keys configured at edge locations before forwarding the payload to the origin server.',
+        topicTag: 'CloudFront Security'
+      },
+      {
+        id: 'wq-22',
+        question: 'An S3 Lifecycle configuration has a rule to transition objects to S3 Standard-IA after 30 days and expire objects after 365 days. How are days calculated by S3?',
+        options: [
+          'From the object creation (LastModified) date rounded to midnight UTC',
+          'From the last time the object was downloaded by a client',
+          'From the date the Lifecycle rule was created by the administrator',
+          'Based on client local device timezone timestamps'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'S3 Lifecycle transitions calculate elapsed days from object creation date (LastModified) rounded up to midnight UTC.',
+        topicTag: 'S3 Lifecycle'
+      },
+      {
+        id: 'wq-23',
+        question: 'Which SQL-like query feature allows applications to extract small subsets of data from CSV, JSON, or Apache Parquet objects stored in S3 without retrieving the entire multi-gigabyte object?',
+        options: [
+          'Amazon S3 Select',
+          'Amazon S3 Direct Index',
+          'Amazon CloudSearch S3 Plugin',
+          'Amazon EFS Sparse Read'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'S3 Select uses simple SQL expressions to filter the contents of an S3 object and retrieve only the required subset of data.',
+        topicTag: 'S3 Querying'
+      },
+      {
+        id: 'wq-24',
+        question: 'How can an administrator instantly clear all cached content from all global CloudFront edge locations for a path pattern like `/assets/*` after a new release?',
+        options: [
+          'Create a CloudFront Invalidation with the pattern `/assets/*`',
+          'Delete and recreate the CloudFront distribution',
+          'Disable the S3 origin bucket for 60 seconds',
+          'Modify the DNS CNAME record in Route 53'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'Creating an Invalidation in CloudFront immediately purges cached objects matching the specified path pattern across all edge locations.',
+        topicTag: 'CloudFront Operations'
+      },
+      {
+        id: 'wq-25',
+        question: 'Which Amazon S3 storage class provides single-zone high-performance storage with sub-10-millisecond latency specifically optimized for compute-intensive workloads and directory-bucket architecture?',
+        options: [
+          'S3 Express One Zone',
+          'S3 Outposts',
+          'S3 Standard Single-AZ',
+          'S3 Reduced Redundancy Storage (RRS)'
+        ],
+        correctOptionIndex: 0,
+        marks: 5,
+        explanation: 'S3 Express One Zone is a high-performance, single-Availability Zone storage class purpose-built to deliver consistent single-digit millisecond data access for latency-sensitive applications.',
+        topicTag: 'S3 Express One Zone'
+      }
+    ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
+
 async function readSettingsStore(): Promise<Record<string, any>> {
   requireDatabaseAvailability();
   if (sql) {
@@ -2669,6 +3052,194 @@ export const db = {
         let list = await db.foundingMembers.getAll();
         list = list.filter((m: any) => m.id !== id);
         await writeJsonFile('founding_members.json', list);
+      });
+    }
+  },
+  weeklyQuizzes: {
+    getAll: async (): Promise<any[]> => {
+      return await readJsonFile<any[]>('weekly_quizzes.json', DEFAULT_WEEKLY_QUIZZES);
+    },
+    getById: async (id: string): Promise<any | null> => {
+      if (!id) return null;
+      const list = await db.weeklyQuizzes.getAll();
+      return list.find((q: any) => q.id === id || q.quizCode?.toLowerCase() === id.toLowerCase()) || null;
+    },
+    insertOne: async (quiz: any): Promise<void> => {
+      return withCollectionLock('weekly_quizzes.json', async () => {
+        const list = await db.weeklyQuizzes.getAll();
+        list.unshift(quiz);
+        await writeJsonFile('weekly_quizzes.json', list);
+      });
+    },
+    updateOne: async (id: string, fields: Partial<any>): Promise<any | null> => {
+      return withCollectionLock('weekly_quizzes.json', async () => {
+        const list = await db.weeklyQuizzes.getAll();
+        const idx = list.findIndex((q: any) => q.id === id);
+        if (idx !== -1) {
+          list[idx] = { ...list[idx], ...fields, updatedAt: new Date().toISOString() };
+          await writeJsonFile('weekly_quizzes.json', list);
+          return list[idx];
+        }
+        return null;
+      });
+    },
+    deleteOne: async (id: string): Promise<void> => {
+      return withCollectionLock('weekly_quizzes.json', async () => {
+        let list = await db.weeklyQuizzes.getAll();
+        list = list.filter((q: any) => q.id !== id);
+        await writeJsonFile('weekly_quizzes.json', list);
+        try {
+          await db.weeklyQuizAttempts.deleteByQuizId(id);
+        } catch (e) {
+          console.error('Error cascading attempt deletion for weekly quiz:', e);
+        }
+      });
+    },
+    saveAll: async (data: any[]): Promise<void> => {
+      return withCollectionLock('weekly_quizzes.json', async () => {
+        await writeJsonFile('weekly_quizzes.json', data);
+      });
+    }
+  },
+  weeklyQuizAttempts: {
+    getAll: async (): Promise<any[]> => {
+      return await readJsonFile<any[]>('weekly_quiz_attempts.json', []);
+    },
+    getById: async (id: string): Promise<any | null> => {
+      if (!id) return null;
+      const list = await db.weeklyQuizAttempts.getAll();
+      return list.find((a: any) => a.id === id) || null;
+    },
+    getByQuizId: async (quizId: string): Promise<any[]> => {
+      if (!quizId) return [];
+      const list = await db.weeklyQuizAttempts.getAll();
+      return list.filter((a: any) => a.quizId === quizId);
+    },
+    getBySessionToken: async (token: string): Promise<any | null> => {
+      if (!token) return null;
+      const list = await db.weeklyQuizAttempts.getAll();
+      return list.find((a: any) => a.sessionToken === token) || null;
+    },
+    getByEmailAndQuiz: async (email: string, quizId: string): Promise<any | null> => {
+      if (!email || !quizId) return null;
+      const cleanEmail = email.trim().toLowerCase();
+      const list = await db.weeklyQuizAttempts.getAll();
+      const matching = list.filter(
+        (a: any) => a.quizId === quizId && a.email?.toLowerCase() === cleanEmail
+      );
+      if (matching.length === 0) return null;
+      return matching.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+    },
+    insertOne: async (attempt: any): Promise<void> => {
+      return withCollectionLock('weekly_quiz_attempts.json', async () => {
+        const list = await db.weeklyQuizAttempts.getAll();
+        list.unshift(attempt);
+        await writeJsonFile('weekly_quiz_attempts.json', list);
+      });
+    },
+    updateOne: async (id: string, fields: Partial<any>): Promise<any | null> => {
+      return withCollectionLock('weekly_quiz_attempts.json', async () => {
+        const list = await db.weeklyQuizAttempts.getAll();
+        const idx = list.findIndex((a: any) => a.id === id);
+        if (idx !== -1) {
+          list[idx] = { ...list[idx], ...fields, updatedAt: new Date().toISOString() };
+          await writeJsonFile('weekly_quiz_attempts.json', list);
+          return list[idx];
+        }
+        return null;
+      });
+    },
+    deleteById: async (id: string): Promise<void> => {
+      return withCollectionLock('weekly_quiz_attempts.json', async () => {
+        let list = await db.weeklyQuizAttempts.getAll();
+        list = list.filter((a: any) => a.id !== id);
+        await writeJsonFile('weekly_quiz_attempts.json', list);
+      });
+    },
+    deleteByQuizId: async (quizId: string): Promise<number> => {
+      return withCollectionLock('weekly_quiz_attempts.json', async () => {
+        let list = await db.weeklyQuizAttempts.getAll();
+        const before = list.length;
+        list = list.filter((a: any) => a.quizId !== quizId);
+        await writeJsonFile('weekly_quiz_attempts.json', list);
+        return before - list.length;
+      });
+    },
+    saveAll: async (data: any[]): Promise<void> => {
+      return withCollectionLock('weekly_quiz_attempts.json', async () => {
+        await writeJsonFile('weekly_quiz_attempts.json', data);
+      });
+    }
+  },
+  weeklyQuizSecurityEvents: {
+    getAll: async (): Promise<any[]> => {
+      return await readJsonFile<any[]>('weekly_quiz_security_events.json', []);
+    },
+    getByAttemptId: async (attemptId: string): Promise<any[]> => {
+      const logs = await db.weeklyQuizSecurityEvents.getAll();
+      return logs.filter((l: any) => l.attemptId === attemptId);
+    },
+    getByQuizId: async (quizId: string): Promise<any[]> => {
+      const logs = await db.weeklyQuizSecurityEvents.getAll();
+      return logs.filter((l: any) => l.quizId === quizId);
+    },
+    insertOne: async (event: any): Promise<void> => {
+      return withCollectionLock('weekly_quiz_security_events.json', async () => {
+        const logs = await db.weeklyQuizSecurityEvents.getAll();
+        logs.unshift(event);
+        await writeJsonFile('weekly_quiz_security_events.json', logs.slice(0, 5000));
+      });
+    },
+    saveAll: async (data: any[]): Promise<void> => {
+      return withCollectionLock('weekly_quiz_security_events.json', async () => {
+        await writeJsonFile('weekly_quiz_security_events.json', data);
+      });
+    }
+  },
+  weeklyQuizAuditLogs: {
+    getAll: async (): Promise<any[]> => {
+      return await readJsonFile<any[]>('weekly_quiz_audit_logs.json', []);
+    },
+    getByQuizId: async (quizId: string): Promise<any[]> => {
+      const logs = await db.weeklyQuizAuditLogs.getAll();
+      return logs.filter((l: any) => l.quizId === quizId);
+    },
+    insertOne: async (log: any): Promise<void> => {
+      return withCollectionLock('weekly_quiz_audit_logs.json', async () => {
+        const logs = await db.weeklyQuizAuditLogs.getAll();
+        logs.unshift(log);
+        await writeJsonFile('weekly_quiz_audit_logs.json', logs.slice(0, 2000));
+      });
+    },
+    saveAll: async (data: any[]): Promise<void> => {
+      return withCollectionLock('weekly_quiz_audit_logs.json', async () => {
+        await writeJsonFile('weekly_quiz_audit_logs.json', data);
+      });
+    }
+  },
+  weeklyQuizSettings: {
+    getSettings: async (): Promise<any> => {
+      const defaultSettings = {
+        requireWebcam: true,
+        requireMicrophone: true,
+        requireFaceDetection: true,
+        detectMultipleFaces: true,
+        requireFullscreen: true,
+        monitorFocus: true,
+        noFaceThresholdSeconds: 6,
+        multipleFacesThresholdSeconds: 4,
+        cameraGracePeriodSeconds: 30,
+        fullscreenGracePeriodSeconds: 15,
+        updatedAt: new Date().toISOString()
+      };
+      return await readJsonFile<any>('weekly_quiz_settings.json', defaultSettings);
+    },
+    updateSettings: async (settings: Partial<any>): Promise<any> => {
+      return withCollectionLock('weekly_quiz_settings.json', async () => {
+        const current = await db.weeklyQuizSettings.getSettings();
+        const updated = { ...current, ...settings, updatedAt: new Date().toISOString() };
+        await writeJsonFile('weekly_quiz_settings.json', updated);
+        return updated;
       });
     }
   }

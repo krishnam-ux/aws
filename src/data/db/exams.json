@@ -1,5 +1,441 @@
 [
   {
+    "id": "exam-admin-lock-flow-1789662731749",
+    "examCode": "LOCK-ADM-1749",
+    "password": "student-flow-pass",
+    "examUnlockPassword": "UNLOCK-ADMIN-FLOW-12",
+    "title": "AWS Admin Control Lock Assessment",
+    "description": "Testing remote admin unlock and manual lock commands",
+    "category": "Security",
+    "durationMinutes": 20,
+    "passingPercentage": 60,
+    "maxAttempts": 1,
+    "status": "Live",
+    "requireSecureBrowser": true,
+    "maxSecurityViolations": 3,
+    "questions": [
+      {
+        "id": "q1",
+        "question": "What is Amazon S3?",
+        "options": [
+          "Object Storage",
+          "Relational DB",
+          "DNS",
+          "Compute"
+        ],
+        "correctOptionIndex": 0,
+        "marks": 10,
+        "explanation": "S3 is object storage."
+      }
+    ],
+    "createdAt": "2026-09-17T16:32:11.764Z",
+    "updatedAt": "2026-09-17T16:32:11.764Z"
+  },
+  {
+    "id": "exam-lock-lifecycle-1789662731155",
+    "examCode": "LOCK-1155",
+    "password": "candidate-entry-pass",
+    "examUnlockPassword": "UNLOCK-TEST-PROCTOR-99",
+    "title": "AWS Lifecycle Lockout Assessment",
+    "description": "Testing lock transition, question stripping, and timer preservation",
+    "category": "Security",
+    "durationMinutes": 30,
+    "passingPercentage": 70,
+    "maxAttempts": 1,
+    "status": "Live",
+    "requireSecureBrowser": true,
+    "maxSecurityViolations": 5,
+    "questions": [
+      {
+        "id": "q-secret-1",
+        "question": "Confidential Exam Question 1",
+        "options": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "correctOptionIndex": 1,
+        "marks": 5,
+        "explanation": "Secret answer"
+      }
+    ],
+    "createdAt": "2026-09-17T16:32:11.162Z",
+    "updatedAt": "2026-09-17T16:32:11.162Z"
+  },
+  {
+    "id": "exam-unlock-1789662730906-xk6fr",
+    "examCode": "LOCK-0906",
+    "password": "student-pass-123",
+    "examUnlockPassword": "UNLOCK-18A1AD",
+    "title": "AWS Secure Lock Verification Exam",
+    "description": "Testing exam lock and invigilator recovery flows",
+    "category": "Security Architecture",
+    "durationMinutes": 45,
+    "passingPercentage": 70,
+    "maxAttempts": 1,
+    "status": "Live",
+    "requireSecureBrowser": true,
+    "maxSecurityViolations": 5,
+    "questions": [
+      {
+        "id": "sec-q1",
+        "question": "Which service provides DDoS protection?",
+        "options": [
+          "AWS Shield",
+          "AWS S3",
+          "AWS Lambda",
+          "AWS Glue"
+        ],
+        "correctOptionIndex": 0,
+        "marks": 10,
+        "explanation": "AWS Shield provides DDoS protection."
+      },
+      {
+        "id": "sec-q2",
+        "question": "What is used for granular IAM permissions?",
+        "options": [
+          "IAM Policies",
+          "VPC Peering",
+          "Route53",
+          "CloudFront"
+        ],
+        "correctOptionIndex": 0,
+        "marks": 10,
+        "explanation": "IAM Policies manage access permissions."
+      }
+    ],
+    "createdAt": "2026-09-17T16:32:10.915Z",
+    "updatedAt": "2026-09-17T16:32:11.053Z"
+  },
+  {
+    "id": "exam-admin-lock-flow-1789653268935",
+    "examCode": "LOCK-ADM-8935",
+    "password": "student-flow-pass",
+    "examUnlockPassword": "UNLOCK-ADMIN-FLOW-12",
+    "title": "AWS Admin Control Lock Assessment",
+    "description": "Testing remote admin unlock and manual lock commands",
+    "category": "Security",
+    "durationMinutes": 20,
+    "passingPercentage": 60,
+    "maxAttempts": 1,
+    "status": "Live",
+    "requireSecureBrowser": true,
+    "maxSecurityViolations": 3,
+    "questions": [
+      {
+        "id": "q1",
+        "question": "What is Amazon S3?",
+        "options": [
+          "Object Storage",
+          "Relational DB",
+          "DNS",
+          "Compute"
+        ],
+        "correctOptionIndex": 0,
+        "marks": 10,
+        "explanation": "S3 is object storage."
+      }
+    ],
+    "createdAt": "2026-09-17T13:54:28.943Z",
+    "updatedAt": "2026-09-17T13:54:28.943Z"
+  },
+  {
+    "id": "exam-lock-lifecycle-1789653268596",
+    "examCode": "LOCK-8596",
+    "password": "candidate-entry-pass",
+    "examUnlockPassword": "UNLOCK-TEST-PROCTOR-99",
+    "title": "AWS Lifecycle Lockout Assessment",
+    "description": "Testing lock transition, question stripping, and timer preservation",
+    "category": "Security",
+    "durationMinutes": 30,
+    "passingPercentage": 70,
+    "maxAttempts": 1,
+    "status": "Live",
+    "requireSecureBrowser": true,
+    "maxSecurityViolations": 5,
+    "questions": [
+      {
+        "id": "q-secret-1",
+        "question": "Confidential Exam Question 1",
+        "options": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "correctOptionIndex": 1,
+        "marks": 5,
+        "explanation": "Secret answer"
+      }
+    ],
+    "createdAt": "2026-09-17T13:54:28.600Z",
+    "updatedAt": "2026-09-17T13:54:28.600Z"
+  },
+  {
+    "id": "exam-unlock-1789653268443-qiqvd",
+    "examCode": "LOCK-8443",
+    "password": "student-pass-123",
+    "examUnlockPassword": "UNLOCK-88590B",
+    "title": "AWS Secure Lock Verification Exam",
+    "description": "Testing exam lock and invigilator recovery flows",
+    "category": "Security Architecture",
+    "durationMinutes": 45,
+    "passingPercentage": 70,
+    "maxAttempts": 1,
+    "status": "Live",
+    "requireSecureBrowser": true,
+    "maxSecurityViolations": 5,
+    "questions": [
+      {
+        "id": "sec-q1",
+        "question": "Which service provides DDoS protection?",
+        "options": [
+          "AWS Shield",
+          "AWS S3",
+          "AWS Lambda",
+          "AWS Glue"
+        ],
+        "correctOptionIndex": 0,
+        "marks": 10,
+        "explanation": "AWS Shield provides DDoS protection."
+      },
+      {
+        "id": "sec-q2",
+        "question": "What is used for granular IAM permissions?",
+        "options": [
+          "IAM Policies",
+          "VPC Peering",
+          "Route53",
+          "CloudFront"
+        ],
+        "correctOptionIndex": 0,
+        "marks": 10,
+        "explanation": "IAM Policies manage access permissions."
+      }
+    ],
+    "createdAt": "2026-09-17T13:54:28.452Z",
+    "updatedAt": "2026-09-17T13:54:28.539Z"
+  },
+  {
+    "id": "exam-admin-lock-flow-1789652506398",
+    "examCode": "LOCK-ADM-6398",
+    "password": "student-flow-pass",
+    "examUnlockPassword": "UNLOCK-ADMIN-FLOW-12",
+    "title": "AWS Admin Control Lock Assessment",
+    "description": "Testing remote admin unlock and manual lock commands",
+    "category": "Security",
+    "durationMinutes": 20,
+    "passingPercentage": 60,
+    "maxAttempts": 1,
+    "status": "Live",
+    "requireSecureBrowser": true,
+    "maxSecurityViolations": 3,
+    "questions": [
+      {
+        "id": "q1",
+        "question": "What is Amazon S3?",
+        "options": [
+          "Object Storage",
+          "Relational DB",
+          "DNS",
+          "Compute"
+        ],
+        "correctOptionIndex": 0,
+        "marks": 10,
+        "explanation": "S3 is object storage."
+      }
+    ],
+    "createdAt": "2026-09-17T13:41:46.401Z",
+    "updatedAt": "2026-09-17T13:41:46.401Z"
+  },
+  {
+    "id": "exam-lock-lifecycle-1789652506213",
+    "examCode": "LOCK-6213",
+    "password": "candidate-entry-pass",
+    "examUnlockPassword": "UNLOCK-TEST-PROCTOR-99",
+    "title": "AWS Lifecycle Lockout Assessment",
+    "description": "Testing lock transition, question stripping, and timer preservation",
+    "category": "Security",
+    "durationMinutes": 30,
+    "passingPercentage": 70,
+    "maxAttempts": 1,
+    "status": "Live",
+    "requireSecureBrowser": true,
+    "maxSecurityViolations": 5,
+    "questions": [
+      {
+        "id": "q-secret-1",
+        "question": "Confidential Exam Question 1",
+        "options": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "correctOptionIndex": 1,
+        "marks": 5,
+        "explanation": "Secret answer"
+      }
+    ],
+    "createdAt": "2026-09-17T13:41:46.215Z",
+    "updatedAt": "2026-09-17T13:41:46.216Z"
+  },
+  {
+    "id": "exam-unlock-1789652506129-qhtea",
+    "examCode": "LOCK-6129",
+    "password": "student-pass-123",
+    "examUnlockPassword": "UNLOCK-40998B",
+    "title": "AWS Secure Lock Verification Exam",
+    "description": "Testing exam lock and invigilator recovery flows",
+    "category": "Security Architecture",
+    "durationMinutes": 45,
+    "passingPercentage": 70,
+    "maxAttempts": 1,
+    "status": "Live",
+    "requireSecureBrowser": true,
+    "maxSecurityViolations": 5,
+    "questions": [
+      {
+        "id": "sec-q1",
+        "question": "Which service provides DDoS protection?",
+        "options": [
+          "AWS Shield",
+          "AWS S3",
+          "AWS Lambda",
+          "AWS Glue"
+        ],
+        "correctOptionIndex": 0,
+        "marks": 10,
+        "explanation": "AWS Shield provides DDoS protection."
+      },
+      {
+        "id": "sec-q2",
+        "question": "What is used for granular IAM permissions?",
+        "options": [
+          "IAM Policies",
+          "VPC Peering",
+          "Route53",
+          "CloudFront"
+        ],
+        "correctOptionIndex": 0,
+        "marks": 10,
+        "explanation": "IAM Policies manage access permissions."
+      }
+    ],
+    "createdAt": "2026-09-17T13:41:46.133Z",
+    "updatedAt": "2026-09-17T13:41:46.181Z"
+  },
+  {
+    "id": "exam-admin-lock-flow-1789651799835",
+    "examCode": "LOCK-ADM-9835",
+    "password": "student-flow-pass",
+    "examUnlockPassword": "UNLOCK-ADMIN-FLOW-12",
+    "title": "AWS Admin Control Lock Assessment",
+    "description": "Testing remote admin unlock and manual lock commands",
+    "category": "Security",
+    "durationMinutes": 20,
+    "passingPercentage": 60,
+    "maxAttempts": 1,
+    "status": "Live",
+    "requireSecureBrowser": true,
+    "maxSecurityViolations": 3,
+    "questions": [
+      {
+        "id": "q1",
+        "question": "What is Amazon S3?",
+        "options": [
+          "Object Storage",
+          "Relational DB",
+          "DNS",
+          "Compute"
+        ],
+        "correctOptionIndex": 0,
+        "marks": 10,
+        "explanation": "S3 is object storage."
+      }
+    ],
+    "createdAt": "2026-09-17T13:29:59.839Z",
+    "updatedAt": "2026-09-17T13:29:59.839Z"
+  },
+  {
+    "id": "exam-lock-lifecycle-1789651799592",
+    "examCode": "LOCK-9592",
+    "password": "candidate-entry-pass",
+    "examUnlockPassword": "UNLOCK-TEST-PROCTOR-99",
+    "title": "AWS Lifecycle Lockout Assessment",
+    "description": "Testing lock transition, question stripping, and timer preservation",
+    "category": "Security",
+    "durationMinutes": 30,
+    "passingPercentage": 70,
+    "maxAttempts": 1,
+    "status": "Live",
+    "requireSecureBrowser": true,
+    "maxSecurityViolations": 5,
+    "questions": [
+      {
+        "id": "q-secret-1",
+        "question": "Confidential Exam Question 1",
+        "options": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "correctOptionIndex": 1,
+        "marks": 5,
+        "explanation": "Secret answer"
+      }
+    ],
+    "createdAt": "2026-09-17T13:29:59.595Z",
+    "updatedAt": "2026-09-17T13:29:59.595Z"
+  },
+  {
+    "id": "exam-unlock-1789651799497-kv5bm",
+    "examCode": "LOCK-9497",
+    "password": "student-pass-123",
+    "examUnlockPassword": "UNLOCK-060B14",
+    "title": "AWS Secure Lock Verification Exam",
+    "description": "Testing exam lock and invigilator recovery flows",
+    "category": "Security Architecture",
+    "durationMinutes": 45,
+    "passingPercentage": 70,
+    "maxAttempts": 1,
+    "status": "Live",
+    "requireSecureBrowser": true,
+    "maxSecurityViolations": 5,
+    "questions": [
+      {
+        "id": "sec-q1",
+        "question": "Which service provides DDoS protection?",
+        "options": [
+          "AWS Shield",
+          "AWS S3",
+          "AWS Lambda",
+          "AWS Glue"
+        ],
+        "correctOptionIndex": 0,
+        "marks": 10,
+        "explanation": "AWS Shield provides DDoS protection."
+      },
+      {
+        "id": "sec-q2",
+        "question": "What is used for granular IAM permissions?",
+        "options": [
+          "IAM Policies",
+          "VPC Peering",
+          "Route53",
+          "CloudFront"
+        ],
+        "correctOptionIndex": 0,
+        "marks": 10,
+        "explanation": "IAM Policies manage access permissions."
+      }
+    ],
+    "createdAt": "2026-09-17T13:29:59.501Z",
+    "updatedAt": "2026-09-17T13:29:59.558Z"
+  },
+  {
     "id": "exam-lock-lifecycle-1789489604618",
     "examCode": "LOCK-4618",
     "password": "candidate-entry-pass",
