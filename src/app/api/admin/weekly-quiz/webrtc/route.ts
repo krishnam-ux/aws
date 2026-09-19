@@ -46,6 +46,8 @@ export async function GET(request: Request) {
         {
           success: false,
           hasStream: false,
+          hasCameraStream: false,
+          hasScreenStream: false,
           message: 'No active signaling session found for candidate.'
         },
         { status: 200, headers: noStoreHeaders }
@@ -55,11 +57,21 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         success: true,
-        hasStream: Boolean(channel.offer || channel.previewFrame),
+        hasStream: Boolean(channel.offer || channel.cameraPreviewFrame || channel.screenOffer || channel.screenPreviewFrame),
+        hasCameraStream: Boolean(channel.offer || channel.cameraPreviewFrame),
+        hasScreenStream: Boolean(channel.screenOffer || channel.screenPreviewFrame),
         offer: channel.offer || null,
+        cameraOffer: channel.offer || null,
+        screenOffer: channel.screenOffer || null,
         candidateIceCandidates: channel.candidateIceCandidates || [],
-        previewFrame: channel.previewFrame || null,
+        screenCandidateIceCandidates: channel.screenCandidateIceCandidates || [],
+        previewFrame: channel.cameraPreviewFrame || channel.previewFrame || null,
+        cameraPreviewFrame: channel.cameraPreviewFrame || channel.previewFrame || null,
+        screenPreviewFrame: channel.screenPreviewFrame || null,
         cameraActive: channel.cameraActive,
+        screenActive: channel.screenActive,
+        connectionStatus: channel.connectionStatus,
+        violationCount: channel.violationCount,
         lastActive: channel.lastActive
       },
       { status: 200, headers: noStoreHeaders }
@@ -83,7 +95,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { attemptId, answer, iceCandidate } = body;
+    const { attemptId, answer, cameraAnswer, screenAnswer, iceCandidate, cameraIceCandidate, screenIceCandidate } = body;
 
     if (!attemptId) {
       return NextResponse.json(
@@ -94,8 +106,10 @@ export async function POST(request: Request) {
 
     const channel = registerAdminSignal({
       attemptId,
-      answer,
-      iceCandidate
+      answer: answer || cameraAnswer,
+      iceCandidate: iceCandidate || cameraIceCandidate,
+      screenAnswer,
+      screenIceCandidate
     });
 
     if (!channel) {

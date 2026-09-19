@@ -386,4 +386,170 @@ test('Weekly Quiz Proctoring System Test Suite', async (t) => {
     const examAttempts = await db.examAttempts.getAll();
     assert.ok(Array.isArray(examAttempts), 'Existing exam attempts must remain intact');
   });
+
+  // Test 9: Two-Violation Policy (1st = Warning, 2nd = Auto-Submission)
+  await t.test('9. Two-Violation Server-Authoritative Policy Enforcement', async () => {
+    const attemptId = `wq_test_viol_${Date.now()}`;
+    const token = 'wq_token_viol_test';
+
+    const testAttempt: WeeklyQuizAttempt = {
+      id: attemptId,
+      quizId: 'quiz-aws-week-01',
+      candidateId: 'cand_viol_test',
+      studentName: 'Violation Test Candidate',
+      rollNumber: '23BCS7777',
+      email: 'violtest@cumail.in',
+      sessionToken: token,
+      status: 'IN_PROGRESS',
+      selectedQuestionIds: ['wq-01'],
+      shuffledOptions: { 'wq-01': [0, 1, 2, 3] },
+      answers: {},
+      markedForReview: [],
+      score: 0,
+      totalMarks: 5,
+      percentage: 0,
+      passed: false,
+      startedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 20 * 60000).toISOString(),
+      extendedMinutes: 0,
+      cameraStatus: 'ACTIVE',
+      screenStatus: 'ACTIVE',
+      faceStatus: 'ONE_FACE',
+      focusStatus: 'FOCUSED',
+      fullscreenStatus: 'FULLSCREEN',
+      connectionStatus: 'CONNECTED',
+      violationCount: 0,
+      violationHistory: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    await db.weeklyQuizAttempts.insertOne(testAttempt);
+
+    // 1st Violation: Screen Share Interrupted
+    const res1 = await logWeeklyQuizSecurityEvent({
+      attemptId,
+      quizId: 'quiz-aws-week-01',
+      candidateId: 'cand_viol_test',
+      studentName: 'Violation Test Candidate',
+      email: 'violtest@cumail.in',
+      eventType: 'SCREEN_SHARE_STOPPED',
+      severity: 'CRITICAL',
+      metadata: { reason: 'Candidate stopped sharing screen' }
+    });
+
+    assert.equal(res1.isWarning, true, 'First violation must trigger a warning');
+    assert.equal(res1.isAutoSubmitted, false, 'First violation must NOT auto-submit');
+    assert.equal(res1.violationCount, 1, 'Violation count should be 1');
+    assert.ok(res1.message?.includes('Warning (1/2)'), 'Message should indicate Warning 1/2');
+
+    const updatedAfter1 = await db.weeklyQuizAttempts.getById(attemptId);
+    assert.equal(updatedAfter1.status, 'IN_PROGRESS', 'Attempt should still be IN_PROGRESS after violation 1');
+    assert.equal(updatedAfter1.violationCount, 1);
+    assert.equal(updatedAfter1.screenStatus, 'DISCONNECTED');
+
+    // 2nd Violation: Tab Switch / Blur
+    const res2 = await logWeeklyQuizSecurityEvent({
+      attemptId,
+      quizId: 'quiz-aws-week-01',
+      candidateId: 'cand_viol_test',
+      studentName: 'Violation Test Candidate',
+      email: 'violtest@cumail.in',
+      eventType: 'TAB_FOCUS_LOST',
+      severity: 'WARNING',
+      metadata: { reason: 'Candidate switched tabs' }
+    });
+
+    assert.equal(res2.isWarning, false, 'Second violation is not just a warning');
+    assert.equal(res2.isAutoSubmitted, true, 'Second violation MUST trigger automatic submission');
+    assert.equal(res2.violationCount, 2, 'Violation count should be 2');
+
+    const updatedAfter2 = await db.weeklyQuizAttempts.getById(attemptId);
+    assert.equal(updatedAfter2.status, 'SUBMITTED', 'Attempt must be SUBMITTED after 2nd violation');
+    assert.equal(updatedAfter2.submissionReason, 'SECURITY_VIOLATION');
+    assert.ok(updatedAfter2.submittedAt, 'Must have submittedAt timestamp');
+
+    // Clean up
+    await db.weeklyQuizAttempts.deleteById(attemptId);
+  });
+
+  // Test 10: Dual WebRTC Signaling & Telemetry Frames
+  await t.test('10. Dual-Stream WebRTC Signaling (Camera + Screen) & Preview Telemetry', async () => {
+    const attemptId = `wq_test_webrtc_dual_${Date.now()}`;
+    const token = 'token_dual_webrtc';
+
+    const testAttempt: WeeklyQuizAttempt = {
+      id: attemptId,
+      quizId: 'quiz-aws-week-01',
+      candidateId: 'cand_dual_webrtc',
+      studentName: 'Dual WebRTC Student',
+      rollNumber: '23BCS6666',
+      email: 'dualwebrtc@cumail.in',
+      sessionToken: token,
+      status: 'IN_PROGRESS',
+      selectedQuestionIds: ['wq-01'],
+      shuffledOptions: { 'wq-01': [0, 1, 2, 3] },
+      answers: {},
+      markedForReview: [],
+      score: 0,
+      totalMarks: 5,
+      percentage: 0,
+      passed: false,
+      cameraStatus: 'ACTIVE',
+      screenStatus: 'ACTIVE',
+      faceStatus: 'ONE_FACE',
+      focusStatus: 'FOCUSED',
+      fullscreenStatus: 'FULLSCREEN',
+      connectionStatus: 'CONNECTED',
+      violationCount: 0,
+      violationHistory: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    await db.weeklyQuizAttempts.insertOne(testAttempt);
+
+    // Candidate registers dual signals: Camera Offer + Screen Offer + Preview Frames
+    const candidateChannel = registerCandidateSignal({
+      attemptId,
+      candidateId: 'cand_dual_webrtc',
+      studentName: 'Dual WebRTC Student',
+      email: 'dualwebrtc@cumail.in',
+      quizId: 'quiz-aws-week-01',
+      offer: { type: 'offer', sdp: 'v=0\r\no=camera 123456\r\n' },
+      screenOffer: { type: 'offer', sdp: 'v=0\r\no=screen 789101\r\n' },
+      cameraPreviewFrame: 'data:image/jpeg;base64,/9j/camFrame',
+      screenPreviewFrame: 'data:image/jpeg;base64,/9j/screenFrame',
+      cameraActive: true,
+      screenActive: true,
+      connectionStatus: 'CONNECTED'
+    });
+
+    assert.ok(candidateChannel, 'Channel registered');
+    assert.equal(candidateChannel.offer.sdp, 'v=0\r\no=camera 123456\r\n');
+    assert.equal(candidateChannel.screenOffer.sdp, 'v=0\r\no=screen 789101\r\n');
+    assert.equal(candidateChannel.cameraPreviewFrame, 'data:image/jpeg;base64,/9j/camFrame');
+    assert.equal(candidateChannel.screenPreviewFrame, 'data:image/jpeg;base64,/9j/screenFrame');
+
+    // Admin fetches signals
+    const adminSignal = getCandidateSignalForAdmin(attemptId);
+    assert.ok(adminSignal);
+    assert.equal(adminSignal.cameraActive, true);
+    assert.equal(adminSignal.screenActive, true);
+
+    // Admin registers dual answers
+    registerAdminSignal({
+      attemptId,
+      answer: { type: 'answer', sdp: 'v=0\r\no=camAnswer 111\r\n' },
+      screenAnswer: { type: 'answer', sdp: 'v=0\r\no=scrAnswer 222\r\n' }
+    });
+
+    // Student retrieves admin answers
+    const studentSignal = getCandidateSignalForStudent(attemptId);
+    assert.equal(studentSignal.answer.sdp, 'v=0\r\no=camAnswer 111\r\n');
+    assert.equal(studentSignal.screenAnswer.sdp, 'v=0\r\no=scrAnswer 222\r\n');
+
+    // Clean up
+    await db.weeklyQuizAttempts.deleteById(attemptId);
+  });
 });

@@ -6,6 +6,8 @@ import {
   selectAndRandomizeQuestions,
   sanitizeQuestionsForStudent,
   calculateRemainingSeconds,
+  calculateAuthoritativeRemainingSeconds,
+  verifyCandidateSessionEligibility,
   logWeeklyQuizSecurityEvent
 } from '@/lib/weeklyQuiz';
 import { WeeklyQuiz, WeeklyQuizAttempt } from '@/types/weeklyQuiz';
@@ -33,8 +35,26 @@ export async function POST(request: Request) {
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    const quiz: WeeklyQuiz = await db.weeklyQuizzes.getById(quizId.trim());
 
+    // 1. Authoritative Server-Side Session Eligibility & Schedule Verification
+    const eligibility = await verifyCandidateSessionEligibility({
+      email: cleanEmail,
+      quizId: quizId.trim()
+    });
+
+    if (!eligibility.isEligible) {
+      return NextResponse.json(
+        {
+          error: eligibility.message,
+          reason: eligibility.reason,
+          serverTime: eligibility.serverTime,
+          quiz: eligibility.quiz || null
+        },
+        { status: 403, headers: { 'Cache-Control': 'no-store, max-age=0' } }
+      );
+    }
+
+    const quiz: WeeklyQuiz = await db.weeklyQuizzes.getById(quizId.trim());
     if (!quiz) {
       return NextResponse.json(
         { error: 'Weekly Quiz not found.' },
@@ -42,14 +62,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (quiz.status === 'Draft' || quiz.status === 'Archived') {
-      return NextResponse.json(
-        { error: 'This weekly quiz is currently unavailable.' },
-        { status: 403, headers: { 'Cache-Control': 'no-store, max-age=0' } }
-      );
-    }
-
-    // Check for existing attempt
+    // Check for existing attempt (resume existing)
     const existingAttempt: WeeklyQuizAttempt | null = await db.weeklyQuizAttempts.getByEmailAndQuiz(cleanEmail, quiz.id);
 
     if (existingAttempt) {
@@ -61,7 +74,7 @@ export async function POST(request: Request) {
       }
 
       // Resume existing active or paused attempt
-      const remainingSeconds = calculateRemainingSeconds(existingAttempt, quiz.durationMinutes);
+      const remainingSeconds = calculateRemainingSeconds(existingAttempt, quiz.durationMinutes, quiz);
       const sanitizedQuestions = sanitizeQuestionsForStudent(
         existingAttempt.selectedQuestionIds,
         existingAttempt.shuffledOptions,
@@ -83,6 +96,14 @@ export async function POST(request: Request) {
             title: quiz.title,
             topic: quiz.topic,
             description: quiz.description,
+            sessionId: quiz.sessionId,
+            sessionTitle: quiz.sessionTitle,
+            scheduledDate: quiz.scheduledDate,
+            startTime: quiz.startTime,
+            endTime: quiz.endTime,
+            timezone: quiz.timezone,
+            scheduledStartAt: quiz.scheduledStartAt,
+            scheduledEndAt: quiz.scheduledEndAt,
             durationMinutes: quiz.durationMinutes,
             totalQuestions: sanitizedQuestions.length,
             passingPercentage: quiz.passingPercentage,
@@ -101,8 +122,11 @@ export async function POST(request: Request) {
             answers: existingAttempt.answers,
             markedForReview: existingAttempt.markedForReview,
             cameraStatus: existingAttempt.cameraStatus,
+            screenStatus: existingAttempt.screenStatus || 'ACTIVE',
             faceStatus: existingAttempt.faceStatus,
-            focusStatus: existingAttempt.focusStatus
+            focusStatus: existingAttempt.focusStatus,
+            connectionStatus: existingAttempt.connectionStatus || 'CONNECTED',
+            violationCount: existingAttempt.violationCount || 0
           }
         },
         { status: 200, headers: { 'Cache-Control': 'no-store, max-age=0' } }
@@ -113,7 +137,17 @@ export async function POST(request: Request) {
     const token = generateWeeklyQuizSessionToken();
     const attemptId = generateWeeklyQuizAttemptId();
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + quiz.durationMinutes * 60 * 1000).toISOString();
+
+    // End time calculation bounded by scheduledEndAt
+    let expiresAtTime = now.getTime() + quiz.durationMinutes * 60 * 1000;
+    if (quiz.scheduledEndAt) {
+      const scheduledEndMs = new Date(quiz.scheduledEndAt).getTime();
+      if (scheduledEndMs < expiresAtTime) {
+        expiresAtTime = scheduledEndMs;
+      }
+    }
+    const expiresAt = new Date(expiresAtTime).toISOString();
+    const initialRemainingSeconds = Math.max(0, Math.floor((expiresAtTime - now.getTime()) / 1000));
 
     const { selectedQuestionIds, shuffledOptions } = selectAndRandomizeQuestions(
       quiz.questionBank,
@@ -123,10 +157,13 @@ export async function POST(request: Request) {
     const cleanName = studentName?.trim() || cleanEmail.split('@')[0];
     const cleanRoll = rollNumber?.trim()?.toUpperCase() || `CU-${Date.now().toString().slice(-6)}`;
     const cId = candidateId || `cand_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const registrationId = eligibility.registration?.id || `reg_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
 
     const newAttempt: WeeklyQuizAttempt = {
       id: attemptId,
       quizId: quiz.id,
+      sessionId: quiz.sessionId,
+      registrationId,
       candidateId: cId,
       studentName: cleanName,
       rollNumber: cleanRoll,
@@ -145,17 +182,25 @@ export async function POST(request: Request) {
       expiresAt,
       extendedMinutes: 0,
       cameraStatus: 'ACTIVE',
+      screenStatus: 'ACTIVE',
       faceStatus: 'ONE_FACE',
       focusStatus: 'FOCUSED',
       fullscreenStatus: 'FULLSCREEN',
+      connectionStatus: 'CONNECTED',
+      violationCount: 0,
+      violationHistory: [],
       integritySummary: {
         cameraStatus: 'ACTIVE',
+        screenStatus: 'ACTIVE',
         faceStatus: 'ONE_FACE',
         focusStatus: 'FOCUSED',
         fullscreenStatus: 'FULLSCREEN',
+        connectionStatus: 'CONNECTED',
+        violationCount: 0,
         faceEventsCount: 0,
         focusEventsCount: 0,
         securityEventsCount: 0,
+        screenEventsCount: 0,
         reconnectsCount: 0,
         integrityRating: 'NORMAL'
       },
@@ -192,7 +237,27 @@ export async function POST(request: Request) {
       candidateId: cId,
       studentName: cleanName,
       email: cleanEmail,
+      eventType: 'SCREEN_SHARE_PERMISSION_GRANTED',
+      severity: 'INFO'
+    });
+
+    await logWeeklyQuizSecurityEvent({
+      attemptId,
+      quizId: quiz.id,
+      candidateId: cId,
+      studentName: cleanName,
+      email: cleanEmail,
       eventType: 'WEBCAM_CONNECTED',
+      severity: 'INFO'
+    });
+
+    await logWeeklyQuizSecurityEvent({
+      attemptId,
+      quizId: quiz.id,
+      candidateId: cId,
+      studentName: cleanName,
+      email: cleanEmail,
+      eventType: 'SCREEN_SHARE_STARTED',
       severity: 'INFO'
     });
 
@@ -208,13 +273,21 @@ export async function POST(request: Request) {
         token,
         attemptId,
         status: 'IN_PROGRESS',
-        remainingSeconds: quiz.durationMinutes * 60,
+        remainingSeconds: initialRemainingSeconds,
         quiz: {
           id: quiz.id,
           quizCode: quiz.quizCode,
           title: quiz.title,
           topic: quiz.topic,
           description: quiz.description,
+          sessionId: quiz.sessionId,
+          sessionTitle: quiz.sessionTitle,
+          scheduledDate: quiz.scheduledDate,
+          startTime: quiz.startTime,
+          endTime: quiz.endTime,
+          timezone: quiz.timezone,
+          scheduledStartAt: quiz.scheduledStartAt,
+          scheduledEndAt: quiz.scheduledEndAt,
           durationMinutes: quiz.durationMinutes,
           totalQuestions: sanitizedQuestions.length,
           passingPercentage: quiz.passingPercentage,
@@ -229,12 +302,15 @@ export async function POST(request: Request) {
           status: 'IN_PROGRESS',
           startedAt: now.toISOString(),
           expiresAt,
-          remainingSeconds: quiz.durationMinutes * 60,
+          remainingSeconds: initialRemainingSeconds,
           answers: {},
           markedForReview: [],
           cameraStatus: 'ACTIVE',
+          screenStatus: 'ACTIVE',
           faceStatus: 'ONE_FACE',
-          focusStatus: 'FOCUSED'
+          focusStatus: 'FOCUSED',
+          connectionStatus: 'CONNECTED',
+          violationCount: 0
         }
       },
       { status: 200, headers: { 'Cache-Control': 'no-store, max-age=0' } }

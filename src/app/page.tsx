@@ -339,18 +339,6 @@ export default async function Home() {
                 <p className="text-slate-600 leading-relaxed">{siteConfig.leader.description}</p>
               </div>
             </div>
-
-            {/* Vaibhav Sharma */}
-            <div className="tech-card-new rounded-md p-6 flex items-start space-x-4 bg-white">
-              <InitialsAvatar name="Vaibhav Sharma" />
-              <div className="space-y-2 font-sans text-xs">
-                <h4 className="font-bold text-slate-900 text-sm font-display">Vaibhav Sharma</h4>
-                <p className="font-bold text-slate-500 uppercase tracking-wider text-[9px]">CO-LEADER</p>
-                <p className="text-slate-600 leading-relaxed">
-                  Vaibhav Sharma supports the AWS Student Builder Group at Chandigarh University – Uttar Pradesh and helps coordinate community activities, student engagement, cloud, AI, data, and emerging technology initiatives.
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </section>

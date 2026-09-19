@@ -1,9 +1,1 @@
-[
-  {
-    "id": "auto-event_registration_confirmation",
-    "eventType": "event_registration_confirmation",
-    "isEnabled": true,
-    "updatedBy": "test_admin",
-    "updatedAt": "2026-09-17T18:08:28.678Z"
-  }
-]
+[{"id":"auto-event_registration_confirmation","eventType":"event_registration_confirmation","isEnabled":true,"updatedBy":"test_admin","updatedAt":"2026-09-19T12:56:31.228Z"}]

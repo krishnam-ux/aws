@@ -9,7 +9,23 @@ export const revalidate = 0;
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { attemptId, token, offer, iceCandidate, previewFrame, cameraActive } = body;
+    const {
+      attemptId,
+      token,
+      offer,
+      cameraOffer,
+      screenOffer,
+      iceCandidate,
+      cameraIceCandidate,
+      screenIceCandidate,
+      previewFrame,
+      cameraPreviewFrame,
+      screenPreviewFrame,
+      cameraActive,
+      screenActive,
+      connectionStatus,
+      violationCount
+    } = body;
 
     if (!attemptId || !token) {
       return NextResponse.json(
@@ -30,18 +46,29 @@ export async function POST(request: Request) {
       attemptId: attempt.id,
       candidateId: attempt.candidateId,
       studentName: attempt.studentName,
+      email: attempt.email,
       quizId: attempt.quizId,
-      offer,
-      iceCandidate,
-      previewFrame,
-      cameraActive
+      offer: offer || cameraOffer,
+      screenOffer,
+      iceCandidate: iceCandidate || cameraIceCandidate,
+      screenIceCandidate,
+      previewFrame: previewFrame || cameraPreviewFrame,
+      cameraPreviewFrame: cameraPreviewFrame || previewFrame,
+      screenPreviewFrame,
+      cameraActive,
+      screenActive,
+      connectionStatus,
+      violationCount
     });
 
     return NextResponse.json(
       {
         success: true,
         answer: channel.answer || null,
-        adminIceCandidates: channel.adminIceCandidates || []
+        cameraAnswer: channel.answer || null,
+        screenAnswer: channel.screenAnswer || null,
+        adminIceCandidates: channel.adminIceCandidates || [],
+        screenAdminIceCandidates: channel.screenAdminIceCandidates || []
       },
       { status: 200, headers: { 'Cache-Control': 'no-store, max-age=0' } }
     );
@@ -81,7 +108,11 @@ export async function GET(request: Request) {
       {
         success: true,
         answer: signalData.answer || null,
-        adminIceCandidates: signalData.adminIceCandidates || []
+        cameraAnswer: signalData.answer || null,
+        screenAnswer: signalData.screenAnswer || null,
+        adminIceCandidates: signalData.adminIceCandidates || [],
+        screenAdminIceCandidates: signalData.screenAdminIceCandidates || [],
+        connectionStatus: signalData.connectionStatus
       },
       { status: 200, headers: { 'Cache-Control': 'no-store, max-age=0' } }
     );

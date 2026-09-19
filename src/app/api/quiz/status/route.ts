@@ -40,7 +40,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const remainingSeconds = calculateRemainingSeconds(attempt, quiz.durationMinutes);
+    const remainingSeconds = calculateRemainingSeconds(attempt, quiz.durationMinutes, quiz);
 
     // Auto-submit if time expired and still IN_PROGRESS
     if (remainingSeconds <= 0 && attempt.status === 'IN_PROGRESS') {
@@ -90,9 +90,14 @@ export async function GET(request: Request) {
         remainingSeconds,
         extendedMinutes: attempt.extendedMinutes || 0,
         cameraStatus: attempt.cameraStatus,
+        screenStatus: attempt.screenStatus || 'ACTIVE',
         faceStatus: attempt.faceStatus,
         focusStatus: attempt.focusStatus,
         fullscreenStatus: attempt.fullscreenStatus,
+        connectionStatus: attempt.connectionStatus || 'CONNECTED',
+        violationCount: attempt.violationCount || 0,
+        violationHistory: attempt.violationHistory || [],
+        submissionReason: attempt.submissionReason,
         adminNotes: attempt.adminNotes,
         submittedAt: attempt.submittedAt
       },

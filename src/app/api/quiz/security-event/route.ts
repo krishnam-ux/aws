@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const event = await logWeeklyQuizSecurityEvent({
+    const result = await logWeeklyQuizSecurityEvent({
       attemptId: attempt.id,
       quizId: attempt.quizId,
       candidateId: attempt.candidateId,
@@ -41,8 +41,12 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: true,
-        eventId: event.id,
-        timestamp: event.timestamp
+        eventId: result.event.id,
+        timestamp: result.event.timestamp,
+        isWarning: result.isWarning,
+        isAutoSubmitted: result.isAutoSubmitted,
+        violationCount: result.violationCount,
+        message: result.message
       },
       { status: 200, headers: { 'Cache-Control': 'no-store, max-age=0' } }
     );

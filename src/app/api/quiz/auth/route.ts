@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { verifyCandidateSessionEligibility } from '@/lib/weeklyQuiz';
 import { WeeklyQuiz, WeeklyQuizAttempt } from '@/types/weeklyQuiz';
 
 export const dynamic = 'force-dynamic';
@@ -57,57 +58,70 @@ export async function POST(request: Request) {
       targetQuiz = liveQuizzes[0];
     }
 
-    // 3. Check for existing attempts by this candidate for the target quiz
-    let existingAttempt: WeeklyQuizAttempt | null = null;
-    if (targetQuiz) {
-      existingAttempt = await db.weeklyQuizAttempts.getByEmailAndQuiz(cleanEmail, targetQuiz.id);
+    if (!targetQuiz) {
+      return NextResponse.json(
+        { error: 'No active Weekly Quiz found.' },
+        { status: 404, headers: { 'Cache-Control': 'no-store, max-age=0' } }
+      );
     }
+
+    // 3. Verify Candidate Session Eligibility & Schedule
+    const eligibility = await verifyCandidateSessionEligibility({
+      email: cleanEmail,
+      quizId: targetQuiz.id
+    });
 
     return NextResponse.json(
       {
         success: true,
+        isEligible: eligibility.isEligible,
+        eligibilityReason: eligibility.reason,
+        eligibilityMessage: eligibility.message,
         candidate: {
           id: candidateId,
           studentName: candidateName,
           rollNumber: candidateRoll,
           email: cleanEmail
         },
-        quiz: targetQuiz
-          ? {
-              id: targetQuiz.id,
-              quizCode: targetQuiz.quizCode,
-              title: targetQuiz.title,
-              topic: targetQuiz.topic,
-              description: targetQuiz.description,
-              durationMinutes: targetQuiz.durationMinutes,
-              totalQuestionsToSelect: targetQuiz.totalQuestionsToSelect,
-              passingPercentage: targetQuiz.passingPercentage,
-              maxAttempts: targetQuiz.maxAttempts || 1,
-              status: targetQuiz.status,
-              settings: targetQuiz.settings
-            }
-          : null,
+        registration: eligibility.registration || null,
+        quiz: eligibility.quiz || {
+          id: targetQuiz.id,
+          quizCode: targetQuiz.quizCode,
+          title: targetQuiz.title,
+          topic: targetQuiz.topic,
+          description: targetQuiz.description,
+          sessionId: targetQuiz.sessionId,
+          sessionTitle: targetQuiz.sessionTitle,
+          durationMinutes: targetQuiz.durationMinutes,
+          totalQuestions: targetQuiz.totalQuestionsToSelect || 20,
+          passingPercentage: targetQuiz.passingPercentage,
+          scheduledDate: targetQuiz.scheduledDate,
+          startTime: targetQuiz.startTime,
+          endTime: targetQuiz.endTime,
+          timezone: targetQuiz.timezone,
+          scheduledStartAt: targetQuiz.scheduledStartAt,
+          scheduledEndAt: targetQuiz.scheduledEndAt,
+          scheduleStatus: 'LIVE'
+        },
         availableQuizzes: liveQuizzes.map(q => ({
           id: q.id,
           quizCode: q.quizCode,
           title: q.title,
           topic: q.topic,
+          sessionId: q.sessionId,
+          sessionTitle: q.sessionTitle,
+          scheduledDate: q.scheduledDate,
+          startTime: q.startTime,
+          endTime: q.endTime,
+          timezone: q.timezone,
+          scheduledStartAt: q.scheduledStartAt,
+          scheduledEndAt: q.scheduledEndAt,
           durationMinutes: q.durationMinutes,
           totalQuestionsToSelect: q.totalQuestionsToSelect,
           status: q.status
         })),
-        existingAttempt: existingAttempt
-          ? {
-              id: existingAttempt.id,
-              status: existingAttempt.status,
-              sessionToken: existingAttempt.sessionToken,
-              score: existingAttempt.score,
-              totalMarks: existingAttempt.totalMarks,
-              percentage: existingAttempt.percentage,
-              passed: existingAttempt.passed,
-              submittedAt: existingAttempt.submittedAt
-            }
-          : null
+        existingAttempt: eligibility.existingAttempt || null,
+        serverTime: eligibility.serverTime
       },
       { status: 200, headers: { 'Cache-Control': 'no-store, max-age=0' } }
     );

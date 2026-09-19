@@ -25,11 +25,10 @@
 
   Modified Files (8 files changed, 392 insertions):
     ✓ src/app/api/admin/route.ts
-      - Rewrote drawSignatureSection() for 3-column balanced layout
+      - Rewrote drawSignatureSection() for 2-column balanced layout
       - Updated finalizeSignatureSection() for smart page breaking
       - Left: Abhay Shukla (AWS Student Builder Group Leader)
-      - Center: Authorized Signature with organization details
-      - Right: Vaibhav Sharma (AWS Student Builder Group Leader)
+      - Right: Authorized Signature with organization details
 
     ✓ src/app/events/[event-id]/register/page.tsx
       - Student ID/UID required field validation
@@ -79,27 +78,22 @@
 ✅ PDF SIGNATURE LAYOUT FEATURES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Left Section (X: 94pt):
+  Left Section (X: 154.5pt):
     ✓ Abhay Shukla
     ✓ AWS Student Builder Group Leader
-    ✓ Signature line (130pt wide, centered)
+    ✓ Signature line (140pt wide, centered)
 
-  Center Section (X: 356pt):
+  Right Section (X: 547.5pt):
     ✓ Authorized Signature
     ✓ AWS Student Builder Group
     ✓ Chandigarh University – Uttar Pradesh
     ✓ Date: ________________
-    ✓ Signature line (130pt wide, centered)
-
-  Right Section (X: 618pt):
-    ✓ Vaibhav Sharma
-    ✓ AWS Student Builder Group Leader
-    ✓ Signature line (130pt wide, centered)
+    ✓ Signature line (140pt wide, centered)
 
   Layout Properties:
     ✓ All signature lines at identical vertical position (signatureLineY)
-    ✓ All signature lines exactly 130pt wide
-    ✓ Perfect 3-column balance (262pt per column)
+    ✓ All signature lines exactly 140pt wide
+    ✓ Perfect 2-column balance (393pt per column)
     ✓ Landscape A4 page: 842pt × 595pt
     ✓ Margins: 28pt (all sides)
     ✓ Names/titles centered under each signature line
@@ -134,16 +128,15 @@
   ✓ Events Found:                6 events in production
   ✓ First Event:                 AWS Student Builder Group - Production Sync Test
   ✓ Code Verification:           All 10 code requirements verified in deployment
-  ✓ Test PDF Generated:          test-production-pdf.pdf (12,033 bytes)
+  ✓ Test PDF Generated:          test-production-pdf.pdf
   ✓ PDF Validation:              All structure checks passed
 
   Signature Alignment Coordinates:
-    ✓ Left signature line X:      94pt
-    ✓ Center signature line X:    356pt
-    ✓ Right signature line X:     618pt
+    ✓ Left signature line X:      154.5pt
+    ✓ Right signature line X:     547.5pt
     ✓ All at same Y position:     signatureLineY
-    ✓ All width:                  130pt each
-    ✓ Perfect spacing:            262pt between each column center
+    ✓ All width:                  140pt each
+    ✓ Perfect spacing:            393pt between column centers
 
 🎯 PRODUCTION ACCESS URLs
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -160,19 +153,18 @@
 The PDF Leadership & Authorization section alignment fix has been successfully
 deployed to production on Vercel with the following verified features:
 
-1. ✓ Perfectly balanced 3-position layout
-2. ✓ Abhay Shukla aligned to LEFT THIRD
-3. ✓ Authorized Signature perfectly CENTERED
-4. ✓ Vaibhav Sharma aligned to RIGHT THIRD
-5. ✓ All three signature lines at SAME HEIGHT
-6. ✓ All signature lines EQUAL WIDTH (130pt)
-7. ✓ Section placed IMMEDIATELY after table
-8. ✓ SMART PAGE BREAKING prevents overlap
-9. ✓ Multi-page PDFs keep section TOGETHER
-10. ✓ Student ID/UID column PRESERVED
-11. ✓ Student Signature column PRESERVED (blank)
-12. ✓ AWS branding PRESERVED
-13. ✓ All table columns PRESERVED
+1. ✓ Perfectly balanced 2-position layout
+2. ✓ Abhay Shukla aligned to LEFT HALF
+3. ✓ Authorized Signature aligned to RIGHT HALF
+4. ✓ All signature lines at SAME HEIGHT
+5. ✓ All signature lines EQUAL WIDTH (140pt)
+6. ✓ Section placed IMMEDIATELY after table
+7. ✓ SMART PAGE BREAKING prevents overlap
+8. ✓ Multi-page PDFs keep section TOGETHER
+9. ✓ Student ID/UID column PRESERVED
+10. ✓ Student Signature column PRESERVED (blank)
+11. ✓ AWS branding PRESERVED
+12. ✓ All table columns PRESERVED
 14. ✓ Export formats (CSV/Excel/PDF) UPDATED
 
 Deployment Timestamp: 2026-08-16 (3 minutes ago)

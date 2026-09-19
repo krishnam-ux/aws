@@ -25,11 +25,32 @@ export async function POST(request: Request) {
       );
     }
 
-    if (attempt.status === 'SUBMITTED' || attempt.status === 'REVIEW_REQUIRED') {
+    if (attempt.status === 'SUBMITTED' || attempt.status === 'REVIEW_REQUIRED' || attempt.status === 'LOCKED') {
       return NextResponse.json(
         { error: 'Cannot save answers on a submitted assessment.' },
         { status: 400, headers: { 'Cache-Control': 'no-store, max-age=0' } }
       );
+    }
+
+    const quiz = await db.weeklyQuizzes.getById(attempt.quizId);
+    if (quiz) {
+      const nowMs = Date.now();
+      const quizEndMs = quiz.scheduledEndAt
+        ? new Date(quiz.scheduledEndAt).getTime()
+        : quiz.availableUntil
+        ? new Date(quiz.availableUntil).getTime()
+        : Number.MAX_SAFE_INTEGER;
+      const attemptExpiresMs = attempt.expiresAt ? new Date(attempt.expiresAt).getTime() : Number.MAX_SAFE_INTEGER;
+
+      if (nowMs >= quizEndMs || nowMs >= attemptExpiresMs) {
+        // Auto-submit expired attempt
+        const { autoSubmitExpiredAttemptsForQuiz } = await import('@/lib/weeklyQuiz');
+        await autoSubmitExpiredAttemptsForQuiz(quiz.id);
+        return NextResponse.json(
+          { error: 'Assessment time has expired. Your answers have been automatically submitted.' },
+          { status: 403, headers: { 'Cache-Control': 'no-store, max-age=0' } }
+        );
+      }
     }
 
     const updatedAnswers = {

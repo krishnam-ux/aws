@@ -64,7 +64,10 @@ export async function POST(request: Request) {
     const events = await db.weeklyQuizSecurityEvents.getByAttemptId(attempt.id);
     const integritySummary = calculateIntegrityRating(events, tempAttempt);
 
-    const submissionReason = reason || 'MANUAL';
+    let submissionReason = reason || 'MANUAL';
+    if (quiz.scheduledEndAt && Date.now() >= new Date(quiz.scheduledEndAt).getTime()) {
+      submissionReason = 'TIME_EXPIRED';
+    }
     const submittedAt = new Date().toISOString();
 
     const updated = await db.weeklyQuizAttempts.updateOne(attempt.id, {

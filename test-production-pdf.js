@@ -119,22 +119,20 @@ const drawSignatureSection = (startY) => {
   currentY += 20;
   
   // Signature line properties
-  const signatureLineWidth = 130;
+  const signatureLineWidth = 140;
   const signatureLineY = currentY + 8;
   
-  // Calculate 3-column positions (PRODUCTION CODE)
+  // Calculate 2-column positions (PRODUCTION CODE)
   const usableWidth = pageWidth - margin * 2;
-  const columnWidth = usableWidth / 3;
+  const columnWidth = usableWidth / 2;
   
   const leftSignX = margin + (columnWidth / 2) - (signatureLineWidth / 2);
-  const centerSignX = margin + columnWidth + (columnWidth / 2) - (signatureLineWidth / 2);
-  const rightSignX = margin + columnWidth * 2 + (columnWidth / 2) - (signatureLineWidth / 2);
+  const rightSignX = margin + columnWidth + (columnWidth / 2) - (signatureLineWidth / 2);
   
-  // Draw all three signature lines at same height
+  // Draw both signature lines at same height
   doc.setDrawColor(15, 23, 42);
   doc.setLineWidth(0.8);
   doc.line(leftSignX, signatureLineY, leftSignX + signatureLineWidth, signatureLineY);
-  doc.line(centerSignX, signatureLineY, centerSignX + signatureLineWidth, signatureLineY);
   doc.line(rightSignX, signatureLineY, rightSignX + signatureLineWidth, signatureLineY);
   
   // Left: Abhay Shukla
@@ -146,28 +144,19 @@ const drawSignatureSection = (startY) => {
   doc.setFontSize(8.5);
   doc.text('AWS Student Builder Group Leader', leftSignX + (signatureLineWidth / 2), signatureLineY + 28, { align: 'center', maxWidth: columnWidth - 8 });
   
-  // Center: Authorized Signature
+  // Right: Authorized Signature
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('Authorized Signature', centerSignX + (signatureLineWidth / 2), signatureLineY + 16, { align: 'center' });
+  doc.text('Authorized Signature', rightSignX + (signatureLineWidth / 2), signatureLineY + 16, { align: 'center' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(30, 41, 59);
-  doc.text('AWS Student Builder Group', centerSignX + (signatureLineWidth / 2), signatureLineY + 28, { align: 'center' });
-  doc.text('Chandigarh University – Uttar Pradesh', centerSignX + (signatureLineWidth / 2), signatureLineY + 40, { align: 'center', maxWidth: columnWidth - 8 });
+  doc.text('AWS Student Builder Group', rightSignX + (signatureLineWidth / 2), signatureLineY + 28, { align: 'center' });
+  doc.text('Chandigarh University – Uttar Pradesh', rightSignX + (signatureLineWidth / 2), signatureLineY + 40, { align: 'center', maxWidth: columnWidth - 8 });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
-  doc.text('Date: ________________', centerSignX + (signatureLineWidth / 2), signatureLineY + 52, { align: 'center' });
-  
-  // Right: Vaibhav Sharma
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Vaibhav Sharma', rightSignX + (signatureLineWidth / 2), signatureLineY + 16, { align: 'center' });
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  doc.text('AWS Student Builder Group Leader', rightSignX + (signatureLineWidth / 2), signatureLineY + 28, { align: 'center', maxWidth: columnWidth - 8 });
+  doc.text('Date: ________________', rightSignX + (signatureLineWidth / 2), signatureLineY + 52, { align: 'center' });
 };
 
 // Add sample registrations
@@ -241,8 +230,7 @@ console.log('  ✓ Registration Date column');
 console.log('  ✓ Student Signature column (blank/empty)');
 console.log('  ✓ Leadership & Authorization section');
 console.log('  ✓ Abhay Shukla (left aligned)');
-console.log('  ✓ Authorized Signature (center aligned)');
-console.log('  ✓ Vaibhav Sharma (right aligned)');
-console.log('  ✓ All signature lines at same height (130pt wide)');
+console.log('  ✓ Authorized Signature (right aligned)');
+console.log('  ✓ All signature lines at same height (140pt wide)');
 console.log('  ✓ Smart page breaking logic implemented');
 console.log('\n✓ This PDF validates the production deployment!\n');

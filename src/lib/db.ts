@@ -622,23 +622,19 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
     throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
   }
 
-  const isRealtime = isRealtimeCollection(filename);
-  if (!isRealtime) {
-    const cached = memoryDbCache[filename];
-    if (cached !== undefined && Date.now() < cached.expiresAt) {
-      return cached.data as T;
-    }
+  // Fast memory cache check
+  const cached = memoryDbCache[filename];
+  if (cached !== undefined && Date.now() < cached.expiresAt) {
+    return cached.data as T;
   }
 
   // 1. Try Vercel KV
   if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
     const val = await readKv(filename, defaultValue);
-    if (!isRealtime) {
-      memoryDbCache[filename] = {
-        data: val,
-        expiresAt: Date.now() + CACHE_TTL_MS
-      };
-    }
+    memoryDbCache[filename] = {
+      data: val,
+      expiresAt: Date.now() + CACHE_TTL_MS
+    };
     return val;
   }
 
@@ -649,12 +645,10 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
     } else {
       try {
         const val = await readPostgres(filename, defaultValue);
-        if (!isRealtime) {
-          memoryDbCache[filename] = {
-            data: val,
-            expiresAt: Date.now() + CACHE_TTL_MS
-          };
-        }
+        memoryDbCache[filename] = {
+          data: val,
+          expiresAt: Date.now() + CACHE_TTL_MS
+        };
         return val;
       } catch (err) {
         console.error(`PostgreSQL read failed for ${filename}:`, err);
@@ -670,12 +664,10 @@ async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
         const val = await store.get(filename, { type: 'text' });
         if (val) {
           const parsed = JSON.parse(val) as T;
-          if (!isRealtime) {
-            memoryDbCache[filename] = {
-              data: parsed,
-              expiresAt: Date.now() + CACHE_TTL_MS
-            };
-          }
+          memoryDbCache[filename] = {
+            data: parsed,
+            expiresAt: Date.now() + CACHE_TTL_MS
+          };
           return parsed;
         }
       } catch (err) {
@@ -717,8 +709,7 @@ async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
     throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
   }
 
-  // Always invalidate stale snapshot before writing, then update cache to the new value.
-  invalidateMemoryCache(filename);
+  // Immediately update in-memory cache to guarantee sequential read consistency
   memoryDbCache[filename] = {
     data,
     expiresAt: Date.now() + CACHE_TTL_MS
@@ -757,21 +748,12 @@ async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
     }
   }
 
-  // 4. Local file fallback only when no database backend is configured.
+  // 4. Local file fallback - non-blocking async write
   const filePath = path.join(DB_DIR, filename);
-  const tmpPath = path.join(DB_DIR, `.${filename}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`);
   try {
-    fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
-    try {
-      fs.renameSync(tmpPath, filePath);
-    } catch {
-      // In Windows, if renameSync fails due to file lock, copy and delete
-      fs.copyFileSync(tmpPath, filePath);
-      try { fs.unlinkSync(tmpPath); } catch {}
-    }
+    await fs.promises.writeFile(filePath, JSON.stringify(data), 'utf-8');
   } catch (err) {
     console.error(`Error writing database file: ${filename}`, err);
-    try { if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath); } catch {}
   }
 }
 
@@ -1195,6 +1177,14 @@ const DEFAULT_WEEKLY_QUIZZES = [
     title: 'Weekly AWS Quiz #01',
     topic: 'Amazon S3 Storage Classes, Bucket Policies & CloudFront Edge Distribution',
     description: 'Post-session assessment on S3 storage tiering, lifecycle configurations, cross-region replication, and Amazon CloudFront CDN architecture.',
+    sessionId: 'event-01',
+    sessionTitle: 'Event 01 - AWS Student Builder Group Inauguration & Cloud Kickstart',
+    scheduledDate: '2026-09-25',
+    startTime: '10:00',
+    endTime: '23:59',
+    timezone: 'Asia/Kolkata',
+    scheduledStartAt: new Date(Date.now() - 3600000).toISOString(),
+    scheduledEndAt: new Date(Date.now() + 7 * 86400000).toISOString(),
     availableFrom: new Date(Date.now() - 86400000).toISOString(),
     availableUntil: new Date(Date.now() + 7 * 86400000).toISOString(),
     durationMinutes: 20,

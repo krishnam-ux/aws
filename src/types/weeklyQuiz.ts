@@ -1,4 +1,5 @@
 export type WeeklyQuizStatus = 'Draft' | 'Published' | 'Live' | 'Archived';
+export type WeeklyQuizScheduleStatus = 'UPCOMING' | 'LIVE' | 'ENDED';
 
 export interface WeeklyQuizQuestion {
   id: string;
@@ -13,14 +14,17 @@ export interface WeeklyQuizQuestion {
 export interface WeeklyQuizProctoringConfig {
   requireWebcam: boolean;
   requireMicrophone: boolean;
+  requireScreenShare: boolean;
   requireFaceDetection: boolean;
   detectMultipleFaces: boolean;
   requireFullscreen: boolean;
   monitorFocus: boolean;
   noFaceThresholdSeconds: number; // grace threshold before logging NO_FACE_DETECTED (e.g. 6s)
   multipleFacesThresholdSeconds: number; // grace threshold before logging MULTIPLE_FACES_DETECTED (e.g. 4s)
-  cameraGracePeriodSeconds: number; // grace period to reconnect camera before pausing quiz (e.g. 30s)
+  cameraGracePeriodSeconds: number; // grace period to reconnect camera before penalty (e.g. 30s)
+  screenGracePeriodSeconds: number; // grace period to restore screen share before penalty (e.g. 20s)
   fullscreenGracePeriodSeconds: number; // grace period to return to fullscreen (e.g. 15s)
+  maxViolationsAllowed: number; // Default 1 warning, 2nd auto-submits
 }
 
 export interface WeeklyQuiz {
@@ -29,8 +33,17 @@ export interface WeeklyQuiz {
   title: string;
   topic: string;
   description: string;
-  availableFrom?: string; // ISO date
-  availableUntil?: string; // ISO date
+  sessionId: string; // Exact linked session/event ID (e.g. "event-01" or "SESSION-W05-001")
+  sessionTitle?: string; // Display title of the linked session
+  scheduledDate?: string; // e.g. "2026-09-25" (YYYY-MM-DD)
+  startTime?: string; // e.g. "10:00" (HH:mm in timezone)
+  endTime?: string; // e.g. "10:30" (HH:mm in timezone)
+  timezone?: string; // Default: "Asia/Kolkata" (IST)
+  scheduledStartAt?: string; // Canonical UTC ISO timestamp
+  scheduledEndAt?: string; // Canonical UTC ISO timestamp
+  lateEntryGraceMinutes?: number; // Optional explicit grace window in minutes
+  availableFrom?: string; // Fallback legacy ISO date
+  availableUntil?: string; // Fallback legacy ISO date
   durationMinutes: number; // e.g. 20 minutes
   totalQuestionsToSelect: number; // e.g. 20 questions chosen from questionBank
   passingPercentage: number; // e.g. 60%
@@ -40,6 +53,73 @@ export interface WeeklyQuiz {
   settings: WeeklyQuizProctoringConfig;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CandidateEligibilityResult {
+  isEligible: boolean;
+  reason:
+    | 'ELIGIBLE'
+    | 'NOT_REGISTERED_FOR_SESSION'
+    | 'REGISTRATION_NOT_CONFIRMED'
+    | 'QUIZ_NOT_STARTED'
+    | 'QUIZ_ENDED'
+    | 'ALREADY_SUBMITTED'
+    | 'ATTEMPT_LOCKED'
+    | 'QUIZ_INACTIVE'
+    | 'INVALID_CREDENTIALS';
+  message: string;
+  registration?: {
+    id: string;
+    eventId: string;
+    name: string;
+    email: string;
+    status: string;
+  };
+  quiz?: {
+    id: string;
+    quizCode: string;
+    title: string;
+    topic: string;
+    description: string;
+    sessionId: string;
+    sessionTitle?: string;
+    durationMinutes: number;
+    totalQuestions: number;
+    passingPercentage: number;
+    scheduledDate?: string;
+    startTime?: string;
+    endTime?: string;
+    timezone?: string;
+    scheduledStartAt?: string;
+    scheduledEndAt?: string;
+    scheduleStatus: WeeklyQuizScheduleStatus;
+    startsInSeconds?: number;
+    remainingSeconds?: number;
+  };
+  existingAttempt?: {
+    id: string;
+    status: WeeklyQuizAttemptStatus;
+    sessionToken: string;
+    score?: number;
+    totalMarks?: number;
+    percentage?: number;
+    passed?: boolean;
+    submissionReason?: WeeklyQuizSubmissionReason;
+    submittedAt?: string;
+    remainingSeconds?: number;
+  };
+  serverTime: string;
+}
+
+export interface WeeklyQuizEligibilityMetrics {
+  totalEligible: number;
+  started: number;
+  notStarted: number;
+  active: number;
+  submitted: number;
+  autoSubmitted: number;
+  scheduleStatus: WeeklyQuizScheduleStatus;
+  serverTime: string;
 }
 
 export type WeeklyQuizAttemptStatus =
@@ -58,21 +138,39 @@ export type WeeklyQuizSubmissionReason =
 
 export type IntegrityRating = 'NORMAL' | 'ATTENTION' | 'REVIEW_REQUIRED';
 
+export type MediaDeviceStatus = 'ACTIVE' | 'DISCONNECTED' | 'ERROR' | 'OFF';
+export type ConnectionHealthStatus = 'CONNECTED' | 'RECONNECTING' | 'DISCONNECTED';
+export type FaceStatusType = 'ONE_FACE' | 'NO_FACE' | 'MULTIPLE_FACES' | 'UNKNOWN';
+
 export interface WeeklyQuizIntegritySummary {
-  cameraStatus: 'ACTIVE' | 'DISCONNECTED' | 'ERROR' | 'OFF';
-  faceStatus: 'ONE_FACE' | 'NO_FACE' | 'MULTIPLE_FACES' | 'UNKNOWN';
+  cameraStatus: MediaDeviceStatus;
+  screenStatus?: MediaDeviceStatus;
+  faceStatus: FaceStatusType;
   focusStatus: 'FOCUSED' | 'UNFOCUSED';
   fullscreenStatus: 'FULLSCREEN' | 'WINDOWED';
+  connectionStatus?: ConnectionHealthStatus;
+  violationCount?: number;
   faceEventsCount: number;
   focusEventsCount: number;
   securityEventsCount: number;
+  screenEventsCount?: number;
   reconnectsCount: number;
   integrityRating: IntegrityRating;
+  lastViolationReason?: string;
+}
+
+export interface WeeklyQuizViolationRecord {
+  violationNumber: number;
+  eventType: string;
+  reason: string;
+  timestamp: string;
 }
 
 export interface WeeklyQuizAttempt {
   id: string;
   quizId: string;
+  sessionId?: string;
+  registrationId?: string;
   candidateId: string;
   studentName: string;
   rollNumber: string;
@@ -92,13 +190,18 @@ export interface WeeklyQuizAttempt {
   submittedAt?: string;
   pausedAt?: string;
   pausedRemainingSeconds?: number;
-  extendedMinutes: number;
+  extendedMinutes?: number;
   submissionReason?: WeeklyQuizSubmissionReason;
-  cameraStatus: 'ACTIVE' | 'DISCONNECTED' | 'ERROR' | 'OFF';
-  faceStatus: 'ONE_FACE' | 'NO_FACE' | 'MULTIPLE_FACES' | 'UNKNOWN';
+  cameraStatus: MediaDeviceStatus;
+  screenStatus?: MediaDeviceStatus;
+  faceStatus: FaceStatusType;
   focusStatus: 'FOCUSED' | 'UNFOCUSED';
   fullscreenStatus: 'FULLSCREEN' | 'WINDOWED';
-  integritySummary: WeeklyQuizIntegritySummary;
+  connectionStatus?: ConnectionHealthStatus;
+  violationCount?: number;
+  violationHistory?: WeeklyQuizViolationRecord[];
+  lastHeartbeatAt?: string;
+  integritySummary?: WeeklyQuizIntegritySummary;
   adminNotes?: string;
   createdAt: string;
   updatedAt: string;
@@ -110,20 +213,42 @@ export type WeeklyQuizEventType =
   | 'WEBCAM_CONNECTED'
   | 'WEBCAM_DISCONNECTED'
   | 'WEBCAM_STREAM_INTERRUPTED'
+  | 'CAMERA_CONNECTED'
+  | 'CAMERA_DISCONNECTED'
+  | 'CAMERA_RECONNECTED'
+  | 'SCREEN_SHARE_PERMISSION_GRANTED'
+  | 'SCREEN_SHARE_PERMISSION_DENIED'
+  | 'SCREEN_SHARE_STARTED'
+  | 'SCREEN_SHARE_STOPPED'
+  | 'SCREEN_SHARE_INTERRUPTED'
+  | 'FACE_DETECTED'
   | 'NO_FACE_DETECTED'
   | 'MULTIPLE_FACES_DETECTED'
   | 'FACE_DETECTION_RECOVERED'
   | 'TAB_FOCUS_LOST'
   | 'TAB_FOCUS_RESTORED'
+  | 'TAB_HIDDEN'
+  | 'TAB_VISIBLE'
+  | 'WINDOW_BLURRED'
+  | 'WINDOW_FOCUSED'
+  | 'FULLSCREEN_ENTERED'
+  | 'FULLSCREEN_EXITED'
   | 'FULLSCREEN_EXIT'
   | 'FULLSCREEN_RESTORED'
   | 'COPY_ATTEMPT'
+  | 'CUT_ATTEMPT'
   | 'PASTE_ATTEMPT'
   | 'NAVIGATION_ATTEMPT'
+  | 'UNAUTHORIZED_KEY'
   | 'QUIZ_STARTED'
   | 'QUIZ_SUBMITTED'
+  | 'AUTO_SUBMITTED'
   | 'NETWORK_INTERRUPTION'
-  | 'NETWORK_RECOVERED';
+  | 'NETWORK_RECOVERED'
+  | 'NETWORK_DISCONNECTED'
+  | 'NETWORK_RECONNECTED'
+  | 'PROCTOR_WARNING'
+  | 'PROCTOR_VIOLATION';
 
 export type WeeklyQuizEventSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
 
@@ -138,6 +263,7 @@ export interface WeeklyQuizSecurityEvent {
   severity: WeeklyQuizEventSeverity;
   durationSeconds?: number;
   metadata?: Record<string, any>;
+  dedupKey?: string;
   timestamp: string;
 }
 
@@ -151,7 +277,8 @@ export type WeeklyQuizAdminAction =
   | 'UPDATE_SETTINGS'
   | 'CREATE_QUIZ'
   | 'UPDATE_QUIZ'
-  | 'DELETE_QUIZ';
+  | 'DELETE_QUIZ'
+  | 'SEND_WARNING';
 
 export interface WeeklyQuizAuditLog {
   id: string;
@@ -193,17 +320,28 @@ export interface WeeklyQuizStudentSession {
     answers: Record<string, number>;
     markedForReview: string[];
     cameraStatus: string;
+    screenStatus: string;
     faceStatus: string;
     focusStatus: string;
+    violationCount: number;
   };
 }
 
 export interface WebRTCSignalingMessage {
   attemptId: string;
   candidateId: string;
+  streamType?: 'camera' | 'screen' | 'both';
   type: 'offer' | 'answer' | 'candidate' | 'heartbeat' | 'preview';
   sdp?: any;
   candidate?: any;
-  previewFrame?: string; // base64 JPEG data URL for instant telemetry fallback
+  cameraOffer?: any;
+  cameraAnswer?: any;
+  screenOffer?: any;
+  screenAnswer?: any;
+  cameraPreviewFrame?: string; // base64 JPEG data URL for instant telemetry fallback
+  screenPreviewFrame?: string; // base64 JPEG data URL for instant screen share telemetry
+  previewFrame?: string; // legacy alias for camera preview
+  cameraActive?: boolean;
+  screenActive?: boolean;
   timestamp: number;
 }

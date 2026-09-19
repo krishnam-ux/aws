@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import {
   calculateRemainingSeconds,
+  calculateAuthoritativeRemainingSeconds,
+  calculateQuizEligibilityMetrics,
+  autoSubmitExpiredAttemptsForQuiz,
+  convertScheduleToUtc,
   calculateScoreAndResults,
   calculateIntegrityRating,
   logWeeklyQuizAuditAction,
@@ -47,6 +51,12 @@ export async function GET(request: Request) {
     const quizzes: WeeklyQuiz[] = await db.weeklyQuizzes.getAll();
     const attempts: WeeklyQuizAttempt[] = await db.weeklyQuizAttempts.getAll();
     const settings = await db.weeklyQuizSettings.getSettings();
+    const eventsList = await db.events.getAll();
+
+    // Auto submit any expired attempts for the requested quiz or all quizzes
+    if (quizId) {
+      await autoSubmitExpiredAttemptsForQuiz(quizId);
+    }
 
     if (action === 'get-timeline' && attemptId) {
       const events: WeeklyQuizSecurityEvent[] = await db.weeklyQuizSecurityEvents.getByAttemptId(attemptId);
@@ -73,7 +83,7 @@ export async function GET(request: Request) {
       const events = await db.weeklyQuizSecurityEvents.getByAttemptId(attemptId);
       const signaling = getCandidateSignalForAdmin(attemptId);
 
-      const remainingSeconds = quiz ? calculateRemainingSeconds(attempt, quiz.durationMinutes) : 0;
+      const remainingSeconds = quiz ? calculateAuthoritativeRemainingSeconds(attempt, quiz) : 0;
 
       return NextResponse.json(
         {
@@ -86,24 +96,35 @@ export async function GET(request: Request) {
             email: attempt.email,
             quizId: attempt.quizId,
             quizTitle: quiz?.title || 'Weekly AWS Quiz',
+            sessionId: attempt.sessionId || quiz?.sessionId,
+            sessionTitle: quiz?.sessionTitle,
             status: attempt.status,
             startedAt: attempt.startedAt,
             expiresAt: attempt.expiresAt,
             submittedAt: attempt.submittedAt,
+            submissionReason: attempt.submissionReason,
             remainingSeconds,
             extendedMinutes: attempt.extendedMinutes || 0,
             cameraStatus: attempt.cameraStatus,
+            screenStatus: attempt.screenStatus || 'ACTIVE',
             faceStatus: attempt.faceStatus,
             focusStatus: attempt.focusStatus,
             fullscreenStatus: attempt.fullscreenStatus,
+            connectionStatus: attempt.connectionStatus || 'CONNECTED',
+            violationCount: attempt.violationCount || 0,
+            violationHistory: attempt.violationHistory || [],
             integritySummary: attempt.integritySummary || calculateIntegrityRating(events, attempt),
             score: attempt.score,
             totalMarks: attempt.totalMarks,
             percentage: attempt.percentage,
             passed: attempt.passed,
             adminNotes: attempt.adminNotes,
-            hasLiveStream: Boolean(signaling?.offer || signaling?.previewFrame),
-            previewFrame: signaling?.previewFrame || null
+            hasLiveStream: Boolean(signaling?.offer || signaling?.cameraPreviewFrame || signaling?.screenOffer || signaling?.screenPreviewFrame),
+            hasCameraStream: Boolean(signaling?.offer || signaling?.cameraPreviewFrame),
+            hasScreenStream: Boolean(signaling?.screenOffer || signaling?.screenPreviewFrame),
+            cameraPreviewFrame: signaling?.cameraPreviewFrame || signaling?.previewFrame || null,
+            screenPreviewFrame: signaling?.screenPreviewFrame || null,
+            previewFrame: signaling?.cameraPreviewFrame || signaling?.previewFrame || null
           },
           events: events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
         },
@@ -112,7 +133,17 @@ export async function GET(request: Request) {
     }
 
     // Default dashboard data
-    const filteredAttempts = quizId ? attempts.filter(a => a.quizId === quizId) : attempts;
+    const activeQuizId = quizId || (quizzes.length > 0 ? quizzes[0].id : undefined);
+    const selectedQuiz = quizzes.find(q => q.id === activeQuizId);
+    
+    // Filter attempts strictly by the selected quiz and its linked session
+    let filteredAttempts = attempts;
+    if (activeQuizId) {
+      filteredAttempts = attempts.filter(a => a.quizId === activeQuizId);
+    }
+
+    // Calculate eligibility metrics for the active quiz
+    const eligibilityMetrics = activeQuizId ? await calculateQuizEligibilityMetrics(activeQuizId) : null;
 
     // Top metrics
     const totalCandidates = filteredAttempts.length;
@@ -120,14 +151,15 @@ export async function GET(request: Request) {
     const inProgress = filteredAttempts.filter(a => a.status === 'IN_PROGRESS' || a.status === 'PAUSED').length;
     const submitted = filteredAttempts.filter(a => a.status === 'SUBMITTED' || a.status === 'REVIEW_REQUIRED').length;
     const cameraIssues = filteredAttempts.filter(a => a.cameraStatus === 'DISCONNECTED' || a.cameraStatus === 'ERROR').length;
+    const screenIssues = filteredAttempts.filter(a => a.screenStatus === 'DISCONNECTED' || a.screenStatus === 'ERROR').length;
     const securityAlerts = filteredAttempts.filter(a =>
-      a.integritySummary?.integrityRating === 'ATTENTION' || a.integritySummary?.integrityRating === 'REVIEW_REQUIRED'
+      a.integritySummary?.integrityRating === 'ATTENTION' || a.integritySummary?.integrityRating === 'REVIEW_REQUIRED' || (a.violationCount || 0) > 0
     ).length;
 
-    // Enrich attempt rows with live timer and quiz title
+    // Enrich attempt rows with live authoritative timer and quiz/session title
     const enrichedAttempts = filteredAttempts.map(att => {
       const quiz = quizzes.find(q => q.id === att.quizId);
-      const remainingSeconds = quiz ? calculateRemainingSeconds(att, quiz.durationMinutes) : 0;
+      const remainingSeconds = quiz ? calculateAuthoritativeRemainingSeconds(att, quiz) : 0;
       const signaling = getCandidateSignalForAdmin(att.id);
 
       return {
@@ -138,27 +170,40 @@ export async function GET(request: Request) {
         email: att.email,
         quizId: att.quizId,
         quizTitle: quiz?.title || 'Weekly AWS Quiz',
+        sessionId: att.sessionId || quiz?.sessionId,
+        sessionTitle: quiz?.sessionTitle,
         durationMinutes: quiz?.durationMinutes || 20,
         status: att.status,
         startedAt: att.startedAt,
         expiresAt: att.expiresAt,
         submittedAt: att.submittedAt,
+        submissionReason: att.submissionReason,
         remainingSeconds,
         extendedMinutes: att.extendedMinutes || 0,
         cameraStatus: att.cameraStatus,
+        screenStatus: att.screenStatus || 'ACTIVE',
         faceStatus: att.faceStatus,
         focusStatus: att.focusStatus,
         fullscreenStatus: att.fullscreenStatus,
+        connectionStatus: att.connectionStatus || 'CONNECTED',
+        violationCount: att.violationCount || 0,
+        violationHistory: att.violationHistory || [],
         securityEventsCount: att.integritySummary?.securityEventsCount ?? 0,
         faceEventsCount: att.integritySummary?.faceEventsCount ?? 0,
         focusEventsCount: att.integritySummary?.focusEventsCount ?? 0,
+        screenEventsCount: att.integritySummary?.screenEventsCount ?? 0,
         integrityRating: att.integritySummary?.integrityRating || 'NORMAL',
         score: att.score,
         totalMarks: att.totalMarks,
         percentage: att.percentage,
         passed: att.passed,
-        hasLiveStream: Boolean(signaling?.offer || signaling?.previewFrame),
-        previewFrame: signaling?.previewFrame || null
+        adminNotes: att.adminNotes,
+        hasLiveStream: Boolean(signaling?.offer || signaling?.cameraPreviewFrame || signaling?.screenOffer || signaling?.screenPreviewFrame),
+        hasCameraStream: Boolean(signaling?.offer || signaling?.cameraPreviewFrame),
+        hasScreenStream: Boolean(signaling?.screenOffer || signaling?.screenPreviewFrame),
+        cameraPreviewFrame: signaling?.cameraPreviewFrame || signaling?.previewFrame || null,
+        screenPreviewFrame: signaling?.screenPreviewFrame || null,
+        previewFrame: signaling?.cameraPreviewFrame || signaling?.previewFrame || null
       };
     });
 
@@ -171,9 +216,18 @@ export async function GET(request: Request) {
           inProgress,
           submitted,
           cameraIssues,
+          screenIssues,
           securityAlerts
         },
+        eligibilityMetrics,
         quizzes,
+        events: eventsList.map(e => ({
+          id: e.id,
+          title: e.title,
+          eventNumber: e.eventNumber,
+          date: e.date,
+          status: e.status
+        })),
         attempts: enrichedAttempts,
         settings
       },
@@ -212,7 +266,7 @@ export async function POST(request: Request) {
       }
 
       const quiz = await db.weeklyQuizzes.getById(attempt.quizId);
-      const remainingSeconds = quiz ? calculateRemainingSeconds(attempt, quiz.durationMinutes) : 0;
+      const remainingSeconds = quiz ? calculateAuthoritativeRemainingSeconds(attempt, quiz) : 0;
 
       await db.weeklyQuizAttempts.updateOne(attemptId, {
         status: 'PAUSED',
@@ -373,18 +427,48 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Quiz details required.' }, { status: 400, headers: noStoreHeaders });
       }
 
+      const timezone = quiz.timezone || 'Asia/Kolkata';
+      let scheduledStartAt = quiz.scheduledStartAt;
+      let scheduledEndAt = quiz.scheduledEndAt;
+
+      if (quiz.scheduledDate && quiz.startTime) {
+        scheduledStartAt = convertScheduleToUtc(quiz.scheduledDate, quiz.startTime, timezone);
+      }
+      if (quiz.scheduledDate && quiz.endTime) {
+        scheduledEndAt = convertScheduleToUtc(quiz.scheduledDate, quiz.endTime, timezone);
+      }
+
+      // Resolve session title if session ID provided
+      let sessionTitle = quiz.sessionTitle;
+      if (quiz.sessionId && !sessionTitle) {
+        const allEvents = await db.events.getAll();
+        const matchingEvent = allEvents.find((e: any) => e.id === quiz.sessionId);
+        if (matchingEvent) {
+          sessionTitle = matchingEvent.title;
+        }
+      }
+
       if (quiz.id) {
         const existing = await db.weeklyQuizzes.getById(quiz.id);
         if (existing) {
           const updated = await db.weeklyQuizzes.updateOne(quiz.id, {
             ...quiz,
+            sessionId: quiz.sessionId || existing.sessionId,
+            sessionTitle: sessionTitle || existing.sessionTitle,
+            scheduledDate: quiz.scheduledDate || existing.scheduledDate,
+            startTime: quiz.startTime || existing.startTime,
+            endTime: quiz.endTime || existing.endTime,
+            timezone,
+            scheduledStartAt: scheduledStartAt || existing.scheduledStartAt,
+            scheduledEndAt: scheduledEndAt || existing.scheduledEndAt,
+            lateEntryGraceMinutes: quiz.lateEntryGraceMinutes !== undefined ? Number(quiz.lateEntryGraceMinutes) : existing.lateEntryGraceMinutes,
             updatedAt: new Date().toISOString()
           });
           await logWeeklyQuizAuditAction({
             quizId: quiz.id,
             adminUser,
             action: 'UPDATE_QUIZ',
-            details: { title: quiz.title }
+            details: { title: quiz.title, sessionId: quiz.sessionId, scheduledStartAt, scheduledEndAt }
           });
           return NextResponse.json({ success: true, quiz: updated }, { status: 200, headers: noStoreHeaders });
         }
@@ -396,8 +480,17 @@ export async function POST(request: Request) {
         title: quiz.title,
         topic: quiz.topic || 'AWS Learning Assessment',
         description: quiz.description || '',
-        availableFrom: quiz.availableFrom || new Date().toISOString(),
-        availableUntil: quiz.availableUntil || new Date(Date.now() + 7 * 86400000).toISOString(),
+        sessionId: quiz.sessionId || 'event-01',
+        sessionTitle: sessionTitle || 'Introduction to AWS Cloud & Architecture',
+        scheduledDate: quiz.scheduledDate || '2026-09-25',
+        startTime: quiz.startTime || '10:00',
+        endTime: quiz.endTime || '10:30',
+        timezone,
+        scheduledStartAt: scheduledStartAt || convertScheduleToUtc('2026-09-25', '10:00', timezone),
+        scheduledEndAt: scheduledEndAt || convertScheduleToUtc('2026-09-25', '10:30', timezone),
+        lateEntryGraceMinutes: quiz.lateEntryGraceMinutes !== undefined ? Number(quiz.lateEntryGraceMinutes) : 0,
+        availableFrom: scheduledStartAt || quiz.availableFrom || new Date().toISOString(),
+        availableUntil: scheduledEndAt || quiz.availableUntil || new Date(Date.now() + 7 * 86400000).toISOString(),
         durationMinutes: Number(quiz.durationMinutes) || 20,
         totalQuestionsToSelect: Number(quiz.totalQuestionsToSelect) || 20,
         passingPercentage: Number(quiz.passingPercentage) || 60,
@@ -425,7 +518,7 @@ export async function POST(request: Request) {
         quizId: newQuiz.id,
         adminUser,
         action: 'CREATE_QUIZ',
-        details: { title: newQuiz.title }
+        details: { title: newQuiz.title, sessionId: newQuiz.sessionId, scheduledStartAt, scheduledEndAt }
       });
 
       return NextResponse.json({ success: true, quiz: newQuiz }, { status: 200, headers: noStoreHeaders });
@@ -468,6 +561,41 @@ export async function POST(request: Request) {
       }
       await db.weeklyQuizAttempts.updateOne(attemptId, { adminNotes });
       return NextResponse.json({ success: true }, { status: 200, headers: noStoreHeaders });
+    }
+
+    // 10. Send Proctor Warning
+    if (action === 'send-warning') {
+      if (!attemptId) {
+        return NextResponse.json({ error: 'Attempt ID required.' }, { status: 400, headers: noStoreHeaders });
+      }
+      const attempt = await db.weeklyQuizAttempts.getById(attemptId);
+      if (!attempt) {
+        return NextResponse.json({ error: 'Attempt not found.' }, { status: 404, headers: noStoreHeaders });
+      }
+
+      const warningMessage = body.message || 'Please ensure you remain focused on your exam screen.';
+      const countViolation = Boolean(body.countViolation);
+
+      await logWeeklyQuizSecurityEvent({
+        attemptId: attempt.id,
+        quizId: attempt.quizId,
+        candidateId: attempt.candidateId,
+        studentName: attempt.studentName,
+        email: attempt.email,
+        eventType: 'PROCTOR_WARNING',
+        severity: 'WARNING',
+        metadata: { reason: warningMessage, adminUser, countViolation }
+      });
+
+      await logWeeklyQuizAuditAction({
+        quizId: attempt.quizId,
+        attemptId,
+        adminUser,
+        action: 'SEND_WARNING',
+        details: { warningMessage, countViolation }
+      });
+
+      return NextResponse.json({ success: true, message: 'Warning dispatched to candidate.' }, { status: 200, headers: noStoreHeaders });
     }
 
     return NextResponse.json({ error: 'Invalid action requested.' }, { status: 400, headers: noStoreHeaders });

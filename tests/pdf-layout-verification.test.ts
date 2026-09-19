@@ -29,19 +29,17 @@ test('PDF Layout Verification - should generate valid PDF with correct signature
     const pageWidth = 842; // Landscape A4 in points
     const margin = 28;
     const usableWidth = pageWidth - margin * 2;
-    const columnWidth = usableWidth / 3;
+    const columnWidth = usableWidth / 2;
     
-    // Verify 3-column alignment
-    const signatureLineWidth = 130;
+    // Verify 2-column alignment
+    const signatureLineWidth = 140;
     const leftSignX = margin + (columnWidth / 2) - (signatureLineWidth / 2);
-    const centerSignX = margin + columnWidth + (columnWidth / 2) - (signatureLineWidth / 2);
-    const rightSignX = margin + columnWidth * 2 + (columnWidth / 2) - (signatureLineWidth / 2);
+    const rightSignX = margin + columnWidth + (columnWidth / 2) - (signatureLineWidth / 2);
     
     // All signature lines should be properly spaced
-    assert(leftSignX > margin, 'Left signature should be within right margin');
-    assert(centerSignX > leftSignX + signatureLineWidth, 'Center signature should not overlap with left');
-    assert(rightSignX > centerSignX + signatureLineWidth, 'Right signature should not overlap with center');
-    assert(rightSignX + signatureLineWidth < pageWidth - margin, 'Right signature should be within left margin');
+    assert(leftSignX > margin, 'Left signature should be within left margin');
+    assert(rightSignX > leftSignX + signatureLineWidth, 'Right signature should not overlap with left');
+    assert(rightSignX + signatureLineWidth < pageWidth - margin, 'Right signature should be within right margin');
     
     // Calculate expected pages
     const rowsPerPage = 18;
@@ -68,7 +66,7 @@ test('PDF Layout Verification - should generate valid PDF with correct signature
     }
     
     console.log(`✓ ${count} registrations: expected ${expectedPages} page(s)`);
-    console.log(`  Left signature X: ${leftSignX}, Center: ${centerSignX}, Right: ${rightSignX}`);
+    console.log(`  Left signature X: ${leftSignX}, Right: ${rightSignX}`);
     assert(expectedPages > 0, 'Expected at least 1 page');
   }
 });
@@ -77,25 +75,23 @@ test('PDF Layout Verification - should maintain signature alignment consistency'
   const pageWidth = 842;
   const margin = 28;
   const usableWidth = pageWidth - margin * 2;
-  const columnWidth = usableWidth / 3;
-  const signatureLineWidth = 130;
+  const columnWidth = usableWidth / 2;
+  const signatureLineWidth = 140;
   
   // Calculate positions
   const leftSignX = margin + (columnWidth / 2) - (signatureLineWidth / 2);
-  const centerSignX = margin + columnWidth + (columnWidth / 2) - (signatureLineWidth / 2);
-  const rightSignX = margin + columnWidth * 2 + (columnWidth / 2) - (signatureLineWidth / 2);
+  const rightSignX = margin + columnWidth + (columnWidth / 2) - (signatureLineWidth / 2);
   
-  // Verify all three signature areas are within page bounds and properly spaced
+  // Verify both signature areas are within page bounds and properly spaced
   assert(leftSignX >= margin, 'Left signature X should be at or after left margin');
-  assert(centerSignX > leftSignX + signatureLineWidth + 10, 'Center should be after left with spacing');
-  assert(rightSignX > centerSignX + signatureLineWidth + 10, 'Right should be after center with spacing');
+  assert(rightSignX > leftSignX + signatureLineWidth + 10, 'Right should be after left with spacing');
   assert(rightSignX + signatureLineWidth <= pageWidth - margin, 'Right signature should be within right margin');
   
   // Verify signature line width is consistent
-  assert(signatureLineWidth === 130, 'All signature lines should have same width (130pt)');
+  assert(signatureLineWidth === 140, 'All signature lines should have same width (140pt)');
   
   console.log('✓ Signature alignment is balanced and consistent');
-  console.log(`  Left signature X: ${leftSignX}, Center: ${centerSignX}, Right: ${rightSignX}`);
+  console.log(`  Left signature X: ${leftSignX}, Right: ${rightSignX}`);
   console.log(`  Signature line width: ${signatureLineWidth}pt each`);
 });
 
