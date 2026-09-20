@@ -462,7 +462,9 @@ export default function OpportunityApplicationForm({
           <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-navy text-xs font-bold text-white">02</span>
             <div>
-              <h3 className="text-lg font-extrabold text-brand-navy">Preferred Domain</h3>
+              <h3 className="text-lg font-extrabold text-brand-navy">
+                Preferred Domain <span className="text-red-600 font-bold">*</span>
+              </h3>
               <p className="text-xs text-slate-500">Which domain would you prefer to contribute to?</p>
             </div>
           </div>
@@ -723,7 +725,9 @@ export default function OpportunityApplicationForm({
           </div>
 
           <div className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-4 text-xs text-slate-750">
-            <p className="font-bold text-slate-900 mb-1">Scenario Question:</p>
+            <p className="font-bold text-slate-900 mb-1">
+              Scenario Question <span className="text-red-600 font-bold">*</span>
+            </p>
             <p className="italic">
               &ldquo;You notice that participation in a community activity has dropped significantly. As a Founding Member, what would you do?&rdquo;
             </p>
@@ -752,7 +756,7 @@ export default function OpportunityApplicationForm({
 
           <div className="grid gap-4 md:grid-cols-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-750">
+              <label className="block text-sm font-semibold text-slate-750">
                 LinkedIn Profile <span className="text-red-600 font-bold">*</span>
               </label>
               <input
@@ -766,16 +770,16 @@ export default function OpportunityApplicationForm({
               <ErrorText message={errors.linkedin} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-750">
-                GitHub Profile <span className="text-slate-400 font-normal">(Optional)</span>
+              <label className="block text-sm font-semibold text-slate-750">
+                GitHub Profile <span className="text-slate-400 font-normal text-xs">(Optional)</span>
               </label>
-              <input type="url" name="github" placeholder="https://github.com/..." className="form-input-field mt-1 w-full rounded-lg border border-slate-300 text-xs" />
+              <input type="url" name="github" placeholder="https://github.com/..." className="form-input-field mt-1 w-full rounded-lg border border-slate-300 text-sm" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-750">
-                Portfolio / Website <span className="text-slate-400 font-normal">(Optional)</span>
+              <label className="block text-sm font-semibold text-slate-750">
+                Portfolio / Website <span className="text-slate-400 font-normal text-xs">(Optional)</span>
               </label>
-              <input type="url" name="portfolio" placeholder="https://..." className="form-input-field mt-1 w-full rounded-lg border border-slate-300 text-xs" />
+              <input type="url" name="portfolio" placeholder="https://..." className="form-input-field mt-1 w-full rounded-lg border border-slate-300 text-sm" />
             </div>
           </div>
         </div>
@@ -979,7 +983,9 @@ export default function OpportunityApplicationForm({
           <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-navy text-xs font-bold text-white">02</span>
             <div>
-              <h3 className="text-lg font-extrabold text-brand-navy">Preferred Domain</h3>
+              <h3 className="text-lg font-extrabold text-brand-navy">
+                Preferred Domain <span className="text-red-600 font-bold">*</span>
+              </h3>
               <p className="text-xs text-slate-500">Select the primary domain you want to contribute to</p>
             </div>
           </div>
@@ -1024,7 +1030,9 @@ export default function OpportunityApplicationForm({
           <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-navy text-xs font-bold text-white">03</span>
             <div>
-              <h3 className="text-lg font-extrabold text-brand-navy">Preferred Role / Responsibility</h3>
+              <h3 className="text-lg font-extrabold text-brand-navy">
+                Preferred Role / Responsibility <span className="text-red-600 font-bold">*</span>
+              </h3>
               <p className="text-xs text-slate-500">Specific role within <span className="font-semibold text-slate-700">{selectedDomain}</span></p>
             </div>
           </div>
@@ -1247,7 +1255,9 @@ export default function OpportunityApplicationForm({
           </div>
 
           <div className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-4 text-xs text-slate-750">
-            <p className="font-bold text-slate-900 mb-1">Scenario Question:</p>
+            <p className="font-bold text-slate-900 mb-1">
+              Scenario Question <span className="text-red-600 font-bold">*</span>
+            </p>
             <p className="italic">
               &ldquo;You are responsible for an important community activity, but one or more team members are unavailable shortly before the event. What would you do to ensure the activity still runs successfully?&rdquo;
             </p>
@@ -1346,7 +1356,7 @@ export default function OpportunityApplicationForm({
 
           <div className="grid gap-4 md:grid-cols-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-750">
+              <label className="block text-sm font-semibold text-slate-750">
                 LinkedIn Profile <span className="text-red-600 font-bold">*</span>
               </label>
               <input
@@ -1360,16 +1370,20 @@ export default function OpportunityApplicationForm({
               <ErrorText message={errors.linkedin} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-750">
-                GitHub Profile {selectedDomain !== 'Tech & Technical' && <span className="text-slate-400 font-normal">(Optional)</span>}
+              <label className="block text-sm font-semibold text-slate-750">
+                GitHub Profile {selectedDomain !== 'Tech & Technical' ? (
+                  <span className="text-slate-400 font-normal text-xs">(Optional)</span>
+                ) : (
+                  <span className="text-slate-400 font-normal text-xs">(Recommended for Tech)</span>
+                )}
               </label>
-              <input type="url" name="github" placeholder="https://github.com/..." className="form-input-field mt-1 w-full rounded-lg border border-slate-300 text-xs" />
+              <input type="url" name="github" placeholder="https://github.com/..." className="form-input-field mt-1 w-full rounded-lg border border-slate-300 text-sm" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-750">
-                Portfolio / Website <span className="text-slate-400 font-normal">(Optional)</span>
+              <label className="block text-sm font-semibold text-slate-750">
+                Portfolio / Website <span className="text-slate-400 font-normal text-xs">(Optional)</span>
               </label>
-              <input type="url" name="portfolio" placeholder="https://..." className="form-input-field mt-1 w-full rounded-lg border border-slate-300 text-xs" />
+              <input type="url" name="portfolio" placeholder="https://..." className="form-input-field mt-1 w-full rounded-lg border border-slate-300 text-sm" />
             </div>
           </div>
 
