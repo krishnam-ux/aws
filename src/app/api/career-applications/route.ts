@@ -4,6 +4,7 @@ import {
   buildOpportunitySuccessUrl,
   hasDuplicateOpportunityApplication,
   isValidGoogleDriveUrl,
+  isValidLinkedInUrl,
   getOpportunityFormType
 } from '@/lib/opportunityApplication';
 import { triggerOpportunityApplicationReceived } from '@/lib/email/automations';
@@ -102,6 +103,13 @@ export async function POST(request: Request) {
     if (!graduationYear) fieldErrors.graduationYear = 'Please enter your graduation year.';
     if (!consent) fieldErrors.consent = 'Please confirm the declaration to proceed.';
 
+    // LinkedIn Profile is REQUIRED for EVERY opportunity
+    if (!linkedin) {
+      fieldErrors.linkedin = 'LinkedIn Profile is required.';
+    } else if (!isValidLinkedInUrl(linkedin)) {
+      fieldErrors.linkedin = 'Please enter a valid LinkedIn profile URL.';
+    }
+
     if (formType === 'founding-member') {
       if (!department) fieldErrors.department = 'Please enter your branch / department.';
       if (!currentYear) fieldErrors.currentYear = 'Please select your current year.';
@@ -141,7 +149,6 @@ export async function POST(request: Request) {
     } else {
       // Anchor & Speaker or generic
       if (!university) fieldErrors.university = 'Please enter your university.';
-      if (!linkedin) fieldErrors.linkedin = 'Please enter your LinkedIn profile URL.';
       if (!introductionVideoUrl || !isValidGoogleDriveUrl(introductionVideoUrl)) {
         fieldErrors.introductionVideoUrl = 'Please provide a valid Google Drive sharing link for your introduction video.';
       }

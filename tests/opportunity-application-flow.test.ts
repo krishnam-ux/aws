@@ -5,6 +5,7 @@ import {
   buildOpportunitySuccessUrl,
   hasDuplicateOpportunityApplication,
   isValidGoogleDriveUrl,
+  isValidLinkedInUrl,
   getOpportunityFormType,
   OPPORTUNITY_DOMAINS,
   CORE_TEAM_ROLES_BY_DOMAIN,
@@ -76,6 +77,28 @@ test('isValidGoogleDriveUrl correctly validates various Google Drive link format
   assert.equal(isValidGoogleDriveUrl('https://drive.google.com/'), false);
 });
 
+test('isValidLinkedInUrl correctly validates various LinkedIn profile link formats', () => {
+  // Valid links
+  assert.equal(isValidLinkedInUrl('https://www.linkedin.com/in/johndoe'), true);
+  assert.equal(isValidLinkedInUrl('https://linkedin.com/in/johndoe-123'), true);
+  assert.equal(isValidLinkedInUrl('http://www.linkedin.com/in/johndoe/'), true);
+  assert.equal(isValidLinkedInUrl('linkedin.com/in/johndoe'), true);
+  assert.equal(isValidLinkedInUrl('www.linkedin.com/in/johndoe'), true);
+  assert.equal(isValidLinkedInUrl('https://in.linkedin.com/in/johndoe'), true);
+
+  // Invalid links
+  assert.equal(isValidLinkedInUrl(''), false);
+  assert.equal(isValidLinkedInUrl(null), false);
+  assert.equal(isValidLinkedInUrl(undefined), false);
+  assert.equal(isValidLinkedInUrl('   '), false);
+  assert.equal(isValidLinkedInUrl('https://google.com/in/johndoe'), false);
+  assert.equal(isValidLinkedInUrl('https://github.com/johndoe'), false);
+  assert.equal(isValidLinkedInUrl('https://not-linkedin.com/in/johndoe'), false);
+  assert.equal(isValidLinkedInUrl('https://www.linkedin.com'), false);
+  assert.equal(isValidLinkedInUrl('https://www.linkedin.com/'), false);
+  assert.equal(isValidLinkedInUrl('not-a-url'), false);
+});
+
 test('getOpportunityFormType correctly distinguishes founding members, core team, and anchor & speaker', () => {
   assert.equal(getOpportunityFormType('founding-members', 'Founding Members'), 'founding-member');
   assert.equal(getOpportunityFormType('founding-member', 'Founding Member'), 'founding-member');
@@ -132,7 +155,54 @@ test('Anchor & Speaker opportunity application requires Google Drive video link'
   const json1 = await res1.json();
   assert.ok(json1.fieldErrors?.introductionVideoUrl);
 
-  // 2. Valid video link succeeds
+  // 2. Missing LinkedIn fails with exact error message
+  const formMissingLinkedIn = new FormData();
+  formMissingLinkedIn.append('opportunityId', anchorOppId);
+  formMissingLinkedIn.append('opportunitySlug', 'anchor-speaker');
+  formMissingLinkedIn.append('name', 'Anchor Candidate');
+  formMissingLinkedIn.append('email', `anchor.${Date.now()}@cumail.in`);
+  formMissingLinkedIn.append('phone', '9876543210');
+  formMissingLinkedIn.append('university', 'Chandigarh University');
+  formMissingLinkedIn.append('program', 'B.Tech CSE');
+  formMissingLinkedIn.append('graduationYear', '2026');
+  formMissingLinkedIn.append('studentId', '22BCS1122');
+  formMissingLinkedIn.append('introductionVideoUrl', 'https://drive.google.com/file/d/1X2Y3Z-anchor-video/view?usp=sharing');
+  formMissingLinkedIn.append('skills', 'Public Speaking, Anchoring');
+  formMissingLinkedIn.append('experience', 'Hosted college fest');
+  formMissingLinkedIn.append('motivation', 'Passionate about public speaking');
+  formMissingLinkedIn.append('consent', 'on');
+
+  const reqMissingLinkedIn = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: formMissingLinkedIn });
+  const resMissingLinkedIn = await careerAppPost(reqMissingLinkedIn);
+  assert.equal(resMissingLinkedIn.status, 400);
+  const jsonMissingLinkedIn = await resMissingLinkedIn.json();
+  assert.equal(jsonMissingLinkedIn.fieldErrors?.linkedin, 'LinkedIn Profile is required.');
+
+  // 3. Invalid LinkedIn URL fails
+  const formInvalidLinkedIn = new FormData();
+  formInvalidLinkedIn.append('opportunityId', anchorOppId);
+  formInvalidLinkedIn.append('opportunitySlug', 'anchor-speaker');
+  formInvalidLinkedIn.append('name', 'Anchor Candidate');
+  formInvalidLinkedIn.append('email', `anchor.${Date.now()}@cumail.in`);
+  formInvalidLinkedIn.append('phone', '9876543210');
+  formInvalidLinkedIn.append('university', 'Chandigarh University');
+  formInvalidLinkedIn.append('program', 'B.Tech CSE');
+  formInvalidLinkedIn.append('graduationYear', '2026');
+  formInvalidLinkedIn.append('studentId', '22BCS1122');
+  formInvalidLinkedIn.append('linkedin', 'https://not-linkedin.com/invalid-profile');
+  formInvalidLinkedIn.append('introductionVideoUrl', 'https://drive.google.com/file/d/1X2Y3Z-anchor-video/view?usp=sharing');
+  formInvalidLinkedIn.append('skills', 'Public Speaking, Anchoring');
+  formInvalidLinkedIn.append('experience', 'Hosted college fest');
+  formInvalidLinkedIn.append('motivation', 'Passionate about public speaking');
+  formInvalidLinkedIn.append('consent', 'on');
+
+  const reqInvalidLinkedIn = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: formInvalidLinkedIn });
+  const resInvalidLinkedIn = await careerAppPost(reqInvalidLinkedIn);
+  assert.equal(resInvalidLinkedIn.status, 400);
+  const jsonInvalidLinkedIn = await resInvalidLinkedIn.json();
+  assert.equal(jsonInvalidLinkedIn.fieldErrors?.linkedin, 'Please enter a valid LinkedIn profile URL.');
+
+  // 4. Valid video link and valid LinkedIn succeeds
   const testEmail = `anchor.valid.${Date.now()}@cumail.in`;
   const validDriveLink = 'https://drive.google.com/file/d/1X2Y3Z-anchor-video/view?usp=sharing';
   const formValid = new FormData();
@@ -160,6 +230,7 @@ test('Anchor & Speaker opportunity application requires Google Drive video link'
   const saved = apps.find((a: any) => a.email.toLowerCase() === testEmail.toLowerCase());
   assert.ok(saved);
   assert.equal(saved.introductionVideoUrl, validDriveLink);
+  assert.equal(saved.linkedin, 'https://linkedin.com/in/anchorcandidate');
   await db.careerApplications.deleteOne(saved.id);
 });
 
@@ -201,6 +272,41 @@ test('Founding Member application validates 11 sections and saves ownership & co
   assert.ok(json1.fieldErrors?.preferredDomain);
   assert.ok(json1.fieldErrors?.whyFoundingMember);
   assert.ok(json1.fieldErrors?.scenarioDropParticipation);
+  assert.equal(json1.fieldErrors?.linkedin, 'LinkedIn Profile is required.');
+
+  // 1b. Founding Member with invalid LinkedIn URL fails
+  const invalidLinkedInForm = new FormData();
+  invalidLinkedInForm.append('opportunityId', fmOppId);
+  invalidLinkedInForm.append('opportunitySlug', 'founding-members');
+  invalidLinkedInForm.append('formType', 'founding-member');
+  invalidLinkedInForm.append('name', 'Founder Candidate');
+  invalidLinkedInForm.append('email', `founder.${Date.now()}@cumail.in`);
+  invalidLinkedInForm.append('phone', '9876543210');
+  invalidLinkedInForm.append('studentId', '23BCS10294');
+  invalidLinkedInForm.append('program', 'B.Tech CSE');
+  invalidLinkedInForm.append('department', 'Cloud Computing');
+  invalidLinkedInForm.append('currentYear', '2nd Year');
+  invalidLinkedInForm.append('graduationYear', '2027');
+  invalidLinkedInForm.append('preferredDomain', 'Growth & Community');
+  invalidLinkedInForm.append('skills', 'Community Building, Public Speaking, AWS Cloud');
+  invalidLinkedInForm.append('experience', 'Organized University Hackathon');
+  invalidLinkedInForm.append('roleAndImpact', 'Head of Logistics');
+  invalidLinkedInForm.append('whyFoundingMember', 'I want to build a thriving community');
+  invalidLinkedInForm.append('personalContribution', 'I will contribute time and skills');
+  invalidLinkedInForm.append('communityGrowthIdeas', 'Introduce peer mentoring circles');
+  invalidLinkedInForm.append('availabilityHours', '6–8 hours');
+  invalidLinkedInForm.append('consistentContribution', 'Yes');
+  invalidLinkedInForm.append('contributionDuration', 'Multiple semesters');
+  invalidLinkedInForm.append('academicBalance', 'I block out evening slots');
+  invalidLinkedInForm.append('scenarioDropParticipation', 'I would poll active and inactive members');
+  invalidLinkedInForm.append('linkedin', 'https://twitter.com/founder');
+  invalidLinkedInForm.append('consent', 'on');
+
+  const reqInvalid = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: invalidLinkedInForm });
+  const resInvalid = await careerAppPost(reqInvalid);
+  assert.equal(resInvalid.status, 400);
+  const jsonInvalid = await resInvalid.json();
+  assert.equal(jsonInvalid.fieldErrors?.linkedin, 'Please enter a valid LinkedIn profile URL.');
 
   // 2. Complete submission succeeds WITHOUT requiring video link
   const founderEmail = `founder.success.${Date.now()}@cumail.in`;
@@ -276,6 +382,80 @@ test('Core Team application validates domain-specific roles, skills self-rating,
   assert.ok(CORE_TEAM_ROLES_BY_DOMAIN['Growth & Community'].includes('Community Management'));
   assert.ok(CORE_TEAM_ROLES_BY_DOMAIN['Media & Creative'].includes('Graphic Design'));
 
+  // 1. Missing LinkedIn on Core Team fails
+  const ctMissingLinkedInForm = new FormData();
+  ctMissingLinkedInForm.append('opportunityId', ctOppId);
+  ctMissingLinkedInForm.append('opportunitySlug', 'core-team');
+  ctMissingLinkedInForm.append('formType', 'core-team');
+  ctMissingLinkedInForm.append('name', 'Rohan Verma');
+  ctMissingLinkedInForm.append('email', `coreteam.nolinkedin.${Date.now()}@cumail.in`);
+  ctMissingLinkedInForm.append('phone', '9876543211');
+  ctMissingLinkedInForm.append('studentId', '23BCS10888');
+  ctMissingLinkedInForm.append('program', 'B.Tech CSE');
+  ctMissingLinkedInForm.append('department', 'Software Development');
+  ctMissingLinkedInForm.append('currentYear', '2nd Year');
+  ctMissingLinkedInForm.append('graduationYear', '2027');
+  ctMissingLinkedInForm.append('preferredDomain', 'Tech & Technical');
+  ctMissingLinkedInForm.append('preferredRole', 'Web / Software Development');
+  ctMissingLinkedInForm.append('skills', 'Next.js, TypeScript, Tailwind CSS, PostgreSQL, AWS Lambda');
+  ctMissingLinkedInForm.append('primarySkillLevel', 'Intermediate');
+  ctMissingLinkedInForm.append('experience', 'Built full-stack student portal and contributed to open source Next.js libraries.');
+  ctMissingLinkedInForm.append('exactResponsibility', 'Architected the REST API endpoints and state management store for 500+ daily active users.');
+  ctMissingLinkedInForm.append('teamworkSituation', 'Worked in a 4-person team during a 36-hour hackathon, coordinating frontend-backend contracts and resolving merge conflicts.');
+  ctMissingLinkedInForm.append('leadershipExperience', 'No');
+  ctMissingLinkedInForm.append('whyCoreTeam', 'I want to build and manage mission-critical web applications and tech infrastructure for AWS SBG.');
+  ctMissingLinkedInForm.append('domainContribution', 'I will build and maintain the community portal, leaderboard, and automate event registration webhooks.');
+  ctMissingLinkedInForm.append('scenarioUnavailableMembers', 'I would immediately reassess the critical path, delegate urgent tasks to available peers, step in to cover the critical role myself, and keep the team aligned.');
+  ctMissingLinkedInForm.append('availabilityHours', '6–8 hours');
+  ctMissingLinkedInForm.append('availableDays', 'Weekdays (Mon–Fri)');
+  ctMissingLinkedInForm.append('activeParticipation', 'Yes');
+  ctMissingLinkedInForm.append('involvementDuration', 'Multiple semesters');
+  ctMissingLinkedInForm.append('consent', 'on');
+
+  const reqMissing = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: ctMissingLinkedInForm });
+  const resMissing = await careerAppPost(reqMissing);
+  assert.equal(resMissing.status, 400);
+  const jsonMissing = await resMissing.json();
+  assert.equal(jsonMissing.fieldErrors?.linkedin, 'LinkedIn Profile is required.');
+
+  // 2. Invalid LinkedIn on Core Team fails
+  const ctInvalidLinkedInForm = new FormData();
+  ctInvalidLinkedInForm.append('opportunityId', ctOppId);
+  ctInvalidLinkedInForm.append('opportunitySlug', 'core-team');
+  ctInvalidLinkedInForm.append('formType', 'core-team');
+  ctInvalidLinkedInForm.append('name', 'Rohan Verma');
+  ctInvalidLinkedInForm.append('email', `coreteam.invalid.${Date.now()}@cumail.in`);
+  ctInvalidLinkedInForm.append('phone', '9876543211');
+  ctInvalidLinkedInForm.append('studentId', '23BCS10888');
+  ctInvalidLinkedInForm.append('program', 'B.Tech CSE');
+  ctInvalidLinkedInForm.append('department', 'Software Development');
+  ctInvalidLinkedInForm.append('currentYear', '2nd Year');
+  ctInvalidLinkedInForm.append('graduationYear', '2027');
+  ctInvalidLinkedInForm.append('preferredDomain', 'Tech & Technical');
+  ctInvalidLinkedInForm.append('preferredRole', 'Web / Software Development');
+  ctInvalidLinkedInForm.append('skills', 'Next.js, TypeScript, Tailwind CSS, PostgreSQL, AWS Lambda');
+  ctInvalidLinkedInForm.append('primarySkillLevel', 'Intermediate');
+  ctInvalidLinkedInForm.append('experience', 'Built full-stack student portal and contributed to open source Next.js libraries.');
+  ctInvalidLinkedInForm.append('exactResponsibility', 'Architected the REST API endpoints and state management store for 500+ daily active users.');
+  ctInvalidLinkedInForm.append('teamworkSituation', 'Worked in a 4-person team during a 36-hour hackathon, coordinating frontend-backend contracts and resolving merge conflicts.');
+  ctInvalidLinkedInForm.append('leadershipExperience', 'No');
+  ctInvalidLinkedInForm.append('whyCoreTeam', 'I want to build and manage mission-critical web applications and tech infrastructure for AWS SBG.');
+  ctInvalidLinkedInForm.append('domainContribution', 'I will build and maintain the community portal, leaderboard, and automate event registration webhooks.');
+  ctInvalidLinkedInForm.append('scenarioUnavailableMembers', 'I would immediately reassess the critical path, delegate urgent tasks to available peers, step in to cover the critical role myself, and keep the team aligned.');
+  ctInvalidLinkedInForm.append('availabilityHours', '6–8 hours');
+  ctInvalidLinkedInForm.append('availableDays', 'Weekdays (Mon–Fri)');
+  ctInvalidLinkedInForm.append('activeParticipation', 'Yes');
+  ctInvalidLinkedInForm.append('involvementDuration', 'Multiple semesters');
+  ctInvalidLinkedInForm.append('linkedin', 'https://instagram.com/rohan');
+  ctInvalidLinkedInForm.append('consent', 'on');
+
+  const reqInvalidCt = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: ctInvalidLinkedInForm });
+  const resInvalidCt = await careerAppPost(reqInvalidCt);
+  assert.equal(resInvalidCt.status, 400);
+  const jsonInvalidCt = await resInvalidCt.json();
+  assert.equal(jsonInvalidCt.fieldErrors?.linkedin, 'Please enter a valid LinkedIn profile URL.');
+
+  // 3. Valid submission succeeds
   const coreTeamEmail = `coreteam.${Date.now()}@cumail.in`;
   const coreTeamForm = new FormData();
   coreTeamForm.append('opportunityId', ctOppId);

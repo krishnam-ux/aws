@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { FormEvent, InvalidEvent, useState } from 'react';
 import {
   isValidGoogleDriveUrl,
+  isValidLinkedInUrl,
   getOpportunityFormType,
   OPPORTUNITY_DOMAINS,
   CORE_TEAM_ROLES_BY_DOMAIN,
@@ -62,7 +63,11 @@ export default function OpportunityApplicationForm({
     if (!value('program')) nextErrors.program = 'Please enter your course or program.';
     if (!value('graduationYear')) nextErrors.graduationYear = 'Please enter your graduation year.';
     if (!value('studentId')) nextErrors.studentId = 'Please enter your student ID / roll number.';
-    if (!value('linkedin')) nextErrors.linkedin = 'Please enter your LinkedIn profile URL.';
+    if (!value('linkedin')) {
+      nextErrors.linkedin = 'LinkedIn Profile is required.';
+    } else if (!isValidLinkedInUrl(value('linkedin'))) {
+      nextErrors.linkedin = 'Please enter a valid LinkedIn profile URL.';
+    }
 
     const videoUrl = value('introductionVideoUrl') || value('videoUrl');
     if (!videoUrl || !isValidGoogleDriveUrl(videoUrl)) {
@@ -135,6 +140,13 @@ export default function OpportunityApplicationForm({
       nextErrors.scenarioDropParticipation = 'Please share your approach to this scenario in detail.';
     }
 
+    // Section 10: Professional Links
+    if (!value('linkedin')) {
+      nextErrors.linkedin = 'LinkedIn Profile is required.';
+    } else if (!isValidLinkedInUrl(value('linkedin'))) {
+      nextErrors.linkedin = 'Please enter a valid LinkedIn profile URL.';
+    }
+
     // Section 11: Final Declaration
     if (!data.get('consent')) nextErrors.consent = 'You must confirm the declaration to submit your application.';
 
@@ -205,6 +217,13 @@ export default function OpportunityApplicationForm({
     if (!value('availableDays')) nextErrors.availableDays = 'Please select the days you are generally available.';
     if (!value('activeParticipation')) nextErrors.activeParticipation = 'Please select your meeting & event participation commitment.';
     if (!value('involvementDuration')) nextErrors.involvementDuration = 'Please select your expected involvement duration.';
+
+    // Section 11: Professional Links
+    if (!value('linkedin')) {
+      nextErrors.linkedin = 'LinkedIn Profile is required.';
+    } else if (!isValidLinkedInUrl(value('linkedin'))) {
+      nextErrors.linkedin = 'Please enter a valid LinkedIn profile URL.';
+    }
 
     // Section 11: Final Declaration
     if (!data.get('consent')) nextErrors.consent = 'You must confirm the declaration to submit your application.';
@@ -727,21 +746,35 @@ export default function OpportunityApplicationForm({
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-navy text-xs font-bold text-white">10</span>
             <div>
               <h3 className="text-lg font-extrabold text-brand-navy">Professional Links</h3>
-              <p className="text-xs text-slate-500">Optional profile links</p>
+              <p className="text-xs text-slate-500">Provide your professional profiles</p>
             </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-750">LinkedIn Profile</label>
-              <input type="url" name="linkedin" placeholder="https://linkedin.com/in/..." className="form-input-field mt-1 w-full rounded-lg border border-slate-300 text-xs" />
+              <label className="block text-xs font-semibold text-slate-750">
+                LinkedIn Profile <span className="text-red-600 font-bold">*</span>
+              </label>
+              <input
+                type="url"
+                name="linkedin"
+                required
+                placeholder="https://www.linkedin.com/in/your-profile"
+                className={inputClass('linkedin')}
+                aria-invalid={Boolean(errors.linkedin)}
+              />
+              <ErrorText message={errors.linkedin} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-750">GitHub Profile</label>
+              <label className="block text-xs font-semibold text-slate-750">
+                GitHub Profile <span className="text-slate-400 font-normal">(Optional)</span>
+              </label>
               <input type="url" name="github" placeholder="https://github.com/..." className="form-input-field mt-1 w-full rounded-lg border border-slate-300 text-xs" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-750">Portfolio / Website</label>
+              <label className="block text-xs font-semibold text-slate-750">
+                Portfolio / Website <span className="text-slate-400 font-normal">(Optional)</span>
+              </label>
               <input type="url" name="portfolio" placeholder="https://..." className="form-input-field mt-1 w-full rounded-lg border border-slate-300 text-xs" />
             </div>
           </div>
@@ -1313,8 +1346,18 @@ export default function OpportunityApplicationForm({
 
           <div className="grid gap-4 md:grid-cols-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-750">LinkedIn Profile</label>
-              <input type="url" name="linkedin" placeholder="https://linkedin.com/in/..." className="form-input-field mt-1 w-full rounded-lg border border-slate-300 text-xs" />
+              <label className="block text-xs font-semibold text-slate-750">
+                LinkedIn Profile <span className="text-red-600 font-bold">*</span>
+              </label>
+              <input
+                type="url"
+                name="linkedin"
+                required
+                placeholder="https://www.linkedin.com/in/your-profile"
+                className={inputClass('linkedin')}
+                aria-invalid={Boolean(errors.linkedin)}
+              />
+              <ErrorText message={errors.linkedin} />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-750">
@@ -1323,7 +1366,9 @@ export default function OpportunityApplicationForm({
               <input type="url" name="github" placeholder="https://github.com/..." className="form-input-field mt-1 w-full rounded-lg border border-slate-300 text-xs" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-750">Portfolio / Website</label>
+              <label className="block text-xs font-semibold text-slate-750">
+                Portfolio / Website <span className="text-slate-400 font-normal">(Optional)</span>
+              </label>
               <input type="url" name="portfolio" placeholder="https://..." className="form-input-field mt-1 w-full rounded-lg border border-slate-300 text-xs" />
             </div>
           </div>
@@ -1391,8 +1436,22 @@ export default function OpportunityApplicationForm({
         <div>
           <h2 className="mb-4 text-lg font-bold text-brand-navy">Professional Information</h2>
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="block text-sm font-medium text-slate-700">LinkedIn <span className="text-red-600" aria-hidden="true">*</span><input type="url" name="linkedin" placeholder="https://linkedin.com/in/..." required className={inputClass('linkedin')} aria-invalid={Boolean(errors.linkedin)} /> <ErrorText message={errors.linkedin} /></label>
-            <label className="block text-sm font-medium text-slate-700">Portfolio / Website<input type="url" name="portfolio" placeholder="https://..." className="form-input-field mt-1" /></label>
+            <label className="block text-sm font-medium text-slate-700">
+              LinkedIn Profile <span className="text-red-600 font-bold" aria-hidden="true">*</span>
+              <input
+                type="url"
+                name="linkedin"
+                placeholder="https://www.linkedin.com/in/your-profile"
+                required
+                className={inputClass('linkedin')}
+                aria-invalid={Boolean(errors.linkedin)}
+              />
+              <ErrorText message={errors.linkedin} />
+            </label>
+            <label className="block text-sm font-medium text-slate-700">
+              Portfolio / Website <span className="text-slate-400 font-normal text-xs">(Optional)</span>
+              <input type="url" name="portfolio" placeholder="https://..." className="form-input-field mt-1" />
+            </label>
             <label className="block text-sm font-medium text-slate-700 md:col-span-2">Skills <span className="text-red-600" aria-hidden="true">*</span><textarea name="skills" placeholder="AWS, Python, React, Cloud Architecture..." required className={`${inputClass('skills')} min-h-24`} aria-invalid={Boolean(errors.skills)} /> <ErrorText message={errors.skills} /></label>
             <label className="block text-sm font-medium text-slate-700 md:col-span-2">{isCareer ? 'Previous Experience' : 'Experience'} <span className="text-red-600" aria-hidden="true">*</span><textarea name="experience" placeholder="Describe your relevant projects, internships, or experience..." required className={`${inputClass('experience')} min-h-24`} aria-invalid={Boolean(errors.experience)} /> <ErrorText message={errors.experience} /></label>
 

@@ -88,6 +88,33 @@ export function isValidGoogleDriveUrl(value?: string | null): boolean {
   }
 }
 
+export function isValidLinkedInUrl(value?: string | null): boolean {
+  if (!value || typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+
+  try {
+    const withProto = trimmed.startsWith('http://') || trimmed.startsWith('https://')
+      ? trimmed
+      : `https://${trimmed}`;
+    const parsed = new URL(withProto);
+
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    if (host !== 'linkedin.com' && !host.endsWith('.linkedin.com')) {
+      return false;
+    }
+
+    const path = parsed.pathname.trim();
+    if (path === '' || path === '/') {
+      return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export type OpportunityFormType = 'founding-member' | 'core-team' | 'anchor-speaker';
 
 export const OPPORTUNITY_DOMAINS = [
