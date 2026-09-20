@@ -233,6 +233,7 @@ export async function POST(request: Request) {
       skills,
       primarySkillLevel,
       experience,
+      previousExperience: experience,
       roleAndImpact,
       exactResponsibility,
       teamworkSituation,

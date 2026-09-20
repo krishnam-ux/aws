@@ -815,97 +815,97 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'No applications available to export.' }, { status: 400 });
       }
 
-      const headers = [
-        'Application ID',
-        'Opportunity ID',
-        'Opportunity Title',
-        'Form Type',
-        'Student Name',
-        'Email',
-        'Personal Email',
-        'Phone',
-        'University',
-        'Program',
-        'Department / Branch',
-        'Current Year',
-        'Graduation Year',
-        'Student ID / Roll No',
-        'Preferred Domain',
-        'Preferred Role',
-        'Skills',
-        'Primary Skill Level',
-        'Experience',
-        'Role & Impact / Exact Responsibility',
-        'Teamwork & Leadership',
-        'Leadership Details',
-        'Motivation / Why Apply',
-        'Personal / Domain Contribution',
-        'Community Growth Ideas',
-        'Scenario Response',
-        'Weekly Availability',
-        'Consistency / Available Days',
-        'Contribution Duration',
-        'Academic Balance Plan',
-        'LinkedIn',
-        'GitHub',
-        'Portfolio',
-        'Introduction Video URL',
-        'Additional Information',
-        'Consent',
-        'Status',
-        'Admin Notes',
-        'Registration Date',
-        'Registration Time'
-      ].join(',');
+      const standardFields: { label: string; getter: (app: any) => any }[] = [
+        { label: 'Application ID', getter: (a) => a.id },
+        { label: 'Opportunity ID', getter: (a) => a.opportunityId },
+        { label: 'Opportunity Title', getter: () => opportunity.title || '' },
+        { label: 'Form Type', getter: (a) => a.formType || '' },
+        { label: 'Student Name', getter: (a) => a.name || '' },
+        { label: 'Email', getter: (a) => a.email || '' },
+        { label: 'Personal Email', getter: (a) => a.personalEmail || '' },
+        { label: 'Phone', getter: (a) => a.phone || '' },
+        { label: 'University', getter: (a) => a.university || '' },
+        { label: 'Program', getter: (a) => a.program || '' },
+        { label: 'Department / Branch', getter: (a) => a.department || a.branch || '' },
+        { label: 'Current Year', getter: (a) => a.currentYear || '' },
+        { label: 'Graduation Year', getter: (a) => a.graduationYear || '' },
+        { label: 'Student ID / Roll No', getter: (a) => a.studentId || a.rollNumber || '' },
+        { label: 'Preferred Domain', getter: (a) => a.preferredDomain || '' },
+        { label: 'Preferred Role', getter: (a) => a.preferredRole || '' },
+        { label: 'Skills', getter: (a) => a.skills || '' },
+        { label: 'Primary Skill Level', getter: (a) => a.primarySkillLevel || '' },
+        { label: 'Experience / Projects', getter: (a) => a.experience || a.previousExperience || '' },
+        { label: 'Role & Impact / Exact Responsibility', getter: (a) => a.roleAndImpact || a.exactResponsibility || '' },
+        { label: 'Leadership Experience', getter: (a) => a.leadershipExperience || '' },
+        { label: 'Leadership Details', getter: (a) => a.leadershipDetails || '' },
+        { label: 'Teamwork Situation', getter: (a) => a.teamworkSituation || '' },
+        { label: 'Why Founding Member', getter: (a) => a.whyFoundingMember || '' },
+        { label: 'Why Core Team', getter: (a) => a.whyCoreTeam || '' },
+        { label: 'Motivation', getter: (a) => a.motivation || '' },
+        { label: 'Personal Contribution', getter: (a) => a.personalContribution || '' },
+        { label: 'Domain Contribution', getter: (a) => a.domainContribution || '' },
+        { label: 'Community Growth Ideas', getter: (a) => a.communityGrowthIdeas || '' },
+        { label: 'Scenario Response', getter: (a) => a.scenarioAnswer || a.scenarioDropParticipation || a.scenarioUnavailableMembers || '' },
+        { label: 'Weekly Availability', getter: (a) => a.availabilityHours || '' },
+        { label: 'Consistent Commitment / Available Days', getter: (a) => a.consistentContribution || a.availableDays || '' },
+        { label: 'Active Participation', getter: (a) => a.activeParticipation || '' },
+        { label: 'Contribution / Involvement Duration', getter: (a) => a.contributionDuration || a.involvementDuration || '' },
+        { label: 'Academic Balance Plan', getter: (a) => a.academicBalance || '' },
+        { label: 'LinkedIn Profile', getter: (a) => a.linkedin || '' },
+        { label: 'GitHub', getter: (a) => a.github || '' },
+        { label: 'Portfolio', getter: (a) => a.portfolio || '' },
+        { label: 'Resume URL', getter: (a) => a.resumeUrl || '' },
+        { label: 'Introduction Video URL', getter: (a) => a.introductionVideoUrl || a.videoUrl || '' },
+        { label: 'Cover Letter', getter: (a) => a.coverLetter || '' },
+        { label: 'Additional Information', getter: (a) => a.additionalInformation || '' },
+        { label: 'Consent / Declaration', getter: (a) => (a.consent ? 'Yes' : 'No') },
+        { label: 'Status', getter: (a) => a.status || 'New' },
+        { label: 'Admin Notes', getter: (a) => a.adminNotes || '' },
+        { label: 'Registration Date', getter: (a) => (a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '') },
+        { label: 'Registration Time', getter: (a) => (a.createdAt ? new Date(a.createdAt).toLocaleTimeString() : '') }
+      ];
 
-      const rows = applications.map((application: any) => (
-        [
-          application.id,
-          application.opportunityId,
-          opportunity.title || '',
-          application.formType || '',
-          application.name || '',
-          application.email || '',
-          application.personalEmail || '',
-          application.phone || '',
-          application.university || '',
-          application.program || '',
-          application.department || application.branch || '',
-          application.currentYear || '',
-          application.graduationYear || '',
-          application.studentId || application.rollNumber || '',
-          application.preferredDomain || '',
-          application.preferredRole || '',
-          application.skills || '',
-          application.primarySkillLevel || '',
-          application.experience || application.previousExperience || '',
-          application.roleAndImpact || application.exactResponsibility || '',
-          application.teamworkSituation || (application.leadershipExperience ? `Leadership: ${application.leadershipExperience}` : ''),
-          application.leadershipDetails || '',
-          application.whyFoundingMember || application.whyCoreTeam || application.motivation || '',
-          application.personalContribution || application.domainContribution || '',
-          application.communityGrowthIdeas || '',
-          application.scenarioAnswer || application.scenarioDropParticipation || application.scenarioUnavailableMembers || '',
-          application.availabilityHours || '',
-          application.consistentContribution || application.availableDays || '',
-          application.contributionDuration || application.involvementDuration || '',
-          application.academicBalance || '',
-          application.linkedin || '',
-          application.github || '',
-          application.portfolio || '',
-          application.introductionVideoUrl || application.videoUrl || '',
-          application.additionalInformation || '',
-          application.consent ? 'Yes' : 'No',
-          application.status || 'New',
-          application.adminNotes || '',
-          application.createdAt ? new Date(application.createdAt).toLocaleDateString() : '',
-          application.createdAt ? new Date(application.createdAt).toLocaleTimeString() : ''
-        ]
+      // Discover any dynamic / custom / historical extra keys
+      const standardKeyNames = new Set([
+        'id', 'opportunityId', 'opportunitySlug', 'formType', 'name', 'email', 'personalEmail',
+        'phone', 'university', 'program', 'department', 'branch', 'currentYear', 'graduationYear',
+        'studentId', 'rollNumber', 'linkedin', 'github', 'portfolio', 'resumeUrl', 'introductionVideoUrl',
+        'videoUrl', 'preferredDomain', 'preferredRole', 'skills', 'primarySkillLevel', 'experience',
+        'previousExperience', 'roleAndImpact', 'exactResponsibility', 'teamworkSituation',
+        'leadershipExperience', 'leadershipDetails', 'whyFoundingMember', 'whyCoreTeam',
+        'personalContribution', 'domainContribution', 'communityGrowthIdeas', 'scenarioAnswer',
+        'scenarioDropParticipation', 'scenarioUnavailableMembers', 'availabilityHours',
+        'consistentContribution', 'contributionDuration', 'academicBalance', 'availableDays',
+        'activeParticipation', 'involvementDuration', 'motivation', 'coverLetter',
+        'additionalInformation', 'consent', 'status', 'adminNotes', 'createdAt', 'updatedAt',
+        '_recordType'
+      ]);
+
+      const extraKeys = Array.from(
+        new Set(
+          applications.flatMap((app: any) =>
+            Object.keys(app).filter((k) => !standardKeyNames.has(k))
+          )
+        )
+      );
+
+      const allHeaderLabels = [
+        ...standardFields.map((f) => f.label),
+        ...extraKeys.map((k) => `Custom: ${k}`)
+      ];
+
+      const rows = applications.map((application: any) => {
+        const standardValues = standardFields.map((f) => f.getter(application));
+        const extraValues = extraKeys.map((k) => {
+          const val = application[k];
+          return typeof val === 'object' && val !== null ? JSON.stringify(val) : val ?? '';
+        });
+        return [...standardValues, ...extraValues]
           .map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`)
-          .join(',')
-      ));
+          .join(',');
+      });
 
-      const csv = [headers, ...rows].join('\n');
+      const csv = [allHeaderLabels.map((h) => `"${h.replace(/"/g, '""')}"`).join(','), ...rows].join('\n');
       const filename = `${String(opportunity.title || 'opportunity').replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '') || 'opportunity'}-applications.csv`;
 
       return new NextResponse(csv, {

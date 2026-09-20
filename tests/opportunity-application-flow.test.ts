@@ -607,3 +607,262 @@ test('admin login authentication works for awsadmin@culko.in and rejects invalid
   const data3 = await res3.json();
   assert.equal(data3.error, 'Invalid credentials.');
 });
+
+test('Admin API retrieves 100% complete submitted form data for Founding Member applications', async () => {
+  const testOppId = `opp-fm-audit-${Date.now()}`;
+  await db.careers.insertOne({
+    id: testOppId,
+    title: 'Founding Member Application Form',
+    slug: `founding-member-audit-${Date.now()}`,
+    department: 'Executive Leadership',
+    location: 'Campus',
+    type: 'Leadership',
+    description: 'Founding member application audit.',
+    requirements: 'Leadership',
+    status: 'Open',
+    published: true,
+    internalApplications: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
+
+  const form = new FormData();
+  form.append('opportunityId', testOppId);
+  form.append('opportunitySlug', 'founding-members');
+  form.append('formType', 'founding-member');
+  form.append('name', 'Aarav Sharma');
+  form.append('email', `aarav.${Date.now()}@cumail.in`);
+  form.append('personalEmail', 'aarav.sharma@personal.com');
+  form.append('phone', '9876543210');
+  form.append('studentId', '22BCS10199');
+  form.append('rollNumber', '22BCS10199');
+  form.append('university', 'Chandigarh University – Uttar Pradesh');
+  form.append('program', 'B.Tech CSE');
+  form.append('department', 'Computer Science and Engineering');
+  form.append('branch', 'Computer Science and Engineering');
+  form.append('currentYear', '3rd Year');
+  form.append('graduationYear', '2026');
+  form.append('preferredDomain', 'Tech & Technical');
+  form.append('skills', 'AWS Cloud Architecture, Serverless Lambda, Next.js, Distributed Systems');
+  form.append('previousExperience', 'Built university portal and served as Technical Lead for Cloud Club');
+  form.append('roleAndImpact', 'Led architecture and reduced latency by 45% across 2,000 active students');
+  form.append('whyFoundingMember', 'I want to build a world-class AWS student developer community from scratch at CUUP.');
+  form.append('personalContribution', 'I will conduct hands-on AWS labs, architecture hackathons, and mentor 50+ students.');
+  form.append('communityGrowthIdeas', 'Host bi-weekly AWS Immersion Days, launch cloud challenge tracks, and build a peer project incubator.');
+  form.append('availabilityHours', '8-10 hours/week');
+  form.append('consistentContribution', 'Yes, 100% committed throughout academic year');
+  form.append('contributionDuration', 'Full Academic Year (1-2 years)');
+  form.append('academicBalance', 'Structured time blocks: 2 hours daily in the evening and weekends dedicated to community initiatives.');
+  form.append('scenarioDropParticipation', 'I would conduct a fast pulse survey to find root causes, pivot topics to hands-on project building, and organize an exciting interactive hack challenge with swag.');
+  form.append('linkedin', 'https://www.linkedin.com/in/aarav-sharma-cloud');
+  form.append('github', 'https://github.com/aaravsharma-aws');
+  form.append('portfolio', 'https://aaravsharma.dev');
+  form.append('consent', 'on');
+
+  const submitReq = new Request('http://localhost/api/career-applications', {
+    method: 'POST',
+    body: form
+  });
+  const submitRes = await careerAppPost(submitReq);
+  assert.ok(submitRes.status === 200 || submitRes.status === 303, `Founding Member application submission must succeed, got ${submitRes.status}`);
+
+  const adminReq = new Request('http://localhost/api/admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...ADMIN_HEADER },
+    body: JSON.stringify({ action: 'get-career-applications', opportunityId: testOppId })
+  });
+  const adminRes = await adminPost(adminReq);
+  assert.equal(adminRes.status, 200);
+  const applications = await adminRes.json();
+  const saved = applications.find((a: any) => a.email === form.get('email'));
+  assert.ok(saved, 'Application must be retrievable by Admin API');
+
+  // Verify all 11 sections fields are preserved exactly
+  assert.equal(saved.name, form.get('name'));
+  assert.equal(saved.email, form.get('email'));
+  assert.equal(saved.personalEmail, form.get('personalEmail'));
+  assert.equal(saved.phone, form.get('phone'));
+  assert.equal(saved.rollNumber, form.get('rollNumber'));
+  assert.equal(saved.program, form.get('program'));
+  assert.equal(saved.branch, form.get('branch'));
+  assert.equal(saved.currentYear, form.get('currentYear'));
+  assert.equal(saved.graduationYear, form.get('graduationYear'));
+  assert.equal(saved.preferredDomain, form.get('preferredDomain'));
+  assert.equal(saved.skills, form.get('skills'));
+  assert.equal(saved.previousExperience, form.get('previousExperience'));
+  assert.equal(saved.roleAndImpact, form.get('roleAndImpact'));
+  assert.equal(saved.whyFoundingMember, form.get('whyFoundingMember'));
+  assert.equal(saved.personalContribution, form.get('personalContribution'));
+  assert.equal(saved.communityGrowthIdeas, form.get('communityGrowthIdeas'));
+  assert.equal(saved.availabilityHours, form.get('availabilityHours'));
+  assert.equal(saved.consistentContribution, form.get('consistentContribution'));
+  assert.equal(saved.contributionDuration, form.get('contributionDuration'));
+  assert.equal(saved.academicBalance, form.get('academicBalance'));
+  assert.equal(saved.scenarioDropParticipation, form.get('scenarioDropParticipation'));
+  assert.equal(saved.linkedin, form.get('linkedin'));
+  assert.equal(saved.github, form.get('github'));
+  assert.equal(saved.portfolio, form.get('portfolio'));
+  assert.equal(saved.consent, true);
+
+  // Clean up
+  await db.careerApplications.deleteOne(saved.id);
+  await db.careers.deleteOne(testOppId);
+});
+
+test('Admin API retrieves 100% complete submitted form data for Core Team applications', async () => {
+  const testOppId = `opp-ct-audit-${Date.now()}`;
+  await db.careers.insertOne({
+    id: testOppId,
+    title: 'Core Team Application Form',
+    slug: `core-team-audit-${Date.now()}`,
+    department: 'Community Operations',
+    location: 'Campus',
+    type: 'Core Team',
+    description: 'Core team application audit.',
+    requirements: 'Core Team',
+    status: 'Open',
+    published: true,
+    internalApplications: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
+
+  const ctForm = new FormData();
+  ctForm.append('opportunityId', testOppId);
+  ctForm.append('opportunitySlug', 'core-team');
+  ctForm.append('formType', 'core-team');
+  ctForm.append('name', 'Priya Verma');
+  ctForm.append('email', `priya.${Date.now()}@cumail.in`);
+  ctForm.append('personalEmail', 'priya.verma@personal.com');
+  ctForm.append('phone', '9812345678');
+  ctForm.append('studentId', '23BCS10888');
+  ctForm.append('rollNumber', '23BCS10888');
+  ctForm.append('university', 'Chandigarh University – Uttar Pradesh');
+  ctForm.append('program', 'B.Tech AI & Data Science');
+  ctForm.append('department', 'Computer Science');
+  ctForm.append('branch', 'Computer Science');
+  ctForm.append('currentYear', '2nd Year');
+  ctForm.append('graduationYear', '2027');
+  ctForm.append('preferredDomain', 'Media & Creative');
+  ctForm.append('preferredRole', 'Video Editing & Reels Creation');
+  ctForm.append('skills', 'Premiere Pro, After Effects, Canva, Motion Graphics, Storyboarding');
+  ctForm.append('primarySkillLevel', 'Advanced');
+  ctForm.append('experience', 'Created 25+ short form technical reels with 100k+ views across student handles');
+  ctForm.append('exactResponsibility', 'Full lifecycle scripting, capturing raw footage, motion graphics animation, and audio mastering');
+  ctForm.append('teamworkSituation', 'Coordinated with 4 event leads to produce 3 recap videos within 6 hours of event conclusion');
+  ctForm.append('leadershipExperience', 'Yes');
+  ctForm.append('leadershipDetails', 'Media sub-head for college tech-fest media committee');
+  ctForm.append('whyCoreTeam', 'I want to craft high-impact visual storytelling that establishes AWS SBG as the premier club.');
+  ctForm.append('domainContribution', 'I will design high-converting event teasers, speaker spotlights, and bite-sized AWS tip reels.');
+  ctForm.append('scenarioUnavailableMembers', 'I will review key deliverables immediately, repurpose pre-made graphic templates, step in directly to edit priority footage, and keep the faculty advisor updated.');
+  ctForm.append('availabilityHours', '6-8 hours/week');
+  ctForm.append('availableDays', 'Weekday Evenings & Weekends');
+  ctForm.append('activeParticipation', 'Yes, actively participating in weekly sprints');
+  ctForm.append('involvementDuration', 'Entire Year');
+  ctForm.append('linkedin', 'https://www.linkedin.com/in/priya-verma-creative');
+  ctForm.append('github', 'https://github.com/priyaverma');
+  ctForm.append('portfolio', 'https://behance.net/priyaverma');
+  ctForm.append('consent', 'on');
+
+  const submitReq = new Request('http://localhost/api/career-applications', {
+    method: 'POST',
+    body: ctForm
+  });
+  const submitRes = await careerAppPost(submitReq);
+  assert.ok(submitRes.status === 200 || submitRes.status === 303, `Core Team submission must succeed, got ${submitRes.status}`);
+
+  const adminReq = new Request('http://localhost/api/admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...ADMIN_HEADER },
+    body: JSON.stringify({ action: 'get-career-applications', opportunityId: testOppId })
+  });
+  const adminRes = await adminPost(adminReq);
+  assert.equal(adminRes.status, 200);
+  const applications = await adminRes.json();
+  const saved = applications.find((a: any) => a.email === ctForm.get('email'));
+  assert.ok(saved, 'Core Team record must be present in Admin API');
+
+  // Verify all Core Team specific fields
+  assert.equal(saved.preferredDomain, 'Media & Creative');
+  assert.equal(saved.preferredRole, 'Video Editing & Reels Creation');
+  assert.equal(saved.skills, ctForm.get('skills'));
+  assert.equal(saved.primarySkillLevel, 'Advanced');
+  assert.equal(saved.exactResponsibility, ctForm.get('exactResponsibility'));
+  assert.equal(saved.teamworkSituation, ctForm.get('teamworkSituation'));
+  assert.equal(saved.leadershipExperience, 'Yes');
+  assert.equal(saved.leadershipDetails, ctForm.get('leadershipDetails'));
+  assert.equal(saved.whyCoreTeam, ctForm.get('whyCoreTeam'));
+  assert.equal(saved.domainContribution, ctForm.get('domainContribution'));
+  assert.equal(saved.scenarioUnavailableMembers, ctForm.get('scenarioUnavailableMembers'));
+  assert.equal(saved.availableDays, ctForm.get('availableDays'));
+  assert.equal(saved.activeParticipation, ctForm.get('activeParticipation'));
+  assert.equal(saved.involvementDuration, ctForm.get('involvementDuration'));
+  assert.equal(saved.linkedin, ctForm.get('linkedin'));
+
+  // Clean up
+  await db.careerApplications.deleteOne(saved.id);
+  await db.careers.deleteOne(testOppId);
+});
+
+test('Admin API export-career-applications-csv exports all standard and dynamic custom fields without dropping data', async () => {
+  const testOppId = `opp-csv-audit-${Date.now()}`;
+  await db.careers.insertOne({
+    id: testOppId,
+    title: 'Audit Opportunity for CSV Export',
+    slug: `audit-csv-${Date.now()}`,
+    department: 'Testing',
+    location: 'Campus',
+    type: 'Test',
+    description: 'CSV export audit.',
+    requirements: 'All',
+    status: 'Active',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
+
+  const customAppId = `custom-app-${Date.now()}`;
+  await db.careerApplications.insertOne({
+    id: customAppId,
+    opportunityId: testOppId,
+    formType: 'founding-member',
+    name: 'Dynamic Field Candidate',
+    email: `dynamic.${Date.now()}@cumail.in`,
+    phone: '9900112233',
+    university: 'Chandigarh University – Uttar Pradesh',
+    program: 'B.Tech',
+    department: 'CSE',
+    currentYear: '3rd Year',
+    graduationYear: '2026',
+    preferredDomain: 'Tech & Technical',
+    skills: 'Node.js, AWS Cloud, Docker',
+    whyFoundingMember: 'Want to lead tech innovation',
+    linkedin: 'https://www.linkedin.com/in/dynamic-candidate',
+    customHackathonScore: 'Top 5 Finalist',
+    customTshirtSize: 'Large',
+    consent: true,
+    status: 'New'
+  });
+
+  const exportReq = new Request('http://localhost/api/admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...ADMIN_HEADER },
+    body: JSON.stringify({ action: 'export-career-applications-csv', opportunityId: testOppId })
+  });
+
+  const exportRes = await adminPost(exportReq);
+  assert.equal(exportRes.status, 200);
+  assert.equal(exportRes.headers.get('content-type'), 'text/csv;charset=utf-8');
+
+  const csvText = await exportRes.text();
+  assert.ok(csvText.includes('Dynamic Field Candidate'), 'CSV must contain applicant name');
+  assert.ok(csvText.includes('https://www.linkedin.com/in/dynamic-candidate'), 'CSV must contain LinkedIn');
+  assert.ok(csvText.includes('Tech & Technical'), 'CSV must contain preferred domain');
+  assert.ok(csvText.includes('Custom: customHackathonScore'), 'CSV must include dynamic custom column');
+  assert.ok(csvText.includes('Top 5 Finalist'), 'CSV must include custom answer');
+  assert.ok(csvText.includes('Custom: customTshirtSize'), 'CSV must include second dynamic custom column');
+  assert.ok(csvText.includes('Large'), 'CSV must include second custom answer');
+
+  // Clean up
+  await db.careerApplications.deleteOne(customAppId);
+  await db.careers.deleteOne(testOppId);
+});
