@@ -327,17 +327,51 @@ export interface WeeklyQuizStudentSession {
   };
 }
 
+export type NetworkQualityTier = 'GOOD' | 'FAIR' | 'POOR' | 'DISCONNECTED';
+
+export interface TrackHardwareSettings {
+  actualWidth: number;
+  actualHeight: number;
+  actualFps: number;
+  label?: string;
+  facingMode?: string;
+}
+
+export interface WebRTCStatsSnapshot {
+  timestamp: number;
+  connectionState: 'CONNECTED' | 'RECONNECTING' | 'DISCONNECTED';
+  quality: NetworkQualityTier;
+  rttMs: number;
+  jitterMs: number;
+  packetsLost: number;
+  packetsReceived: number;
+  packetLossPercent: number;
+  fps: number;
+  framesDecoded: number;
+  framesDropped: number;
+  frameWidth: number;
+  frameHeight: number;
+  bitrateKbps: number;
+  bytesReceived: number;
+  iceCandidateType?: string;
+  qualityLimitationReason?: string;
+}
+
 export interface WebRTCSignalingMessage {
   attemptId: string;
   candidateId: string;
   streamType?: 'camera' | 'screen' | 'both';
-  type: 'offer' | 'answer' | 'candidate' | 'heartbeat' | 'preview';
+  type: 'offer' | 'answer' | 'candidate' | 'heartbeat' | 'preview' | 'stats';
   sdp?: any;
   candidate?: any;
   cameraOffer?: any;
   cameraAnswer?: any;
   screenOffer?: any;
   screenAnswer?: any;
+  networkStats?: WebRTCStatsSnapshot;
+  actualCameraSettings?: TrackHardwareSettings;
+  qualityTier?: NetworkQualityTier;
+  targetQualityMode?: 'GRID' | 'HIGH_QUALITY';
   cameraPreviewFrame?: string; // base64 JPEG data URL for instant telemetry fallback
   screenPreviewFrame?: string; // base64 JPEG data URL for instant screen share telemetry
   previewFrame?: string; // legacy alias for camera preview
@@ -345,3 +379,4 @@ export interface WebRTCSignalingMessage {
   screenActive?: boolean;
   timestamp: number;
 }
+

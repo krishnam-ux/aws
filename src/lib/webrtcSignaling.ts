@@ -1,3 +1,9 @@
+import {
+  WebRTCStatsSnapshot,
+  TrackHardwareSettings,
+  NetworkQualityTier
+} from '@/types/weeklyQuiz';
+
 export interface SignalingChannel {
   attemptId: string;
   candidateId: string;
@@ -14,7 +20,14 @@ export interface SignalingChannel {
   screenAnswer?: any; // RTCSessionDescriptionInit
   screenCandidateIceCandidates: any[]; // RTCIceCandidateInit[]
   screenAdminIceCandidates: any[]; // RTCIceCandidateInit[]
-  // Low-Resolution Telemetry Preview Snapshots (Instant Dashboard Render)
+  // Real-time Diagnostic Network Telemetry & Quality Tiers
+  networkStats?: WebRTCStatsSnapshot;
+  actualCameraSettings?: TrackHardwareSettings;
+  qualityTier: NetworkQualityTier;
+  targetQualityMode?: 'GRID' | 'HIGH_QUALITY';
+  iceRestartNeeded?: boolean;
+  reconnectCount: number;
+  // Low-Resolution Telemetry Preview Snapshots (Instant Fallback / Telemetry)
   cameraPreviewFrame?: string; // base64 data URL
   screenPreviewFrame?: string; // base64 data URL
   previewFrame?: string; // legacy alias for cameraPreviewFrame
@@ -60,6 +73,11 @@ export function registerCandidateSignal(params: {
   screenActive?: boolean;
   connectionStatus?: 'CONNECTED' | 'RECONNECTING' | 'DISCONNECTED';
   violationCount?: number;
+  networkStats?: WebRTCStatsSnapshot;
+  actualCameraSettings?: TrackHardwareSettings;
+  qualityTier?: NetworkQualityTier;
+  targetQualityMode?: 'GRID' | 'HIGH_QUALITY';
+  iceRestartNeeded?: boolean;
 }): SignalingChannel {
   cleanupStaleChannels();
 
@@ -75,6 +93,9 @@ export function registerCandidateSignal(params: {
       adminIceCandidates: [],
       screenCandidateIceCandidates: [],
       screenAdminIceCandidates: [],
+      qualityTier: params.qualityTier || 'GOOD',
+      targetQualityMode: params.targetQualityMode || 'GRID',
+      reconnectCount: 0,
       cameraActive: params.cameraActive !== undefined ? params.cameraActive : true,
       screenActive: params.screenActive !== undefined ? params.screenActive : true,
       connectionStatus: params.connectionStatus || 'CONNECTED',
@@ -90,10 +111,36 @@ export function registerCandidateSignal(params: {
 
   if (params.studentName) channel.studentName = params.studentName;
   if (params.email) channel.email = params.email;
-  if (params.offer) channel.offer = params.offer;
-  if (params.iceCandidate) channel.candidateIceCandidates.push(params.iceCandidate);
-  if (params.screenOffer) channel.screenOffer = params.screenOffer;
-  if (params.screenIceCandidate) channel.screenCandidateIceCandidates.push(params.screenIceCandidate);
+  if (params.offer) {
+    channel.offer = params.offer;
+    // Clear old admin answer if new offer arrives (e.g. renegotiation or ICE restart)
+    channel.answer = undefined;
+    channel.candidateIceCandidates = [];
+  }
+  if (params.iceCandidate) {
+    // Deduplicate candidate ICE candidates
+    const isDup = channel.candidateIceCandidates.some(
+      c => c.candidate === params.iceCandidate.candidate && c.sdpMid === params.iceCandidate.sdpMid
+    );
+    if (!isDup) channel.candidateIceCandidates.push(params.iceCandidate);
+  }
+  if (params.screenOffer) {
+    channel.screenOffer = params.screenOffer;
+    channel.screenAnswer = undefined;
+    channel.screenCandidateIceCandidates = [];
+  }
+  if (params.screenIceCandidate) {
+    const isDup = channel.screenCandidateIceCandidates.some(
+      c => c.candidate === params.screenIceCandidate.candidate && c.sdpMid === params.screenIceCandidate.sdpMid
+    );
+    if (!isDup) channel.screenCandidateIceCandidates.push(params.screenIceCandidate);
+  }
+
+  if (params.networkStats) channel.networkStats = params.networkStats;
+  if (params.actualCameraSettings) channel.actualCameraSettings = params.actualCameraSettings;
+  if (params.qualityTier) channel.qualityTier = params.qualityTier;
+  if (params.targetQualityMode) channel.targetQualityMode = params.targetQualityMode;
+  if (params.iceRestartNeeded !== undefined) channel.iceRestartNeeded = params.iceRestartNeeded;
 
   if (params.cameraPreviewFrame) {
     channel.cameraPreviewFrame = params.cameraPreviewFrame;
@@ -109,7 +156,12 @@ export function registerCandidateSignal(params: {
 
   if (params.cameraActive !== undefined) channel.cameraActive = params.cameraActive;
   if (params.screenActive !== undefined) channel.screenActive = params.screenActive;
-  if (params.connectionStatus) channel.connectionStatus = params.connectionStatus;
+  if (params.connectionStatus) {
+    if (channel.connectionStatus === 'RECONNECTING' && params.connectionStatus === 'CONNECTED') {
+      channel.reconnectCount += 1;
+    }
+    channel.connectionStatus = params.connectionStatus;
+  }
   if (typeof params.violationCount === 'number') channel.violationCount = params.violationCount;
 
   return channel;
@@ -121,13 +173,17 @@ export function getCandidateSignalForStudent(attemptId: string): {
   screenAnswer?: any;
   screenAdminIceCandidates: any[];
   connectionStatus: 'CONNECTED' | 'RECONNECTING' | 'DISCONNECTED';
+  qualityTier: NetworkQualityTier;
+  targetQualityMode: 'GRID' | 'HIGH_QUALITY';
 } {
   const channel = signalingChannels.get(attemptId);
   if (!channel) {
     return {
       adminIceCandidates: [],
       screenAdminIceCandidates: [],
-      connectionStatus: 'DISCONNECTED'
+      connectionStatus: 'DISCONNECTED',
+      qualityTier: 'DISCONNECTED',
+      targetQualityMode: 'GRID'
     };
   }
   channel.lastActive = Date.now();
@@ -136,7 +192,9 @@ export function getCandidateSignalForStudent(attemptId: string): {
     adminIceCandidates: [...channel.adminIceCandidates],
     screenAnswer: channel.screenAnswer,
     screenAdminIceCandidates: [...channel.screenAdminIceCandidates],
-    connectionStatus: channel.connectionStatus
+    connectionStatus: channel.connectionStatus,
+    qualityTier: channel.qualityTier || 'GOOD',
+    targetQualityMode: channel.targetQualityMode || 'GRID'
   };
 }
 
@@ -154,6 +212,7 @@ export function registerAdminSignal(params: {
   iceCandidate?: any;
   screenAnswer?: any;
   screenIceCandidate?: any;
+  targetQualityMode?: 'GRID' | 'HIGH_QUALITY';
 }): SignalingChannel | null {
   const channel = signalingChannels.get(params.attemptId);
   if (!channel) return null;
@@ -163,13 +222,22 @@ export function registerAdminSignal(params: {
     channel.answer = params.answer;
   }
   if (params.iceCandidate) {
-    channel.adminIceCandidates.push(params.iceCandidate);
+    const isDup = channel.adminIceCandidates.some(
+      c => c.candidate === params.iceCandidate.candidate && c.sdpMid === params.iceCandidate.sdpMid
+    );
+    if (!isDup) channel.adminIceCandidates.push(params.iceCandidate);
   }
   if (params.screenAnswer) {
     channel.screenAnswer = params.screenAnswer;
   }
   if (params.screenIceCandidate) {
-    channel.screenAdminIceCandidates.push(params.screenIceCandidate);
+    const isDup = channel.screenAdminIceCandidates.some(
+      c => c.candidate === params.screenIceCandidate.candidate && c.sdpMid === params.screenIceCandidate.sdpMid
+    );
+    if (!isDup) channel.screenAdminIceCandidates.push(params.screenIceCandidate);
+  }
+  if (params.targetQualityMode) {
+    channel.targetQualityMode = params.targetQualityMode;
   }
 
   return channel;

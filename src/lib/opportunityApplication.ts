@@ -40,7 +40,7 @@ export function buildOpportunitySuccessUrl(
   const requestHostOrigin = requestOrigin && !requestOrigin.includes('localhost') ? requestOrigin : null;
   const origin = forwardedOrigin || requestHostOrigin || productionOrigin || 'http://localhost:3000';
 
-  return new URL(`/careers/${slug}?submitted=1`, origin).toString();
+  return new URL(`/opportunities/${slug}?submitted=1`, origin).toString();
 }
 
 export function hasDuplicateOpportunityApplication(
@@ -88,3 +88,76 @@ export function isValidGoogleDriveUrl(value?: string | null): boolean {
   }
 }
 
+export type OpportunityFormType = 'founding-member' | 'core-team' | 'anchor-speaker';
+
+export const OPPORTUNITY_DOMAINS = [
+  'Tech & Technical',
+  'Growth & Community',
+  'Media & Creative'
+] as const;
+
+export type OpportunityDomain = typeof OPPORTUNITY_DOMAINS[number];
+
+export const CORE_TEAM_ROLES_BY_DOMAIN: Record<OpportunityDomain, string[]> = {
+  'Tech & Technical': [
+    'Technical Content / Workshops',
+    'Cloud / AWS',
+    'Web / Software Development',
+    'DevOps / Infrastructure',
+    'Technical Operations',
+    'Other Technical Responsibility'
+  ],
+  'Growth & Community': [
+    'Community Management',
+    'Outreach',
+    'Partnerships / Networking',
+    'Event Coordination',
+    'Member Engagement',
+    'Growth / Promotion',
+    'Other Growth Responsibility'
+  ],
+  'Media & Creative': [
+    'Social Media',
+    'Graphic Design',
+    'Video Editing',
+    'Photography / Coverage',
+    'Content Creation',
+    'Branding / Creative',
+    'Other Media Responsibility'
+  ]
+};
+
+export function getOpportunityFormType(slug: string = '', title: string = ''): OpportunityFormType {
+  const s = (slug || '').toLowerCase().trim();
+  const t = (title || '').toLowerCase().trim();
+
+  // If Anchor or Speaker is explicitly mentioned -> anchor-speaker
+  if (s.includes('anchor') || s.includes('speaker') || t.includes('anchor') || t.includes('speaker')) {
+    return 'anchor-speaker';
+  }
+
+  // If Core Team is specifically indicated
+  if (
+    s === 'core-team' ||
+    s.startsWith('core-team-') ||
+    s.includes('core-team') ||
+    s.includes('core_team') ||
+    (t.includes('core team') && !t.includes('founding')) ||
+    s === 'core-members'
+  ) {
+    return 'core-team';
+  }
+
+  // If Founding Member is indicated
+  if (
+    s === 'founding-members' ||
+    s === 'founding-member' ||
+    s.includes('founding') ||
+    t.includes('founding')
+  ) {
+    return 'founding-member';
+  }
+
+  // Default fallback form type is anchor-speaker
+  return 'anchor-speaker';
+}

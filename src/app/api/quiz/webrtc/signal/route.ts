@@ -24,7 +24,12 @@ export async function POST(request: Request) {
       cameraActive,
       screenActive,
       connectionStatus,
-      violationCount
+      violationCount,
+      networkStats,
+      actualCameraSettings,
+      qualityTier,
+      targetQualityMode,
+      iceRestartNeeded
     } = body;
 
     if (!attemptId || !token) {
@@ -58,7 +63,12 @@ export async function POST(request: Request) {
       cameraActive,
       screenActive,
       connectionStatus,
-      violationCount
+      violationCount,
+      networkStats,
+      actualCameraSettings,
+      qualityTier,
+      targetQualityMode,
+      iceRestartNeeded
     });
 
     return NextResponse.json(
@@ -68,7 +78,10 @@ export async function POST(request: Request) {
         cameraAnswer: channel.answer || null,
         screenAnswer: channel.screenAnswer || null,
         adminIceCandidates: channel.adminIceCandidates || [],
-        screenAdminIceCandidates: channel.screenAdminIceCandidates || []
+        screenAdminIceCandidates: channel.screenAdminIceCandidates || [],
+        targetQualityMode: channel.targetQualityMode || 'GRID',
+        qualityTier: channel.qualityTier || 'GOOD',
+        connectionStatus: channel.connectionStatus
       },
       { status: 200, headers: { 'Cache-Control': 'no-store, max-age=0' } }
     );
@@ -112,7 +125,9 @@ export async function GET(request: Request) {
         screenAnswer: signalData.screenAnswer || null,
         adminIceCandidates: signalData.adminIceCandidates || [],
         screenAdminIceCandidates: signalData.screenAdminIceCandidates || [],
-        connectionStatus: signalData.connectionStatus
+        connectionStatus: signalData.connectionStatus,
+        qualityTier: signalData.qualityTier,
+        targetQualityMode: signalData.targetQualityMode
       },
       { status: 200, headers: { 'Cache-Control': 'no-store, max-age=0' } }
     );

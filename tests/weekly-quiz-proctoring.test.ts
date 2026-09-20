@@ -19,7 +19,8 @@ import {
   registerAdminSignal
 } from '../src/lib/webrtcSignaling';
 import { FaceStatusTracker, FaceDetectionResult } from '../src/lib/faceDetection';
-import { WeeklyQuiz, WeeklyQuizAttempt, WeeklyQuizQuestion } from '../src/types/weeklyQuiz';
+import { evaluateNetworkQuality, getTrackHardwareSettings, WebRTCStatsCollector } from '../src/lib/webrtcStats';
+import { WeeklyQuiz, WeeklyQuizAttempt, WeeklyQuizQuestion, NetworkQualityTier, WebRTCStatsSnapshot } from '../src/types/weeklyQuiz';
 
 test('Weekly Quiz Proctoring System Test Suite', async (t) => {
 
@@ -552,4 +553,168 @@ test('Weekly Quiz Proctoring System Test Suite', async (t) => {
     // Clean up
     await db.weeklyQuizAttempts.deleteById(attemptId);
   });
+
+  // Test 11: Real WebRTC Stats Evaluation & Network Quality Tiering
+  await t.test('11. WebRTC Stats Evaluation & Network Quality Classification (GOOD/FAIR/POOR/DISCONNECTED)', async () => {
+    // 1. Excellent network metrics -> GOOD
+    const goodSnapshot: WebRTCStatsSnapshot = {
+      timestamp: Date.now(),
+      connectionState: 'CONNECTED',
+      quality: 'GOOD',
+      rttMs: 45,
+      jitterMs: 5,
+      packetLossPercent: 0.2,
+      packetsLost: 2,
+      packetsReceived: 1000,
+      bitrateKbps: 1150,
+      bytesReceived: 143750,
+      fps: 29.8,
+      framesDecoded: 890,
+      framesDropped: 2,
+      frameWidth: 1280,
+      frameHeight: 720,
+      qualityLimitationReason: 'none'
+    };
+    assert.equal(evaluateNetworkQuality(goodSnapshot), 'GOOD', 'Low RTT, high FPS, low loss should be GOOD');
+
+    // 2. Degraded network metrics -> FAIR
+    const fairSnapshot: WebRTCStatsSnapshot = {
+      ...goodSnapshot,
+      rttMs: 180,
+      packetLossPercent: 3.5,
+      fps: 22
+    };
+    assert.equal(evaluateNetworkQuality(fairSnapshot), 'FAIR', 'Moderate RTT/loss should be FAIR');
+
+    // 3. High packet loss & low FPS -> POOR
+    const poorSnapshot: WebRTCStatsSnapshot = {
+      ...goodSnapshot,
+      rttMs: 350,
+      packetLossPercent: 12.0,
+      fps: 12
+    };
+    assert.equal(evaluateNetworkQuality(poorSnapshot), 'POOR', 'High packet loss & low FPS should be POOR');
+
+    // 4. Zero bitrate / missing stream -> DISCONNECTED
+    const disconnectedSnapshot: WebRTCStatsSnapshot = {
+      ...goodSnapshot,
+      bitrateKbps: 0,
+      fps: 0
+    };
+    assert.equal(evaluateNetworkQuality(disconnectedSnapshot), 'DISCONNECTED', 'Zero bitrate & FPS should be DISCONNECTED');
+  });
+
+  // Test 12: Dynamic Quality Mode Negotiation & Signaling Persistence
+  await t.test('12. Dynamic Quality Mode Negotiation (GRID vs HIGH_QUALITY Tier)', async () => {
+    const attemptId = `wq_test_tier_nego_${Date.now()}`;
+
+    // Candidate registers initial GRID tier signal with hardware settings & stats
+    const candidateChannel = registerCandidateSignal({
+      attemptId,
+      candidateId: 'cand_tier_test',
+      studentName: 'Tier Test Student',
+      email: 'tiertest@cumail.in',
+      quizId: 'quiz-aws-week-01',
+      offer: { type: 'offer', sdp: 'v=0\r\no=camOffer\r\n' },
+      screenOffer: { type: 'offer', sdp: 'v=0\r\no=screenOffer\r\n' },
+      cameraActive: true,
+      screenActive: true,
+      qualityTier: 'GOOD',
+      targetQualityMode: 'GRID',
+      actualCameraSettings: {
+        actualWidth: 1280,
+        actualHeight: 720,
+        actualFps: 30,
+        facingMode: 'user',
+        label: 'Mock HD Cam'
+      },
+      networkStats: {
+        timestamp: Date.now(),
+        connectionState: 'CONNECTED',
+        quality: 'GOOD',
+        rttMs: 38,
+        jitterMs: 4,
+        packetLossPercent: 0.1,
+        packetsLost: 1,
+        packetsReceived: 800,
+        bitrateKbps: 980,
+        bytesReceived: 120000,
+        fps: 29.5,
+        framesDecoded: 590,
+        framesDropped: 1,
+        frameWidth: 1280,
+        frameHeight: 720,
+        qualityLimitationReason: 'none'
+      }
+    });
+
+    assert.ok(candidateChannel);
+    assert.equal(candidateChannel.qualityTier, 'GOOD');
+    assert.equal(candidateChannel.actualCameraSettings?.actualWidth, 1280);
+    assert.equal(candidateChannel.actualCameraSettings?.actualFps, 30);
+    assert.equal(candidateChannel.networkStats?.fps, 29.5);
+
+    // Admin opens Live Modal -> Requests HIGH_QUALITY mode
+    registerAdminSignal({
+      attemptId,
+      answer: { type: 'answer', sdp: 'v=0\r\no=camAnswer\r\n' },
+      screenAnswer: { type: 'answer', sdp: 'v=0\r\no=screenAnswer\r\n' },
+      targetQualityMode: 'HIGH_QUALITY'
+    });
+
+    // Student checks signal -> sees targetQualityMode = HIGH_QUALITY
+    const studentSignal = getCandidateSignalForStudent(attemptId);
+    assert.equal(studentSignal.targetQualityMode, 'HIGH_QUALITY', 'Student should receive targetQualityMode from Admin');
+
+    // Student responds with HIGH_QUALITY mode acknowledged
+    registerCandidateSignal({
+      attemptId,
+      candidateId: 'cand_tier_test',
+      studentName: 'Tier Test Student',
+      email: 'tiertest@cumail.in',
+      quizId: 'quiz-aws-week-01',
+      qualityTier: 'GOOD',
+      targetQualityMode: 'HIGH_QUALITY',
+      cameraActive: true,
+      screenActive: true
+    });
+
+    const adminSignal = getCandidateSignalForAdmin(attemptId);
+    assert.equal(adminSignal?.targetQualityMode, 'HIGH_QUALITY', 'Admin should verify student upgraded to HIGH_QUALITY');
+
+    // Admin closes Live Modal -> Requests GRID mode back
+    registerAdminSignal({
+      attemptId,
+      targetQualityMode: 'GRID'
+    });
+
+    const studentSignalAfterClose = getCandidateSignalForStudent(attemptId);
+    assert.equal(studentSignalAfterClose.targetQualityMode, 'GRID', 'Student should receive downgrade to GRID mode');
+  });
+
+  // Test 13: WebRTC StatsCollector Instantiation and Track Hardware Extractor
+  await t.test('13. WebRTC Track Hardware Extractor & Stats Collector Sanity', async () => {
+    // Test getTrackHardwareSettings with null/undefined track
+    const nullSettings = getTrackHardwareSettings(null);
+    assert.equal(nullSettings, null, 'Null track should return null settings');
+
+    // Test with mock MediaStreamTrack
+    const mockTrack = {
+      getSettings: () => ({
+        width: 1280,
+        height: 720,
+        frameRate: 30,
+        facingMode: 'user',
+        deviceId: 'device-abc-123'
+      })
+    } as unknown as MediaStreamTrack;
+
+    const extracted = getTrackHardwareSettings(mockTrack);
+    assert.ok(extracted);
+    assert.equal(extracted.actualWidth, 1280);
+    assert.equal(extracted.actualHeight, 720);
+    assert.equal(extracted.actualFps, 30);
+    assert.equal(extracted.facingMode, 'user');
+  });
 });
+

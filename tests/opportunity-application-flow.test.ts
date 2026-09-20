@@ -5,6 +5,9 @@ import {
   buildOpportunitySuccessUrl,
   hasDuplicateOpportunityApplication,
   isValidGoogleDriveUrl,
+  getOpportunityFormType,
+  OPPORTUNITY_DOMAINS,
+  CORE_TEAM_ROLES_BY_DOMAIN,
 } from '../src/lib/opportunityApplication';
 import { db } from '../src/lib/db';
 import { POST as careerAppPost } from '../src/app/api/career-applications/route';
@@ -35,10 +38,10 @@ test('uses the current request origin when building the success redirect URL', (
       'opportunity-slug',
     );
 
-    assert.equal(redirect, 'https://www.awssbgcuup.tech/careers/opportunity-slug?submitted=1');
+    assert.equal(redirect, 'https://www.awssbgcuup.tech/opportunities/opportunity-slug?submitted=1');
     assert.equal(
       buildOpportunitySuccessUrl('http://localhost:3000/api/career-applications', 'demo-opportunity'),
-      'http://localhost:3000/careers/demo-opportunity?submitted=1',
+      'http://localhost:3000/opportunities/demo-opportunity?submitted=1',
     );
     assert.equal(
       buildOpportunitySuccessUrl(
@@ -46,7 +49,7 @@ test('uses the current request origin when building the success redirect URL', (
         'prod-opportunity',
         new Headers({ host: 'www.awssbgcuup.tech', 'x-forwarded-proto': 'https' }),
       ),
-      'https://www.awssbgcuup.tech/careers/prod-opportunity?submitted=1',
+      'https://www.awssbgcuup.tech/opportunities/prod-opportunity?submitted=1',
     );
   } finally {
     if (previous === undefined) delete process.env.NEXT_PUBLIC_SITE_URL; else process.env.NEXT_PUBLIC_SITE_URL = previous;
@@ -73,131 +76,259 @@ test('isValidGoogleDriveUrl correctly validates various Google Drive link format
   assert.equal(isValidGoogleDriveUrl('https://drive.google.com/'), false);
 });
 
-test('opportunity application submission requires Google Drive video link and works without resume or github', async () => {
-  // Ensure an active opportunity exists with a future deadline
-  const careers = await db.careers.getAll();
-  assert.ok(careers.length > 0, 'At least one career/opportunity must exist in test environment');
-  const opportunity = careers[0];
-  await db.careers.updateOne(opportunity.id, {
-    published: true,
-    internalApplications: true,
-    status: 'Open',
-    applicationDeadline: '2026-12-31T23:59:59.000Z'
-  });
+test('getOpportunityFormType correctly distinguishes founding members, core team, and anchor & speaker', () => {
+  assert.equal(getOpportunityFormType('founding-members', 'Founding Members'), 'founding-member');
+  assert.equal(getOpportunityFormType('founding-member', 'Founding Member'), 'founding-member');
+  assert.equal(getOpportunityFormType('founding-core-members-aws-student-builder-group', 'Founding Core Members'), 'founding-member');
+  assert.equal(getOpportunityFormType('core-team', 'Core Team'), 'core-team');
+  assert.equal(getOpportunityFormType('core-team-aws-student-builder-group', 'Core Team'), 'core-team');
+  assert.equal(getOpportunityFormType('anchor-speaker', 'Anchor & Speaker'), 'anchor-speaker');
+  assert.equal(getOpportunityFormType('anchor-and-speaker', 'Anchor & Speaker'), 'anchor-speaker');
+  assert.equal(getOpportunityFormType('general-opportunity', 'General Opportunity'), 'anchor-speaker');
+});
 
-  // 1. Missing video link should fail
+test('Anchor & Speaker opportunity application requires Google Drive video link', async () => {
+  // Setup anchor-speaker opportunity
+  const anchorOppId = 'opp-test-anchor-speaker';
+  const existingCareers = await db.careers.getAll();
+  const existing = existingCareers.find((c: any) => c.id === anchorOppId);
+  if (!existing) {
+    await db.careers.insertOne({
+      id: anchorOppId,
+      slug: 'anchor-speaker',
+      title: 'Anchor & Speaker',
+      organizationName: 'AWS Student Builder Group',
+      opportunityType: 'Speaking & Anchoring',
+      location: 'Chandigarh University – Uttar Pradesh',
+      workMode: 'Onsite',
+      description: 'Host events, introduce speakers, and represent the community on stage.',
+      status: 'Open',
+      published: true,
+      internalApplications: true,
+      applicationDeadline: '2026-12-31T23:59:59.000Z'
+    });
+  }
+
+  // 1. Missing video link fails
   const formMissingVideo = new FormData();
-  formMissingVideo.append('opportunityId', opportunity.id);
-  formMissingVideo.append('opportunitySlug', opportunity.slug);
-  formMissingVideo.append('name', 'Aditi Rao');
-  formMissingVideo.append('email', `aditi.${Date.now()}@cumail.in`);
+  formMissingVideo.append('opportunityId', anchorOppId);
+  formMissingVideo.append('opportunitySlug', 'anchor-speaker');
+  formMissingVideo.append('name', 'Anchor Candidate');
+  formMissingVideo.append('email', `anchor.${Date.now()}@cumail.in`);
   formMissingVideo.append('phone', '9876543210');
   formMissingVideo.append('university', 'Chandigarh University');
   formMissingVideo.append('program', 'B.Tech CSE');
   formMissingVideo.append('graduationYear', '2026');
   formMissingVideo.append('studentId', '22BCS1122');
-  formMissingVideo.append('linkedin', 'https://linkedin.com/in/aditirao');
-  formMissingVideo.append('skills', 'AWS, Python');
-  formMissingVideo.append('experience', 'Cloud project intern');
-  formMissingVideo.append('motivation', 'Passionate about AWS cloud');
+  formMissingVideo.append('linkedin', 'https://linkedin.com/in/anchorcandidate');
+  formMissingVideo.append('skills', 'Public Speaking, Anchoring');
+  formMissingVideo.append('experience', 'Hosted college fest');
+  formMissingVideo.append('motivation', 'Passionate about public speaking');
   formMissingVideo.append('consent', 'on');
 
-  const req1 = new Request('http://localhost:3000/api/career-applications', {
-    method: 'POST',
-    body: formMissingVideo,
-  });
+  const req1 = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: formMissingVideo });
   const res1 = await careerAppPost(req1);
   assert.equal(res1.status, 400);
   const json1 = await res1.json();
-  assert.ok(json1.fieldErrors?.introductionVideoUrl || json1.fieldErrors?.videoUrl);
+  assert.ok(json1.fieldErrors?.introductionVideoUrl);
 
-  // 2. Invalid Google Drive link should fail
-  const formInvalidVideo = new FormData();
-  formInvalidVideo.append('opportunityId', opportunity.id);
-  formInvalidVideo.append('opportunitySlug', opportunity.slug);
-  formInvalidVideo.append('name', 'Aditi Rao');
-  formInvalidVideo.append('email', `aditi.invalid.${Date.now()}@cumail.in`);
-  formInvalidVideo.append('phone', '9876543210');
-  formInvalidVideo.append('university', 'Chandigarh University');
-  formInvalidVideo.append('program', 'B.Tech CSE');
-  formInvalidVideo.append('graduationYear', '2026');
-  formInvalidVideo.append('studentId', '22BCS1122');
-  formInvalidVideo.append('linkedin', 'https://linkedin.com/in/aditirao');
-  formInvalidVideo.append('introductionVideoUrl', 'https://dropbox.com/s/invalid-video');
-  formInvalidVideo.append('skills', 'AWS, Python');
-  formInvalidVideo.append('experience', 'Cloud project intern');
-  formInvalidVideo.append('motivation', 'Passionate about AWS cloud');
-  formInvalidVideo.append('consent', 'on');
-
-  const req2 = new Request('http://localhost:3000/api/career-applications', {
-    method: 'POST',
-    body: formInvalidVideo,
-  });
-  const res2 = await careerAppPost(req2);
-  assert.equal(res2.status, 400);
-
-  // 3. Valid Google Drive video link with canonical field introductionVideoUrl
-  const testEmail = `aditi.canonical.${Date.now()}@cumail.in`;
-  const validDriveLink = 'https://drive.google.com/file/d/1X2Y3Z-intro-video-sample/view?usp=sharing';
-
+  // 2. Valid video link succeeds
+  const testEmail = `anchor.valid.${Date.now()}@cumail.in`;
+  const validDriveLink = 'https://drive.google.com/file/d/1X2Y3Z-anchor-video/view?usp=sharing';
   const formValid = new FormData();
-  formValid.append('opportunityId', opportunity.id);
-  formValid.append('opportunitySlug', opportunity.slug);
-  formValid.append('name', 'Aditi Rao');
+  formValid.append('opportunityId', anchorOppId);
+  formValid.append('opportunitySlug', 'anchor-speaker');
+  formValid.append('name', 'Anchor Candidate');
   formValid.append('email', testEmail);
   formValid.append('phone', '9876543210');
   formValid.append('university', 'Chandigarh University');
   formValid.append('program', 'B.Tech CSE');
   formValid.append('graduationYear', '2026');
   formValid.append('studentId', '22BCS1122');
-  formValid.append('linkedin', 'https://linkedin.com/in/aditirao');
+  formValid.append('linkedin', 'https://linkedin.com/in/anchorcandidate');
   formValid.append('introductionVideoUrl', validDriveLink);
-  formValid.append('skills', 'AWS, Python, DynamoDB');
-  formValid.append('experience', 'Cloud project intern at Tech Corp');
-  formValid.append('motivation', 'Passionate about AWS cloud architectures');
+  formValid.append('skills', 'Public Speaking, Anchoring');
+  formValid.append('experience', 'Hosted college tech fest');
+  formValid.append('motivation', 'Passionate about public speaking and student hosting');
   formValid.append('consent', 'on');
 
-  const req3 = new Request('http://localhost:3000/api/career-applications', {
-    method: 'POST',
-    body: formValid,
-  });
-  const res3 = await careerAppPost(req3);
-  assert.equal(res3.status, 303);
+  const req2 = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: formValid });
+  const res2 = await careerAppPost(req2);
+  assert.equal(res2.status, 303);
 
-  // Verify stored in DB has both canonical introductionVideoUrl and videoUrl
-  const apps = await db.careerApplications.getByOpportunityId(opportunity.id);
-  const stored = apps.find((a: any) => a.email.toLowerCase() === testEmail.toLowerCase());
-  assert.ok(stored, 'Application must be saved in database');
-  assert.equal(stored.introductionVideoUrl, validDriveLink);
-  assert.equal(stored.videoUrl, validDriveLink);
-  assert.equal(stored.name, 'Aditi Rao');
+  const apps = await db.careerApplications.getByOpportunityId(anchorOppId);
+  const saved = apps.find((a: any) => a.email.toLowerCase() === testEmail.toLowerCase());
+  assert.ok(saved);
+  assert.equal(saved.introductionVideoUrl, validDriveLink);
+  await db.careerApplications.deleteOne(saved.id);
+});
 
-  // 4. Admin API security & retrieval
-  // Unauthorized request must be rejected
-  const unauthReq = new Request('http://localhost/api/admin', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'get-career-applications', opportunityId: opportunity.id })
-  });
-  const unauthRes = await adminPost(unauthReq);
-  assert.equal(unauthRes.status, 401, 'Unauthorized requests must be rejected with 401');
+test('Founding Member application validates 11 sections and saves ownership & commitment details', async () => {
+  const fmOppId = 'opp-test-founding-members';
+  const existingCareers = await db.careers.getAll();
+  const existing = existingCareers.find((c: any) => c.id === fmOppId);
+  if (!existing) {
+    await db.careers.insertOne({
+      id: fmOppId,
+      slug: 'founding-members',
+      title: 'Founding Members',
+      organizationName: 'AWS Student Builder Group',
+      opportunityType: 'Leadership',
+      location: 'Chandigarh University – Uttar Pradesh',
+      workMode: 'Hybrid',
+      description: 'Join the founding team of AWS Student Builder Group.',
+      status: 'Open',
+      published: true,
+      internalApplications: true,
+      applicationDeadline: '2026-12-31T23:59:59.000Z'
+    });
+  }
 
-  // Authorized admin request returns application with introductionVideoUrl
-  const authReq = new Request('http://localhost/api/admin', {
-    method: 'POST',
-    headers: { ...ADMIN_HEADER, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'get-career-applications', opportunityId: opportunity.id })
-  });
-  const authRes = await adminPost(authReq);
-  assert.equal(authRes.status, 200);
-  const adminApps = await authRes.json();
-  const adminStored = adminApps.find((a: any) => a.id === stored.id);
-  assert.ok(adminStored, 'Admin API must return the stored application');
-  assert.equal(adminStored.introductionVideoUrl, validDriveLink);
-  assert.equal(adminStored.videoUrl, validDriveLink);
+  // 1. Missing required founding member fields fails
+  const incompleteForm = new FormData();
+  incompleteForm.append('opportunityId', fmOppId);
+  incompleteForm.append('opportunitySlug', 'founding-members');
+  incompleteForm.append('formType', 'founding-member');
+  incompleteForm.append('name', 'Founder Candidate');
+  incompleteForm.append('email', `founder.${Date.now()}@cumail.in`);
+  incompleteForm.append('phone', '9876543210');
+  incompleteForm.append('consent', 'on');
 
-  // Clean up
-  await db.careerApplications.deleteOne(stored.id);
+  const req1 = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: incompleteForm });
+  const res1 = await careerAppPost(req1);
+  assert.equal(res1.status, 400);
+  const json1 = await res1.json();
+  assert.ok(json1.fieldErrors?.preferredDomain);
+  assert.ok(json1.fieldErrors?.whyFoundingMember);
+  assert.ok(json1.fieldErrors?.scenarioDropParticipation);
+
+  // 2. Complete submission succeeds WITHOUT requiring video link
+  const founderEmail = `founder.success.${Date.now()}@cumail.in`;
+  const completeForm = new FormData();
+  completeForm.append('opportunityId', fmOppId);
+  completeForm.append('opportunitySlug', 'founding-members');
+  completeForm.append('formType', 'founding-member');
+  completeForm.append('name', 'Aarav Sharma');
+  completeForm.append('email', founderEmail);
+  completeForm.append('personalEmail', 'aarav.sharma.personal@gmail.com');
+  completeForm.append('phone', '9876543210');
+  completeForm.append('studentId', '23BCS10294');
+  completeForm.append('program', 'B.Tech CSE');
+  completeForm.append('department', 'Cloud Computing');
+  completeForm.append('currentYear', '2nd Year');
+  completeForm.append('graduationYear', '2027');
+  completeForm.append('preferredDomain', 'Growth & Community');
+  completeForm.append('skills', 'Community Building, Public Speaking, AWS Cloud Practitioner, Event Planning');
+  completeForm.append('experience', 'Organized University Hackathon with 300+ attendees and managed volunteer team.');
+  completeForm.append('roleAndImpact', 'Head of Logistics; streamlined check-ins and ensured zero delays across 24 hours.');
+  completeForm.append('whyFoundingMember', 'I want to build a thriving, sustainable cloud community culture that empowers students with real cloud skills.');
+  completeForm.append('personalContribution', 'I will contribute time, event organization skills, and establish student outreach networks across departments.');
+  completeForm.append('communityGrowthIdeas', 'Introduce peer mentoring circles, monthly hands-on AWS workshops, and guest sessions with AWS Community Builders.');
+  completeForm.append('availabilityHours', '6–8 hours');
+  completeForm.append('consistentContribution', 'Yes');
+  completeForm.append('contributionDuration', 'Multiple semesters');
+  completeForm.append('academicBalance', 'I block out evening slots for community initiatives and maintain strict weekend study schedules.');
+  completeForm.append('scenarioDropParticipation', 'I would poll active and inactive members to identify pain points, revamp topics based on student demand, and introduce interactive challenges.');
+  completeForm.append('linkedin', 'https://linkedin.com/in/aaravsharma');
+  completeForm.append('github', 'https://github.com/aaravsharma');
+  completeForm.append('consent', 'on');
+
+  const req2 = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: completeForm });
+  const res2 = await careerAppPost(req2);
+  assert.equal(res2.status, 303);
+
+  const apps = await db.careerApplications.getByOpportunityId(fmOppId);
+  const saved = apps.find((a: any) => a.email.toLowerCase() === founderEmail.toLowerCase());
+  assert.ok(saved, 'Founding member application must be saved');
+  assert.equal(saved.preferredDomain, 'Growth & Community');
+  assert.equal(saved.department, 'Cloud Computing');
+  assert.equal(saved.currentYear, '2nd Year');
+  assert.equal(saved.availabilityHours, '6–8 hours');
+  assert.equal(saved.whyFoundingMember, 'I want to build a thriving, sustainable cloud community culture that empowers students with real cloud skills.');
+  assert.ok(saved.scenarioAnswer.includes('poll active and inactive members'));
+
+  await db.careerApplications.deleteOne(saved.id);
+});
+
+test('Core Team application validates domain-specific roles, skills self-rating, and execution scenarios', async () => {
+  const ctOppId = 'opp-test-core-team';
+  const existingCareers = await db.careers.getAll();
+  const existing = existingCareers.find((c: any) => c.id === ctOppId);
+  if (!existing) {
+    await db.careers.insertOne({
+      id: ctOppId,
+      slug: 'core-team',
+      title: 'Core Team',
+      organizationName: 'AWS Student Builder Group',
+      opportunityType: 'Operations & Execution',
+      location: 'Chandigarh University – Uttar Pradesh',
+      workMode: 'Hybrid',
+      description: 'Core operational team for AWS Student Builder Group.',
+      status: 'Open',
+      published: true,
+      internalApplications: true,
+      applicationDeadline: '2026-12-31T23:59:59.000Z'
+    });
+  }
+
+  // Verify domain-aware roles taxonomy
+  assert.ok(CORE_TEAM_ROLES_BY_DOMAIN['Tech & Technical'].includes('Cloud / AWS'));
+  assert.ok(CORE_TEAM_ROLES_BY_DOMAIN['Growth & Community'].includes('Community Management'));
+  assert.ok(CORE_TEAM_ROLES_BY_DOMAIN['Media & Creative'].includes('Graphic Design'));
+
+  const coreTeamEmail = `coreteam.${Date.now()}@cumail.in`;
+  const coreTeamForm = new FormData();
+  coreTeamForm.append('opportunityId', ctOppId);
+  coreTeamForm.append('opportunitySlug', 'core-team');
+  coreTeamForm.append('formType', 'core-team');
+  coreTeamForm.append('name', 'Rohan Verma');
+  coreTeamForm.append('email', coreTeamEmail);
+  coreTeamForm.append('phone', '9876543211');
+  coreTeamForm.append('studentId', '23BCS10888');
+  coreTeamForm.append('program', 'B.Tech CSE');
+  coreTeamForm.append('department', 'Software Development');
+  coreTeamForm.append('currentYear', '2nd Year');
+  coreTeamForm.append('graduationYear', '2027');
+  coreTeamForm.append('preferredDomain', 'Tech & Technical');
+  coreTeamForm.append('preferredRole', 'Web / Software Development');
+  coreTeamForm.append('skills', 'Next.js, TypeScript, Tailwind CSS, PostgreSQL, AWS Lambda');
+  coreTeamForm.append('primarySkillLevel', 'Intermediate');
+  coreTeamForm.append('experience', 'Built full-stack student portal and contributed to open source Next.js libraries.');
+  coreTeamForm.append('exactResponsibility', 'Architected the REST API endpoints and state management store for 500+ daily active users.');
+  coreTeamForm.append('teamworkSituation', 'Worked in a 4-person team during a 36-hour hackathon, coordinating frontend-backend contracts and resolving merge conflicts.');
+  coreTeamForm.append('leadershipExperience', 'Yes');
+  coreTeamForm.append('leadershipDetails', 'Led a team of 5 students in college coding club to build internal problem-solving leaderboard.');
+  coreTeamForm.append('whyCoreTeam', 'I want to build and manage mission-critical web applications and tech infrastructure for AWS SBG.');
+  coreTeamForm.append('domainContribution', 'I will build and maintain the community portal, leaderboard, and automate event registration webhooks.');
+  coreTeamForm.append('scenarioUnavailableMembers', 'I would immediately reassess the critical path, delegate urgent tasks to available peers, step in to cover the critical role myself, and keep the team aligned.');
+  coreTeamForm.append('availabilityHours', '6–8 hours');
+  coreTeamForm.append('availableDays', 'Weekdays (Mon–Fri)');
+  coreTeamForm.append('activeParticipation', 'Yes');
+  coreTeamForm.append('involvementDuration', 'Multiple semesters');
+  completeFormAppend(coreTeamForm, 'linkedin', 'https://linkedin.com/in/rohanverma');
+  completeFormAppend(coreTeamForm, 'github', 'https://github.com/rohanverma');
+  coreTeamForm.append('consent', 'on');
+
+  function completeFormAppend(form: FormData, key: string, val: string) {
+    form.append(key, val);
+  }
+
+  const req = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: coreTeamForm });
+  const res = await careerAppPost(req);
+  assert.equal(res.status, 303);
+
+  const apps = await db.careerApplications.getByOpportunityId(ctOppId);
+  const saved = apps.find((a: any) => a.email.toLowerCase() === coreTeamEmail.toLowerCase());
+  assert.ok(saved, 'Core team application must be saved');
+  assert.equal(saved.preferredDomain, 'Tech & Technical');
+  assert.equal(saved.preferredRole, 'Web / Software Development');
+  assert.equal(saved.primarySkillLevel, 'Intermediate');
+  assert.equal(saved.leadershipExperience, 'Yes');
+  assert.ok(saved.leadershipDetails.includes('Led a team of 5 students'));
+  assert.equal(saved.whyCoreTeam, 'I want to build and manage mission-critical web applications and tech infrastructure for AWS SBG.');
+  assert.ok(saved.scenarioAnswer.includes('reassess the critical path'));
+
+  await db.careerApplications.deleteOne(saved.id);
 });
 
 test('historical applications with resume and github are preserved and returned intact', async () => {
@@ -296,4 +427,3 @@ test('admin login authentication works for awsadmin@culko.in and rejects invalid
   const data3 = await res3.json();
   assert.equal(data3.error, 'Invalid credentials.');
 });
-

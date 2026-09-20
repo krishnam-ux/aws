@@ -65,6 +65,11 @@ export async function GET(request: Request) {
         screenOffer: channel.screenOffer || null,
         candidateIceCandidates: channel.candidateIceCandidates || [],
         screenCandidateIceCandidates: channel.screenCandidateIceCandidates || [],
+        networkStats: channel.networkStats || null,
+        actualCameraSettings: channel.actualCameraSettings || null,
+        qualityTier: channel.qualityTier || 'GOOD',
+        targetQualityMode: channel.targetQualityMode || 'GRID',
+        reconnectCount: channel.reconnectCount || 0,
         previewFrame: channel.cameraPreviewFrame || channel.previewFrame || null,
         cameraPreviewFrame: channel.cameraPreviewFrame || channel.previewFrame || null,
         screenPreviewFrame: channel.screenPreviewFrame || null,
@@ -95,7 +100,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { attemptId, answer, cameraAnswer, screenAnswer, iceCandidate, cameraIceCandidate, screenIceCandidate } = body;
+    const { attemptId, answer, cameraAnswer, screenAnswer, iceCandidate, cameraIceCandidate, screenIceCandidate, targetQualityMode } = body;
 
     if (!attemptId) {
       return NextResponse.json(
@@ -109,7 +114,8 @@ export async function POST(request: Request) {
       answer: answer || cameraAnswer,
       iceCandidate: iceCandidate || cameraIceCandidate,
       screenAnswer,
-      screenIceCandidate
+      screenIceCandidate,
+      targetQualityMode
     });
 
     if (!channel) {

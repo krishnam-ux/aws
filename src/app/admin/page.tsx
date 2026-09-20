@@ -4754,83 +4754,264 @@ export default function AdminDashboard() {
 
             {/* If Opportunity Application details */}
             {viewItem._recordType === 'opportunityApplication' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Student Name</span>
-                    <p className="font-semibold text-slate-800 text-sm mt-0.5">{viewItem.name}</p>
+              <div className="space-y-4 font-sans text-xs">
+                {/* Header Badge */}
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-brand-navy px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
+                      {viewItem.formType === 'founding-member'
+                        ? 'Founding Member Application'
+                        : viewItem.formType === 'core-team'
+                        ? 'Core Team Application'
+                        : 'Opportunity Application'}
+                    </span>
+                    {viewItem.preferredDomain ? (
+                      <span className="rounded-full bg-orange-50 border border-orange-200 px-2 py-0.5 text-[10px] font-bold text-aws-orange">
+                        {viewItem.preferredDomain}
+                      </span>
+                    ) : null}
+                    {viewItem.preferredRole ? (
+                      <span className="rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+                        {viewItem.preferredRole}
+                      </span>
+                    ) : null}
                   </div>
-                  <div>
-                    <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Email / Phone</span>
-                    <p className="font-mono text-slate-800 mt-0.5 select-all">{viewItem.email}</p>
-                    <p className="text-slate-600 mt-0.5">{viewItem.phone || 'N/A'}</p>
-                  </div>
+                  <span className="text-[10px] text-slate-400">
+                    ID: <span className="font-mono">{viewItem.id}</span>
+                  </span>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+
+                {/* Personal & Academic Details */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-lg bg-slate-50/70 border border-slate-200/80 p-3.5">
+                  <div>
+                    <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Student Details</span>
+                    <p className="font-bold text-slate-900 text-sm mt-0.5">{viewItem.name}</p>
+                    <p className="font-mono text-slate-700 text-[11px] mt-0.5 select-all">{viewItem.email}</p>
+                    {viewItem.personalEmail ? <p className="font-mono text-slate-500 text-[10px]">Alt: {viewItem.personalEmail}</p> : null}
+                    <p className="text-slate-600 mt-0.5">📞 {viewItem.phone || 'N/A'}</p>
+                  </div>
                   <div>
                     <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Academic Details</span>
-                    <p className="font-semibold text-slate-800 mt-0.5">{viewItem.university || 'N/A'}</p>
-                    <p className="text-slate-600 mt-0.5">{viewItem.program || 'N/A'}{viewItem.graduationYear ? ` - ${viewItem.graduationYear}` : ''}</p>
-                    <p className="text-[10px] text-slate-450 font-mono mt-0.5">Student ID: {viewItem.studentId || '—'}</p>
+                    <p className="font-semibold text-slate-800 mt-0.5">{viewItem.university || 'Chandigarh University – Uttar Pradesh'}</p>
+                    <p className="text-slate-700 mt-0.5">
+                      {viewItem.program || 'N/A'} {viewItem.department || viewItem.branch ? `(${viewItem.department || viewItem.branch})` : ''}
+                    </p>
+                    <p className="text-slate-500 mt-0.5">
+                      {viewItem.currentYear ? `Current: ${viewItem.currentYear}` : ''} {viewItem.graduationYear ? `• Grad: ${viewItem.graduationYear}` : ''}
+                    </p>
+                    <p className="text-[10px] text-slate-450 font-mono mt-0.5">Student ID / Roll No: {viewItem.studentId || viewItem.rollNumber || '—'}</p>
                   </div>
-                  <div>
-                    <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Profiles</span>
-                    {viewItem.linkedin && <p className="text-slate-600 mt-0.5 truncate"><a href={viewItem.linkedin} target="_blank" rel="noopener noreferrer" className="underline text-brand-navy font-medium hover:text-aws-orange">LinkedIn Profile</a></p>}
-                    {viewItem.github && <p className="text-slate-600 mt-0.5 truncate"><a href={viewItem.github} target="_blank" rel="noopener noreferrer" className="underline text-brand-navy font-medium hover:text-aws-orange">GitHub Profile</a></p>}
-                    {viewItem.portfolio && <p className="text-slate-600 mt-0.5 truncate"><a href={viewItem.portfolio} target="_blank" rel="noopener noreferrer" className="underline text-brand-navy font-medium hover:text-aws-orange">Portfolio Website</a></p>}
+                </div>
+
+                {/* Profiles & Links */}
+                {(viewItem.linkedin || viewItem.github || viewItem.portfolio) ? (
+                  <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-3">
+                    <span className="font-bold text-[#64748B] uppercase tracking-wider text-[10px]">Links:</span>
+                    {viewItem.linkedin && (
+                      <a href={viewItem.linkedin} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline font-semibold">
+                        🔗 LinkedIn
+                      </a>
+                    )}
+                    {viewItem.github && (
+                      <a href={viewItem.github} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-slate-800 hover:underline font-semibold">
+                        🐙 GitHub
+                      </a>
+                    )}
+                    {viewItem.portfolio && (
+                      <a href={viewItem.portfolio} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-aws-orange hover:underline font-semibold">
+                        🌐 Portfolio
+                      </a>
+                    )}
                   </div>
-                </div>
+                ) : null}
+
+                {/* Skills & Primary Level */}
                 <div>
-                  <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Skills</span>
-                  <p className="text-slate-650 leading-relaxed font-sans bg-slate-50 p-3 rounded border border-slate-100 whitespace-pre-wrap">{viewItem.skills || 'No skills provided.'}</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Skills & Strengths</span>
+                    {viewItem.primarySkillLevel ? (
+                      <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+                        Level: {viewItem.primarySkillLevel}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="text-slate-700 leading-relaxed bg-slate-50 p-3 rounded border border-slate-150 whitespace-pre-wrap">{viewItem.skills || 'No skills provided.'}</p>
                 </div>
+
+                {/* Experience & Responsibilities / Impact */}
                 <div>
-                  <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Experience</span>
-                  <p className="text-slate-650 leading-relaxed font-sans bg-slate-50 p-3 rounded border border-slate-100 whitespace-pre-wrap">{viewItem.experience || 'No experience details provided.'}</p>
+                  <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Previous Experience & Projects</span>
+                  <p className="text-slate-700 leading-relaxed bg-slate-50 p-3 rounded border border-slate-150 whitespace-pre-wrap">{viewItem.experience || 'No experience details provided.'}</p>
+                  {viewItem.roleAndImpact ? (
+                    <div className="mt-2 pl-3 border-l-2 border-aws-orange">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">Role & Impact:</span>
+                      <p className="text-slate-700 text-xs mt-0.5">{viewItem.roleAndImpact}</p>
+                    </div>
+                  ) : null}
+                  {viewItem.exactResponsibility ? (
+                    <div className="mt-2 pl-3 border-l-2 border-blue-500">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">Exact Responsibility:</span>
+                      <p className="text-slate-700 text-xs mt-0.5">{viewItem.exactResponsibility}</p>
+                    </div>
+                  ) : null}
                 </div>
+
+                {/* Leadership & Teamwork (Core Team) */}
+                {(viewItem.teamworkSituation || viewItem.leadershipExperience) ? (
+                  <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3 space-y-2">
+                    <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Leadership & Teamwork</span>
+                    {viewItem.teamworkSituation ? (
+                      <div>
+                        <span className="text-[10px] font-semibold text-slate-600">Teamwork Situation:</span>
+                        <p className="text-slate-700 whitespace-pre-wrap">{viewItem.teamworkSituation}</p>
+                      </div>
+                    ) : null}
+                    {viewItem.leadershipExperience ? (
+                      <div className="pt-1">
+                        <span className="text-[10px] font-semibold text-slate-600">Previous Leadership Responsibility: <strong>{viewItem.leadershipExperience}</strong></span>
+                        {viewItem.leadershipDetails ? <p className="text-slate-700 mt-0.5">{viewItem.leadershipDetails}</p> : null}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {/* Motivation / Why Apply */}
                 <div>
-                  <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Motivation</span>
-                  <p className="text-slate-650 leading-relaxed font-sans bg-slate-50 p-3 rounded border border-slate-100 whitespace-pre-wrap">{viewItem.motivation || 'No motivation provided.'}</p>
-                </div>
-                <div>
-                  <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Additional Information</span>
-                  <p className="text-slate-650 leading-relaxed font-sans bg-slate-50 p-3 rounded border border-slate-100 whitespace-pre-wrap">{viewItem.additionalInformation || 'No additional information provided.'}</p>
-                </div>
-                {/* SHORT INTRODUCTION VIDEO CARD */}
-                <div className="space-y-2.5 rounded border border-slate-200 bg-slate-50 p-3.5">
                   <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">
-                    🎥 Short Introduction Video
+                    {viewItem.whyFoundingMember ? 'Why Founding Member?' : viewItem.whyCoreTeam ? 'Why Core Team?' : 'Motivation / Statement'}
                   </span>
-                  {(() => {
-                    const rawUrl = (viewItem.introductionVideoUrl || viewItem.videoUrl || '').trim();
-                    if (!rawUrl) {
-                      return <p className="text-slate-500 text-xs italic">Not provided</p>;
-                    }
-                    const isGoogleDriveOrSafe = rawUrl.startsWith('http://') || rawUrl.startsWith('https://') || rawUrl.includes('drive.google.com') || rawUrl.includes('docs.google.com');
-                    if (!isGoogleDriveOrSafe) {
-                      return <p className="text-amber-600 text-xs font-medium">Invalid or unavailable link</p>;
-                    }
-                    const targetUrl = rawUrl.startsWith('http://') || rawUrl.startsWith('https://') ? rawUrl : `https://${rawUrl}`;
-                    return (
-                      <div className="space-y-2 pt-0.5">
-                        <div className="flex flex-wrap items-center gap-3">
-                          <a
-                            href={targetUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 rounded bg-brand-navy px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-slate-800 transition-colors"
-                          >
-                            <span>▶ Open Introduction Video ↗</span>
-                          </a>
-                        </div>
-                        <p className="text-[11px] text-slate-500 flex items-center gap-1.5">
-                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                          Google Drive video submitted by applicant
+                  <p className="text-slate-700 leading-relaxed bg-slate-50 p-3 rounded border border-slate-150 whitespace-pre-wrap">
+                    {viewItem.whyFoundingMember || viewItem.whyCoreTeam || viewItem.motivation || 'No motivation provided.'}
+                  </p>
+                </div>
+
+                {/* Contribution & Community Ideas */}
+                {(viewItem.personalContribution || viewItem.domainContribution || viewItem.communityGrowthIdeas) ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {(viewItem.personalContribution || viewItem.domainContribution) ? (
+                      <div>
+                        <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">
+                          {viewItem.personalContribution ? 'Personal Contribution' : 'Domain Contribution'}
+                        </span>
+                        <p className="text-slate-700 leading-relaxed bg-slate-50 p-3 rounded border border-slate-150 whitespace-pre-wrap">
+                          {viewItem.personalContribution || viewItem.domainContribution}
                         </p>
                       </div>
-                    );
-                  })()}
-                </div>
+                    ) : null}
+                    {viewItem.communityGrowthIdeas ? (
+                      <div>
+                        <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Community Growth Ideas</span>
+                        <p className="text-slate-700 leading-relaxed bg-slate-50 p-3 rounded border border-slate-150 whitespace-pre-wrap">
+                          {viewItem.communityGrowthIdeas}
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {/* Scenario Response */}
+                {(viewItem.scenarioAnswer || viewItem.scenarioDropParticipation || viewItem.scenarioUnavailableMembers) ? (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50/30 p-3.5">
+                    <span className="font-bold text-amber-800 block uppercase tracking-wider text-[10px] mb-1">
+                      Scenario / Behavioral Response
+                    </span>
+                    <p className="text-slate-800 leading-relaxed whitespace-pre-wrap">
+                      {viewItem.scenarioAnswer || viewItem.scenarioDropParticipation || viewItem.scenarioUnavailableMembers}
+                    </p>
+                  </div>
+                ) : null}
+
+                {/* Availability & Commitment */}
+                {(viewItem.availabilityHours || viewItem.consistentContribution || viewItem.contributionDuration || viewItem.academicBalance || viewItem.availableDays || viewItem.activeParticipation || viewItem.involvementDuration) ? (
+                  <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5 space-y-2">
+                    <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Availability & Commitment</span>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                      {viewItem.availabilityHours ? (
+                        <div>
+                          <span className="text-[10px] text-slate-400 block">Weekly Hours:</span>
+                          <span className="font-semibold text-slate-800">{viewItem.availabilityHours}</span>
+                        </div>
+                      ) : null}
+                      {viewItem.consistentContribution ? (
+                        <div>
+                          <span className="text-[10px] text-slate-400 block">Consistent Commitment:</span>
+                          <span className="font-semibold text-slate-800">{viewItem.consistentContribution}</span>
+                        </div>
+                      ) : null}
+                      {viewItem.availableDays ? (
+                        <div>
+                          <span className="text-[10px] text-slate-400 block">Available Days:</span>
+                          <span className="font-semibold text-slate-800">{viewItem.availableDays}</span>
+                        </div>
+                      ) : null}
+                      {viewItem.activeParticipation ? (
+                        <div>
+                          <span className="text-[10px] text-slate-400 block">Active Participation:</span>
+                          <span className="font-semibold text-slate-800">{viewItem.activeParticipation}</span>
+                        </div>
+                      ) : null}
+                      {viewItem.contributionDuration || viewItem.involvementDuration ? (
+                        <div>
+                          <span className="text-[10px] text-slate-400 block">Duration:</span>
+                          <span className="font-semibold text-slate-800">{viewItem.contributionDuration || viewItem.involvementDuration}</span>
+                        </div>
+                      ) : null}
+                    </div>
+                    {viewItem.academicBalance ? (
+                      <div className="pt-1.5 border-t border-slate-200">
+                        <span className="text-[10px] font-semibold text-slate-600 block">Academic Balance Plan:</span>
+                        <p className="text-slate-700 text-xs mt-0.5">{viewItem.academicBalance}</p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {/* Additional Information */}
+                {viewItem.additionalInformation ? (
+                  <div>
+                    <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Additional Information</span>
+                    <p className="text-slate-650 leading-relaxed font-sans bg-slate-50 p-3 rounded border border-slate-100 whitespace-pre-wrap">{viewItem.additionalInformation}</p>
+                  </div>
+                ) : null}
+
+                {/* SHORT INTRODUCTION VIDEO CARD (Anchor & Speaker / Video enabled) */}
+                {(viewItem.introductionVideoUrl || viewItem.videoUrl) ? (
+                  <div className="space-y-2.5 rounded border border-slate-200 bg-slate-50 p-3.5">
+                    <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">
+                      🎥 Short Introduction Video
+                    </span>
+                    {(() => {
+                      const rawUrl = (viewItem.introductionVideoUrl || viewItem.videoUrl || '').trim();
+                      if (!rawUrl) {
+                        return <p className="text-slate-500 text-xs italic">Not provided</p>;
+                      }
+                      const isGoogleDriveOrSafe = rawUrl.startsWith('http://') || rawUrl.startsWith('https://') || rawUrl.includes('drive.google.com') || rawUrl.includes('docs.google.com');
+                      if (!isGoogleDriveOrSafe) {
+                        return <p className="text-amber-600 text-xs font-medium">Invalid or unavailable link</p>;
+                      }
+                      const targetUrl = rawUrl.startsWith('http://') || rawUrl.startsWith('https://') ? rawUrl : `https://${rawUrl}`;
+                      return (
+                        <div className="space-y-2 pt-0.5">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <a
+                              href={targetUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 rounded bg-brand-navy px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-slate-800 transition-colors"
+                            >
+                              <span>▶ Open Introduction Video ↗</span>
+                            </a>
+                          </div>
+                          <p className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            Google Drive video submitted by applicant
+                          </p>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                ) : null}
+
                 {/* HISTORICAL RESUME (Only shown if application has historical resumeUrl) */}
                 {viewItem.resumeUrl ? (
                   <div className="space-y-2 rounded border border-slate-200 bg-slate-50 p-3.5">
@@ -4839,20 +5020,22 @@ export default function AdminDashboard() {
                       <button
                         type="button"
                         onClick={() => getResumeFile(viewItem, false)}
-                        className="rounded bg-brand-navy px-3 py-1.5 text-[11px] font-bold text-white hover:bg-slate-800 transition-colors"
+                        className="rounded bg-brand-navy px-3 py-1.5 text-[11px] font-bold text-white hover:bg-slate-800 transition-colors cursor-pointer"
                       >
                         View Resume
                       </button>
                       <button
                         type="button"
                         onClick={() => getResumeFile(viewItem, true)}
-                        className="rounded border border-slate-300 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-100 transition-colors"
+                        className="rounded border border-slate-300 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                       >
                         Download Resume
                       </button>
                     </div>
                   </div>
                 ) : null}
+
+                {/* Admin Notes */}
                 <div className="space-y-1">
                   <span className="font-bold text-[#64748B] block uppercase tracking-wider text-[10px]">Admin Notes</span>
                   <textarea
@@ -4863,7 +5046,7 @@ export default function AdminDashboard() {
                       setViewItem({ ...viewItem, adminNotes: e.target.value });
                     }}
                     placeholder="Add internal notes (saves on blur)..."
-                    className="w-full p-2 border border-[#E2E8F0] rounded font-sans text-xs focus:outline-none"
+                    className="w-full p-2 border border-[#E2E8F0] rounded font-sans text-xs focus:outline-none focus:ring-1 focus:ring-aws-orange"
                   />
                 </div>
               </div>
@@ -6269,6 +6452,16 @@ export default function AdminDashboard() {
                         <td className="px-4 py-3 font-semibold text-[#111827]">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span>{app.name}</span>
+                            {app.preferredDomain ? (
+                              <span className="inline-flex items-center rounded-full bg-orange-50 border border-orange-200 px-1.5 py-0.2 text-[9px] font-bold text-aws-orange">
+                                {app.preferredDomain}
+                              </span>
+                            ) : null}
+                            {app.preferredRole ? (
+                              <span className="inline-flex items-center rounded-full bg-blue-50 border border-blue-200 px-1.5 py-0.2 text-[9px] font-bold text-blue-700">
+                                {app.preferredRole}
+                              </span>
+                            ) : null}
                             {(app.introductionVideoUrl || app.videoUrl) ? (
                               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200" title="Introduction Video submitted">
                                 🎥 Video
@@ -6278,7 +6471,7 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-4 py-3 font-mono text-[11px] select-all">{app.email}</td>
                         <td className="px-4 py-3">{app.university || '—'}</td>
-                        <td className="px-4 py-3">{app.program ? `${app.program}${app.graduationYear ? ` (${app.graduationYear})` : ''}` : '—'}</td>
+                        <td className="px-4 py-3">{app.program ? `${app.program}${app.department || app.branch ? ` (${app.department || app.branch})` : ''}${app.graduationYear ? ` • ${app.graduationYear}` : ''}` : '—'}</td>
                         <td className="px-4 py-3 whitespace-nowrap">{app.createdAt ? new Date(app.createdAt).toLocaleString() : '—'}</td>
                         <td className="px-4 py-3">
                           <select

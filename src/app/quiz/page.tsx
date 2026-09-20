@@ -3,6 +3,13 @@
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams, useParams } from 'next/navigation';
 import { detectFaceStatus, FaceStatusTracker, FaceStatus } from '@/lib/faceDetection';
+import {
+  getTrackHardwareSettings,
+  WebRTCStatsCollector,
+  TrackHardwareSettings,
+  NetworkQualityTier,
+  WebRTCStatsSnapshot
+} from '@/lib/webrtcStats';
 
 interface WeeklyQuizPortalProps {
   initialQuizId?: string;
@@ -97,6 +104,11 @@ function WeeklyQuizPortalContent({ initialQuizId }: WeeklyQuizPortalProps) {
   const [liveFaceStatus, setLiveFaceStatus] = useState<FaceStatus>('ONE_FACE');
   const [integrityWarning, setIntegrityWarning] = useState<string | null>(null);
 
+  // WebRTC Hardware Telemetry & Connection Health State
+  const [actualCameraSettings, setActualCameraSettings] = useState<TrackHardwareSettings | null>(null);
+  const [networkQualityTier, setNetworkQualityTier] = useState<NetworkQualityTier>('GOOD');
+  const [isReconnecting, setIsReconnecting] = useState(false);
+
   // Refs for Media & Signaling
   const videoPreviewRef = useRef<HTMLVideoElement | null>(null);
   const screenPreviewRef = useRef<HTMLVideoElement | null>(null);
@@ -104,12 +116,14 @@ function WeeklyQuizPortalContent({ initialQuizId }: WeeklyQuizPortalProps) {
   const floatingScreenRef = useRef<HTMLVideoElement | null>(null);
   const cameraPeerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const screenPeerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const statsCollectorRef = useRef<WebRTCStatsCollector | null>(null);
   const faceTrackerRef = useRef<FaceStatusTracker | null>(null);
   const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const cameraGraceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const fullscreenGraceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Check saved session on mount
   useEffect(() => {
@@ -243,7 +257,7 @@ function WeeklyQuizPortalContent({ initialQuizId }: WeeklyQuizPortalProps) {
     [attemptId, sessionToken]
   );
 
-  // Initialize Hardware (Camera & Microphone) Check
+  // Initialize Hardware (Camera & Microphone) Check with 720p capability
   const initializeHardwareCheck = async () => {
     setCheckingHardware(true);
     setCameraPermissionError(null);
@@ -255,29 +269,45 @@ function WeeklyQuizPortalContent({ initialQuizId }: WeeklyQuizPortalProps) {
         throw new Error('Your browser does not support webcam or microphone access.');
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          facingMode: 'user'
-        },
-        audio: true
-      });
+      let stream: MediaStream;
+      try {
+        // High-Quality 720p constraints preferred
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280, max: 1280 },
+            height: { ideal: 720, max: 720 },
+            frameRate: { ideal: 30, max: 30 },
+            facingMode: 'user'
+          },
+          audio: true
+        });
+      } catch (hdErr) {
+        // Fallback gracefully for hardware supporting only standard definitions (e.g. 640x480)
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true
+        });
+      }
 
       setCameraStream(stream);
       setCameraDetected(stream.getVideoTracks().length > 0);
       setMicDetected(stream.getAudioTracks().length > 0);
 
-      if (videoPreviewRef.current) {
-        videoPreviewRef.current.srcObject = stream;
-        videoPreviewRef.current.play().catch(() => {});
-      }
-
       const videoTrack = stream.getVideoTracks()[0];
       if (videoTrack) {
+        const hwSettings = getTrackHardwareSettings(videoTrack);
+        if (hwSettings) {
+          setActualCameraSettings(hwSettings);
+        }
+
         videoTrack.onended = () => {
           handleCameraDisconnected();
         };
+      }
+
+      if (videoPreviewRef.current) {
+        videoPreviewRef.current.srcObject = stream;
+        videoPreviewRef.current.play().catch(() => {});
       }
     } catch (err: any) {
       console.error('Camera check error:', err);
@@ -293,7 +323,7 @@ function WeeklyQuizPortalContent({ initialQuizId }: WeeklyQuizPortalProps) {
     }
   };
 
-  // Initialize Screen Share Check
+  // Initialize Screen Share Check with text-detail optimization
   const initializeScreenShare = async () => {
     setRequestingScreen(true);
     setScreenShareError(null);
@@ -305,10 +335,21 @@ function WeeklyQuizPortalContent({ initialQuizId }: WeeklyQuizPortalProps) {
 
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
-          displaySurface: 'monitor'
+          displaySurface: 'monitor',
+          frameRate: { ideal: 15, max: 20 }
         } as any,
         audio: false
       });
+
+      const screenTrack = stream.getVideoTracks()[0];
+      if (screenTrack) {
+        if ('contentHint' in screenTrack) {
+          (screenTrack as any).contentHint = 'detail';
+        }
+        screenTrack.onended = () => {
+          handleScreenShareStopped();
+        };
+      }
 
       setScreenStream(stream);
       setScreenShareActive(true);
@@ -316,13 +357,6 @@ function WeeklyQuizPortalContent({ initialQuizId }: WeeklyQuizPortalProps) {
       if (screenPreviewRef.current) {
         screenPreviewRef.current.srcObject = stream;
         screenPreviewRef.current.play().catch(() => {});
-      }
-
-      const screenTrack = stream.getVideoTracks()[0];
-      if (screenTrack) {
-        screenTrack.onended = () => {
-          handleScreenShareStopped();
-        };
       }
     } catch (err: any) {
       console.error('Screen share error:', err);
@@ -390,19 +424,62 @@ function WeeklyQuizPortalContent({ initialQuizId }: WeeklyQuizPortalProps) {
     return () => clearInterval(interval);
   }, [phase, cameraStream]);
 
-  // Setup WebRTC Dual Stream Signaling
+  // Setup WebRTC Dual Stream Signaling with STUN Redundancy & Diagnostic Stats
   const setupWebRTCSignaling = useCallback(
     async (camStream: MediaStream, scrStream: MediaStream | null, attId: string, tok: string) => {
       try {
+        const iceServers = [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' }
+        ];
+
         // Setup Camera RTCPeerConnection
-        const camPc = new RTCPeerConnection({
-          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }]
-        });
+        const camPc = new RTCPeerConnection({ iceServers });
         cameraPeerConnectionRef.current = camPc;
+        statsCollectorRef.current = new WebRTCStatsCollector(camPc);
 
         camStream.getTracks().forEach(track => {
-          camPc.addTrack(track, camStream);
+          const sender = camPc.addTrack(track, camStream);
+          try {
+            const params = sender.getParameters();
+            if (!params.encodings || params.encodings.length === 0) {
+              params.encodings = [{}];
+            }
+            params.encodings[0].maxBitrate = 1200000; // 1.2 Mbps max for HD 720p
+            (params as any).degradationPreference = 'maintain-framerate';
+            sender.setParameters(params).catch(() => {});
+          } catch (e) {}
         });
+
+        // Track Connection States & Auto-Recovery
+        camPc.onconnectionstatechange = () => {
+          const state = camPc.connectionState;
+          if (state === 'connected') {
+            setIsReconnecting(false);
+            setNetworkQualityTier('GOOD');
+          } else if (state === 'disconnected' || state === 'connecting') {
+            setIsReconnecting(true);
+            setNetworkQualityTier('POOR');
+          } else if (state === 'failed') {
+            setIsReconnecting(true);
+            setNetworkQualityTier('DISCONNECTED');
+            // Trigger ICE restart for seamless recovery
+            camPc.createOffer({ iceRestart: true }).then(async newOffer => {
+              await camPc.setLocalDescription(newOffer);
+              await fetch('/api/quiz/webrtc/signal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  attemptId: attId,
+                  token: tok,
+                  cameraOffer: camPc.localDescription,
+                  iceRestartNeeded: true
+                })
+              });
+            }).catch(() => {});
+          }
+        };
 
         camPc.onicecandidate = async event => {
           if (event.candidate) {
@@ -426,13 +503,20 @@ function WeeklyQuizPortalContent({ initialQuizId }: WeeklyQuizPortalProps) {
         // Setup Screen Share RTCPeerConnection if available
         let scrOffer: any = null;
         if (scrStream) {
-          const scrPc = new RTCPeerConnection({
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }]
-          });
+          const scrPc = new RTCPeerConnection({ iceServers });
           screenPeerConnectionRef.current = scrPc;
 
           scrStream.getTracks().forEach(track => {
-            scrPc.addTrack(track, scrStream);
+            const sender = scrPc.addTrack(track, scrStream);
+            try {
+              const params = sender.getParameters();
+              if (!params.encodings || params.encodings.length === 0) {
+                params.encodings = [{}];
+              }
+              params.encodings[0].maxBitrate = 800000; // 800 kbps for text clarity
+              (params as any).degradationPreference = 'maintain-resolution';
+              sender.setParameters(params).catch(() => {});
+            } catch (e) {}
           });
 
           scrPc.onicecandidate = async event => {
@@ -455,7 +539,7 @@ function WeeklyQuizPortalContent({ initialQuizId }: WeeklyQuizPortalProps) {
           await scrPc.setLocalDescription(scrOffer);
         }
 
-        // Send dual offers to signaling server
+        // Send initial dual offers to signaling server
         await fetch('/api/quiz/webrtc/signal', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -464,6 +548,8 @@ function WeeklyQuizPortalContent({ initialQuizId }: WeeklyQuizPortalProps) {
             token: tok,
             cameraOffer: camPc.localDescription,
             screenOffer: scrOffer,
+            actualCameraSettings,
+            qualityTier: 'GOOD',
             cameraActive: true,
             screenActive: Boolean(scrStream)
           })
@@ -481,7 +567,7 @@ function WeeklyQuizPortalContent({ initialQuizId }: WeeklyQuizPortalProps) {
             const data = await res.json();
 
             if (data.success) {
-              if (data.cameraAnswer && !camPc.currentRemoteDescription) {
+              if (data.cameraAnswer && (!camPc.currentRemoteDescription || data.iceRestartNeeded)) {
                 await camPc.setRemoteDescription(new RTCSessionDescription(data.cameraAnswer));
               }
               if (screenPeerConnectionRef.current && data.screenAnswer && !screenPeerConnectionRef.current.currentRemoteDescription) {
@@ -494,14 +580,36 @@ function WeeklyQuizPortalContent({ initialQuizId }: WeeklyQuizPortalProps) {
                   } catch (e) {}
                 }
               }
+
+              // Dynamic sender bitrate & framerate adaptation based on Admin quality mode
+              if (data.targetQualityMode) {
+                const isHighQuality = data.targetQualityMode === 'HIGH_QUALITY';
+                const targetBitrate = isHighQuality ? 1200000 : 250000;
+                const targetFps = isHighQuality ? 30 : 15;
+
+                camPc.getSenders().forEach(sender => {
+                  if (sender.track?.kind === 'video') {
+                    try {
+                      const params = sender.getParameters();
+                      if (params.encodings && params.encodings[0]) {
+                        if (params.encodings[0].maxBitrate !== targetBitrate) {
+                          params.encodings[0].maxBitrate = targetBitrate;
+                          (params.encodings[0] as any).maxFramerate = targetFps;
+                          sender.setParameters(params).catch(() => {});
+                        }
+                      }
+                    } catch (e) {}
+                  }
+                });
+              }
             }
           } catch (e) {}
-        }, 3000);
+        }, 2500);
       } catch (err) {
         console.error('WebRTC setup error:', err);
       }
     },
-    []
+    [actualCameraSettings]
   );
 
   // Capture low-res preview snapshots for dashboard thumbnails
@@ -509,9 +617,13 @@ function WeeklyQuizPortalContent({ initialQuizId }: WeeklyQuizPortalProps) {
     const video = floatingVideoRef.current || videoPreviewRef.current;
     if (!video || video.readyState < 2 || video.videoWidth === 0) return null;
     try {
-      const canvas = document.createElement('canvas');
-      canvas.width = 160;
-      canvas.height = 120;
+      if (!previewCanvasRef.current && typeof document !== 'undefined') {
+        previewCanvasRef.current = document.createElement('canvas');
+        previewCanvasRef.current.width = 160;
+        previewCanvasRef.current.height = 120;
+      }
+      const canvas = previewCanvasRef.current;
+      if (!canvas) return null;
       const ctx = canvas.getContext('2d');
       if (!ctx) return null;
       ctx.drawImage(video, 0, 0, 160, 120);
@@ -525,9 +637,13 @@ function WeeklyQuizPortalContent({ initialQuizId }: WeeklyQuizPortalProps) {
     const video = floatingScreenRef.current || screenPreviewRef.current;
     if (!video || video.readyState < 2 || video.videoWidth === 0) return null;
     try {
-      const canvas = document.createElement('canvas');
-      canvas.width = 160;
-      canvas.height = 100;
+      if (!previewCanvasRef.current && typeof document !== 'undefined') {
+        previewCanvasRef.current = document.createElement('canvas');
+        previewCanvasRef.current.width = 160;
+        previewCanvasRef.current.height = 100;
+      }
+      const canvas = previewCanvasRef.current;
+      if (!canvas) return null;
       const ctx = canvas.getContext('2d');
       if (!ctx) return null;
       ctx.drawImage(video, 0, 0, 160, 100);
@@ -630,10 +746,21 @@ function WeeklyQuizPortalContent({ initialQuizId }: WeeklyQuizPortalProps) {
       }
     }, 1000);
 
-    // Heartbeat & Dual Snapshot Telemetry (every 3.5 seconds)
+    // Heartbeat & WebRTC Diagnostic Telemetry (every 3 seconds)
     heartbeatIntervalRef.current = setInterval(async () => {
-      const camPreview = captureCameraPreviewFrame();
-      const scrPreview = captureScreenPreviewFrame();
+      let statsSnapshot: WebRTCStatsSnapshot | null = null;
+      if (statsCollectorRef.current) {
+        statsSnapshot = await statsCollectorRef.current.collectStats();
+        if (statsSnapshot) {
+          setNetworkQualityTier(statsSnapshot.quality);
+        }
+      }
+
+      // Only capture fallback frame on initial launch or when WebRTC is not connected
+      const isConnected = cameraPeerConnectionRef.current?.connectionState === 'connected';
+      const camPreview = !isConnected ? captureCameraPreviewFrame() : undefined;
+      const scrPreview = !isConnected ? captureScreenPreviewFrame() : undefined;
+
       try {
         await fetch('/api/quiz/webrtc/signal', {
           method: 'POST',
@@ -643,19 +770,23 @@ function WeeklyQuizPortalContent({ initialQuizId }: WeeklyQuizPortalProps) {
             token: sessionToken,
             cameraPreviewFrame: camPreview,
             screenPreviewFrame: scrPreview,
+            networkStats: statsSnapshot || undefined,
+            actualCameraSettings: actualCameraSettings || undefined,
+            qualityTier: statsSnapshot?.quality || networkQualityTier,
+            connectionStatus: isReconnecting ? 'RECONNECTING' : cameraInterrupted ? 'DISCONNECTED' : 'CONNECTED',
             cameraActive: !cameraInterrupted,
             screenActive: !screenInterrupted,
             violationCount
           })
         });
       } catch (e) {}
-    }, 3500);
+    }, 3000);
 
     return () => {
       if (detectionIntervalRef.current) clearInterval(detectionIntervalRef.current);
       if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
     };
-  }, [phase, attemptId, sessionToken, quiz, cameraInterrupted, screenInterrupted, violationCount, captureCameraPreviewFrame, captureScreenPreviewFrame, logSecurityEvent]);
+  }, [phase, attemptId, sessionToken, quiz, cameraInterrupted, screenInterrupted, violationCount, isReconnecting, networkQualityTier, actualCameraSettings, captureCameraPreviewFrame, captureScreenPreviewFrame, logSecurityEvent]);
 
   // Authoritative Server Timer & Local Countdown
   useEffect(() => {

@@ -38,6 +38,13 @@ function getNativeFaceDetector(): any {
   return nativeDetectorInstance;
 }
 
+// Reusable offscreen canvas & flat buffer for zero GC memory allocation
+let reusableCanvas: HTMLCanvasElement | null = null;
+let reusableCtx: CanvasRenderingContext2D | null = null;
+const ANALYSIS_WIDTH = 120;
+const ANALYSIS_HEIGHT = 90;
+const reusableSkinGrid = new Uint8Array(ANALYSIS_WIDTH * ANALYSIS_HEIGHT);
+
 /**
  * Analyzes video element frame to estimate face count.
  */
@@ -66,28 +73,29 @@ export async function detectFaceStatus(videoElement: HTMLVideoElement): Promise<
 
   // 2. High-speed Canvas Computer Vision Heuristics (Privacy-preserving chromaticity and luminance clustering)
   try {
-    const canvas = document.createElement('canvas');
-    const width = 120;
-    const height = 90;
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) {
+    if (!reusableCanvas && typeof document !== 'undefined') {
+      reusableCanvas = document.createElement('canvas');
+      reusableCanvas.width = ANALYSIS_WIDTH;
+      reusableCanvas.height = ANALYSIS_HEIGHT;
+      reusableCtx = reusableCanvas.getContext('2d', { willReadFrequently: true });
+    }
+
+    if (!reusableCtx || !reusableCanvas) {
       return { status: 'ONE_FACE', count: 1, confidence: 0.7 };
     }
 
-    ctx.drawImage(videoElement, 0, 0, width, height);
-    const imageData = ctx.getImageData(0, 0, width, height);
+    reusableCtx.drawImage(videoElement, 0, 0, ANALYSIS_WIDTH, ANALYSIS_HEIGHT);
+    const imageData = reusableCtx.getImageData(0, 0, ANALYSIS_WIDTH, ANALYSIS_HEIGHT);
     const data = imageData.data;
 
     let skinPixels = 0;
-    const skinGrid: boolean[][] = Array.from({ length: height }, () => Array(width).fill(false));
-    let minX = width, maxX = 0, minY = height, maxY = 0;
+    reusableSkinGrid.fill(0);
+    let minX = ANALYSIS_WIDTH, maxX = 0, minY = ANALYSIS_HEIGHT, maxY = 0;
 
     // Fast skin-tone chromaticity test in normalized RGB
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const idx = (y * width + x) * 4;
+    for (let y = 0; y < ANALYSIS_HEIGHT; y++) {
+      for (let x = 0; x < ANALYSIS_WIDTH; x++) {
+        const idx = (y * ANALYSIS_WIDTH + x) * 4;
         const r = data[idx];
         const g = data[idx + 1];
         const b = data[idx + 2];
@@ -105,7 +113,7 @@ export async function detectFaceStatus(videoElement: HTMLVideoElement): Promise<
 
         if (isSkin) {
           skinPixels++;
-          skinGrid[y][x] = true;
+          reusableSkinGrid[y * ANALYSIS_WIDTH + x] = 1;
           if (x < minX) minX = x;
           if (x > maxX) maxX = x;
           if (y < minY) minY = y;
@@ -114,7 +122,7 @@ export async function detectFaceStatus(videoElement: HTMLVideoElement): Promise<
       }
     }
 
-    const totalPixels = width * height;
+    const totalPixels = ANALYSIS_WIDTH * ANALYSIS_HEIGHT;
     const skinRatio = skinPixels / totalPixels;
 
     // If skin pixels are extremely low (< 2.5% of frame) -> No face
@@ -131,7 +139,7 @@ export async function detectFaceStatus(videoElement: HTMLVideoElement): Promise<
 
     for (let y = minY; y <= maxY; y++) {
       for (let x = minX; x <= maxX; x++) {
-        if (skinGrid[y][x]) {
+        if (reusableSkinGrid[y * ANALYSIS_WIDTH + x] === 1) {
           if (x < midX - 8) leftSkin++;
           else if (x > midX + 8) rightSkin++;
         }
@@ -139,7 +147,7 @@ export async function detectFaceStatus(videoElement: HTMLVideoElement): Promise<
     }
 
     // If both left and right clusters are large and separated by an empty gap across wide horizontal space
-    if (boxWidth > width * 0.75 && leftSkin > totalPixels * 0.04 && rightSkin > totalPixels * 0.04) {
+    if (boxWidth > ANALYSIS_WIDTH * 0.75 && leftSkin > totalPixels * 0.04 && rightSkin > totalPixels * 0.04) {
       return { status: 'MULTIPLE_FACES', count: 2, confidence: 0.8 };
     }
 
