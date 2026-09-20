@@ -1,11 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
+import {
+  resolveOpportunityApplicationType,
+  CanonicalOpportunityType
+} from '@/lib/opportunityApplication';
 
 export type OpportunityApplicationRecord = {
   id: string;
   opportunityId?: string;
   opportunitySlug?: string;
+  opportunityTitle?: string;
   formType?: 'founding-member' | 'core-team' | 'anchor-speaker' | string;
   name: string;
   email: string;
@@ -100,15 +105,14 @@ function QuestionAnswer({
           {isRequired && <span className="text-red-500 font-bold text-xs">*</span>}
         </div>
         {subLabel && <p className="text-[11px] text-slate-500">{subLabel}</p>}
-        <div>
-          {isRequired ? (
-            <span className="inline-flex items-center gap-1 rounded bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-650 border border-red-200">
-              ⚠️ Missing / Invalid submission data
-            </span>
-          ) : (
-            <span className="text-xs italic text-slate-400">Not provided</span>
-          )}
-        </div>
+        {isRequired ? (
+          <p className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 border border-amber-200 text-[11px] font-medium text-amber-800">
+            <span>⚠️</span>
+            <span>Missing / Invalid submission data</span>
+          </p>
+        ) : (
+          <p className="text-xs text-slate-400 italic">Not provided</p>
+        )}
       </div>
     );
   }
@@ -118,12 +122,12 @@ function QuestionAnswer({
     const targetUrl = raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw}`;
     let icon = '🔗';
     let buttonText = 'Open Link ↗';
-    let colorClasses = 'text-blue-600 hover:text-blue-800 bg-blue-50/60 border-blue-200';
+    let colorClasses = 'text-blue-650 hover:text-blue-800 bg-blue-50 border-blue-200';
 
     if (linkType === 'linkedin') {
       icon = '💼';
       buttonText = 'Open LinkedIn Profile ↗';
-      colorClasses = 'text-[#0077b5] hover:text-[#005582] bg-sky-50 border-sky-200';
+      colorClasses = 'text-blue-700 hover:text-blue-900 bg-blue-50 border-blue-250';
     } else if (linkType === 'github') {
       icon = '🐙';
       buttonText = 'Open GitHub Profile ↗';
@@ -222,10 +226,16 @@ export default function AdminOpportunityApplicationDetailsModal({
   const [notes, setNotes] = useState(application.adminNotes || '');
   const [savingNotes, setSavingNotes] = useState(false);
 
-  const effectiveFormType = (application.formType || '').toLowerCase().trim();
-  const isFoundingMember = effectiveFormType === 'founding-member' || (!effectiveFormType && String(application.whyFoundingMember || '').length > 0);
-  const isCoreTeam = effectiveFormType === 'core-team' || (!effectiveFormType && String(application.whyCoreTeam || '').length > 0);
-  const isAnchorSpeaker = !isFoundingMember && !isCoreTeam;
+  // Authoritative Canonical Opportunity Type Resolution
+  const canonicalType: CanonicalOpportunityType = resolveOpportunityApplicationType(application, {
+    title: opportunityTitle || application.opportunityTitle,
+    slug: application.opportunitySlug,
+    id: application.opportunityId
+  });
+
+  const isFoundingMember = canonicalType === 'FOUNDING_MEMBER';
+  const isCoreTeam = canonicalType === 'CORE_TEAM';
+  const isAnchorSpeaker = canonicalType === 'ANCHOR_SPEAKER';
 
   const handleStatusChange = async (newStatus: string) => {
     setCurrentStatus(newStatus);
@@ -610,20 +620,22 @@ export default function AdminOpportunityApplicationDetailsModal({
               </div>
             </SectionContainer>
 
-            {/* SECTION 11: Professional Links & Declaration */}
-            <SectionContainer number="11" title="Professional Links & Declaration">
+            {/* SECTION 11: Professional Links */}
+            <SectionContainer number="11" title="Professional Links">
               <div className="grid gap-3.5 sm:grid-cols-3">
                 <QuestionAnswer label="LinkedIn Profile" value={application.linkedin} isRequired isLink linkType="linkedin" />
                 <QuestionAnswer label="GitHub Profile" value={application.github} isLink linkType="github" />
                 <QuestionAnswer label="Portfolio / Website" value={application.portfolio} isLink linkType="portfolio" />
               </div>
-              <div className="pt-3 border-t border-slate-100">
-                <QuestionAnswer
-                  label="Declaration: “I confirm that the information provided by me is accurate and I am committed to actively contributing as a Core Team member.”"
-                  value={application.consent ? '✅ Confirmed & Committed' : '❌ Not confirmed'}
-                  isRequired
-                />
-              </div>
+            </SectionContainer>
+
+            {/* SECTION 12: Declaration / Consent */}
+            <SectionContainer number="12" title="Declaration / Consent">
+              <QuestionAnswer
+                label="Declaration: “I confirm that the information provided by me is accurate and I am committed to actively contributing as a Core Team member.”"
+                value={application.consent ? '✅ Confirmed & Committed' : '❌ Not confirmed'}
+                isRequired
+              />
             </SectionContainer>
           </div>
         )}

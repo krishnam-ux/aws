@@ -4641,7 +4641,12 @@ export default function AdminDashboard() {
       {viewItem && viewItem._recordType === 'opportunityApplication' && (
         <AdminOpportunityApplicationDetailsModal
           application={viewItem}
-          opportunityTitle={selectedOpportunityRegs?.title || opportunities.find(o => o.id === viewItem.opportunityId)?.title || ''}
+          opportunityTitle={
+            selectedOpportunityRegs?.title ||
+            opportunities.find(o => o.id === viewItem.opportunityId || o.slug === viewItem.opportunitySlug)?.title ||
+            viewItem.opportunityTitle ||
+            ''
+          }
           token={token}
           onClose={() => setViewItem(null)}
           onUpdateStatus={async (id, status) => {

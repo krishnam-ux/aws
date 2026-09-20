@@ -1,15 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import {
   buildOpportunitySuccessUrl,
   hasDuplicateOpportunityApplication,
   isValidGoogleDriveUrl,
   isValidLinkedInUrl,
   getOpportunityFormType,
+  resolveOpportunityApplicationType,
   OPPORTUNITY_DOMAINS,
   CORE_TEAM_ROLES_BY_DOMAIN,
 } from '../src/lib/opportunityApplication';
+import AdminOpportunityApplicationDetailsModal from '../src/components/AdminOpportunityApplicationDetailsModal';
 import { db } from '../src/lib/db';
 import { POST as careerAppPost } from '../src/app/api/career-applications/route';
 import { POST as adminPost } from '../src/app/api/admin/route';
@@ -866,3 +870,472 @@ test('Admin API export-career-applications-csv exports all standard and dynamic 
   await db.careerApplications.deleteOne(customAppId);
   await db.careers.deleteOne(testOppId);
 });
+
+/* ==========================================================================
+   REGRESSION SUITE: ADMIN OPPORTUNITY FORM TYPE & FIELD RENDERING (TESTS 1 - 12)
+   ========================================================================== */
+
+// TEST 1: Core Team application resolves to CORE_TEAM
+test('TEST 1: Core Team application resolves to CORE_TEAM via stable identifiers and context', () => {
+  // Via explicit formType
+  assert.equal(resolveOpportunityApplicationType({ formType: 'core-team' }), 'CORE_TEAM');
+  // Via opportunity title
+  assert.equal(
+    resolveOpportunityApplicationType(
+      { opportunityTitle: 'AWS SBG Core Team Member' },
+      { title: 'AWS SBG Core Team Member' }
+    ),
+    'CORE_TEAM'
+  );
+  // Via slug
+  assert.equal(
+    resolveOpportunityApplicationType(
+      { opportunitySlug: 'core-team' },
+      { slug: 'core-team' }
+    ),
+    'CORE_TEAM'
+  );
+  // Via questions without explicit formType
+  assert.equal(
+    resolveOpportunityApplicationType({
+      whyCoreTeam: 'Passionate about student developer leadership',
+      preferredRole: 'Web / Software Development'
+    }),
+    'CORE_TEAM'
+  );
+});
+
+// TEST 2: Core Team Admin header says: CORE TEAM APPLICATION
+test('TEST 2: Core Team Admin header says: CORE TEAM APPLICATION', () => {
+  const ctApp = {
+    id: 'career-app-ct-001',
+    name: 'Krishnam Dwivedi',
+    email: 'krishnam@culko.in',
+    opportunityTitle: 'AWS SBG Core Team Member',
+    opportunitySlug: 'core-team',
+    formType: 'core-team',
+    preferredDomain: 'Tech & Technical',
+    preferredRole: 'Web / Software Development',
+    linkedin: 'https://www.linkedin.com/in/krishnam-dwivedi',
+    consent: true,
+    status: 'New'
+  };
+
+  const html = renderToStaticMarkup(
+    React.createElement(AdminOpportunityApplicationDetailsModal, {
+      application: ctApp,
+      opportunityTitle: 'AWS SBG Core Team Member',
+      token: 'test-token',
+      onClose: () => {}
+    })
+  );
+
+  assert.ok(html.includes('Core Team Application'), 'Header badge must say Core Team Application');
+  assert.ok(html.includes('AWS SBG Core Team Member'), 'Header must contain opportunity title');
+});
+
+// TEST 3: Core Team Admin view contains complete 12 sections / fields
+test('TEST 3: Core Team Admin view contains all 12 expected Core Team question fields', () => {
+  const fullCtApp = {
+    id: 'career-app-ct-full',
+    name: 'Aarav Test',
+    email: 'aarav@culko.in',
+    personalEmail: 'aarav.personal@gmail.com',
+    phone: '+919876543210',
+    studentId: '23BCS10888',
+    university: 'Chandigarh University – Uttar Pradesh',
+    program: 'B.Tech CSE',
+    department: 'Cloud Computing',
+    currentYear: '2nd Year',
+    graduationYear: '2027',
+    preferredDomain: 'Tech & Technical',
+    preferredRole: 'Cloud / AWS',
+    skills: 'AWS CDK, DynamoDB, Lambda, TypeScript',
+    primarySkillLevel: 'Advanced',
+    experience: 'Built serverless event ticketing system',
+    exactResponsibility: 'Managed backend microservices and deployment pipelines',
+    teamworkSituation: 'Collaborated with UI team across 3 sprints',
+    leadershipExperience: 'Yes',
+    leadershipDetails: 'Led campus cloud study jam with 60 students',
+    whyCoreTeam: 'I want to mentor junior builders and scale SBG technical workshops.',
+    domainContribution: 'I will organize 4 hands-on AWS labs and automate certification tracking.',
+    scenarioUnavailableMembers: 'I will prioritize the critical workshop demos, delegate setup tasks, and step in as speaker.',
+    availabilityHours: '8–10 hours',
+    availableDays: 'Weekday Evenings & Weekends',
+    activeParticipation: 'Yes, weekly standups',
+    involvementDuration: 'Full Academic Year',
+    linkedin: 'https://www.linkedin.com/in/aarav-cloud',
+    github: 'https://github.com/aarav-cloud',
+    portfolio: 'https://aarav.dev',
+    consent: true,
+    status: 'New'
+  };
+
+  const html = renderToStaticMarkup(
+    React.createElement(AdminOpportunityApplicationDetailsModal, {
+      application: fullCtApp,
+      opportunityTitle: 'AWS SBG Core Team Member',
+      token: 'test-token',
+      onClose: () => {}
+    })
+  );
+
+  // 01 Personal & Academic Details
+  assert.ok(html.includes('Personal &amp; Academic Details') || html.includes('Personal & Academic Details'));
+  assert.ok(html.includes('Aarav Test'));
+  assert.ok(html.includes('aarav@culko.in'));
+  assert.ok(html.includes('23BCS10888'));
+  assert.ok(html.includes('B.Tech CSE'));
+  assert.ok(html.includes('Cloud Computing'));
+  assert.ok(html.includes('2027'));
+
+  // 02 Preferred Domain
+  assert.ok(html.includes('Preferred Domain'));
+  assert.ok(html.includes('Tech &amp; Technical') || html.includes('Tech & Technical'));
+
+  // 03 Preferred Role
+  assert.ok(html.includes('Preferred Role / Responsibility'));
+  assert.ok(html.includes('Cloud / AWS'));
+
+  // 04 Skills & Proficiency
+  assert.ok(html.includes('Relevant Skills &amp; Proficiency') || html.includes('Relevant Skills & Proficiency'));
+  assert.ok(html.includes('AWS CDK, DynamoDB, Lambda, TypeScript'));
+  assert.ok(html.includes('Advanced'));
+
+  // 05 Experience & Execution
+  assert.ok(html.includes('Previous Experience &amp; Projects') || html.includes('Previous Experience & Projects'));
+  assert.ok(html.includes('Built serverless event ticketing system'));
+  assert.ok(html.includes('Managed backend microservices and deployment pipelines'));
+
+  // 06 Leadership & Teamwork
+  assert.ok(html.includes('Leadership &amp; Teamwork') || html.includes('Leadership & Teamwork'));
+  assert.ok(html.includes('Collaborated with UI team across 3 sprints'));
+  assert.ok(html.includes('Led campus cloud study jam with 60 students'));
+
+  // 07 Why Core Team?
+  assert.ok(html.includes('Why Core Team?'));
+  assert.ok(html.includes('I want to mentor junior builders and scale SBG technical workshops.'));
+
+  // 08 Domain Contribution
+  assert.ok(html.includes('Domain Contribution'));
+  assert.ok(html.includes('I will organize 4 hands-on AWS labs and automate certification tracking.'));
+
+  // 09 Problem Solving / Crisis Scenario
+  assert.ok(html.includes('Problem-Solving / Crisis Scenario'));
+  assert.ok(html.includes('prioritize the critical workshop demos'));
+
+  // 10 Availability & Commitment
+  assert.ok(html.includes('Availability &amp; Commitment') || html.includes('Availability & Commitment'));
+  assert.ok(html.includes('8–10 hours') || html.includes('8-10 hours'));
+  assert.ok(html.includes('Weekday Evenings &amp; Weekends') || html.includes('Weekday Evenings & Weekends'));
+
+  // 11 Professional Links
+  assert.ok(html.includes('Professional Links'));
+  assert.ok(html.includes('https://www.linkedin.com/in/aarav-cloud'));
+  assert.ok(html.includes('https://github.com/aarav-cloud'));
+  assert.ok(html.includes('https://aarav.dev'));
+
+  // 12 Declaration & Consent
+  assert.ok(html.includes('Declaration / Consent'));
+  assert.ok(html.includes('Confirmed &amp; Committed') || html.includes('Confirmed & Committed'));
+});
+
+// TEST 4: Core Team Admin view does NOT incorrectly show: ANCHOR & SPEAKER APPLICATION
+test('TEST 4: Core Team Admin view does NOT incorrectly show: ANCHOR & SPEAKER APPLICATION', () => {
+  const ctApp = {
+    id: 'career-app-ct-002',
+    name: 'Krishnam Dwivedi',
+    email: 'krishnam@culko.in',
+    opportunityTitle: 'AWS SBG Core Team Member',
+    opportunitySlug: 'core-team',
+    formType: 'core-team',
+    whyCoreTeam: 'Passionate about builder group',
+    linkedin: 'https://www.linkedin.com/in/krishnam-dwivedi',
+    consent: true
+  };
+
+  const html = renderToStaticMarkup(
+    React.createElement(AdminOpportunityApplicationDetailsModal, {
+      application: ctApp,
+      opportunityTitle: 'AWS SBG Core Team Member',
+      token: 'test-token',
+      onClose: () => {}
+    })
+  );
+
+  assert.equal(html.includes('Anchor &amp; Speaker Application'), false);
+  assert.equal(html.includes('Anchor & Speaker Application'), false);
+  assert.equal(html.includes('ANCHOR &amp; SPEAKER'), false);
+  assert.equal(html.includes('ANCHOR & SPEAKER'), false);
+});
+
+// TEST 5: Core Team Admin view does NOT incorrectly show: Short Introduction Video
+test('TEST 5: Core Team Admin view does NOT incorrectly show: Short Introduction Video', () => {
+  const ctApp = {
+    id: 'career-app-ct-003',
+    name: 'Candidate Without Video',
+    email: 'test@culko.in',
+    opportunityTitle: 'AWS SBG Core Team Member',
+    opportunitySlug: 'core-team',
+    formType: 'core-team',
+    preferredDomain: 'Tech & Technical',
+    whyCoreTeam: 'Tech motivation',
+    linkedin: 'https://www.linkedin.com/in/test',
+    consent: true
+  };
+
+  const html = renderToStaticMarkup(
+    React.createElement(AdminOpportunityApplicationDetailsModal, {
+      application: ctApp,
+      opportunityTitle: 'AWS SBG Core Team Member',
+      token: 'test-token',
+      onClose: () => {}
+    })
+  );
+
+  assert.equal(html.includes('Short Introduction Video'), false);
+  assert.equal(html.includes('Introduction Video URL'), false);
+  assert.equal(html.includes('Google Drive video link'), false);
+});
+
+// TEST 6: Anchor & Speaker still resolves to ANCHOR_SPEAKER
+test('TEST 6: Anchor & Speaker still resolves to ANCHOR_SPEAKER', () => {
+  assert.equal(resolveOpportunityApplicationType({ formType: 'anchor-speaker' }), 'ANCHOR_SPEAKER');
+  assert.equal(
+    resolveOpportunityApplicationType(
+      { opportunityTitle: 'Anchor & Speaker' },
+      { title: 'Anchor & Speaker' }
+    ),
+    'ANCHOR_SPEAKER'
+  );
+  assert.equal(
+    resolveOpportunityApplicationType(
+      { opportunitySlug: 'anchor-speaker' },
+      { slug: 'anchor-speaker' }
+    ),
+    'ANCHOR_SPEAKER'
+  );
+});
+
+// TEST 7: Anchor & Speaker still shows Google Drive Introduction Video
+test('TEST 7: Anchor & Speaker still shows Google Drive Introduction Video', () => {
+  const anchorApp = {
+    id: 'career-app-anchor-001',
+    name: 'Anchor Host',
+    email: 'anchor@culko.in',
+    opportunityTitle: 'Anchor & Speaker',
+    opportunitySlug: 'anchor-speaker',
+    formType: 'anchor-speaker',
+    linkedin: 'https://www.linkedin.com/in/anchorhost',
+    introductionVideoUrl: 'https://drive.google.com/file/d/12345sample/view',
+    motivation: 'I love stage hosting',
+    skills: 'Public Speaking',
+    experience: 'Anchored 5 college events',
+    consent: true
+  };
+
+  const html = renderToStaticMarkup(
+    React.createElement(AdminOpportunityApplicationDetailsModal, {
+      application: anchorApp,
+      opportunityTitle: 'Anchor & Speaker',
+      token: 'test-token',
+      onClose: () => {}
+    })
+  );
+
+  assert.ok(html.includes('Anchor &amp; Speaker Application') || html.includes('Anchor & Speaker Application'));
+  assert.ok(html.includes('Short Introduction Video') || html.includes('Introduction Video URL'));
+  assert.ok(html.includes('https://drive.google.com/file/d/12345sample/view'));
+});
+
+// TEST 8: Founding Member still resolves to FOUNDING_MEMBER
+test('TEST 8: Founding Member still resolves to FOUNDING_MEMBER', () => {
+  assert.equal(resolveOpportunityApplicationType({ formType: 'founding-member' }), 'FOUNDING_MEMBER');
+  assert.equal(
+    resolveOpportunityApplicationType(
+      { opportunityTitle: 'Founding Core Members' },
+      { title: 'Founding Core Members' }
+    ),
+    'FOUNDING_MEMBER'
+  );
+  assert.equal(
+    resolveOpportunityApplicationType(
+      { opportunitySlug: 'founding-members' },
+      { slug: 'founding-members' }
+    ),
+    'FOUNDING_MEMBER'
+  );
+  assert.equal(
+    resolveOpportunityApplicationType({
+      whyFoundingMember: 'To establish cloud presence',
+      communityGrowthIdeas: 'Workshops & Hackathons'
+    }),
+    'FOUNDING_MEMBER'
+  );
+});
+
+// TEST 9: Founding Member still shows all its dedicated fields
+test('TEST 9: Founding Member still shows all its dedicated fields', () => {
+  const fmApp = {
+    id: 'career-app-fm-001',
+    name: 'Founder Candidate',
+    email: 'founder@culko.in',
+    personalEmail: 'founder.personal@gmail.com',
+    phone: '9876543210',
+    studentId: '23BCS10101',
+    program: 'B.Tech CSE',
+    department: 'Cloud Computing',
+    currentYear: '3rd Year',
+    graduationYear: '2026',
+    preferredDomain: 'Tech & Technical',
+    skills: 'AWS Cloud, Architecture, Kubernetes',
+    previousExperience: 'Organized university cloud hackathon',
+    roleAndImpact: 'Chief organizer and mentor',
+    whyFoundingMember: 'Build the premier AWS student builder community',
+    personalContribution: 'Mentor 100+ students in cloud skills',
+    communityGrowthIdeas: 'Bi-weekly immersion days and builder showcase',
+    availabilityHours: '10 hours/week',
+    consistentContribution: 'Committed full term',
+    contributionDuration: 'Entire Year',
+    academicBalance: 'Evening and weekend schedule blocks',
+    scenarioDropParticipation: 'Poll inactive members and pivot topics to hands-on build challenges',
+    linkedin: 'https://www.linkedin.com/in/foundercandidate',
+    github: 'https://github.com/foundercandidate',
+    portfolio: 'https://founder.dev',
+    consent: true
+  };
+
+  const html = renderToStaticMarkup(
+    React.createElement(AdminOpportunityApplicationDetailsModal, {
+      application: fmApp,
+      opportunityTitle: 'Founding Core Members',
+      token: 'test-token',
+      onClose: () => {}
+    })
+  );
+
+  assert.ok(html.includes('Founding Member Application'));
+  assert.ok(html.includes('Why Founding Member?'));
+  assert.ok(html.includes('Community Growth Ideas'));
+  assert.ok(html.includes('Ownership &amp; Initiative Scenario') || html.includes('Ownership & Initiative Scenario'));
+  assert.ok(html.includes('Poll inactive members and pivot topics'));
+  assert.ok(html.includes('https://www.linkedin.com/in/foundercandidate'));
+  assert.equal(html.includes('Short Introduction Video'), false);
+});
+
+// TEST 10: Opportunity line and badge can never disagree
+test('TEST 10: Opportunity line and badge can never disagree', () => {
+  const matrix = [
+    {
+      app: { id: 'app-matrix-1', email: 'user1@culko.in', opportunityTitle: 'AWS SBG Core Team Member', name: 'User 1' },
+      oppTitle: 'AWS SBG Core Team Member',
+      expectedBadge: 'Core Team Application',
+      forbiddenBadge: 'Anchor & Speaker Application'
+    },
+    {
+      app: { id: 'app-matrix-2', email: 'user2@culko.in', opportunityTitle: 'Founding Members of AWS SBG', name: 'User 2' },
+      oppTitle: 'Founding Members of AWS SBG',
+      expectedBadge: 'Founding Member Application',
+      forbiddenBadge: 'Anchor & Speaker Application'
+    },
+    {
+      app: { id: 'app-matrix-3', email: 'user3@culko.in', opportunityTitle: 'Anchor & Speaker for AWS Events', name: 'User 3' },
+      oppTitle: 'Anchor & Speaker for AWS Events',
+      expectedBadge: 'Anchor & Speaker Application',
+      forbiddenBadge: 'Core Team Application'
+    }
+  ];
+
+  for (const { app, oppTitle, expectedBadge, forbiddenBadge } of matrix) {
+    const html = renderToStaticMarkup(
+      React.createElement(AdminOpportunityApplicationDetailsModal, {
+        application: app,
+        opportunityTitle: oppTitle,
+        token: 'test-token',
+        onClose: () => {}
+      })
+    );
+
+    const badgeMatches = (badge: string) =>
+      html.includes(badge) || html.includes(badge.replace('&', '&amp;'));
+
+    assert.ok(
+      badgeMatches(expectedBadge),
+      `Modal for ${oppTitle} must render badge "${expectedBadge}"`
+    );
+    assert.equal(
+      badgeMatches(forbiddenBadge),
+      false,
+      `Modal for ${oppTitle} must NOT render badge "${forbiddenBadge}"`
+    );
+  }
+});
+
+// TEST 11: Historical application with old fields remains readable
+test('TEST 11: Historical application with old fields remains readable without crashing', () => {
+  const historicalApp = {
+    id: 'career-app-hist-001',
+    name: 'Historical Candidate',
+    email: 'hist@culko.in',
+    opportunityTitle: 'AWS SBG Core Team Member',
+    opportunitySlug: 'core-team',
+    // Stored with generic fields from first-generation form
+    motivation: 'I want to build cloud apps for college',
+    experience: 'Previous internship in React',
+    skills: 'React, Node.js',
+    resumeUrl: '/uploads/resumes/hist.pdf',
+    linkedin: 'https://www.linkedin.com/in/historical-user',
+    consent: true
+  };
+
+  const html = renderToStaticMarkup(
+    React.createElement(AdminOpportunityApplicationDetailsModal, {
+      application: historicalApp,
+      opportunityTitle: 'AWS SBG Core Team Member',
+      token: 'test-token',
+      onClose: () => {}
+    })
+  );
+
+  assert.ok(html.includes('Core Team Application'));
+  assert.ok(html.includes('Historical Candidate'));
+  assert.ok(html.includes('I want to build cloud apps for college'));
+  assert.ok(html.includes('Previous internship in React'));
+  assert.ok(html.includes('View Resume') || html.includes('Download Resume'));
+  assert.ok(html.includes('Missing / Invalid submission data') || html.includes('Not provided'));
+  assert.equal(html.includes('Short Introduction Video'), false);
+});
+
+// TEST 12: Unknown/custom fields remain visible
+test('TEST 12: Unknown/custom fields remain visible in Additional / Historical Custom Fields', () => {
+  const dynamicApp = {
+    id: 'career-app-custom-001',
+    name: 'Dynamic Custom Candidate',
+    email: 'dynamic@culko.in',
+    opportunityTitle: 'AWS SBG Core Team Member',
+    formType: 'core-team',
+    linkedin: 'https://www.linkedin.com/in/dynamic',
+    customAwardTrack: 'National Cloud Champion',
+    legacyDiscordHandle: 'awsbuilder#1234',
+    consent: true
+  };
+
+  const html = renderToStaticMarkup(
+    React.createElement(AdminOpportunityApplicationDetailsModal, {
+      application: dynamicApp,
+      opportunityTitle: 'AWS SBG Core Team Member',
+      token: 'test-token',
+      onClose: () => {}
+    })
+  );
+
+  assert.ok(
+    html.includes('Additional / Historical Custom Fields') ||
+    html.includes('Additional / Historical')
+  );
+  assert.ok(html.includes('customAwardTrack'));
+  assert.ok(html.includes('National Cloud Champion'));
+  assert.ok(html.includes('legacyDiscordHandle'));
+  assert.ok(html.includes('awsbuilder#1234'));
+});
+

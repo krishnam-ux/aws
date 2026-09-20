@@ -116,6 +116,7 @@ export function isValidLinkedInUrl(value?: string | null): boolean {
 }
 
 export type OpportunityFormType = 'founding-member' | 'core-team' | 'anchor-speaker';
+export type CanonicalOpportunityType = 'FOUNDING_MEMBER' | 'CORE_TEAM' | 'ANCHOR_SPEAKER';
 
 export const OPPORTUNITY_DOMAINS = [
   'Tech & Technical',
@@ -154,37 +155,126 @@ export const CORE_TEAM_ROLES_BY_DOMAIN: Record<OpportunityDomain, string[]> = {
   ]
 };
 
+/**
+ * Authoritative Canonical Opportunity Application Type Resolver.
+ * Resolves an application to FOUNDING_MEMBER, CORE_TEAM, or ANCHOR_SPEAKER
+ * using stable stored identifiers, opportunity context, and questions.
+ */
+export function resolveOpportunityApplicationType(
+  application?: {
+    formType?: string;
+    opportunitySlug?: string;
+    opportunityId?: string;
+    opportunityTitle?: string;
+    whyCoreTeam?: string;
+    whyFoundingMember?: string;
+    preferredRole?: string;
+    primarySkillLevel?: string;
+    exactResponsibility?: string;
+    teamworkSituation?: string;
+    scenarioUnavailableMembers?: string;
+    personalContribution?: string;
+    communityGrowthIdeas?: string;
+    scenarioDropParticipation?: string;
+    roleAndImpact?: string;
+    academicBalance?: string;
+    [key: string]: any;
+  } | null,
+  opportunityContext?: {
+    slug?: string;
+    title?: string;
+    id?: string;
+  } | string | null
+): CanonicalOpportunityType {
+  if (!application && !opportunityContext) {
+    return 'ANCHOR_SPEAKER';
+  }
+
+  // 1. Explicit stored formType on the application record
+  const rawFormType = String(application?.formType || '').toLowerCase().trim();
+  if (rawFormType === 'founding-member' || rawFormType === 'founding_member' || rawFormType === 'founding') {
+    return 'FOUNDING_MEMBER';
+  }
+  if (rawFormType === 'core-team' || rawFormType === 'core_team' || rawFormType === 'core') {
+    return 'CORE_TEAM';
+  }
+  if (rawFormType === 'anchor-speaker' || rawFormType === 'anchor_speaker' || rawFormType === 'anchor' || rawFormType === 'speaker') {
+    return 'ANCHOR_SPEAKER';
+  }
+
+  // 2. Canonical Opportunity Metadata (Title, Slug, ID)
+  const ctxTitle = String(
+    typeof opportunityContext === 'string'
+      ? opportunityContext
+      : opportunityContext?.title || application?.opportunityTitle || ''
+  ).toLowerCase().trim();
+
+  const ctxSlug = String(
+    typeof opportunityContext === 'object' && opportunityContext !== null
+      ? (opportunityContext.slug || application?.opportunitySlug || '')
+      : (application?.opportunitySlug || '')
+  ).toLowerCase().trim();
+
+  const ctxId = String(
+    typeof opportunityContext === 'object' && opportunityContext !== null
+      ? (opportunityContext.id || application?.opportunityId || '')
+      : (application?.opportunityId || '')
+  ).toLowerCase().trim();
+
+  const metaString = `${ctxTitle} ${ctxSlug} ${ctxId}`;
+
+  // Anchor & Speaker
+  if (metaString.includes('anchor') || metaString.includes('speaker')) {
+    return 'ANCHOR_SPEAKER';
+  }
+
+  // Founding Member (Founding Member, founding-members, founding-core-members, etc.)
+  if (metaString.includes('founding')) {
+    return 'FOUNDING_MEMBER';
+  }
+
+  // Core Team (AWS SBG Core Team Member, core-team, core_team, core-members)
+  if (
+    metaString.includes('core team') ||
+    metaString.includes('core-team') ||
+    metaString.includes('core_team') ||
+    metaString.includes('core-members') ||
+    metaString.includes('core')
+  ) {
+    return 'CORE_TEAM';
+  }
+
+  // 3. Question-specific submitted answers on the application
+  if (
+    application?.whyCoreTeam ||
+    application?.preferredRole ||
+    application?.primarySkillLevel ||
+    application?.exactResponsibility ||
+    application?.teamworkSituation ||
+    application?.scenarioUnavailableMembers ||
+    (application?.availableDays && !application?.academicBalance)
+  ) {
+    return 'CORE_TEAM';
+  }
+
+  if (
+    application?.whyFoundingMember ||
+    application?.personalContribution ||
+    application?.communityGrowthIdeas ||
+    application?.scenarioDropParticipation ||
+    application?.roleAndImpact ||
+    application?.academicBalance
+  ) {
+    return 'FOUNDING_MEMBER';
+  }
+
+  // 4. Default fallback
+  return 'ANCHOR_SPEAKER';
+}
+
 export function getOpportunityFormType(slug: string = '', title: string = ''): OpportunityFormType {
-  const s = (slug || '').toLowerCase().trim();
-  const t = (title || '').toLowerCase().trim();
-
-  // If Anchor or Speaker is explicitly mentioned -> anchor-speaker
-  if (s.includes('anchor') || s.includes('speaker') || t.includes('anchor') || t.includes('speaker')) {
-    return 'anchor-speaker';
-  }
-
-  // If Core Team is specifically indicated
-  if (
-    s === 'core-team' ||
-    s.startsWith('core-team-') ||
-    s.includes('core-team') ||
-    s.includes('core_team') ||
-    (t.includes('core team') && !t.includes('founding')) ||
-    s === 'core-members'
-  ) {
-    return 'core-team';
-  }
-
-  // If Founding Member is indicated
-  if (
-    s === 'founding-members' ||
-    s === 'founding-member' ||
-    s.includes('founding') ||
-    t.includes('founding')
-  ) {
-    return 'founding-member';
-  }
-
-  // Default fallback form type is anchor-speaker
+  const canonical = resolveOpportunityApplicationType(null, { slug, title });
+  if (canonical === 'FOUNDING_MEMBER') return 'founding-member';
+  if (canonical === 'CORE_TEAM') return 'core-team';
   return 'anchor-speaker';
 }
