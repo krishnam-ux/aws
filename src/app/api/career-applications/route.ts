@@ -127,6 +127,16 @@ export async function POST(request: Request) {
       if (!contributionDuration) fieldErrors.contributionDuration = 'Please select your expected contribution duration.';
       if (!academicBalance) fieldErrors.academicBalance = 'Please explain how you will balance academics.';
       if (!scenarioDropParticipation) fieldErrors.scenarioDropParticipation = 'Please provide your approach to this scenario.';
+      if (!(resume instanceof File) || resume.size === 0) {
+        fieldErrors.resume = 'Resume / CV is required.';
+      } else {
+        const isPdf = resume.type === 'application/pdf' || resume.name.toLowerCase().endsWith('.pdf');
+        if (!isPdf) {
+          fieldErrors.resume = 'Resume must be a PDF file.';
+        } else if (resume.size > 5 * 1024 * 1024) {
+          fieldErrors.resume = 'Resume must be 5MB or smaller.';
+        }
+      }
     } else if (formType === 'core-team') {
       if (!department) fieldErrors.department = 'Please enter your branch / department.';
       if (!currentYear) fieldErrors.currentYear = 'Please select your current year.';
@@ -148,6 +158,16 @@ export async function POST(request: Request) {
       if (!availableDays) fieldErrors.availableDays = 'Please select your available days.';
       if (!activeParticipation) fieldErrors.activeParticipation = 'Please select your participation commitment.';
       if (!involvementDuration) fieldErrors.involvementDuration = 'Please select your expected involvement duration.';
+      if (!(resume instanceof File) || resume.size === 0) {
+        fieldErrors.resume = 'Resume / CV is required.';
+      } else {
+        const isPdf = resume.type === 'application/pdf' || resume.name.toLowerCase().endsWith('.pdf');
+        if (!isPdf) {
+          fieldErrors.resume = 'Resume must be a PDF file.';
+        } else if (resume.size > 5 * 1024 * 1024) {
+          fieldErrors.resume = 'Resume must be 5MB or smaller.';
+        }
+      }
     } else {
       // Anchor & Speaker or generic
       if (!university) fieldErrors.university = 'Please enter your university.';
@@ -181,26 +201,22 @@ export async function POST(request: Request) {
     let resumeUrl = '';
 
     if (resume instanceof File && resume.size > 0) {
-      const allowedMimeTypes = new Set([
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      ]);
-      if (!allowedMimeTypes.has(resume.type)) {
-        return NextResponse.json({ success: false, error: 'Resume must be a PDF, DOC, or DOCX file.' }, { status: 400 });
+      const isPdf = resume.type === 'application/pdf' || resume.name.toLowerCase().endsWith('.pdf');
+      const isAnchor = formType !== 'founding-member' && formType !== 'core-team';
+      
+      if (!isPdf && !isAnchor) {
+        return NextResponse.json({ success: false, error: 'Resume must be a PDF file.', fieldErrors: { resume: 'Resume must be a PDF file.' } }, { status: 400 });
       }
       if (resume.size > 5 * 1024 * 1024) {
-        return NextResponse.json({ success: false, error: 'Resume must be 5MB or smaller.' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Resume must be 5MB or smaller.', fieldErrors: { resume: 'Resume must be 5MB or smaller.' } }, { status: 400 });
       }
 
-      const resumeFiles = await db.resumeFiles.getMap();
-      resumeFiles[applicationId] = {
+      await db.resumeFiles.saveFile(applicationId, {
         data: Buffer.from(await resume.arrayBuffer()).toString('base64'),
-        mimeType: resume.type,
+        mimeType: isPdf ? 'application/pdf' : resume.type || 'application/octet-stream',
         fileName: resume.name,
         size: resume.size,
-      };
-      await db.resumeFiles.saveMap(resumeFiles);
+      });
       resumeUrl = `admin-resume:${applicationId}`;
     }
 

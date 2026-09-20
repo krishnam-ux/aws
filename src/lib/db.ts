@@ -484,6 +484,26 @@ async function ensureCareerApplicationsTable() {
   }
 }
 
+async function ensureResumeFilesTable() {
+  if (!sql) return;
+  try {
+    await ensurePostgresTable();
+    await sql`
+      CREATE TABLE IF NOT EXISTS career_resume_files (
+        id VARCHAR(255) PRIMARY KEY,
+        file_name VARCHAR(255),
+        mime_type VARCHAR(100),
+        size INT,
+        data TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_career_resume_files_id ON career_resume_files(id)`;
+  } catch (err) {
+    console.error('Failed to ensure career resume files table exists in PostgreSQL:', err);
+  }
+}
+
 async function ensureCertificatesTable() {
   if (!sql) return;
   try {
@@ -2151,8 +2171,90 @@ export const db = {
     }
   },
   resumeFiles: {
-    getMap: async () => await readJsonFile<Record<string, { data: string; mimeType: string; fileName: string; size: number }>>('career_resume_files.json', {}),
-    saveMap: async (data: Record<string, { data: string; mimeType: string; fileName: string; size: number }>) => await writeJsonFile('career_resume_files.json', data)
+    getMap: async (): Promise<Record<string, { data: string; mimeType: string; fileName: string; size: number }>> => {
+      const localMap = await readJsonFile<Record<string, { data: string; mimeType: string; fileName: string; size: number }>>('career_resume_files.json', {});
+      if (sql) {
+        try {
+          await ensureResumeFilesTable();
+          const rows = await sql`SELECT id, file_name, mime_type, size, data FROM career_resume_files`;
+          const dbMap: Record<string, { data: string; mimeType: string; fileName: string; size: number }> = {};
+          for (const r of rows) {
+            dbMap[r.id] = {
+              data: r.data,
+              mimeType: r.mime_type,
+              fileName: r.file_name,
+              size: Number(r.size || 0)
+            };
+          }
+          return { ...localMap, ...dbMap };
+        } catch (e) {
+          console.error('Error fetching resume files from PostgreSQL:', e);
+        }
+      }
+      return localMap;
+    },
+    getById: async (id: string): Promise<{ data: string; mimeType: string; fileName: string; size: number } | null> => {
+      if (sql) {
+        try {
+          await ensureResumeFilesTable();
+          const rows = await sql`SELECT id, file_name, mime_type, size, data FROM career_resume_files WHERE id = ${id}`;
+          if (rows.length > 0) {
+            return {
+              data: rows[0].data,
+              mimeType: rows[0].mime_type,
+              fileName: rows[0].file_name,
+              size: Number(rows[0].size || 0)
+            };
+          }
+        } catch (e) {
+          console.error('Error fetching single resume file from PostgreSQL:', e);
+        }
+      }
+      const localMap = await readJsonFile<Record<string, { data: string; mimeType: string; fileName: string; size: number }>>('career_resume_files.json', {});
+      return localMap[id] || null;
+    },
+    saveMap: async (data: Record<string, { data: string; mimeType: string; fileName: string; size: number }>) => {
+      await writeJsonFile('career_resume_files.json', data);
+      if (sql) {
+        try {
+          await ensureResumeFilesTable();
+          for (const [id, file] of Object.entries(data)) {
+            await sql`
+              INSERT INTO career_resume_files (id, file_name, mime_type, size, data)
+              VALUES (${id}, ${file.fileName}, ${file.mimeType}, ${file.size}, ${file.data})
+              ON CONFLICT (id) DO UPDATE SET
+                file_name = EXCLUDED.file_name,
+                mime_type = EXCLUDED.mime_type,
+                size = EXCLUDED.size,
+                data = EXCLUDED.data;
+            `;
+          }
+        } catch (e) {
+          console.error('Error saving resume files to PostgreSQL:', e);
+        }
+      }
+    },
+    saveFile: async (id: string, file: { data: string; mimeType: string; fileName: string; size: number }) => {
+      const map = await readJsonFile<Record<string, { data: string; mimeType: string; fileName: string; size: number }>>('career_resume_files.json', {});
+      map[id] = file;
+      await writeJsonFile('career_resume_files.json', map);
+      if (sql) {
+        try {
+          await ensureResumeFilesTable();
+          await sql`
+            INSERT INTO career_resume_files (id, file_name, mime_type, size, data)
+            VALUES (${id}, ${file.fileName}, ${file.mimeType}, ${file.size}, ${file.data})
+            ON CONFLICT (id) DO UPDATE SET
+              file_name = EXCLUDED.file_name,
+              mime_type = EXCLUDED.mime_type,
+              size = EXCLUDED.size,
+              data = EXCLUDED.data;
+          `;
+        } catch (e) {
+          console.error('Error saving single resume file to PostgreSQL:', e);
+        }
+      }
+    }
   },
   feedback: {
     getAll: async (): Promise<any[]> => {

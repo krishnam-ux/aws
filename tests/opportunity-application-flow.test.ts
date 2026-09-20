@@ -18,6 +18,7 @@ import AdminOpportunityApplicationDetailsModal from '../src/components/AdminOppo
 import { db } from '../src/lib/db';
 import { POST as careerAppPost } from '../src/app/api/career-applications/route';
 import { POST as adminPost } from '../src/app/api/admin/route';
+import { GET as adminResumeGet } from '../src/app/api/admin/career-applications/[id]/resume/route';
 
 const ADMIN_HEADER = { Authorization: 'Bearer awssbg-admin-session-token-secure-hash' };
 
@@ -342,6 +343,7 @@ test('Founding Member application validates 11 sections and saves ownership & co
   completeForm.append('scenarioDropParticipation', 'I would poll active and inactive members to identify pain points, revamp topics based on student demand, and introduce interactive challenges.');
   completeForm.append('linkedin', 'https://linkedin.com/in/aaravsharma');
   completeForm.append('github', 'https://github.com/aaravsharma');
+  completeForm.append('resume', new File([Buffer.from('%PDF-1.4 sample pdf')], 'aarav-resume.pdf', { type: 'application/pdf' }));
   completeForm.append('consent', 'on');
 
   const req2 = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: completeForm });
@@ -492,6 +494,7 @@ test('Core Team application validates domain-specific roles, skills self-rating,
   coreTeamForm.append('involvementDuration', 'Multiple semesters');
   completeFormAppend(coreTeamForm, 'linkedin', 'https://linkedin.com/in/rohanverma');
   completeFormAppend(coreTeamForm, 'github', 'https://github.com/rohanverma');
+  coreTeamForm.append('resume', new File([Buffer.from('%PDF-1.4 mock core team resume')], 'rohan-resume.pdf', { type: 'application/pdf' }));
   coreTeamForm.append('consent', 'on');
 
   function completeFormAppend(form: FormData, key: string, val: string) {
@@ -662,6 +665,7 @@ test('Admin API retrieves 100% complete submitted form data for Founding Member 
   form.append('linkedin', 'https://www.linkedin.com/in/aarav-sharma-cloud');
   form.append('github', 'https://github.com/aaravsharma-aws');
   form.append('portfolio', 'https://aaravsharma.dev');
+  form.append('resume', new File([Buffer.from('%PDF-1.4 aarav resume')], 'aarav-resume.pdf', { type: 'application/pdf' }));
   form.append('consent', 'on');
 
   const submitReq = new Request('http://localhost/api/career-applications', {
@@ -767,6 +771,7 @@ test('Admin API retrieves 100% complete submitted form data for Core Team applic
   ctForm.append('linkedin', 'https://www.linkedin.com/in/priya-verma-creative');
   ctForm.append('github', 'https://github.com/priyaverma');
   ctForm.append('portfolio', 'https://behance.net/priyaverma');
+  ctForm.append('resume', new File([Buffer.from('%PDF-1.4 priya resume')], 'priya-resume.pdf', { type: 'application/pdf' }));
   ctForm.append('consent', 'on');
 
   const submitReq = new Request('http://localhost/api/career-applications', {
@@ -1389,6 +1394,7 @@ test('TEST 13: Full Founding Member submission -> DB -> Admin modal renders all 
   form.append('linkedin', 'https://linkedin.com/in/e2efoundingcandidate');
   form.append('github', 'https://github.com/e2efoundingcandidate');
   form.append('portfolio', 'https://e2efoundingcandidate.dev');
+  form.append('resume', new File([Buffer.from('%PDF-1.4 mock founding resume')], 'founding-resume.pdf', { type: 'application/pdf' }));
   form.append('consent', 'on');
 
   const req = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: form });
@@ -1437,6 +1443,7 @@ test('TEST 13: Full Founding Member submission -> DB -> Admin modal renders all 
   assert.ok(html.includes('https://linkedin.com/in/e2efoundingcandidate'), 'LinkedIn must render');
   assert.ok(html.includes('https://github.com/e2efoundingcandidate'), 'GitHub must render');
   assert.ok(html.includes('https://e2efoundingcandidate.dev'), 'Portfolio must render');
+  assert.ok(html.includes('View Resume') && html.includes('Download Resume'), 'Resume buttons must render');
 
   // CRITICAL CHECK: "Missing / Invalid submission data" must NOT be rendered anywhere in this fully filled application
   assert.equal(
@@ -1502,6 +1509,7 @@ test('TEST 14: Full Core Team submission -> DB -> Admin modal renders all fields
   form.append('linkedin', 'https://linkedin.com/in/e2ecoreteam');
   form.append('github', 'https://github.com/e2ecoreteam');
   form.append('portfolio', 'https://e2ecoreteam.dev');
+  form.append('resume', new File([Buffer.from('%PDF-1.4 mock core team resume')], 'coreteam-resume.pdf', { type: 'application/pdf' }));
   form.append('consent', 'on');
 
   const req = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: form });
@@ -1547,6 +1555,7 @@ test('TEST 14: Full Core Team submission -> DB -> Admin modal renders all fields
   assert.ok(html.includes('Monday, Wednesday, Friday, Saturday'), 'Available days must render');
   assert.ok(html.includes('8-10 hours/week'), 'Availability hours must render');
   assert.ok(html.includes('Proactively step in, reassign critical tasks among available peers, notify leadership'), 'Scenario must render');
+  assert.ok(html.includes('View Resume') && html.includes('Download Resume'), 'Resume buttons must render');
 
   // CRITICAL CHECK: "Missing / Invalid submission data" must NOT be rendered anywhere in this fully filled application
   assert.equal(
@@ -1590,6 +1599,7 @@ test('TEST 15: normalizeOpportunityApplication handles snake_case, camelCase, an
     linkedin: 'https://linkedin.com/in/normcandidate',
     github: 'https://github.com/normcandidate',
     portfolio: 'https://normcandidate.design',
+    resume_url: 'admin-resume:test-norm-1',
     consent: true
   };
 
@@ -1611,6 +1621,7 @@ test('TEST 15: normalizeOpportunityApplication handles snake_case, camelCase, an
   assert.equal(normalized.consistentContribution, 'Yes, weekly 3 videos guaranteed');
   assert.equal(normalized.contributionDuration, '2 Years');
   assert.equal(normalized.academicBalance, 'Scheduled edit slots during free campus blocks');
+  assert.equal(normalized.resumeUrl, 'admin-resume:test-norm-1');
 
   // Render in Admin Modal to verify complete rendering
   const html = renderToStaticMarkup(
@@ -1636,5 +1647,321 @@ test('TEST 15: normalizeOpportunityApplication handles snake_case, camelCase, an
   assert.ok(html.includes('Yes, weekly 3 videos guaranteed'));
   assert.ok(html.includes('2 Years'));
   assert.ok(html.includes('Scheduled edit slots during free campus blocks'));
+  assert.ok(html.includes('View Resume') && html.includes('Download Resume'));
   assert.equal(html.includes('Missing / Invalid submission data'), false);
 });
+
+// TEST 16: Founding Member requires Resume / CV (missing resume rejected with 400)
+test('TEST 16: Founding Member requires Resume / CV (missing resume rejected with 400)', async () => {
+  const form = new FormData();
+  form.append('opportunityId', 'opp-e2e-founding-member');
+  form.append('opportunitySlug', 'founding-members');
+  form.append('formType', 'founding-member');
+  form.append('name', 'Missing Resume Founder');
+  form.append('email', `fm.noresume.${Date.now()}@cumail.in`);
+  form.append('phone', '9876543210');
+  form.append('university', 'Chandigarh University – Uttar Pradesh');
+  form.append('program', 'B.Tech CSE');
+  form.append('department', 'Computer Science and Engineering');
+  form.append('currentYear', '3rd Year');
+  form.append('graduationYear', '2026');
+  form.append('studentId', '23BCS9999');
+  form.append('preferredDomain', 'Tech & Technical');
+  form.append('skills', 'Next.js, TypeScript, AWS CDK, Serverless');
+  form.append('experience', 'Led development of campus cloud portal');
+  form.append('roleAndImpact', 'Architected frontend and backend microservices');
+  form.append('whyFoundingMember', 'To foster cloud computing culture and mentor junior builders');
+  form.append('personalContribution', 'Conduct hands-on AWS workshops and build community tooling');
+  form.append('communityGrowthIdeas', 'Organize cloud certifications study tracks and hackathons');
+  form.append('availabilityHours', '10-15 hours/week');
+  form.append('consistentContribution', 'Yes, fully committed to weekly deliverables');
+  form.append('contributionDuration', '1+ Year (Full Academic Term)');
+  form.append('academicBalance', 'Effective weekend sprint planning');
+  form.append('scenarioDropParticipation', 'Conduct anonymous feedback survey, switch to interactive live coding labs');
+  form.append('linkedin', 'https://linkedin.com/in/noresume');
+  form.append('consent', 'on');
+  // NOTE: No resume attached!
+
+  const req = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: form });
+  const res = await careerAppPost(req);
+  assert.equal(res.status, 400);
+  const data = await res.json();
+  assert.equal(data.success, false);
+  assert.ok(data.fieldErrors?.resume, 'fieldErrors.resume must be present');
+  assert.equal(data.fieldErrors.resume, 'Resume / CV is required.');
+});
+
+// TEST 17: Core Team requires Resume / CV (missing resume rejected with 400)
+test('TEST 17: Core Team requires Resume / CV (missing resume rejected with 400)', async () => {
+  const form = new FormData();
+  form.append('opportunityId', 'opp-e2e-core-team');
+  form.append('opportunitySlug', 'core-team');
+  form.append('formType', 'core-team');
+  form.append('name', 'Missing Resume Core Team');
+  form.append('email', `ct.noresume.${Date.now()}@cumail.in`);
+  form.append('phone', '9876543211');
+  form.append('university', 'Chandigarh University – Uttar Pradesh');
+  form.append('program', 'B.Tech CSE');
+  form.append('department', 'Information Technology');
+  form.append('currentYear', '2nd Year');
+  form.append('graduationYear', '2027');
+  form.append('studentId', '24BCS8888');
+  form.append('preferredDomain', 'Growth & Community');
+  form.append('preferredRole', 'Event Coordination');
+  form.append('skills', 'Event Management, Sponsorship Outreach');
+  form.append('primarySkillLevel', 'Intermediate (Hands-on experience)');
+  form.append('experience', 'Managed national level university hackathon');
+  form.append('exactResponsibility', 'Head of Logistics and Guest Hospitality');
+  form.append('teamworkSituation', 'Delegated timeline tasks to 12 volunteers');
+  form.append('leadershipExperience', 'No');
+  form.append('whyCoreTeam', 'Want to scale AWS community events across north campus');
+  form.append('domainContribution', 'Plan bi-weekly hands-on workshops and invite cloud architects');
+  form.append('availableDays', 'Monday, Wednesday, Friday, Saturday');
+  form.append('availabilityHours', '8-10 hours/week');
+  form.append('activeParticipation', 'Yes, fully active in discussions and events');
+  form.append('involvementDuration', '1 Year minimum');
+  form.append('scenarioUnavailableMembers', 'Proactively step in, reassign critical tasks');
+  form.append('linkedin', 'https://linkedin.com/in/ctnoresume');
+  form.append('consent', 'on');
+  // NOTE: No resume attached!
+
+  const req = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: form });
+  const res = await careerAppPost(req);
+  assert.equal(res.status, 400);
+  const data = await res.json();
+  assert.equal(data.success, false);
+  assert.ok(data.fieldErrors?.resume, 'fieldErrors.resume must be present');
+  assert.equal(data.fieldErrors.resume, 'Resume / CV is required.');
+});
+
+// TEST 18: Non-PDF resume (e.g. DOCX or PNG) is rejected with 400
+test('TEST 18: Non-PDF resume is rejected with 400 and fieldErrors.resume', async () => {
+  const form = new FormData();
+  form.append('opportunityId', 'opp-e2e-core-team');
+  form.append('opportunitySlug', 'core-team');
+  form.append('formType', 'core-team');
+  form.append('name', 'Invalid File Candidate');
+  form.append('email', `invalid.file.${Date.now()}@cumail.in`);
+  form.append('phone', '9876543211');
+  form.append('university', 'Chandigarh University – Uttar Pradesh');
+  form.append('program', 'B.Tech CSE');
+  form.append('department', 'Information Technology');
+  form.append('currentYear', '2nd Year');
+  form.append('graduationYear', '2027');
+  form.append('studentId', '24BCS8888');
+  form.append('preferredDomain', 'Growth & Community');
+  form.append('preferredRole', 'Event Coordination');
+  form.append('skills', 'Event Management, Sponsorship Outreach');
+  form.append('primarySkillLevel', 'Intermediate (Hands-on experience)');
+  form.append('experience', 'Managed national level university hackathon');
+  form.append('exactResponsibility', 'Head of Logistics and Guest Hospitality');
+  form.append('teamworkSituation', 'Delegated timeline tasks to 12 volunteers');
+  form.append('leadershipExperience', 'No');
+  form.append('whyCoreTeam', 'Want to scale AWS community events across north campus');
+  form.append('domainContribution', 'Plan bi-weekly hands-on workshops and invite cloud architects');
+  form.append('availableDays', 'Monday, Wednesday, Friday, Saturday');
+  form.append('availabilityHours', '8-10 hours/week');
+  form.append('activeParticipation', 'Yes, fully active in discussions and events');
+  form.append('involvementDuration', '1 Year minimum');
+  form.append('scenarioUnavailableMembers', 'Proactively step in, reassign critical tasks');
+  form.append('linkedin', 'https://linkedin.com/in/invalidfile');
+  form.append('consent', 'on');
+  // Word docx instead of PDF
+  form.append('resume', new File([Buffer.from('fake docx content')], 'resume.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }));
+
+  const req = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: form });
+  const res = await careerAppPost(req);
+  assert.equal(res.status, 400);
+  const data = await res.json();
+  assert.equal(data.success, false);
+  assert.ok(data.fieldErrors?.resume);
+  assert.equal(data.fieldErrors.resume, 'Resume must be a PDF file.');
+});
+
+// TEST 19: Oversized resume (> 5MB) is rejected with 400
+test('TEST 19: Oversized resume (> 5MB) is rejected with 400 and fieldErrors.resume', async () => {
+  const form = new FormData();
+  form.append('opportunityId', 'opp-e2e-core-team');
+  form.append('opportunitySlug', 'core-team');
+  form.append('formType', 'core-team');
+  form.append('name', 'Oversized Resume Candidate');
+  form.append('email', `oversized.${Date.now()}@cumail.in`);
+  form.append('phone', '9876543211');
+  form.append('university', 'Chandigarh University – Uttar Pradesh');
+  form.append('program', 'B.Tech CSE');
+  form.append('department', 'Information Technology');
+  form.append('currentYear', '2nd Year');
+  form.append('graduationYear', '2027');
+  form.append('studentId', '24BCS8888');
+  form.append('preferredDomain', 'Growth & Community');
+  form.append('preferredRole', 'Event Coordination');
+  form.append('skills', 'Event Management, Sponsorship Outreach');
+  form.append('primarySkillLevel', 'Intermediate (Hands-on experience)');
+  form.append('experience', 'Managed national level university hackathon');
+  form.append('exactResponsibility', 'Head of Logistics and Guest Hospitality');
+  form.append('teamworkSituation', 'Delegated timeline tasks to 12 volunteers');
+  form.append('leadershipExperience', 'No');
+  form.append('whyCoreTeam', 'Want to scale AWS community events across north campus');
+  form.append('domainContribution', 'Plan bi-weekly hands-on workshops and invite cloud architects');
+  form.append('availableDays', 'Monday, Wednesday, Friday, Saturday');
+  form.append('availabilityHours', '8-10 hours/week');
+  form.append('activeParticipation', 'Yes, fully active in discussions and events');
+  form.append('involvementDuration', '1 Year minimum');
+  form.append('scenarioUnavailableMembers', 'Proactively step in, reassign critical tasks');
+  form.append('linkedin', 'https://linkedin.com/in/oversized');
+  form.append('consent', 'on');
+  // 6 MB PDF
+  const largeBuffer = Buffer.alloc(6 * 1024 * 1024);
+  form.append('resume', new File([largeBuffer], 'large-resume.pdf', { type: 'application/pdf' }));
+
+  const req = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: form });
+  const res = await careerAppPost(req);
+  assert.equal(res.status, 400);
+  const data = await res.json();
+  assert.equal(data.success, false);
+  assert.ok(data.fieldErrors?.resume);
+  assert.equal(data.fieldErrors.resume, 'Resume must be 5MB or smaller.');
+});
+
+// TEST 20: Anchor & Speaker does NOT require a resume and succeeds without it
+test('TEST 20: Anchor & Speaker does NOT require a resume and succeeds without it', async () => {
+  const anchorOppId = 'opp-test-anchor-speaker';
+  const testEmail = `anchor.noresume.${Date.now()}@cumail.in`;
+  const form = new FormData();
+  form.append('opportunityId', anchorOppId);
+  form.append('opportunitySlug', 'anchor-speaker');
+  form.append('formType', 'anchor-speaker');
+  form.append('name', 'Anchor No Resume Candidate');
+  form.append('email', testEmail);
+  form.append('phone', '9876543210');
+  form.append('university', 'Chandigarh University – Uttar Pradesh');
+  form.append('program', 'B.Tech CSE');
+  form.append('graduationYear', '2026');
+  form.append('studentId', '22BCS1122');
+  form.append('linkedin', 'https://linkedin.com/in/anchornoresume');
+  form.append('introductionVideoUrl', 'https://drive.google.com/file/d/1A2B3C4D5E/view?usp=sharing');
+  form.append('skills', 'Stage Hosting, Public Speaking');
+  form.append('experience', 'Anchored national summit');
+  form.append('motivation', 'Passionate about hosting tech conferences');
+  form.append('consent', 'on');
+  // NO resume attached!
+
+  const req = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: form });
+  const res = await careerAppPost(req);
+  assert.equal(res.status, 303, 'Anchor & Speaker submission must succeed without a resume');
+
+  const apps = await db.careerApplications.getByOpportunityId(anchorOppId);
+  const saved = apps.find((a: any) => a.email.toLowerCase() === testEmail.toLowerCase());
+  assert.ok(saved);
+
+  await db.careerApplications.deleteOne(saved.id);
+});
+
+// TEST 21: Admin Details Modal shows Missing / Invalid data when resume is missing on canonical FM or CT
+test('TEST 21: Admin Details Modal shows Missing / Invalid data when resume is missing on canonical FM or CT', () => {
+  const appWithoutResume = {
+    id: 'app-no-resume-render',
+    name: 'No Resume Applicant',
+    email: 'noresume@cumail.in',
+    opportunityTitle: 'Founding Members',
+    formType: 'founding-member',
+    linkedin: 'https://linkedin.com/in/noresume',
+    resumeUrl: '', // Missing
+    consent: true
+  };
+
+  const html = renderToStaticMarkup(
+    React.createElement(AdminOpportunityApplicationDetailsModal, {
+      application: appWithoutResume,
+      opportunityTitle: 'Founding Members',
+      token: 'test-token',
+      onClose: () => {}
+    })
+  );
+
+  assert.ok(html.includes('Resume / CV'));
+  assert.ok(html.includes('Missing / Invalid submission data'));
+});
+
+// TEST 22: Admin resume API serves inline preview and attachment download
+test('TEST 22: Admin resume API serves inline preview and attachment download', async () => {
+  const appId = `career-app-resume-test-${Date.now()}`;
+  const mockPdfData = Buffer.from('%PDF-1.4 Mock PDF Content For Admin Testing').toString('base64');
+  
+  await db.careerApplications.insertOne({
+    id: appId,
+    opportunityId: 'opp-1',
+    opportunitySlug: 'founding-members',
+    formType: 'founding-member',
+    name: 'Admin Resume Tester',
+    email: `admintest.${Date.now()}@cumail.in`,
+    resumeUrl: `admin-resume:${appId}`,
+    linkedin: 'https://linkedin.com/in/admintester',
+    consent: true,
+    status: 'New'
+  });
+
+  await db.resumeFiles.saveFile(appId, {
+    data: mockPdfData,
+    mimeType: 'application/pdf',
+    fileName: 'resume-document.pdf',
+    size: Buffer.from(mockPdfData, 'base64').length
+  });
+
+  // 1. Unauthorized request
+  const unauthReq = new Request(`http://localhost:3000/api/admin/career-applications/${appId}/resume`);
+  const unauthRes = await adminResumeGet(unauthReq, { params: Promise.resolve({ id: appId }) });
+  assert.equal(unauthRes.status, 401);
+
+  // 2. Authorized Inline Preview (View Resume)
+  const viewReq = new Request(`http://localhost:3000/api/admin/career-applications/${appId}/resume`, {
+    headers: { Authorization: 'Bearer awssbg-admin-session-token-secure-hash' }
+  });
+  const viewRes = await adminResumeGet(viewReq, { params: Promise.resolve({ id: appId }) });
+  assert.equal(viewRes.status, 200);
+  assert.equal(viewRes.headers.get('Content-Type'), 'application/pdf');
+  assert.ok(viewRes.headers.get('Content-Disposition')?.includes('inline'));
+
+  // 3. Authorized Attachment Download (Download Resume)
+  const downloadReq = new Request(`http://localhost:3000/api/admin/career-applications/${appId}/resume?download=1`, {
+    headers: { Authorization: 'Bearer awssbg-admin-session-token-secure-hash' }
+  });
+  const downloadRes = await adminResumeGet(downloadReq, { params: Promise.resolve({ id: appId }) });
+  assert.equal(downloadRes.status, 200);
+  assert.equal(downloadRes.headers.get('Content-Type'), 'application/pdf');
+  assert.ok(downloadRes.headers.get('Content-Disposition')?.includes('attachment'));
+  assert.ok(downloadRes.headers.get('Content-Disposition')?.includes('resume-document.pdf'));
+
+  // Clean up
+  await db.careerApplications.deleteOne(appId);
+});
+
+// TEST 23: Historical applications without resume or with custom URLs remain intact
+test('TEST 23: Historical applications without resume or with custom URLs remain intact and readable', () => {
+  const legacyApp = {
+    id: 'legacy-app-001',
+    name: 'Legacy Applicant',
+    email: 'legacy@culko.in',
+    opportunityTitle: 'Anchor & Speaker for AWS Events',
+    formType: 'anchor-speaker',
+    linkedin: 'https://linkedin.com/in/legacy',
+    resumeUrl: 'https://example.com/resumes/legacy.pdf',
+    introductionVideoUrl: 'https://drive.google.com/file/d/123/view',
+    consent: true
+  };
+
+  const html = renderToStaticMarkup(
+    React.createElement(AdminOpportunityApplicationDetailsModal, {
+      application: legacyApp,
+      opportunityTitle: 'Anchor & Speaker for AWS Events',
+      token: 'test-token',
+      onClose: () => {}
+    })
+  );
+
+  assert.ok(html.includes('Legacy Applicant'));
+  assert.ok(html.includes('Attached Resume (Historical / File Submission)'));
+  assert.ok(html.includes('View Resume') && html.includes('Download Resume'));
+  assert.ok(html.includes('https://example.com/resumes/legacy.pdf'));
+});
+

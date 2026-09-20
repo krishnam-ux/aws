@@ -23,7 +23,7 @@ export async function GET(
     return NextResponse.json({ error: 'Resume not found.' }, { status: 404 });
   }
 
-  const resumeFile = (await db.resumeFiles.getMap())[id];
+  const resumeFile = (await db.resumeFiles.getById(id)) || (await db.resumeFiles.getMap())[id];
   if (!resumeFile) {
     return NextResponse.json({ error: 'Resume file not found.' }, { status: 404 });
   }

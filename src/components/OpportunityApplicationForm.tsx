@@ -140,11 +140,23 @@ export default function OpportunityApplicationForm({
       nextErrors.scenarioDropParticipation = 'Please share your approach to this scenario in detail.';
     }
 
-    // Section 10: Professional Links
+    // Section 10: Professional Links & Resume
     if (!value('linkedin')) {
       nextErrors.linkedin = 'LinkedIn Profile is required.';
     } else if (!isValidLinkedInUrl(value('linkedin'))) {
       nextErrors.linkedin = 'Please enter a valid LinkedIn profile URL.';
+    }
+
+    const resumeFM = data.get('resume');
+    if (!(resumeFM instanceof File) || resumeFM.size === 0) {
+      nextErrors.resume = 'Please upload your Resume / CV in PDF format.';
+    } else {
+      const isPdf = resumeFM.type === 'application/pdf' || resumeFM.name.toLowerCase().endsWith('.pdf');
+      if (!isPdf) {
+        nextErrors.resume = 'Resume must be a PDF file.';
+      } else if (resumeFM.size > 5 * 1024 * 1024) {
+        nextErrors.resume = 'Resume must be 5MB or smaller.';
+      }
     }
 
     // Section 11: Final Declaration
@@ -218,11 +230,23 @@ export default function OpportunityApplicationForm({
     if (!value('activeParticipation')) nextErrors.activeParticipation = 'Please select your meeting & event participation commitment.';
     if (!value('involvementDuration')) nextErrors.involvementDuration = 'Please select your expected involvement duration.';
 
-    // Section 11: Professional Links
+    // Section 11: Professional Links & Resume
     if (!value('linkedin')) {
       nextErrors.linkedin = 'LinkedIn Profile is required.';
     } else if (!isValidLinkedInUrl(value('linkedin'))) {
       nextErrors.linkedin = 'Please enter a valid LinkedIn profile URL.';
+    }
+
+    const resumeCT = data.get('resume');
+    if (!(resumeCT instanceof File) || resumeCT.size === 0) {
+      nextErrors.resume = 'Please upload your Resume / CV in PDF format.';
+    } else {
+      const isPdf = resumeCT.type === 'application/pdf' || resumeCT.name.toLowerCase().endsWith('.pdf');
+      if (!isPdf) {
+        nextErrors.resume = 'Resume must be a PDF file.';
+      } else if (resumeCT.size > 5 * 1024 * 1024) {
+        nextErrors.resume = 'Resume must be 5MB or smaller.';
+      }
     }
 
     // Section 11: Final Declaration
@@ -744,13 +768,13 @@ export default function OpportunityApplicationForm({
           </div>
         </div>
 
-        {/* SECTION 10: Professional Links */}
+        {/* SECTION 10: Professional Links & Resume */}
         <div className="tech-card-new space-y-6 p-6 sm:p-8">
           <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-navy text-xs font-bold text-white">10</span>
             <div>
-              <h3 className="text-lg font-extrabold text-brand-navy">Professional Links</h3>
-              <p className="text-xs text-slate-500">Provide your professional profiles</p>
+              <h3 className="text-lg font-extrabold text-brand-navy">Professional Links & Resume</h3>
+              <p className="text-xs text-slate-500">Provide your professional profiles and resume</p>
             </div>
           </div>
 
@@ -781,6 +805,22 @@ export default function OpportunityApplicationForm({
               </label>
               <input type="url" name="portfolio" placeholder="https://..." className="form-input-field mt-1 w-full rounded-lg border border-slate-300 text-sm" />
             </div>
+          </div>
+
+          <div className="pt-2 border-t border-slate-100">
+            <label className="block text-sm font-semibold text-slate-750">
+              Resume / CV <span className="text-red-600 font-bold">*</span>
+            </label>
+            <p className="mt-0.5 text-xs text-slate-500">Upload your latest resume or CV in PDF format (Max 5 MB).</p>
+            <input
+              type="file"
+              name="resume"
+              accept=".pdf,application/pdf"
+              required
+              className="mt-2 block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-navy file:text-white hover:file:bg-slate-800 file:cursor-pointer cursor-pointer border border-slate-300 rounded-lg p-1.5 bg-slate-50/50"
+              aria-invalid={Boolean(errors.resume)}
+            />
+            <ErrorText message={errors.resume} />
           </div>
         </div>
 
@@ -1344,13 +1384,13 @@ export default function OpportunityApplicationForm({
           </div>
         </div>
 
-        {/* SECTION 11: Professional Links & Declaration */}
+        {/* SECTION 11: Professional Links & Resume */}
         <div className="tech-card-new space-y-6 p-6 sm:p-8">
           <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-navy text-xs font-bold text-white">11</span>
             <div>
-              <h3 className="text-lg font-extrabold text-brand-navy">Professional Links & Declaration</h3>
-              <p className="text-xs text-slate-500">Provide links (GitHub is optional for non-technical domains)</p>
+              <h3 className="text-lg font-extrabold text-brand-navy">Professional Links & Resume</h3>
+              <p className="text-xs text-slate-500">Provide links and your resume (GitHub is optional for non-technical domains)</p>
             </div>
           </div>
 
@@ -1385,6 +1425,22 @@ export default function OpportunityApplicationForm({
               </label>
               <input type="url" name="portfolio" placeholder="https://..." className="form-input-field mt-1 w-full rounded-lg border border-slate-300 text-sm" />
             </div>
+          </div>
+
+          <div className="pt-2 border-t border-slate-100">
+            <label className="block text-sm font-semibold text-slate-750">
+              Resume / CV <span className="text-red-600 font-bold">*</span>
+            </label>
+            <p className="mt-0.5 text-xs text-slate-500">Upload your latest resume or CV in PDF format (Max 5 MB).</p>
+            <input
+              type="file"
+              name="resume"
+              accept=".pdf,application/pdf"
+              required
+              className="mt-2 block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-navy file:text-white hover:file:bg-slate-800 file:cursor-pointer cursor-pointer border border-slate-300 rounded-lg p-1.5 bg-slate-50/50"
+              aria-invalid={Boolean(errors.resume)}
+            />
+            <ErrorText message={errors.resume} />
           </div>
 
           <div className="border-t border-slate-200 pt-5">

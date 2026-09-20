@@ -186,6 +186,122 @@ function QuestionAnswer({
   );
 }
 
+// Helper: Resume Viewer with View and Download actions
+function ResumeViewer({
+  resumeUrl,
+  application,
+  onGetResumeFile,
+  token,
+  isRequired = false
+}: {
+  resumeUrl?: string;
+  application: any;
+  onGetResumeFile?: (application: any, download: boolean) => Promise<void> | void;
+  token?: string;
+  isRequired?: boolean;
+}) {
+  const effectiveUrl = resumeUrl || application?.resumeUrl || application?.resume_url;
+
+  if (!effectiveUrl) {
+    return (
+      <div className="space-y-1">
+        <div className="flex items-center gap-1">
+          <span className="text-xs font-bold text-slate-700">Resume / CV</span>
+          {isRequired && <span className="text-red-500 font-bold text-xs">*</span>}
+        </div>
+        {isRequired ? (
+          <p className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 border border-amber-200 text-[11px] font-medium text-amber-800">
+            <span>⚠️</span>
+            <span>Missing / Invalid submission data</span>
+          </p>
+        ) : (
+          <p className="text-xs text-slate-400 italic">Not provided</p>
+        )}
+      </div>
+    );
+  }
+
+  const handleAction = async (download: boolean) => {
+    if (onGetResumeFile) {
+      await onGetResumeFile(application, download);
+      return;
+    }
+    if (effectiveUrl.startsWith('http://') || effectiveUrl.startsWith('https://')) {
+      if (download) {
+        const link = document.createElement('a');
+        link.href = effectiveUrl;
+        link.download = 'resume.pdf';
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      } else {
+        window.open(effectiveUrl, '_blank', 'noopener,noreferrer');
+      }
+      return;
+    }
+    // Direct admin endpoint fallback
+    const previewWindow = download ? null : window.open('about:blank', '_blank', 'noopener,noreferrer');
+    try {
+      const response = await fetch(`/api/admin/career-applications/${encodeURIComponent(application.id)}/resume${download ? '?download=1' : ''}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!response.ok) {
+        previewWindow?.close();
+        alert('Unable to access this resume. Please try again.');
+        return;
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      if (download) {
+        const contentDisposition = response.headers.get('content-disposition') || '';
+        const fileName = contentDisposition.match(/filename="([^"]+)"/)?.[1] || 'resume.pdf';
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      } else if (previewWindow) {
+        previewWindow.location.href = url;
+      }
+    } catch {
+      previewWindow?.close();
+      alert('Unable to retrieve resume file.');
+    }
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1">
+        <span className="text-xs font-bold text-slate-700">Resume / CV</span>
+        {isRequired && <span className="text-red-500 font-bold text-xs">*</span>}
+      </div>
+      <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
+        <button
+          type="button"
+          onClick={() => handleAction(false)}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-brand-navy hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
+        >
+          <span>📄</span>
+          <span>View Resume</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => handleAction(true)}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs shadow-xs transition-colors cursor-pointer"
+        >
+          <span>⬇️</span>
+          <span>Download Resume</span>
+        </button>
+        <span className="text-[11px] text-slate-500 font-mono">
+          Storage: {effectiveUrl}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // Helper: Section container with numbered badges
 function SectionContainer({
   number,
@@ -474,12 +590,21 @@ export default function AdminOpportunityApplicationDetailsModal({
               />
             </SectionContainer>
 
-            {/* SECTION 10: Professional Links */}
-            <SectionContainer number="10" title="Professional Links">
+            {/* SECTION 10: Professional Links & Resume */}
+            <SectionContainer number="10" title="Professional Links & Resume">
               <div className="grid gap-3.5 sm:grid-cols-3">
                 <QuestionAnswer label="LinkedIn Profile" value={app.linkedin} isRequired isLink linkType="linkedin" />
                 <QuestionAnswer label="GitHub Profile" value={app.github} isLink linkType="github" />
                 <QuestionAnswer label="Portfolio / Website" value={app.portfolio} isLink linkType="portfolio" />
+              </div>
+              <div className="pt-3 border-t border-slate-100">
+                <ResumeViewer
+                  resumeUrl={app.resumeUrl}
+                  application={app}
+                  onGetResumeFile={onGetResumeFile}
+                  token={token}
+                  isRequired
+                />
               </div>
             </SectionContainer>
 
@@ -635,12 +760,21 @@ export default function AdminOpportunityApplicationDetailsModal({
               </div>
             </SectionContainer>
 
-            {/* SECTION 11: Professional Links */}
-            <SectionContainer number="11" title="Professional Links">
+            {/* SECTION 11: Professional Links & Resume */}
+            <SectionContainer number="11" title="Professional Links & Resume">
               <div className="grid gap-3.5 sm:grid-cols-3">
                 <QuestionAnswer label="LinkedIn Profile" value={app.linkedin} isRequired isLink linkType="linkedin" />
                 <QuestionAnswer label="GitHub Profile" value={app.github} isLink linkType="github" />
                 <QuestionAnswer label="Portfolio / Website" value={app.portfolio} isLink linkType="portfolio" />
+              </div>
+              <div className="pt-3 border-t border-slate-100">
+                <ResumeViewer
+                  resumeUrl={app.resumeUrl}
+                  application={app}
+                  onGetResumeFile={onGetResumeFile}
+                  token={token}
+                  isRequired
+                />
               </div>
             </SectionContainer>
 
@@ -737,29 +871,14 @@ export default function AdminOpportunityApplicationDetailsModal({
         {/* ========================================================= */}
         {/* HISTORICAL RESUME / MEDIA ATTACHMENTS */}
         {/* ========================================================= */}
-        {app.resumeUrl && (
+        {!isFoundingMember && !isCoreTeam && app.resumeUrl && (
           <SectionContainer number="📎" title="Attached Resume (Historical / File Submission)">
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => onGetResumeFile && onGetResumeFile(app, false)}
-                className="px-3.5 py-2 rounded-lg bg-brand-navy hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
-              >
-                <span>📄</span>
-                <span>View Resume</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onGetResumeFile && onGetResumeFile(app, true)}
-                className="px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs shadow-xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
-              >
-                <span>⬇️</span>
-                <span>Download Resume</span>
-              </button>
-              <span className="text-[11px] text-slate-500 font-mono">
-                Storage: {app.resumeUrl}
-              </span>
-            </div>
+            <ResumeViewer
+              resumeUrl={app.resumeUrl}
+              application={app}
+              onGetResumeFile={onGetResumeFile}
+              token={token}
+            />
           </SectionContainer>
         )}
 

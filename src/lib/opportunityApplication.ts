@@ -366,6 +366,7 @@ export function normalizeOpportunityApplication(app: any): any {
   const linkedin = String(app.linkedin || '').trim();
   const github = String(app.github || '').trim();
   const portfolio = String(app.portfolio || '').trim();
+  const resumeUrl = String(app.resumeUrl || app.resume_url || app.resume || '').trim();
 
   return {
     ...app,
@@ -412,6 +413,9 @@ export function normalizeOpportunityApplication(app: any): any {
     linkedin,
     github,
     portfolio,
+    resumeUrl,
+    resume_url: resumeUrl,
   };
 }
+
 
