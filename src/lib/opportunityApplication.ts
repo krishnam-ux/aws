@@ -278,3 +278,140 @@ export function getOpportunityFormType(slug: string = '', title: string = ''): O
   if (canonical === 'CORE_TEAM') return 'core-team';
   return 'anchor-speaker';
 }
+
+/**
+ * Normalizes all opportunity application fields and legacy/alternative key aliases
+ * into a single unified, canonical structure.
+ */
+export function normalizeOpportunityApplication(app: any): any {
+  if (!app || typeof app !== 'object') return app;
+
+  const department = String(app.department || app.branch || app.departmentName || app.department_name || '').trim();
+  const currentYear = String(app.currentYear || app.current_year || app.year || app.academicYear || app.academic_year || app.currentAcademicYear || app.current_academic_year || '').trim();
+  const studentId = String(app.studentId || app.student_id || app.rollNumber || app.roll_number || app.uid || '').trim();
+  const graduationYear = String(app.graduationYear || app.graduation_year || app.expectedGraduationYear || app.expected_graduation_year || '').trim();
+  
+  const preferredDomain = String(app.preferredDomain || app.preferred_domain || app.domain || app.selectedDomain || app.selected_domain || app.track || '').trim();
+  const preferredRole = String(app.preferredRole || app.preferred_role || app.role || app.selectedRole || app.selected_role || '').trim();
+  
+  const skills = String(app.skills || app.areasOfExpertise || app.relevantSkills || app.relevant_skills || '').trim();
+  const primarySkillLevel = String(app.primarySkillLevel || app.primary_skill_level || app.skillLevel || app.skill_level || app.proficiency || '').trim();
+  
+  const experience = String(app.experience || app.previousExperience || app.previous_experience || app.projects || '').trim();
+  const roleAndImpact = String(
+    app.roleAndImpact ||
+    app.role_and_impact ||
+    app.impact ||
+    (app.previousExperienceRole && app.previousExperienceImpact
+      ? `${app.previousExperienceRole} - ${app.previousExperienceImpact}`
+      : app.previousExperienceRole || app.previousExperienceImpact || '')
+  ).trim();
+  const exactResponsibility = String(app.exactResponsibility || app.exact_responsibility || app.responsibility || roleAndImpact || '').trim();
+  
+  const teamworkSituation = String(app.teamworkSituation || app.teamwork_situation || app.teamwork || '').trim();
+  const leadershipExperience = String(app.leadershipExperience || app.leadership_experience || app.hasLeadership || app.has_leadership || '').trim();
+  const leadershipDetails = String(app.leadershipDetails || app.leadership_details || app.leadershipInfo || app.leadership_info || '').trim();
+  
+  const whyFoundingMember = String(app.whyFoundingMember || app.why_founding_member || (app.motivation && !app.whyCoreTeam ? app.motivation : '')).trim();
+  const whyCoreTeam = String(app.whyCoreTeam || app.why_core_team || (app.motivation && !app.whyFoundingMember ? app.motivation : '')).trim();
+  const motivation = String(app.motivation || whyFoundingMember || whyCoreTeam || '').trim();
+  
+  const personalContribution = String(app.personalContribution || app.personal_contribution || app.contribution || app.contributions || '').trim();
+  const domainContribution = String(app.domainContribution || app.domain_contribution || personalContribution || '').trim();
+  const communityGrowthIdeas = String(app.communityGrowthIdeas || app.community_growth_ideas || app.growthIdeas || app.growth_ideas || app.ideas || '').trim();
+  
+  const scenarioDropParticipation = String(
+    app.scenarioDropParticipation ||
+    app.scenario_drop_participation ||
+    app.ownershipScenario ||
+    app.ownership_scenario ||
+    app.scenarioAnswer ||
+    app.scenario_answer ||
+    app.scenario ||
+    ''
+  ).trim();
+  
+  const scenarioUnavailableMembers = String(
+    app.scenarioUnavailableMembers ||
+    app.scenario_unavailable_members ||
+    app.crisisScenario ||
+    app.crisis_scenario ||
+    app.scenarioAnswer ||
+    app.scenario_answer ||
+    app.scenario ||
+    ''
+  ).trim();
+  
+  const scenarioAnswer = String(
+    app.scenarioAnswer ||
+    app.scenario_answer ||
+    scenarioDropParticipation ||
+    scenarioUnavailableMembers ||
+    app.scenario ||
+    ''
+  ).trim();
+
+  const availabilityHours = String(app.availabilityHours || app.availability_hours || app.weeklyAvailability || app.weekly_availability || app.weeklyHours || app.weekly_hours || '').trim();
+  const consistentContribution = String(app.consistentContribution || app.consistent_contribution || app.consistentCommitment || app.consistent_commitment || app.commitment || '').trim();
+  const contributionDuration = String(app.contributionDuration || app.contribution_duration || app.involvementDuration || app.involvement_duration || app.duration || '').trim();
+  const academicBalance = String(app.academicBalance || app.academic_balance || app.academicManagement || app.academic_management || '').trim();
+  
+  const availableDays = String(app.availableDays || app.available_days || app.daysAvailable || app.days_available || app.schedule || '').trim();
+  const activeParticipation = String(app.activeParticipation || app.active_participation || app.participationCommitment || app.participation_commitment || '').trim();
+  const involvementDuration = String(app.involvementDuration || app.involvement_duration || contributionDuration || '').trim();
+  
+  const introductionVideoUrl = String(app.introductionVideoUrl || app.introduction_video_url || app.videoUrl || app.video_url || '').trim();
+  const videoUrl = introductionVideoUrl;
+  
+  const linkedin = String(app.linkedin || '').trim();
+  const github = String(app.github || '').trim();
+  const portfolio = String(app.portfolio || '').trim();
+
+  return {
+    ...app,
+    department,
+    branch: department,
+    currentYear,
+    year: currentYear,
+    studentId,
+    rollNumber: studentId,
+    graduationYear,
+    preferredDomain,
+    domain: preferredDomain,
+    preferredRole,
+    role: preferredRole,
+    skills,
+    primarySkillLevel,
+    experience,
+    previousExperience: experience,
+    roleAndImpact: roleAndImpact || exactResponsibility,
+    exactResponsibility: exactResponsibility || roleAndImpact,
+    teamworkSituation,
+    leadershipExperience,
+    leadershipDetails,
+    whyFoundingMember,
+    whyCoreTeam,
+    motivation,
+    personalContribution,
+    domainContribution,
+    communityGrowthIdeas,
+    scenarioDropParticipation,
+    scenarioUnavailableMembers,
+    scenarioAnswer,
+    availabilityHours,
+    weeklyAvailability: availabilityHours,
+    consistentContribution,
+    consistentCommitment: consistentContribution,
+    contributionDuration,
+    academicBalance,
+    availableDays,
+    activeParticipation,
+    involvementDuration,
+    introductionVideoUrl,
+    videoUrl,
+    linkedin,
+    github,
+    portfolio,
+  };
+}
+

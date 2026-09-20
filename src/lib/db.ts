@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import postgres from 'postgres';
+import { normalizeOpportunityApplication } from './opportunityApplication';
 
 const DB_DIR = path.join(process.cwd(), 'src', 'data', 'db');
 
@@ -380,33 +381,100 @@ async function ensureCareerApplicationsTable() {
       CREATE TABLE IF NOT EXISTS career_applications (
         id VARCHAR(255) PRIMARY KEY,
         opportunity_id VARCHAR(255) NOT NULL,
+        opportunity_slug VARCHAR(255),
+        form_type VARCHAR(100),
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) NOT NULL,
+        personal_email VARCHAR(255),
         phone VARCHAR(255),
         university VARCHAR(255),
         program VARCHAR(255),
+        department VARCHAR(255),
+        branch VARCHAR(255),
+        current_year VARCHAR(50),
         graduation_year VARCHAR(50),
         student_id VARCHAR(255),
+        roll_number VARCHAR(255),
         resume_url TEXT,
         introduction_video_url TEXT,
         video_url TEXT,
         linkedin VARCHAR(255),
         github VARCHAR(255),
         portfolio VARCHAR(255),
+        preferred_domain VARCHAR(255),
+        preferred_role VARCHAR(255),
         skills TEXT,
+        primary_skill_level VARCHAR(100),
         experience TEXT,
+        previous_experience TEXT,
+        role_and_impact TEXT,
+        exact_responsibility TEXT,
+        teamwork_situation TEXT,
+        leadership_experience VARCHAR(50),
+        leadership_details TEXT,
+        why_founding_member TEXT,
+        why_core_team TEXT,
+        personal_contribution TEXT,
+        domain_contribution TEXT,
+        community_growth_ideas TEXT,
+        scenario_answer TEXT,
+        scenario_drop_participation TEXT,
+        scenario_unavailable_members TEXT,
+        availability_hours VARCHAR(100),
+        consistent_contribution VARCHAR(100),
+        contribution_duration VARCHAR(100),
+        academic_balance TEXT,
+        available_days VARCHAR(255),
+        active_participation VARCHAR(100),
+        involvement_duration VARCHAR(100),
         motivation TEXT,
         cover_letter TEXT,
         additional_information TEXT,
         consent BOOLEAN NOT NULL DEFAULT false,
         status VARCHAR(50) NOT NULL DEFAULT 'New',
         admin_notes TEXT,
+        details JSONB,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS opportunity_slug VARCHAR(255)`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS form_type VARCHAR(100)`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS personal_email VARCHAR(255)`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS department VARCHAR(255)`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS branch VARCHAR(255)`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS current_year VARCHAR(50)`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS roll_number VARCHAR(255)`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS preferred_domain VARCHAR(255)`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS preferred_role VARCHAR(255)`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS skills TEXT`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS primary_skill_level VARCHAR(100)`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS experience TEXT`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS previous_experience TEXT`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS role_and_impact TEXT`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS exact_responsibility TEXT`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS teamwork_situation TEXT`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS leadership_experience VARCHAR(50)`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS leadership_details TEXT`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS why_founding_member TEXT`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS why_core_team TEXT`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS personal_contribution TEXT`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS domain_contribution TEXT`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS community_growth_ideas TEXT`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS scenario_answer TEXT`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS scenario_drop_participation TEXT`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS scenario_unavailable_members TEXT`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS availability_hours VARCHAR(100)`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS consistent_contribution VARCHAR(100)`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS contribution_duration VARCHAR(100)`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS academic_balance TEXT`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS available_days VARCHAR(255)`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS active_participation VARCHAR(100)`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS involvement_duration VARCHAR(100)`;
     await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS introduction_video_url TEXT`;
     await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS video_url TEXT`;
+    await sql`ALTER TABLE career_applications ADD COLUMN IF NOT EXISTS details JSONB`;
+
     await sql`CREATE INDEX IF NOT EXISTS idx_career_applications_opportunity_id ON career_applications(opportunity_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_career_applications_email ON career_applications(email)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_career_applications_status ON career_applications(status)`;
@@ -2399,71 +2467,119 @@ export const db = {
       if (sql) {
         await ensureCareerApplicationsTable();
         const rows = await sql`SELECT * FROM career_applications ORDER BY created_at DESC`;
-        return rows.map((r: any) => ({
-          id: r.id,
-          opportunityId: r.opportunity_id,
-          name: r.name,
-          email: r.email,
-          phone: r.phone || '',
-          university: r.university || '',
-          program: r.program || '',
-          graduationYear: r.graduation_year || '',
-          studentId: r.student_id || '',
-          resumeUrl: r.resume_url || '',
-          introductionVideoUrl: r.introduction_video_url || r.video_url || r.introductionVideoUrl || r.videoUrl || '',
-          videoUrl: r.introduction_video_url || r.video_url || r.introductionVideoUrl || r.videoUrl || '',
-          linkedin: r.linkedin || '',
-          github: r.github || '',
-          portfolio: r.portfolio || '',
-          skills: r.skills || '',
-          experience: r.experience || '',
-          motivation: r.motivation || '',
-          coverLetter: r.cover_letter || '',
-          additionalInformation: r.additional_information || '',
-          consent: Boolean(r.consent),
-          status: r.status || 'New',
-          adminNotes: r.admin_notes || '',
-          createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
-          updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString()
-        }));
+        return rows.map((r: any) => {
+          const details = r.details && typeof r.details === 'object' ? r.details : {};
+          const mapped = {
+            id: r.id,
+            opportunityId: r.opportunity_id,
+            opportunitySlug: r.opportunity_slug || details.opportunitySlug || '',
+            formType: r.form_type || details.formType || '',
+            name: r.name,
+            email: r.email,
+            personalEmail: r.personal_email || details.personalEmail || '',
+            phone: r.phone || '',
+            university: r.university || '',
+            program: r.program || '',
+            department: r.department || details.department || r.branch || details.branch || '',
+            branch: r.branch || details.branch || r.department || details.department || '',
+            currentYear: r.current_year || details.currentYear || r.year || details.year || '',
+            graduationYear: r.graduation_year || details.graduationYear || '',
+            studentId: r.student_id || details.studentId || r.roll_number || details.rollNumber || '',
+            rollNumber: r.roll_number || details.rollNumber || r.student_id || details.studentId || '',
+            resumeUrl: r.resume_url || details.resumeUrl || '',
+            introductionVideoUrl: r.introduction_video_url || r.video_url || details.introductionVideoUrl || details.videoUrl || '',
+            videoUrl: r.introduction_video_url || r.video_url || details.introductionVideoUrl || details.videoUrl || '',
+            linkedin: r.linkedin || details.linkedin || '',
+            github: r.github || details.github || '',
+            portfolio: r.portfolio || details.portfolio || '',
+            preferredDomain: r.preferred_domain || details.preferredDomain || details.domain || '',
+            preferredRole: r.preferred_role || details.preferredRole || details.role || '',
+            skills: r.skills || details.skills || '',
+            primarySkillLevel: r.primary_skill_level || details.primarySkillLevel || '',
+            experience: r.experience || details.experience || r.previous_experience || details.previousExperience || '',
+            previousExperience: r.previous_experience || details.previousExperience || r.experience || details.experience || '',
+            roleAndImpact: r.role_and_impact || details.roleAndImpact || r.exact_responsibility || details.exactResponsibility || '',
+            exactResponsibility: r.exact_responsibility || details.exactResponsibility || r.role_and_impact || details.roleAndImpact || '',
+            teamworkSituation: r.teamwork_situation || details.teamworkSituation || '',
+            leadershipExperience: r.leadership_experience || details.leadershipExperience || '',
+            leadershipDetails: r.leadership_details || details.leadershipDetails || '',
+            whyFoundingMember: r.why_founding_member || details.whyFoundingMember || '',
+            whyCoreTeam: r.why_core_team || details.whyCoreTeam || '',
+            personalContribution: r.personal_contribution || details.personalContribution || details.contribution || '',
+            domainContribution: r.domain_contribution || details.domainContribution || details.personalContribution || details.contribution || '',
+            communityGrowthIdeas: r.community_growth_ideas || details.communityGrowthIdeas || details.growthIdeas || '',
+            scenarioAnswer: r.scenario_answer || details.scenarioAnswer || r.scenario_drop_participation || details.scenarioDropParticipation || r.scenario_unavailable_members || details.scenarioUnavailableMembers || '',
+            scenarioDropParticipation: r.scenario_drop_participation || details.scenarioDropParticipation || r.scenario_answer || details.scenarioAnswer || '',
+            scenarioUnavailableMembers: r.scenario_unavailable_members || details.scenarioUnavailableMembers || r.scenario_answer || details.scenarioAnswer || '',
+            availabilityHours: r.availability_hours || details.availabilityHours || details.weeklyAvailability || '',
+            consistentContribution: r.consistent_contribution || details.consistentContribution || details.consistentCommitment || '',
+            contributionDuration: r.contribution_duration || details.contributionDuration || details.involvementDuration || details.duration || '',
+            academicBalance: r.academic_balance || details.academicBalance || '',
+            availableDays: r.available_days || details.availableDays || '',
+            activeParticipation: r.active_participation || details.activeParticipation || '',
+            involvementDuration: r.involvement_duration || details.involvementDuration || details.contributionDuration || details.duration || '',
+            motivation: r.motivation || details.motivation || r.why_founding_member || details.whyFoundingMember || r.why_core_team || details.whyCoreTeam || '',
+            coverLetter: r.cover_letter || details.coverLetter || '',
+            additionalInformation: r.additional_information || details.additionalInformation || '',
+            consent: Boolean(r.consent),
+            status: r.status || details.status || 'New',
+            adminNotes: r.admin_notes || details.adminNotes || '',
+            ...details,
+            createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+            updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString()
+          };
+          return normalizeOpportunityApplication(mapped);
+        });
       }
       const data = await readJsonFile<any[]>('career_applications.json', []);
-      return data.map((item: any) => ({
-        ...item,
-        introductionVideoUrl: item.introductionVideoUrl || item.videoUrl || '',
-        videoUrl: item.introductionVideoUrl || item.videoUrl || ''
-      }));
+      return data.map((item: any) => normalizeOpportunityApplication(item));
     },
     getByOpportunityId: async (opportunityId: string): Promise<any[]> => {
       const rows = await db.careerApplications.getAll();
       return rows.filter((application: any) => application.opportunityId === opportunityId);
     },
-    insertOne: async (application: any): Promise<void> => {
+    insertOne: async (rawApp: any): Promise<void> => {
       if (hasConfiguredDatabase() && !sql) {
         throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
       }
+      const application = normalizeOpportunityApplication(rawApp);
       const videoLink = application.introductionVideoUrl || application.videoUrl || '';
       if (sql) {
         await ensureCareerApplicationsTable();
+        const detailsJson = JSON.stringify(application);
         await sql`
           INSERT INTO career_applications (
-            id, opportunity_id, name, email, phone, university, program, graduation_year, student_id,
-            resume_url, introduction_video_url, video_url, linkedin, github, portfolio, skills, experience, motivation, cover_letter,
-            additional_information, consent, status, admin_notes, created_at, updated_at
+            id, opportunity_id, opportunity_slug, form_type, name, email, personal_email, phone, university, program,
+            department, branch, current_year, graduation_year, student_id, roll_number,
+            resume_url, introduction_video_url, video_url, linkedin, github, portfolio,
+            preferred_domain, preferred_role, skills, primary_skill_level,
+            experience, previous_experience, role_and_impact, exact_responsibility,
+            teamwork_situation, leadership_experience, leadership_details,
+            why_founding_member, why_core_team, personal_contribution, domain_contribution,
+            community_growth_ideas, scenario_answer, scenario_drop_participation, scenario_unavailable_members,
+            availability_hours, consistent_contribution, contribution_duration, academic_balance,
+            available_days, active_participation, involvement_duration,
+            motivation, cover_letter, additional_information, consent, status, admin_notes, details,
+            created_at, updated_at
           ) VALUES (
-            ${application.id}, ${application.opportunityId}, ${application.name}, ${application.email}, ${application.phone || ''}, ${application.university || ''}, ${application.program || ''}, ${application.graduationYear || ''}, ${application.studentId || ''},
-            ${application.resumeUrl || ''}, ${videoLink}, ${videoLink}, ${application.linkedin || ''}, ${application.github || ''}, ${application.portfolio || ''}, ${application.skills || ''}, ${application.experience || ''}, ${application.motivation || ''}, ${application.coverLetter || ''}, ${application.additionalInformation || ''},
-            ${Boolean(application.consent)}, ${application.status || 'New'}, ${application.adminNotes || ''}, ${application.createdAt || new Date().toISOString()}, ${application.updatedAt || new Date().toISOString()}
+            ${application.id}, ${application.opportunityId}, ${application.opportunitySlug || ''}, ${application.formType || ''}, ${application.name}, ${application.email}, ${application.personalEmail || ''}, ${application.phone || ''}, ${application.university || ''}, ${application.program || ''},
+            ${application.department || ''}, ${application.branch || ''}, ${application.currentYear || ''}, ${application.graduationYear || ''}, ${application.studentId || ''}, ${application.rollNumber || ''},
+            ${application.resumeUrl || ''}, ${videoLink}, ${videoLink}, ${application.linkedin || ''}, ${application.github || ''}, ${application.portfolio || ''},
+            ${application.preferredDomain || ''}, ${application.preferredRole || ''}, ${application.skills || ''}, ${application.primarySkillLevel || ''},
+            ${application.experience || ''}, ${application.previousExperience || ''}, ${application.roleAndImpact || ''}, ${application.exactResponsibility || ''},
+            ${application.teamworkSituation || ''}, ${application.leadershipExperience || ''}, ${application.leadershipDetails || ''},
+            ${application.whyFoundingMember || ''}, ${application.whyCoreTeam || ''}, ${application.personalContribution || ''}, ${application.domainContribution || ''},
+            ${application.communityGrowthIdeas || ''}, ${application.scenarioAnswer || ''}, ${application.scenarioDropParticipation || ''}, ${application.scenarioUnavailableMembers || ''},
+            ${application.availabilityHours || ''}, ${application.consistentContribution || ''}, ${application.contributionDuration || ''}, ${application.academicBalance || ''},
+            ${application.availableDays || ''}, ${application.activeParticipation || ''}, ${application.involvementDuration || ''},
+            ${application.motivation || ''}, ${application.coverLetter || ''}, ${application.additionalInformation || ''}, ${Boolean(application.consent)}, ${application.status || 'New'}, ${application.adminNotes || ''}, ${detailsJson},
+            ${application.createdAt || new Date().toISOString()}, ${application.updatedAt || new Date().toISOString()}
           )
         `;
         return;
       }
       const data = await readJsonFile<any[]>('career_applications.json', []);
-      data.unshift({
-        ...application,
-        introductionVideoUrl: videoLink,
-        videoUrl: videoLink
-      });
+      data.unshift(application);
       await writeJsonFile('career_applications.json', data);
     },
     updateOne: async (id: string, fields: Partial<any>): Promise<void> => {
@@ -2472,11 +2588,18 @@ export const db = {
       }
       if (sql) {
         await ensureCareerApplicationsTable();
+        const existingRows = await sql`SELECT details FROM career_applications WHERE id = ${id}`;
+        let updatedDetailsJson = null;
+        if (existingRows.length > 0 && existingRows[0].details) {
+          const oldDetails = typeof existingRows[0].details === 'object' ? existingRows[0].details : {};
+          updatedDetailsJson = JSON.stringify({ ...oldDetails, ...fields });
+        }
         await sql`
           UPDATE career_applications
           SET
             status = ${fields.status !== undefined ? fields.status : sql`status`},
             admin_notes = ${fields.adminNotes !== undefined ? fields.adminNotes : sql`admin_notes`},
+            details = ${updatedDetailsJson !== null ? updatedDetailsJson : sql`details`},
             updated_at = ${new Date().toISOString()}
           WHERE id = ${id}
         `;
@@ -2485,7 +2608,7 @@ export const db = {
       const data = await readJsonFile<any[]>('career_applications.json', []);
       const idx = data.findIndex((application: any) => application.id === id);
       if (idx !== -1) {
-        data[idx] = { ...data[idx], ...fields, updatedAt: new Date().toISOString() };
+        data[idx] = normalizeOpportunityApplication({ ...data[idx], ...fields, updatedAt: new Date().toISOString() });
         await writeJsonFile('career_applications.json', data);
       }
     },
@@ -2514,7 +2637,7 @@ export const db = {
         }
         return;
       }
-      await writeJsonFile('career_applications.json', data);
+      await writeJsonFile('career_applications.json', data.map((item: any) => normalizeOpportunityApplication(item)));
     }
   },
   exams: {

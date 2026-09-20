@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import {
   resolveOpportunityApplicationType,
-  CanonicalOpportunityType
+  CanonicalOpportunityType,
+  normalizeOpportunityApplication
 } from '@/lib/opportunityApplication';
 
 export type OpportunityApplicationRecord = {
@@ -222,15 +223,16 @@ export default function AdminOpportunityApplicationDetailsModal({
   onUpdateNotes,
   onGetResumeFile
 }: AdminOpportunityApplicationDetailsModalProps) {
-  const [currentStatus, setCurrentStatus] = useState(application.status || 'New');
-  const [notes, setNotes] = useState(application.adminNotes || '');
+  const app = normalizeOpportunityApplication(application);
+  const [currentStatus, setCurrentStatus] = useState(app.status || 'New');
+  const [notes, setNotes] = useState(app.adminNotes || '');
   const [savingNotes, setSavingNotes] = useState(false);
 
   // Authoritative Canonical Opportunity Type Resolution
-  const canonicalType: CanonicalOpportunityType = resolveOpportunityApplicationType(application, {
-    title: opportunityTitle || application.opportunityTitle,
-    slug: application.opportunitySlug,
-    id: application.opportunityId
+  const canonicalType: CanonicalOpportunityType = resolveOpportunityApplicationType(app, {
+    title: opportunityTitle || app.opportunityTitle,
+    slug: app.opportunitySlug,
+    id: app.opportunityId
   });
 
   const isFoundingMember = canonicalType === 'FOUNDING_MEMBER';
@@ -240,16 +242,16 @@ export default function AdminOpportunityApplicationDetailsModal({
   const handleStatusChange = async (newStatus: string) => {
     setCurrentStatus(newStatus);
     if (onUpdateStatus) {
-      await onUpdateStatus(application.id, newStatus);
+      await onUpdateStatus(app.id, newStatus);
     }
   };
 
   const handleNotesBlur = async () => {
-    if (notes === (application.adminNotes || '')) return;
+    if (notes === (app.adminNotes || '')) return;
     setSavingNotes(true);
     try {
       if (onUpdateNotes) {
-        await onUpdateNotes(application.id, notes);
+        await onUpdateNotes(app.id, notes);
       }
     } finally {
       setSavingNotes(false);
@@ -258,22 +260,35 @@ export default function AdminOpportunityApplicationDetailsModal({
 
   // Known field keys to check for unrendered dynamic / historical fields
   const renderedStandardKeys = new Set([
-    'id', 'opportunityId', 'opportunitySlug', 'formType', 'name', 'email', 'personalEmail',
-    'phone', 'university', 'program', 'department', 'branch', 'currentYear', 'graduationYear',
-    'studentId', 'rollNumber', 'linkedin', 'github', 'portfolio', 'resumeUrl', 'introductionVideoUrl',
-    'videoUrl', 'preferredDomain', 'preferredRole', 'skills', 'primarySkillLevel', 'experience',
-    'previousExperience', 'roleAndImpact', 'exactResponsibility', 'teamworkSituation',
-    'leadershipExperience', 'leadershipDetails', 'whyFoundingMember', 'whyCoreTeam',
-    'personalContribution', 'domainContribution', 'communityGrowthIdeas', 'scenarioAnswer',
-    'scenarioDropParticipation', 'scenarioUnavailableMembers', 'availabilityHours',
-    'consistentContribution', 'contributionDuration', 'academicBalance', 'availableDays',
-    'activeParticipation', 'involvementDuration', 'motivation', 'coverLetter',
-    'additionalInformation', 'consent', 'status', 'adminNotes', 'createdAt', 'updatedAt',
-    '_recordType'
+    'id', 'opportunityId', 'opportunitySlug', 'opportunity_id', 'opportunity_slug', 'formType', 'form_type',
+    'name', 'email', 'personalEmail', 'personal_email', 'phone', 'university', 'program', 'department',
+    'branch', 'departmentName', 'currentYear', 'current_year', 'year', 'academicYear', 'currentAcademicYear',
+    'graduationYear', 'graduation_year', 'expectedGraduationYear', 'studentId', 'student_id', 'rollNumber',
+    'roll_number', 'uid', 'linkedin', 'github', 'portfolio', 'resumeUrl', 'resume_url', 'introductionVideoUrl',
+    'introduction_video_url', 'videoUrl', 'video_url', 'preferredDomain', 'preferred_domain', 'domain',
+    'selectedDomain', 'track', 'preferredRole', 'preferred_role', 'role', 'selectedRole', 'skills',
+    'areasOfExpertise', 'relevantSkills', 'primarySkillLevel', 'primary_skill_level', 'skillLevel', 'proficiency',
+    'experience', 'previousExperience', 'previous_experience', 'projects', 'roleAndImpact', 'role_and_impact',
+    'previousExperienceRole', 'previousExperienceImpact', 'exactResponsibility', 'exact_responsibility',
+    'responsibility', 'teamworkSituation', 'teamwork_situation', 'teamwork', 'leadershipExperience',
+    'leadership_experience', 'hasLeadership', 'leadershipDetails', 'leadership_details', 'leadershipInfo',
+    'whyFoundingMember', 'why_founding_member', 'whyCoreTeam', 'why_core_team', 'personalContribution',
+    'personal_contribution', 'contribution', 'contributions', 'domainContribution', 'domain_contribution',
+    'communityGrowthIdeas', 'community_growth_ideas', 'growthIdeas', 'ideas', 'scenarioAnswer',
+    'scenario_answer', 'scenarioDropParticipation', 'scenario_drop_participation', 'ownershipScenario',
+    'scenarioUnavailableMembers', 'scenario_unavailable_members', 'crisisScenario', 'scenario',
+    'availabilityHours', 'availability_hours', 'weeklyAvailability', 'weekly_availability', 'weeklyHours',
+    'consistentContribution', 'consistent_contribution', 'consistentCommitment', 'commitment',
+    'contributionDuration', 'contribution_duration', 'involvementDuration', 'involvement_duration',
+    'duration', 'academicBalance', 'academic_balance', 'academicManagement', 'availableDays',
+    'available_days', 'daysAvailable', 'schedule', 'activeParticipation', 'active_participation',
+    'participationCommitment', 'motivation', 'coverLetter', 'cover_letter', 'additionalInformation',
+    'additional_information', 'consent', 'status', 'adminNotes', 'admin_notes', 'createdAt',
+    'created_at', 'updatedAt', 'updated_at', '_recordType', 'details'
   ]);
 
   // Extract any additional/historical unmapped keys
-  const extraCustomEntries = Object.entries(application).filter(
+  const extraCustomEntries = Object.entries(app).filter(
     ([key, val]) => !renderedStandardKeys.has(key) && val !== undefined && val !== null && val !== ''
   );
 
@@ -292,20 +307,20 @@ export default function AdminOpportunityApplicationDetailsModal({
                   ? 'Core Team Application'
                   : 'Anchor & Speaker Application'}
               </span>
-              {application.preferredDomain && (
+              {app.preferredDomain && (
                 <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-slate-200">
-                  {application.preferredDomain}
+                  {app.preferredDomain}
                 </span>
               )}
-              {application.preferredRole && (
+              {app.preferredRole && (
                 <span className="rounded-full bg-blue-500/20 border border-blue-400/30 px-2 py-0.5 text-[10px] font-semibold text-blue-200">
-                  {application.preferredRole}
+                  {app.preferredRole}
                 </span>
               )}
             </div>
-            <h3 className="text-lg sm:text-xl font-black text-white">{application.name}</h3>
+            <h3 className="text-lg sm:text-xl font-black text-white">{app.name}</h3>
             <p className="text-[11px] text-slate-300 font-mono">
-              ID: {application.id} • Applied: {application.createdAt ? new Date(application.createdAt).toLocaleString() : '—'}
+              ID: {app.id} • Applied: {app.createdAt ? new Date(app.createdAt).toLocaleString() : '—'}
             </p>
             {opportunityTitle && (
               <p className="text-[11px] text-slate-300">
@@ -351,16 +366,16 @@ export default function AdminOpportunityApplicationDetailsModal({
             {/* SECTION 01: Personal & Academic Details */}
             <SectionContainer number="01" title="Personal & Academic Details">
               <div className="grid gap-3.5 sm:grid-cols-2 md:grid-cols-3">
-                <QuestionAnswer label="Full Name" value={application.name} isRequired />
-                <QuestionAnswer label="University Email" value={application.email} isRequired />
-                <QuestionAnswer label="Personal Email" value={application.personalEmail} />
-                <QuestionAnswer label="Phone (WhatsApp)" value={application.phone} isRequired />
-                <QuestionAnswer label="Roll Number / University ID" value={application.studentId || application.rollNumber} isRequired />
-                <QuestionAnswer label="University" value={application.university || 'Chandigarh University – Uttar Pradesh'} />
-                <QuestionAnswer label="Course / Program" value={application.program} isRequired />
-                <QuestionAnswer label="Branch / Department" value={application.department || application.branch} isRequired />
-                <QuestionAnswer label="Current Year" value={application.currentYear} isRequired />
-                <QuestionAnswer label="Expected Graduation Year" value={application.graduationYear} isRequired />
+                <QuestionAnswer label="Full Name" value={app.name} isRequired />
+                <QuestionAnswer label="University Email" value={app.email} isRequired />
+                <QuestionAnswer label="Personal Email" value={app.personalEmail} />
+                <QuestionAnswer label="Phone (WhatsApp)" value={app.phone} isRequired />
+                <QuestionAnswer label="Roll Number / University ID" value={app.studentId || app.rollNumber} isRequired />
+                <QuestionAnswer label="University" value={app.university || 'Chandigarh University – Uttar Pradesh'} />
+                <QuestionAnswer label="Course / Program" value={app.program} isRequired />
+                <QuestionAnswer label="Branch / Department" value={app.department || app.branch} isRequired />
+                <QuestionAnswer label="Current Year" value={app.currentYear} isRequired />
+                <QuestionAnswer label="Expected Graduation Year" value={app.graduationYear} isRequired />
               </div>
             </SectionContainer>
 
@@ -368,7 +383,7 @@ export default function AdminOpportunityApplicationDetailsModal({
             <SectionContainer number="02" title="Preferred Domain">
               <QuestionAnswer
                 label="Selected Domain"
-                value={application.preferredDomain}
+                value={app.preferredDomain}
                 isRequired
                 subLabel="Which domain does the candidate prefer to contribute to?"
               />
@@ -378,7 +393,7 @@ export default function AdminOpportunityApplicationDetailsModal({
             <SectionContainer number="03" title="Skills & Areas of Expertise">
               <QuestionAnswer
                 label="What skills, strengths, or areas of expertise can you contribute to the community?"
-                value={application.skills}
+                value={app.skills}
                 isRequired
                 isLongText
               />
@@ -389,13 +404,13 @@ export default function AdminOpportunityApplicationDetailsModal({
               <div className="space-y-3.5">
                 <QuestionAnswer
                   label="Tell us about a project, club, community, event, or leadership experience you have been involved in."
-                  value={application.experience || application.previousExperience}
+                  value={app.experience || app.previousExperience}
                   isRequired
                   isLongText
                 />
                 <QuestionAnswer
                   label="What was your role and what impact did you make?"
-                  value={application.roleAndImpact}
+                  value={app.roleAndImpact}
                   isRequired
                   isLongText
                 />
@@ -406,7 +421,7 @@ export default function AdminOpportunityApplicationDetailsModal({
             <SectionContainer number="05" title="Why Founding Member?">
               <QuestionAnswer
                 label="Why do you want to become a Founding Member of AWS Student Builder Group at Chandigarh University – Uttar Pradesh?"
-                value={application.whyFoundingMember || application.motivation}
+                value={app.whyFoundingMember || app.motivation}
                 isRequired
                 isLongText
               />
@@ -416,7 +431,7 @@ export default function AdminOpportunityApplicationDetailsModal({
             <SectionContainer number="06" title="Contribution">
               <QuestionAnswer
                 label="What can you personally contribute to AWS Student Builder Group as a Founding Member?"
-                value={application.personalContribution}
+                value={app.personalContribution}
                 isRequired
                 isLongText
               />
@@ -426,7 +441,7 @@ export default function AdminOpportunityApplicationDetailsModal({
             <SectionContainer number="07" title="Community Growth Ideas">
               <QuestionAnswer
                 label="If you became a Founding Member, what would you do to improve and grow the AWS Student Builder Group community?"
-                value={application.communityGrowthIdeas}
+                value={app.communityGrowthIdeas}
                 isRequired
                 isLongText
               />
@@ -435,14 +450,14 @@ export default function AdminOpportunityApplicationDetailsModal({
             {/* SECTION 08: Availability & Long-Term Commitment */}
             <SectionContainer number="08" title="Weekly Availability & Long-Term Commitment">
               <div className="grid gap-3.5 sm:grid-cols-3">
-                <QuestionAnswer label="1. Weekly Availability" value={application.availabilityHours} isRequired />
-                <QuestionAnswer label="2. Consistent Commitment" value={application.consistentContribution} isRequired />
-                <QuestionAnswer label="3. Contribution Duration" value={application.contributionDuration} isRequired />
+                <QuestionAnswer label="1. Weekly Availability" value={app.availabilityHours} isRequired />
+                <QuestionAnswer label="2. Consistent Commitment" value={app.consistentContribution} isRequired />
+                <QuestionAnswer label="3. Contribution Duration" value={app.contributionDuration} isRequired />
               </div>
               <div className="pt-2 border-t border-slate-100">
                 <QuestionAnswer
                   label="4. How will you balance academics with your responsibilities as a Founding Member?"
-                  value={application.academicBalance}
+                  value={app.academicBalance}
                   isRequired
                   isLongText
                 />
@@ -453,7 +468,7 @@ export default function AdminOpportunityApplicationDetailsModal({
             <SectionContainer number="09" title="Ownership & Initiative Scenario">
               <QuestionAnswer
                 label="Scenario: “You notice that participation in a community activity has dropped significantly. As a Founding Member, what would you do?”"
-                value={application.scenarioDropParticipation || application.scenarioAnswer}
+                value={app.scenarioDropParticipation || app.scenarioAnswer}
                 isRequired
                 isLongText
               />
@@ -462,9 +477,9 @@ export default function AdminOpportunityApplicationDetailsModal({
             {/* SECTION 10: Professional Links */}
             <SectionContainer number="10" title="Professional Links">
               <div className="grid gap-3.5 sm:grid-cols-3">
-                <QuestionAnswer label="LinkedIn Profile" value={application.linkedin} isRequired isLink linkType="linkedin" />
-                <QuestionAnswer label="GitHub Profile" value={application.github} isLink linkType="github" />
-                <QuestionAnswer label="Portfolio / Website" value={application.portfolio} isLink linkType="portfolio" />
+                <QuestionAnswer label="LinkedIn Profile" value={app.linkedin} isRequired isLink linkType="linkedin" />
+                <QuestionAnswer label="GitHub Profile" value={app.github} isLink linkType="github" />
+                <QuestionAnswer label="Portfolio / Website" value={app.portfolio} isLink linkType="portfolio" />
               </div>
             </SectionContainer>
 
@@ -472,7 +487,7 @@ export default function AdminOpportunityApplicationDetailsModal({
             <SectionContainer number="11" title="Final Declaration">
               <QuestionAnswer
                 label="Declaration: “I understand that becoming a Founding Member involves consistent contribution, ownership, teamwork, and long-term responsibility toward the community.”"
-                value={application.consent ? '✅ Confirmed & Agreed' : '❌ Not confirmed'}
+                value={app.consent ? '✅ Confirmed & Agreed' : '❌ Not confirmed'}
                 isRequired
               />
             </SectionContainer>
@@ -487,16 +502,16 @@ export default function AdminOpportunityApplicationDetailsModal({
             {/* SECTION 01: Personal & Academic Details */}
             <SectionContainer number="01" title="Personal & Academic Details">
               <div className="grid gap-3.5 sm:grid-cols-2 md:grid-cols-3">
-                <QuestionAnswer label="Full Name" value={application.name} isRequired />
-                <QuestionAnswer label="University Email" value={application.email} isRequired />
-                <QuestionAnswer label="Personal Email" value={application.personalEmail} />
-                <QuestionAnswer label="Phone (WhatsApp)" value={application.phone} isRequired />
-                <QuestionAnswer label="Roll Number / University ID" value={application.studentId || application.rollNumber} isRequired />
-                <QuestionAnswer label="University" value={application.university || 'Chandigarh University – Uttar Pradesh'} />
-                <QuestionAnswer label="Course / Program" value={application.program} isRequired />
-                <QuestionAnswer label="Branch / Department" value={application.department || application.branch} isRequired />
-                <QuestionAnswer label="Current Year" value={application.currentYear} isRequired />
-                <QuestionAnswer label="Expected Graduation Year" value={application.graduationYear} isRequired />
+                <QuestionAnswer label="Full Name" value={app.name} isRequired />
+                <QuestionAnswer label="University Email" value={app.email} isRequired />
+                <QuestionAnswer label="Personal Email" value={app.personalEmail} />
+                <QuestionAnswer label="Phone (WhatsApp)" value={app.phone} isRequired />
+                <QuestionAnswer label="Roll Number / University ID" value={app.studentId || app.rollNumber} isRequired />
+                <QuestionAnswer label="University" value={app.university || 'Chandigarh University – Uttar Pradesh'} />
+                <QuestionAnswer label="Course / Program" value={app.program} isRequired />
+                <QuestionAnswer label="Branch / Department" value={app.department || app.branch} isRequired />
+                <QuestionAnswer label="Current Year" value={app.currentYear} isRequired />
+                <QuestionAnswer label="Expected Graduation Year" value={app.graduationYear} isRequired />
               </div>
             </SectionContainer>
 
@@ -504,7 +519,7 @@ export default function AdminOpportunityApplicationDetailsModal({
             <SectionContainer number="02" title="Preferred Domain">
               <QuestionAnswer
                 label="Selected Domain"
-                value={application.preferredDomain}
+                value={app.preferredDomain}
                 isRequired
                 subLabel="Primary domain chosen by the applicant"
               />
@@ -514,9 +529,9 @@ export default function AdminOpportunityApplicationDetailsModal({
             <SectionContainer number="03" title="Preferred Role / Responsibility">
               <QuestionAnswer
                 label="Selected Role"
-                value={application.preferredRole}
+                value={app.preferredRole}
                 isRequired
-                subLabel={`Role within ${application.preferredDomain || 'selected domain'}`}
+                subLabel={`Role within ${app.preferredDomain || 'selected domain'}`}
               />
             </SectionContainer>
 
@@ -525,14 +540,14 @@ export default function AdminOpportunityApplicationDetailsModal({
               <div className="space-y-3">
                 <QuestionAnswer
                   label="What technical, creative, communication, management, or professional skills do you currently have that are relevant to your selected domain?"
-                  value={application.skills}
+                  value={app.skills}
                   isRequired
                   isLongText
                 />
                 <div className="pt-2 border-t border-slate-100">
                   <QuestionAnswer
                     label="Self-Rated Primary Skill Level"
-                    value={application.primarySkillLevel ? `Level: ${application.primarySkillLevel}` : null}
+                    value={app.primarySkillLevel ? `Level: ${app.primarySkillLevel}` : null}
                     isRequired
                   />
                 </div>
@@ -544,13 +559,13 @@ export default function AdminOpportunityApplicationDetailsModal({
               <div className="space-y-3.5">
                 <QuestionAnswer
                   label="Tell us about relevant projects, internships, clubs, communities, events, competitions, volunteering, or other experiences."
-                  value={application.experience || application.previousExperience}
+                  value={app.experience || app.previousExperience}
                   isRequired
                   isLongText
                 />
                 <QuestionAnswer
                   label="What exactly was your responsibility in that experience?"
-                  value={application.exactResponsibility}
+                  value={app.exactResponsibility}
                   isRequired
                   isLongText
                 />
@@ -562,19 +577,19 @@ export default function AdminOpportunityApplicationDetailsModal({
               <div className="space-y-3.5">
                 <QuestionAnswer
                   label="Describe a situation where you worked as part of a team. What was your responsibility and how did you contribute?"
-                  value={application.teamworkSituation}
+                  value={app.teamworkSituation}
                   isRequired
                   isLongText
                 />
                 <div className="grid gap-3 sm:grid-cols-2 pt-2 border-t border-slate-100">
                   <QuestionAnswer
                     label="Previous Leadership Experience"
-                    value={application.leadershipExperience}
+                    value={app.leadershipExperience}
                     isRequired
                   />
                   <QuestionAnswer
                     label="Leadership / Management Details"
-                    value={application.leadershipDetails || (application.leadershipExperience === 'No' ? 'Not applicable (No previous leadership)' : null)}
+                    value={app.leadershipDetails || (app.leadershipExperience === 'No' ? 'Not applicable (No previous leadership)' : null)}
                   />
                 </div>
               </div>
@@ -584,7 +599,7 @@ export default function AdminOpportunityApplicationDetailsModal({
             <SectionContainer number="07" title="Why Core Team?">
               <QuestionAnswer
                 label="Why do you want to join the Core Team of AWS Student Builder Group at Chandigarh University – Uttar Pradesh?"
-                value={application.whyCoreTeam || application.motivation}
+                value={app.whyCoreTeam || app.motivation}
                 isRequired
                 isLongText
               />
@@ -593,8 +608,8 @@ export default function AdminOpportunityApplicationDetailsModal({
             {/* SECTION 08: Domain Contribution */}
             <SectionContainer number="08" title="Domain Contribution">
               <QuestionAnswer
-                label={`How would you contribute to your selected domain (${application.preferredDomain || 'Selected Domain'}) as a Core Team member?`}
-                value={application.domainContribution}
+                label={`How would you contribute to your selected domain (${app.preferredDomain || 'Selected Domain'}) as a Core Team member?`}
+                value={app.domainContribution}
                 isRequired
                 isLongText
               />
@@ -604,7 +619,7 @@ export default function AdminOpportunityApplicationDetailsModal({
             <SectionContainer number="09" title="Problem-Solving / Crisis Scenario">
               <QuestionAnswer
                 label="Scenario: “You are responsible for an important community activity, but one or more team members are unavailable shortly before the event. What would you do to ensure the activity still runs successfully?”"
-                value={application.scenarioUnavailableMembers || application.scenarioAnswer}
+                value={app.scenarioUnavailableMembers || app.scenarioAnswer}
                 isRequired
                 isLongText
               />
@@ -613,19 +628,19 @@ export default function AdminOpportunityApplicationDetailsModal({
             {/* SECTION 10: Availability & Time Commitment */}
             <SectionContainer number="10" title="Availability & Commitment">
               <div className="grid gap-3.5 sm:grid-cols-2 md:grid-cols-4">
-                <QuestionAnswer label="1. Weekly Availability" value={application.availabilityHours} isRequired />
-                <QuestionAnswer label="2. Available Days" value={application.availableDays} isRequired />
-                <QuestionAnswer label="3. Active Participation" value={application.activeParticipation} isRequired />
-                <QuestionAnswer label="4. Involvement Duration" value={application.involvementDuration} isRequired />
+                <QuestionAnswer label="1. Weekly Availability" value={app.availabilityHours} isRequired />
+                <QuestionAnswer label="2. Available Days" value={app.availableDays} isRequired />
+                <QuestionAnswer label="3. Active Participation" value={app.activeParticipation} isRequired />
+                <QuestionAnswer label="4. Involvement Duration" value={app.involvementDuration} isRequired />
               </div>
             </SectionContainer>
 
             {/* SECTION 11: Professional Links */}
             <SectionContainer number="11" title="Professional Links">
               <div className="grid gap-3.5 sm:grid-cols-3">
-                <QuestionAnswer label="LinkedIn Profile" value={application.linkedin} isRequired isLink linkType="linkedin" />
-                <QuestionAnswer label="GitHub Profile" value={application.github} isLink linkType="github" />
-                <QuestionAnswer label="Portfolio / Website" value={application.portfolio} isLink linkType="portfolio" />
+                <QuestionAnswer label="LinkedIn Profile" value={app.linkedin} isRequired isLink linkType="linkedin" />
+                <QuestionAnswer label="GitHub Profile" value={app.github} isLink linkType="github" />
+                <QuestionAnswer label="Portfolio / Website" value={app.portfolio} isLink linkType="portfolio" />
               </div>
             </SectionContainer>
 
@@ -633,7 +648,7 @@ export default function AdminOpportunityApplicationDetailsModal({
             <SectionContainer number="12" title="Declaration / Consent">
               <QuestionAnswer
                 label="Declaration: “I confirm that the information provided by me is accurate and I am committed to actively contributing as a Core Team member.”"
-                value={application.consent ? '✅ Confirmed & Committed' : '❌ Not confirmed'}
+                value={app.consent ? '✅ Confirmed & Committed' : '❌ Not confirmed'}
                 isRequired
               />
             </SectionContainer>
@@ -648,25 +663,25 @@ export default function AdminOpportunityApplicationDetailsModal({
             {/* SECTION 01: Personal Information */}
             <SectionContainer number="01" title="Personal Information">
               <div className="grid gap-3.5 sm:grid-cols-2 md:grid-cols-3">
-                <QuestionAnswer label="Full Name" value={application.name} isRequired />
-                <QuestionAnswer label="Email" value={application.email} isRequired />
-                <QuestionAnswer label="Phone" value={application.phone} isRequired />
-                <QuestionAnswer label="University" value={application.university || 'Chandigarh University'} isRequired />
-                <QuestionAnswer label="Course / Program" value={application.program} isRequired />
-                <QuestionAnswer label="Graduation Year / Year" value={application.graduationYear} isRequired />
-                <QuestionAnswer label="Student ID / Roll Number" value={application.studentId || application.rollNumber} isRequired />
+                <QuestionAnswer label="Full Name" value={app.name} isRequired />
+                <QuestionAnswer label="Email" value={app.email} isRequired />
+                <QuestionAnswer label="Phone" value={app.phone} isRequired />
+                <QuestionAnswer label="University" value={app.university || 'Chandigarh University'} isRequired />
+                <QuestionAnswer label="Course / Program" value={app.program} isRequired />
+                <QuestionAnswer label="Graduation Year / Year" value={app.graduationYear} isRequired />
+                <QuestionAnswer label="Student ID / Roll Number" value={app.studentId || app.rollNumber} isRequired />
               </div>
             </SectionContainer>
 
             {/* SECTION 02: Professional Information & Links */}
             <SectionContainer number="02" title="Professional Information & Links">
               <div className="grid gap-3.5 sm:grid-cols-2 mb-3.5">
-                <QuestionAnswer label="LinkedIn Profile" value={application.linkedin} isRequired isLink linkType="linkedin" />
-                <QuestionAnswer label="Portfolio / Website" value={application.portfolio} isLink linkType="portfolio" />
+                <QuestionAnswer label="LinkedIn Profile" value={app.linkedin} isRequired isLink linkType="linkedin" />
+                <QuestionAnswer label="Portfolio / Website" value={app.portfolio} isLink linkType="portfolio" />
               </div>
               <div className="space-y-3.5 pt-2 border-t border-slate-100">
-                <QuestionAnswer label="Skills" value={application.skills} isRequired isLongText />
-                <QuestionAnswer label="Previous Experience" value={application.experience || application.previousExperience} isRequired isLongText />
+                <QuestionAnswer label="Skills" value={app.skills} isRequired isLongText />
+                <QuestionAnswer label="Previous Experience" value={app.experience || app.previousExperience} isRequired isLongText />
               </div>
             </SectionContainer>
 
@@ -675,7 +690,7 @@ export default function AdminOpportunityApplicationDetailsModal({
               <div className="space-y-2">
                 <QuestionAnswer
                   label="Introduction Video URL"
-                  value={application.introductionVideoUrl || application.videoUrl}
+                  value={app.introductionVideoUrl || app.videoUrl}
                   isRequired
                   isLink
                   linkType="video"
@@ -689,20 +704,20 @@ export default function AdminOpportunityApplicationDetailsModal({
               <div className="space-y-3.5">
                 <QuestionAnswer
                   label="Why do you want to join / Why are you interested?"
-                  value={application.motivation}
+                  value={app.motivation}
                   isRequired
                   isLongText
                 />
-                {application.coverLetter && (
+                {app.coverLetter && (
                   <QuestionAnswer
                     label="Cover Letter / Additional Statement"
-                    value={application.coverLetter}
+                    value={app.coverLetter}
                     isLongText
                   />
                 )}
                 <QuestionAnswer
                   label="Additional Information"
-                  value={application.additionalInformation}
+                  value={app.additionalInformation}
                   isLongText
                 />
               </div>
@@ -712,7 +727,7 @@ export default function AdminOpportunityApplicationDetailsModal({
             <SectionContainer number="05" title="Declaration & Consent">
               <QuestionAnswer
                 label="Confirmation & Consent to be considered"
-                value={application.consent ? '✅ Confirmed & Consented' : '❌ Not confirmed'}
+                value={app.consent ? '✅ Confirmed & Consented' : '❌ Not confirmed'}
                 isRequired
               />
             </SectionContainer>
@@ -722,12 +737,12 @@ export default function AdminOpportunityApplicationDetailsModal({
         {/* ========================================================= */}
         {/* HISTORICAL RESUME / MEDIA ATTACHMENTS */}
         {/* ========================================================= */}
-        {application.resumeUrl && (
+        {app.resumeUrl && (
           <SectionContainer number="📎" title="Attached Resume (Historical / File Submission)">
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                onClick={() => onGetResumeFile && onGetResumeFile(application, false)}
+                onClick={() => onGetResumeFile && onGetResumeFile(app, false)}
                 className="px-3.5 py-2 rounded-lg bg-brand-navy hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
               >
                 <span>📄</span>
@@ -735,14 +750,14 @@ export default function AdminOpportunityApplicationDetailsModal({
               </button>
               <button
                 type="button"
-                onClick={() => onGetResumeFile && onGetResumeFile(application, true)}
+                onClick={() => onGetResumeFile && onGetResumeFile(app, true)}
                 className="px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs shadow-xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
               >
                 <span>⬇️</span>
                 <span>Download Resume</span>
               </button>
               <span className="text-[11px] text-slate-500 font-mono">
-                Storage: {application.resumeUrl}
+                Storage: {app.resumeUrl}
               </span>
             </div>
           </SectionContainer>
@@ -796,7 +811,7 @@ export default function AdminOpportunityApplicationDetailsModal({
         {/* MODAL FOOTER */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200">
           <div className="text-[11px] text-slate-500">
-            Applicant ID: <span className="font-mono font-semibold text-slate-700">{application.id}</span>
+            Applicant ID: <span className="font-mono font-semibold text-slate-700">{app.id}</span>
           </div>
           <button
             type="button"

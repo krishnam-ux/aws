@@ -10,6 +10,7 @@ import {
   isValidLinkedInUrl,
   getOpportunityFormType,
   resolveOpportunityApplicationType,
+  normalizeOpportunityApplication,
   OPPORTUNITY_DOMAINS,
   CORE_TEAM_ROLES_BY_DOMAIN,
 } from '../src/lib/opportunityApplication';
@@ -1339,3 +1340,301 @@ test('TEST 12: Unknown/custom fields remain visible in Additional / Historical C
   assert.ok(html.includes('awsbuilder#1234'));
 });
 
+// TEST 13: Full Founding Member submission -> DB -> Admin modal renders all fields without "Missing"
+test('TEST 13: Full Founding Member submission -> DB -> Admin modal renders all fields without "Missing"', async () => {
+  const fmOppId = 'opp-e2e-founding-member';
+  const existingCareers = await db.careers.getAll();
+  const existing = existingCareers.find((c: any) => c.id === fmOppId);
+  if (!existing) {
+    await db.careers.insertOne({
+      id: fmOppId,
+      slug: 'founding-members',
+      title: 'Founding Members',
+      organizationName: 'AWS Student Builder Group',
+      opportunityType: 'Leadership',
+      location: 'Chandigarh University – Uttar Pradesh',
+      workMode: 'Hybrid',
+      description: 'Founding members core group',
+      status: 'Open',
+      published: true,
+      internalApplications: true
+    });
+  }
+
+  const testEmail = `fm.e2e.${Date.now()}@cumail.in`;
+  const form = new FormData();
+  form.append('opportunityId', fmOppId);
+  form.append('opportunitySlug', 'founding-members');
+  form.append('name', 'E2E Founding Candidate');
+  form.append('email', testEmail);
+  form.append('phone', '9876543210');
+  form.append('university', 'Chandigarh University – Uttar Pradesh');
+  form.append('program', 'B.Tech CSE');
+  form.append('department', 'Computer Science and Engineering');
+  form.append('currentYear', '3rd Year');
+  form.append('graduationYear', '2026');
+  form.append('studentId', '23BCS9999');
+  form.append('preferredDomain', 'Tech & Technical');
+  form.append('skills', 'Next.js, TypeScript, AWS CDK, Serverless');
+  form.append('experience', 'Led development of campus cloud portal');
+  form.append('roleAndImpact', 'Architected frontend and backend microservices');
+  form.append('whyFoundingMember', 'To foster cloud computing culture and mentor junior builders');
+  form.append('personalContribution', 'Conduct hands-on AWS workshops and build community tooling');
+  form.append('communityGrowthIdeas', 'Organize cloud certifications study tracks and hackathons');
+  form.append('availabilityHours', '10-15 hours/week');
+  form.append('consistentContribution', 'Yes, fully committed to weekly deliverables');
+  form.append('contributionDuration', '1+ Year (Full Academic Term)');
+  form.append('academicBalance', 'Effective weekend sprint planning and structured daily time-blocking');
+  form.append('scenarioDropParticipation', 'Conduct anonymous feedback survey, switch to interactive live coding labs, gamify badges');
+  form.append('linkedin', 'https://linkedin.com/in/e2efoundingcandidate');
+  form.append('github', 'https://github.com/e2efoundingcandidate');
+  form.append('portfolio', 'https://e2efoundingcandidate.dev');
+  form.append('consent', 'on');
+
+  const req = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: form });
+  const res = await careerAppPost(req);
+  assert.equal(res.status, 303);
+
+  const apps = await db.careerApplications.getByOpportunityId(fmOppId);
+  const saved = apps.find((a: any) => a.email.toLowerCase() === testEmail.toLowerCase());
+  assert.ok(saved, 'Saved application must be retrieved from DB');
+
+  // Render Admin Details Modal
+  const html = renderToStaticMarkup(
+    React.createElement(AdminOpportunityApplicationDetailsModal, {
+      application: saved,
+      opportunityTitle: 'Founding Members',
+      token: 'test-token',
+      onClose: () => {}
+    })
+  );
+
+  // Assert Badge
+  assert.ok(
+    html.includes('Founding Member Application') || html.includes('FOUNDING MEMBER APPLICATION'),
+    'Badge must be FOUNDING MEMBER APPLICATION'
+  );
+  assert.equal(html.includes('Anchor &amp; Speaker Application'), false);
+  assert.equal(html.includes('Anchor & Speaker Application'), false);
+
+  // Assert ALL fields are rendered with their exact submitted values
+  assert.ok(html.includes('E2E Founding Candidate'), 'Name must render');
+  assert.ok(html.includes('Computer Science and Engineering'), 'Branch/Department must render');
+  assert.ok(html.includes('3rd Year'), 'Current Year must render');
+  assert.ok(html.includes('23BCS9999'), 'Student ID must render');
+  assert.ok(html.includes('Tech &amp; Technical') || html.includes('Tech & Technical'), 'Preferred Domain must render');
+  assert.ok(html.includes('Next.js, TypeScript, AWS CDK, Serverless'), 'Skills must render');
+  assert.ok(html.includes('Led development of campus cloud portal'), 'Experience must render');
+  assert.ok(html.includes('Architected frontend and backend microservices'), 'Role & Impact must render');
+  assert.ok(html.includes('To foster cloud computing culture and mentor junior builders'), 'Why Founding Member must render');
+  assert.ok(html.includes('Conduct hands-on AWS workshops and build community tooling'), 'Personal Contribution must render');
+  assert.ok(html.includes('Organize cloud certifications study tracks and hackathons'), 'Community Growth Ideas must render');
+  assert.ok(html.includes('10-15 hours/week'), 'Weekly Availability must render');
+  assert.ok(html.includes('Yes, fully committed to weekly deliverables'), 'Consistent Commitment must render');
+  assert.ok(html.includes('1+ Year (Full Academic Term)'), 'Contribution Duration must render');
+  assert.ok(html.includes('Effective weekend sprint planning and structured daily time-blocking'), 'Academic Balance must render');
+  assert.ok(html.includes('Conduct anonymous feedback survey, switch to interactive live coding labs, gamify badges'), 'Scenario Drop Participation must render');
+  assert.ok(html.includes('https://linkedin.com/in/e2efoundingcandidate'), 'LinkedIn must render');
+  assert.ok(html.includes('https://github.com/e2efoundingcandidate'), 'GitHub must render');
+  assert.ok(html.includes('https://e2efoundingcandidate.dev'), 'Portfolio must render');
+
+  // CRITICAL CHECK: "Missing / Invalid submission data" must NOT be rendered anywhere in this fully filled application
+  assert.equal(
+    html.includes('Missing / Invalid submission data'),
+    false,
+    'No field should be rendered as Missing / Invalid submission data for a fully filled application'
+  );
+
+  await db.careerApplications.deleteOne(saved.id);
+});
+
+// TEST 14: Full Core Team submission -> DB -> Admin modal renders all fields without "Missing"
+test('TEST 14: Full Core Team submission -> DB -> Admin modal renders all fields without "Missing"', async () => {
+  const ctOppId = 'opp-e2e-core-team';
+  const existingCareers = await db.careers.getAll();
+  const existing = existingCareers.find((c: any) => c.id === ctOppId);
+  if (!existing) {
+    await db.careers.insertOne({
+      id: ctOppId,
+      slug: 'core-team',
+      title: 'AWS SBG Core Team Member',
+      organizationName: 'AWS Student Builder Group',
+      opportunityType: 'Core Team',
+      location: 'Chandigarh University – Uttar Pradesh',
+      workMode: 'Hybrid',
+      description: 'Core team operations',
+      status: 'Open',
+      published: true,
+      internalApplications: true
+    });
+  }
+
+  const testEmail = `ct.e2e.${Date.now()}@cumail.in`;
+  const form = new FormData();
+  form.append('opportunityId', ctOppId);
+  form.append('opportunitySlug', 'core-team');
+  form.append('name', 'E2E Core Team Candidate');
+  form.append('email', testEmail);
+  form.append('personalEmail', 'ct.personal@gmail.com');
+  form.append('phone', '9876543211');
+  form.append('university', 'Chandigarh University – Uttar Pradesh');
+  form.append('program', 'B.Tech CSE');
+  form.append('department', 'Information Technology');
+  form.append('currentYear', '2nd Year');
+  form.append('graduationYear', '2027');
+  form.append('studentId', '24BCS8888');
+  form.append('preferredDomain', 'Growth & Community');
+  form.append('preferredRole', 'Event Coordination');
+  form.append('skills', 'Event Management, Sponsorship Outreach, Stage Operations');
+  form.append('primarySkillLevel', 'Intermediate (Hands-on experience)');
+  form.append('experience', 'Managed national level university hackathon with 400 attendees');
+  form.append('exactResponsibility', 'Head of Logistics and Guest Hospitality');
+  form.append('teamworkSituation', 'Delegated timeline tasks to 12 volunteers and executed seamless scheduling');
+  form.append('leadershipExperience', 'Yes');
+  form.append('leadershipDetails', 'President of Student Technical Society');
+  form.append('whyCoreTeam', 'Want to scale AWS community events across north campus');
+  form.append('domainContribution', 'Plan bi-weekly hands-on workshops and invite cloud architects');
+  form.append('availableDays', 'Monday, Wednesday, Friday, Saturday');
+  form.append('availabilityHours', '8-10 hours/week');
+  form.append('activeParticipation', 'Yes, fully active in discussions and events');
+  form.append('involvementDuration', '1 Year minimum');
+  form.append('scenarioUnavailableMembers', 'Proactively step in, reassign critical tasks among available peers, notify leadership');
+  form.append('linkedin', 'https://linkedin.com/in/e2ecoreteam');
+  form.append('github', 'https://github.com/e2ecoreteam');
+  form.append('portfolio', 'https://e2ecoreteam.dev');
+  form.append('consent', 'on');
+
+  const req = new Request('http://localhost:3000/api/career-applications', { method: 'POST', body: form });
+  const res = await careerAppPost(req);
+  assert.equal(res.status, 303);
+
+  const apps = await db.careerApplications.getByOpportunityId(ctOppId);
+  const saved = apps.find((a: any) => a.email.toLowerCase() === testEmail.toLowerCase());
+  assert.ok(saved, 'Saved Core Team application must be retrieved from DB');
+
+  // Render Admin Details Modal
+  const html = renderToStaticMarkup(
+    React.createElement(AdminOpportunityApplicationDetailsModal, {
+      application: saved,
+      opportunityTitle: 'AWS SBG Core Team Member',
+      token: 'test-token',
+      onClose: () => {}
+    })
+  );
+
+  // Assert Badge
+  assert.ok(
+    html.includes('Core Team Application') || html.includes('CORE TEAM APPLICATION'),
+    'Badge must be CORE TEAM APPLICATION'
+  );
+  assert.equal(html.includes('ANCHOR &amp; SPEAKER APPLICATION'), false);
+
+  // Assert ALL fields are rendered with their exact submitted values
+  assert.ok(html.includes('E2E Core Team Candidate'), 'Name must render');
+  assert.ok(html.includes('ct.personal@gmail.com'), 'Personal Email must render');
+  assert.ok(html.includes('Information Technology'), 'Department must render');
+  assert.ok(html.includes('2nd Year'), 'Current Year must render');
+  assert.ok(html.includes('Growth &amp; Community') || html.includes('Growth & Community'), 'Domain must render');
+  assert.ok(html.includes('Event Coordination'), 'Role must render');
+  assert.ok(html.includes('Event Management, Sponsorship Outreach, Stage Operations'), 'Skills must render');
+  assert.ok(html.includes('Intermediate (Hands-on experience)'), 'Skill level must render');
+  assert.ok(html.includes('Managed national level university hackathon with 400 attendees'), 'Experience must render');
+  assert.ok(html.includes('Head of Logistics and Guest Hospitality'), 'Exact responsibility must render');
+  assert.ok(html.includes('Delegated timeline tasks to 12 volunteers and executed seamless scheduling'), 'Teamwork must render');
+  assert.ok(html.includes('President of Student Technical Society'), 'Leadership details must render');
+  assert.ok(html.includes('Want to scale AWS community events across north campus'), 'Why Core Team must render');
+  assert.ok(html.includes('Plan bi-weekly hands-on workshops and invite cloud architects'), 'Domain contribution must render');
+  assert.ok(html.includes('Monday, Wednesday, Friday, Saturday'), 'Available days must render');
+  assert.ok(html.includes('8-10 hours/week'), 'Availability hours must render');
+  assert.ok(html.includes('Proactively step in, reassign critical tasks among available peers, notify leadership'), 'Scenario must render');
+
+  // CRITICAL CHECK: "Missing / Invalid submission data" must NOT be rendered anywhere in this fully filled application
+  assert.equal(
+    html.includes('Missing / Invalid submission data'),
+    false,
+    'No field should be rendered as Missing / Invalid submission data for a fully filled application'
+  );
+
+  await db.careerApplications.deleteOne(saved.id);
+});
+
+// TEST 15: normalizeOpportunityApplication handles snake_case, camelCase, and fallback aliases seamlessly
+test('TEST 15: normalizeOpportunityApplication handles snake_case, camelCase, and fallback aliases seamlessly', () => {
+  const rawPostgresRow = {
+    id: 'test-norm-1',
+    opportunity_id: 'opp-1',
+    opportunity_slug: 'founding-members',
+    form_type: 'founding-member',
+    name: 'Raw Postgres Candidate',
+    email: 'norm@cumail.in',
+    personal_email: 'norm.pers@gmail.com',
+    phone: '9876543210',
+    program: 'B.Tech AI & Data Science',
+    branch: 'AIML',
+    current_year: '1st Year',
+    graduation_year: '2028',
+    roll_number: '25BCS0001',
+    preferred_domain: 'Media & Creative',
+    skills: 'Photoshop, Premiere Pro, After Effects',
+    primary_skill_level: 'Advanced / Proficient',
+    previous_experience: 'Freelance video editor for YouTube channels',
+    role_and_impact: 'Produced 50+ videos generating 1M+ views',
+    why_founding_member: 'Help AWS SBG build a strong visual identity and brand',
+    personal_contribution: 'Design all event banners, promotional teasers, and recap reels',
+    community_growth_ideas: 'Launch YouTube shorts series teaching AWS concepts in 60 seconds',
+    scenario_drop_participation: 'Launch high-energy interactive reel challenges with shoutouts',
+    availability_hours: '12-15 hours/week',
+    consistent_contribution: 'Yes, weekly 3 videos guaranteed',
+    contribution_duration: '2 Years',
+    academic_balance: 'Scheduled edit slots during free campus blocks',
+    linkedin: 'https://linkedin.com/in/normcandidate',
+    github: 'https://github.com/normcandidate',
+    portfolio: 'https://normcandidate.design',
+    consent: true
+  };
+
+  const normalized = normalizeOpportunityApplication(rawPostgresRow);
+
+  assert.equal(normalized.department, 'AIML');
+  assert.equal(normalized.branch, 'AIML');
+  assert.equal(normalized.currentYear, '1st Year');
+  assert.equal(normalized.studentId, '25BCS0001');
+  assert.equal(normalized.rollNumber, '25BCS0001');
+  assert.equal(normalized.preferredDomain, 'Media & Creative');
+  assert.equal(normalized.roleAndImpact, 'Produced 50+ videos generating 1M+ views');
+  assert.equal(normalized.exactResponsibility, 'Produced 50+ videos generating 1M+ views');
+  assert.equal(normalized.whyFoundingMember, 'Help AWS SBG build a strong visual identity and brand');
+  assert.equal(normalized.personalContribution, 'Design all event banners, promotional teasers, and recap reels');
+  assert.equal(normalized.communityGrowthIdeas, 'Launch YouTube shorts series teaching AWS concepts in 60 seconds');
+  assert.equal(normalized.scenarioDropParticipation, 'Launch high-energy interactive reel challenges with shoutouts');
+  assert.equal(normalized.availabilityHours, '12-15 hours/week');
+  assert.equal(normalized.consistentContribution, 'Yes, weekly 3 videos guaranteed');
+  assert.equal(normalized.contributionDuration, '2 Years');
+  assert.equal(normalized.academicBalance, 'Scheduled edit slots during free campus blocks');
+
+  // Render in Admin Modal to verify complete rendering
+  const html = renderToStaticMarkup(
+    React.createElement(AdminOpportunityApplicationDetailsModal, {
+      application: normalized,
+      opportunityTitle: 'Founding Members',
+      token: 'test-token',
+      onClose: () => {}
+    })
+  );
+
+  assert.ok(html.includes('Raw Postgres Candidate'));
+  assert.ok(html.includes('AIML'));
+  assert.ok(html.includes('1st Year'));
+  assert.ok(html.includes('25BCS0001'));
+  assert.ok(html.includes('Media &amp; Creative') || html.includes('Media & Creative'));
+  assert.ok(html.includes('Produced 50+ videos generating 1M+ views'));
+  assert.ok(html.includes('Help AWS SBG build a strong visual identity and brand'));
+  assert.ok(html.includes('Design all event banners, promotional teasers, and recap reels'));
+  assert.ok(html.includes('Launch YouTube shorts series teaching AWS concepts in 60 seconds'));
+  assert.ok(html.includes('Launch high-energy interactive reel challenges with shoutouts'));
+  assert.ok(html.includes('12-15 hours/week'));
+  assert.ok(html.includes('Yes, weekly 3 videos guaranteed'));
+  assert.ok(html.includes('2 Years'));
+  assert.ok(html.includes('Scheduled edit slots during free campus blocks'));
+  assert.equal(html.includes('Missing / Invalid submission data'), false);
+});

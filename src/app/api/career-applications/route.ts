@@ -5,7 +5,8 @@ import {
   hasDuplicateOpportunityApplication,
   isValidGoogleDriveUrl,
   isValidLinkedInUrl,
-  getOpportunityFormType
+  getOpportunityFormType,
+  normalizeOpportunityApplication
 } from '@/lib/opportunityApplication';
 import { triggerOpportunityApplicationReceived } from '@/lib/email/automations';
 
@@ -83,7 +84,8 @@ export async function POST(request: Request) {
 
     // Retrieve opportunity to determine effective form type and validate status
     const allCareers = await db.careers.getAll();
-    const opportunity = allCareers.find((item: any) => item.id === opportunityId || item.slug === opportunitySlug);
+    const opportunity = (opportunityId ? allCareers.find((item: any) => item.id === opportunityId) : null)
+      || (opportunitySlug ? allCareers.find((item: any) => item.slug === opportunitySlug) : null);
     if (!opportunity) {
       return NextResponse.json({ success: false, error: 'Opportunity not found.' }, { status: 404 });
     }
@@ -264,7 +266,7 @@ export async function POST(request: Request) {
       updatedAt: new Date().toISOString(),
     };
 
-    await db.careerApplications.insertOne(submission);
+    await db.careerApplications.insertOne(normalizeOpportunityApplication(submission));
 
     // Dispatch automated application acknowledgement email (isolated, non-blocking)
     try {
