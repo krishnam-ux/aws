@@ -30,9 +30,10 @@ describe('Certification Exam Safe Exam Browser (.seb) Configuration Security Tes
     assert.ok(!xml.includes(`<string>${prodSiteUrl}/exam/${mockExam.id}</string>`));
   });
 
-  test('2. Quit URL is properly set to /exam', () => {
+  test('2. Quit URL is properly set to distinct quit route /exam/quit', () => {
     assert.ok(xml.includes('<key>quitURL</key>'));
-    assert.ok(xml.includes(`<string>${prodSiteUrl}/exam</string>`));
+    assert.ok(xml.includes(`<string>${prodSiteUrl}/exam/quit</string>`));
+    assert.ok(!xml.includes(`<key>quitURL</key>\n    <string>${prodSiteUrl}/exam</string>`));
   });
 
   test('3. URL Filter is enabled and content filter is configured', () => {

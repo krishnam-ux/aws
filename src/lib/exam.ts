@@ -553,7 +553,7 @@ export async function logAdminAudit(
 export function generateSEBConfigXml(exam: Exam, siteUrl: string): string {
   const normalizedSiteUrl = (siteUrl || 'https://www.awssbgcuup.tech').replace(/\/+$/, '');
   const startUrl = `${normalizedSiteUrl}/exam`;
-  const quitUrl = `${normalizedSiteUrl}/exam`;
+  const quitUrl = `${normalizedSiteUrl}/exam/quit`;
 
   // Build unique allowed expressions list
   const allowedExpressions = Array.from(new Set([
