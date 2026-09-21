@@ -25,12 +25,26 @@ export async function GET(request: Request) {
     const sebXml = generateSEBConfigXml(exam, siteUrl);
     const fileName = `AWS-SBG-${(exam.examCode || exam.id).replace(/[^a-zA-Z0-9_-]/g, '_')}.seb`;
 
+    // Server-side audit logging for SEB config generation
+    console.info('[SEB_CONFIG_GENERATED]', {
+      examId: exam.id,
+      examCode: exam.examCode,
+      examTitle: exam.title,
+      startUrl: `${siteUrl}/exam`,
+      configVersion: '1.0',
+      timestamp: new Date().toISOString(),
+      host,
+      siteUrl
+    });
+
     return new NextResponse(sebXml, {
       status: 200,
       headers: {
         'Content-Type': 'application/seb',
         'Content-Disposition': `attachment; filename="${fileName}"`,
-        'Cache-Control': 'no-store'
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       }
     });
   } catch (error: any) {

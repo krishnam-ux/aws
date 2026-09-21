@@ -218,7 +218,6 @@ test('7. Safe Exam Browser (SEB) XML config contains correct startURL, quitURL, 
   const siteUrl = 'https://www.awssbgcuup.tech';
   const xml = generateSEBConfigXml(exam, siteUrl);
 
-  assert.ok(xml.includes(`<string>${siteUrl}/exam/${exam.id}</string>`));
   assert.ok(xml.includes(`<string>${siteUrl}/exam</string>`));
   assert.ok(xml.includes('<key>allowDeveloperConsole</key>'));
   assert.ok(xml.includes('<key>prohibitedProcesses</key>'));

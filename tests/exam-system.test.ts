@@ -275,7 +275,7 @@ test('5. Security Event Logging & Violation Auto-Submit Threshold', async () => 
 test('6. Safe Exam Browser (SEB) XML Config Generator', async () => {
   const xml = generateSEBConfigXml(TEST_EXAM, 'https://www.awssbgcuup.tech');
   assert.ok(xml.includes('<key>startURL</key>'));
-  assert.ok(xml.includes('https://www.awssbgcuup.tech/exam/test-exam-ccp-unit'));
+  assert.ok(xml.includes('https://www.awssbgcuup.tech/exam'));
   assert.ok(xml.includes('<key>URLFilterRules</key>'));
   assert.ok(xml.includes('<key>allowDeveloperConsole</key>'));
   assert.ok(xml.includes('<false/>'));

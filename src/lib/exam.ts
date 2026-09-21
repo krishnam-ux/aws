@@ -551,15 +551,44 @@ export async function logAdminAudit(
  * Generates an XML plist configuration compatible with SEB for Windows/macOS/iOS.
  */
 export function generateSEBConfigXml(exam: Exam, siteUrl: string): string {
-  const targetUrl = `${siteUrl}/exam/${exam.id}`;
-  const quitUrl = `${siteUrl}/exam`;
+  const normalizedSiteUrl = (siteUrl || 'https://www.awssbgcuup.tech').replace(/\/+$/, '');
+  const startUrl = `${normalizedSiteUrl}/exam`;
+  const quitUrl = `${normalizedSiteUrl}/exam`;
+
+  // Build unique allowed expressions list
+  const allowedExpressions = Array.from(new Set([
+    'https://www.awssbgcuup.tech/*',
+    'https://www.awssbgcuup.tech',
+    'https://awssbgcuup.tech/*',
+    'https://awssbgcuup.tech',
+    '*.awssbgcuup.tech/*',
+    `${normalizedSiteUrl}/*`,
+    normalizedSiteUrl,
+    'https://fonts.googleapis.com/*',
+    'https://fonts.gstatic.com/*'
+  ]));
+
+  const rulesXml = allowedExpressions
+    .map(
+      (expr) => `        <dict>
+            <key>action</key>
+            <integer>1</integer>
+            <key>active</key>
+            <true/>
+            <key>expression</key>
+            <string>${expr}</string>
+            <key>regex</key>
+            <false/>
+        </dict>`
+    )
+    .join('\n');
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>startURL</key>
-    <string>${targetUrl}</string>
+    <string>${startUrl}</string>
     <key>examKeySalt</key>
     <data></data>
     <key>browserExamKey</key>
@@ -703,28 +732,11 @@ export function generateSEBConfigXml(exam: Exam, siteUrl: string): string {
     </array>
     <key>URLFilterEnable</key>
     <true/>
+    <key>URLFilterEnableContentFilter</key>
+    <false/>
     <key>URLFilterRules</key>
     <array>
-        <dict>
-            <key>action</key>
-            <integer>1</integer>
-            <key>active</key>
-            <true/>
-            <key>expression</key>
-            <string>${siteUrl}/*</string>
-            <key>regex</key>
-            <false/>
-        </dict>
-        <dict>
-            <key>action</key>
-            <integer>0</integer>
-            <key>active</key>
-            <true/>
-            <key>expression</key>
-            <string>*</string>
-            <key>regex</key>
-            <false/>
-        </dict>
+${rulesXml}
     </array>
 </dict>
 </plist>`;
