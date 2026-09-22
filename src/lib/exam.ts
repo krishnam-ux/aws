@@ -583,21 +583,70 @@ export function generateSEBConfigXml(exam: Exam, siteUrl: string): string {
     )
     .join('\n');
 
+  const escapeXml = (str: string) =>
+    str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+
+  const prohibitedApps = [
+    { name: 'Discord', exe: 'Discord.exe', desc: 'Communication & Remote Access' },
+    { name: 'DiscordPTB', exe: 'DiscordPTB.exe', desc: 'Communication & Remote Access' },
+    { name: 'DiscordCanary', exe: 'DiscordCanary.exe', desc: 'Communication & Remote Access' },
+    { name: 'AnyDesk', exe: 'AnyDesk.exe', desc: 'Remote Desktop' },
+    { name: 'TeamViewer', exe: 'TeamViewer.exe', desc: 'TeamViewer' },
+    { name: 'OBS 64-bit', exe: 'obs64.exe', desc: 'Screen Recording' },
+    { name: 'OBS 32-bit', exe: 'obs32.exe', desc: 'Screen Recording' },
+    { name: 'Zoom', exe: 'Zoom.exe', desc: 'Zoom Meetings' },
+    { name: 'WhatsApp', exe: 'WhatsApp.exe', desc: 'WhatsApp' },
+    { name: 'Telegram', exe: 'Telegram.exe', desc: 'Telegram' },
+    { name: 'Microsoft Teams', exe: 'ms-teams.exe', desc: 'Microsoft Teams' },
+    { name: 'Microsoft Teams Classic', exe: 'Teams.exe', desc: 'Microsoft Teams' },
+    { name: 'Slack', exe: 'slack.exe', desc: 'Slack' },
+    { name: 'Skype', exe: 'Skype.exe', desc: 'Skype' },
+    { name: 'SkypeApp', exe: 'SkypeApp.exe', desc: 'Skype App' }
+  ];
+
+  const prohibitedXml = prohibitedApps
+    .map(
+      (app) => `        <dict>
+            <key>active</key>
+            <true/>
+            <key>currentUser</key>
+            <true/>
+            <key>description</key>
+            <string>${escapeXml(app.desc)}</string>
+            <key>executable</key>
+            <string>${escapeXml(app.exe)}</string>
+            <key>originalName</key>
+            <string>${escapeXml(app.exe)}</string>
+            <key>os</key>
+            <integer>1</integer>
+            <key>strongKill</key>
+            <true/>
+        </dict>`
+    )
+    .join('\n');
+
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>originatorVersion</key>
+    <string>SEB_Win_3.10.2</string>
+    <key>sebConfigPurpose</key>
+    <integer>0</integer>
+    <key>sebMode</key>
+    <integer>0</integer>
     <key>startURL</key>
     <string>${startUrl}</string>
-    <key>examKeySalt</key>
-    <data></data>
-    <key>browserExamKey</key>
-    <string></string>
     <key>allowQuit</key>
     <true/>
     <key>quitURL</key>
     <string>${quitUrl}</string>
-    <key>allowPreferencesWindow</key>
+    <key>quitURLConfirm</key>
     <false/>
     <key>allowDeveloperConsole</key>
     <false/>
@@ -645,90 +694,7 @@ export function generateSEBConfigXml(exam: Exam, siteUrl: string): string {
     <false/>
     <key>prohibitedProcesses</key>
     <array>
-        <dict>
-            <key>active</key>
-            <true/>
-            <key>currentUser</key>
-            <true/>
-            <key>description</key>
-            <string>Communication &amp; Remote Access</string>
-            <key>executable</key>
-            <string>Discord.exe</string>
-            <key>originalName</key>
-            <string>Discord.exe</string>
-        </dict>
-        <dict>
-            <key>active</key>
-            <true/>
-            <key>currentUser</key>
-            <true/>
-            <key>description</key>
-            <string>Remote Desktop</string>
-            <key>executable</key>
-            <string>AnyDesk.exe</string>
-            <key>originalName</key>
-            <string>AnyDesk.exe</string>
-        </dict>
-        <dict>
-            <key>active</key>
-            <true/>
-            <key>currentUser</key>
-            <true/>
-            <key>description</key>
-            <string>TeamViewer</string>
-            <key>executable</key>
-            <string>TeamViewer.exe</string>
-            <key>originalName</key>
-            <string>TeamViewer.exe</string>
-        </dict>
-        <dict>
-            <key>active</key>
-            <true/>
-            <key>currentUser</key>
-            <true/>
-            <key>description</key>
-            <string>Screen Recording</string>
-            <key>executable</key>
-            <string>obs64.exe</string>
-            <key>originalName</key>
-            <string>obs64.exe</string>
-        </dict>
-        <dict>
-            <key>active</key>
-            <true/>
-            <key>currentUser</key>
-            <true/>
-            <key>description</key>
-            <string>Zoom Meetings</string>
-            <key>executable</key>
-            <string>Zoom.exe</string>
-            <key>originalName</key>
-            <string>Zoom.exe</string>
-        </dict>
-        <dict>
-            <key>active</key>
-            <true/>
-            <key>currentUser</key>
-            <true/>
-            <key>description</key>
-            <string>WhatsApp</string>
-            <key>executable</key>
-            <string>WhatsApp.exe</string>
-            <key>originalName</key>
-            <string>WhatsApp.exe</string>
-        </dict>
-        <dict>
-            <key>active</key>
-            <true/>
-            <key>currentUser</key>
-            <true/>
-            <key>description</key>
-            <string>Telegram</string>
-            <key>executable</key>
-            <string>Telegram.exe</string>
-            <key>originalName</key>
-            <string>Telegram.exe</string>
-        </dict>
+${prohibitedXml}
     </array>
     <key>URLFilterEnable</key>
     <true/>
@@ -741,4 +707,5 @@ ${rulesXml}
 </dict>
 </plist>`;
 }
+
 

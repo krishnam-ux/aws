@@ -30,18 +30,26 @@ describe('Certification Exam Safe Exam Browser (.seb) Configuration Security Tes
     assert.ok(!xml.includes(`<string>${prodSiteUrl}/exam/${mockExam.id}</string>`));
   });
 
-  test('2. Quit URL is properly set to distinct quit route /exam/quit', () => {
+  test('2. Quit URL is properly set to distinct quit route /exam/quit (startURL !== quitURL)', () => {
     assert.ok(xml.includes('<key>quitURL</key>'));
     assert.ok(xml.includes(`<string>${prodSiteUrl}/exam/quit</string>`));
     assert.ok(!xml.includes(`<key>quitURL</key>\n    <string>${prodSiteUrl}/exam</string>`));
+    assert.notEqual(`${prodSiteUrl}/exam`, `${prodSiteUrl}/exam/quit`);
   });
 
-  test('3. URL Filter is enabled and content filter is configured', () => {
+  test('3. Configuration purpose and session mode are explicitly set for SEB 3.10.2 Exam Mode', () => {
+    assert.ok(xml.includes('<key>sebConfigPurpose</key>\n    <integer>0</integer>'));
+    assert.ok(xml.includes('<key>sebMode</key>\n    <integer>0</integer>'));
+    assert.ok(xml.includes('<key>quitURLConfirm</key>\n    <false/>'));
+    assert.ok(xml.includes('<key>originatorVersion</key>\n    <string>SEB_Win_3.10.2</string>'));
+  });
+
+  test('4. URL Filter is enabled and content filter is configured', () => {
     assert.ok(xml.includes('<key>URLFilterEnable</key>'));
     assert.ok(xml.includes('<key>URLFilterRules</key>'));
   });
 
-  test('4. Required production domains and assets are explicitly allowed with action = 1', () => {
+  test('5. Required production domains and assets are explicitly allowed with action = 1', () => {
     // www.awssbgcuup.tech
     assert.ok(xml.includes('<string>https://www.awssbgcuup.tech/*</string>'));
     assert.ok(xml.includes('<string>https://www.awssbgcuup.tech</string>'));
@@ -55,17 +63,16 @@ describe('Certification Exam Safe Exam Browser (.seb) Configuration Security Tes
     assert.ok(xml.includes('<string>https://fonts.gstatic.com/*</string>'));
   });
 
-  test('5. Conflicting catch-all block rule (*) is REMOVED to prevent "Page Access Is Blocked"', () => {
-    // In plist, action 0 is Block. There should not be any expression '*' with action 0.
+  test('6. Conflicting catch-all block rule (*) is REMOVED to prevent "Page Access Is Blocked"', () => {
     const hasWildcardBlock = xml.includes('<string>*</string>') && xml.includes('<integer>0</integer>');
     assert.equal(hasWildcardBlock, false, 'Global wildcard block rule must not exist in SEB plist');
   });
 
-  test('6. SEB Lockdown, Anti-tampering, and Kiosk security settings are strictly preserved', () => {
+  test('7. SEB Lockdown, Anti-tampering, and Kiosk security settings are strictly preserved', () => {
     assert.ok(xml.includes('<key>allowDeveloperConsole</key>\n    <false/>'));
-    assert.ok(xml.includes('<key>allowPreferencesWindow</key>\n    <false/>'));
     assert.ok(xml.includes('<key>allowSpellCheck</key>\n    <false/>'));
     assert.ok(xml.includes('<key>allowVirtualMachine</key>\n    <false/>'));
+    assert.ok(xml.includes('<key>allowWlan</key>\n    <false/>'));
     assert.ok(xml.includes('<key>enableAltEsc</key>\n    <false/>'));
     assert.ok(xml.includes('<key>enableAltF4</key>\n    <false/>'));
     assert.ok(xml.includes('<key>enableAltTab</key>\n    <false/>'));
@@ -74,8 +81,15 @@ describe('Certification Exam Safe Exam Browser (.seb) Configuration Security Tes
     assert.ok(xml.includes('<key>enableRightMouse</key>\n    <false/>'));
   });
 
-  test('7. Prohibited processes (communication, screen sharing, recording) are locked down', () => {
+  test('8. Unsupported legacy keys (allowPreferencesWindow, browserExamKey) are omitted from SEB 3 schema', () => {
+    assert.ok(!xml.includes('<key>allowPreferencesWindow</key>'));
+    assert.ok(!xml.includes('<key>browserExamKey</key>'));
+  });
+
+  test('9. Prohibited processes include Windows OS mapping (os=1) and auto-termination (strongKill=true) to prevent session startup abort', () => {
     assert.ok(xml.includes('<key>prohibitedProcesses</key>'));
+    assert.ok(xml.includes('<key>os</key>\n            <integer>1</integer>'));
+    assert.ok(xml.includes('<key>strongKill</key>\n            <true/>'));
     assert.ok(xml.includes('<string>Discord.exe</string>'));
     assert.ok(xml.includes('<string>AnyDesk.exe</string>'));
     assert.ok(xml.includes('<string>TeamViewer.exe</string>'));
@@ -83,5 +97,10 @@ describe('Certification Exam Safe Exam Browser (.seb) Configuration Security Tes
     assert.ok(xml.includes('<string>Zoom.exe</string>'));
     assert.ok(xml.includes('<string>WhatsApp.exe</string>'));
     assert.ok(xml.includes('<string>Telegram.exe</string>'));
+    assert.ok(xml.includes('<string>ms-teams.exe</string>'));
+    assert.ok(xml.includes('<string>Teams.exe</string>'));
+    assert.ok(xml.includes('<string>slack.exe</string>'));
+    assert.ok(xml.includes('<string>Skype.exe</string>'));
   });
 });
+
