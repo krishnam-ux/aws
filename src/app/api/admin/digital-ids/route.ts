@@ -256,3 +256,138 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function PATCH(request: Request) {
+  try {
+    if (!isAuthorized(request)) {
+      return NextResponse.json(
+        { error: 'Unauthorized administrative access.' },
+        { status: 401, headers: noStoreHeaders }
+      );
+    }
+
+    const body = await request.json();
+    const { id, publicId, status, reason, actor, action } = body;
+    const targetId = id || publicId;
+
+    if (!targetId) {
+      return NextResponse.json(
+        { error: 'ID or Public ID is required.' },
+        { status: 400, headers: noStoreHeaders }
+      );
+    }
+
+    const existing = await db.digitalIdentities.getByPublicId(targetId) || await db.digitalIdentities.getById(targetId);
+    if (!existing) {
+      return NextResponse.json(
+        { error: 'Digital ID record not found.' },
+        { status: 404, headers: noStoreHeaders }
+      );
+    }
+
+    // 1. If status change requested
+    if (status || action === 'change-status') {
+      const targetStatus = status || body.data?.status;
+      if (!['ACTIVE', 'SUSPENDED', 'REVOKED'].includes(targetStatus)) {
+        return NextResponse.json(
+          { error: 'Invalid status. Must be ACTIVE, SUSPENDED, or REVOKED.' },
+          { status: 400, headers: noStoreHeaders }
+        );
+      }
+      const updated = await db.digitalIdentities.updateStatus(
+        existing.publicId,
+        targetStatus,
+        reason || body.data?.reason,
+        actor || 'Administrator'
+      );
+      return NextResponse.json(
+        {
+          success: true,
+          item: updated,
+          message: `Digital ID ${existing.publicId} status changed to ${targetStatus}.`
+        },
+        { headers: noStoreHeaders }
+      );
+    }
+
+    // 2. Profile updates
+    const validation = validateDigitalIdPayload(body.data || body);
+    if (!validation.valid || !validation.sanitized) {
+      return NextResponse.json(
+        { error: validation.error || 'Validation failed.' },
+        { status: 400, headers: noStoreHeaders }
+      );
+    }
+
+    const clean = validation.sanitized;
+    const updated = await db.digitalIdentities.updateOne(existing.id, {
+      fullName: clean.fullName,
+      photoUrl: clean.photoUrl,
+      memberType: clean.memberType,
+      role: clean.role,
+      domain: clean.domain,
+      university: clean.university,
+      course: clean.course,
+      branch: clean.branch,
+      currentYear: clean.currentYear,
+      email: clean.email,
+      linkedin: clean.linkedin,
+      joiningDate: clean.joiningDate,
+      additionalInformation: clean.additionalInformation
+    });
+
+    return NextResponse.json(
+      { success: true, item: updated, message: 'Digital ID profile updated successfully.' },
+      { headers: noStoreHeaders }
+    );
+  } catch (err: any) {
+    console.error('Error in PATCH /api/admin/digital-ids:', err);
+    return NextResponse.json(
+      { error: err.message || 'Failed to update digital ID.' },
+      { status: 500, headers: noStoreHeaders }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    if (!isAuthorized(request)) {
+      return NextResponse.json(
+        { error: 'Unauthorized administrative access.' },
+        { status: 401, headers: noStoreHeaders }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const queryId = searchParams.get('id') || searchParams.get('publicId');
+
+    let targetId = queryId;
+    if (!targetId) {
+      try {
+        const body = await request.json();
+        targetId = body.id || body.publicId;
+      } catch {
+        // no body
+      }
+    }
+
+    if (!targetId) {
+      return NextResponse.json(
+        { error: 'Target ID is required.' },
+        { status: 400, headers: noStoreHeaders }
+      );
+    }
+
+    await db.digitalIdentities.deleteById(targetId);
+    return NextResponse.json(
+      { success: true, message: 'Digital ID record deleted successfully.' },
+      { headers: noStoreHeaders }
+    );
+  } catch (err: any) {
+    console.error('Error in DELETE /api/admin/digital-ids:', err);
+    return NextResponse.json(
+      { error: err.message || 'Failed to delete digital ID.' },
+      { status: 500, headers: noStoreHeaders }
+    );
+  }
+}
