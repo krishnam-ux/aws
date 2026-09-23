@@ -141,7 +141,22 @@ export async function POST(request: Request) {
         );
       }
 
-      const validation = validateDigitalIdPayload(data || body);
+      const validation = validateDigitalIdPayload({
+        fullName: existing.fullName,
+        memberType: existing.memberType,
+        role: existing.role,
+        photoUrl: existing.photoUrl,
+        domain: existing.domain,
+        university: existing.university,
+        course: existing.course,
+        branch: existing.branch,
+        currentYear: existing.currentYear,
+        email: existing.email,
+        linkedin: existing.linkedin,
+        joiningDate: existing.joiningDate,
+        additionalInformation: existing.additionalInformation,
+        ...(body.data || body)
+      });
       if (!validation.valid || !validation.sanitized) {
         return NextResponse.json(
           { error: validation.error || 'Validation failed.' },
@@ -311,7 +326,22 @@ export async function PATCH(request: Request) {
     }
 
     // 2. Profile updates
-    const validation = validateDigitalIdPayload(body.data || body);
+    const validation = validateDigitalIdPayload({
+      fullName: existing.fullName,
+      memberType: existing.memberType,
+      role: existing.role,
+      photoUrl: existing.photoUrl,
+      domain: existing.domain,
+      university: existing.university,
+      course: existing.course,
+      branch: existing.branch,
+      currentYear: existing.currentYear,
+      email: existing.email,
+      linkedin: existing.linkedin,
+      joiningDate: existing.joiningDate,
+      additionalInformation: existing.additionalInformation,
+      ...(body.data || body)
+    });
     if (!validation.valid || !validation.sanitized) {
       return NextResponse.json(
         { error: validation.error || 'Validation failed.' },
