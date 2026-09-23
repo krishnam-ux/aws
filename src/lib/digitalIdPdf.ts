@@ -33,10 +33,11 @@ export async function generateDigitalIdPdfBuffer(identity: DigitalIdentity): Pro
   const pageHeight = 841.89;
   const margin = 40;
 
-  // Generate QR Code data URL
+  // Generate QR Code data URL encoding canonical verification link
   let qrDataUrl = '';
   try {
-    qrDataUrl = await generateQrCodeDataUrl(identity.publicId);
+    const verifyUrl = getVerificationUrl(identity.publicId);
+    qrDataUrl = await generateQrCodeDataUrl(verifyUrl);
   } catch (err) {
     console.error('Failed to generate QR code for PDF:', err);
   }

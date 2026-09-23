@@ -25,7 +25,7 @@ export async function GET(
 
     const filename = `DigitalID-${identity.publicId}-${identity.fullName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
 
-    return new NextResponse(new Uint8Array(pdfBuffer), {
+    return new NextResponse(pdfBuffer as any, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
