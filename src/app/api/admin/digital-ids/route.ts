@@ -77,7 +77,7 @@ export async function POST(request: Request) {
     const { action } = body;
 
     // 1. CREATE DIGITAL ID
-    if (action === 'create') {
+    if (action === 'create' || (!action && (body.fullName || body.data?.fullName))) {
       const validation = validateDigitalIdPayload(body.data || body);
       if (!validation.valid || !validation.sanitized) {
         return NextResponse.json(
