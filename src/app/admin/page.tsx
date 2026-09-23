@@ -6,6 +6,7 @@ import AdminExamsManager from '@/components/AdminExamsManager';
 import AdminWeeklyQuizProctoring from '@/components/AdminWeeklyQuizProctoring';
 import AdminEmailManager from '@/components/AdminEmailManager';
 import AdminFoundingMembersManager from '@/components/AdminFoundingMembersManager';
+import AdminDigitalIdManager from '@/components/AdminDigitalIdManager';
 import AdminSendStudentEmailModal from '@/components/AdminSendStudentEmailModal';
 import AdminBulkSendStudentEmailModal from '@/components/AdminBulkSendStudentEmailModal';
 import AdminOpportunityApplicationDetailsModal from '@/components/AdminOpportunityApplicationDetailsModal';
@@ -149,7 +150,7 @@ export default function AdminDashboard() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   // Tabs structure matching user specifications
-  const [activeTab, setActiveTab] = useState<'Dashboard' | 'Registrations' | 'EventRegistrations' | 'Verification' | 'Collaborations' | 'Events' | 'Announcements' | 'Resources' | 'Opportunities' | 'CoreTeam' | 'FoundingMembers' | 'Content' | 'Settings' | 'ContactMessages' | 'Feedback' | 'Exams' | 'Emails' | 'WeeklyQuizProctoring'>('Dashboard');
+  const [activeTab, setActiveTab] = useState<'Dashboard' | 'Registrations' | 'EventRegistrations' | 'Verification' | 'Collaborations' | 'Events' | 'Announcements' | 'Resources' | 'Opportunities' | 'CoreTeam' | 'FoundingMembers' | 'DigitalIDs' | 'Content' | 'Settings' | 'ContactMessages' | 'Feedback' | 'Exams' | 'Emails' | 'WeeklyQuizProctoring'>('Dashboard');
 
   // Stats / Dashboard data
   const [stats, setStats] = useState<any>({
@@ -2110,6 +2111,32 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
+              {/* Group: People & Identity */}
+              <div className="space-y-1">
+                {!isSidebarCollapsed && <span className="text-[10px] font-bold text-[#FF9900] uppercase tracking-widest px-3 block">People &amp; Identity</span>}
+                <button
+                  id="sidebar-nav-digital-ids"
+                  onClick={() => {
+                    setActiveTab('DigitalIDs');
+                    if (typeof window !== 'undefined' && window.innerWidth < 768) setIsSidebarCollapsed(true);
+                  }}
+                  className={getNavClass('DigitalIDs')}
+                  title="Digital ID Cards & Verification Hub"
+                >
+                  <div className="relative flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm">🪪</span>
+                  </div>
+                  {!isSidebarCollapsed && (
+                    <span className="flex items-center justify-between w-full">
+                      <span className="font-bold">Digital ID Cards</span>
+                      <span className="text-[8px] bg-orange-500/20 text-[#FF9900] px-1.5 py-0.5 rounded font-mono font-bold">
+                        REGISTRY
+                      </span>
+                    </span>
+                  )}
+                </button>
+              </div>
+
               {/* Group: Organization */}
               <div className="space-y-1">
                 {!isSidebarCollapsed && <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 block">Organization</span>}
@@ -2475,6 +2502,11 @@ export default function AdminDashboard() {
           {/* TAB: FOUNDING MEMBERS CMS & FORM LINKS */}
           {activeTab === 'FoundingMembers' && (
             <AdminFoundingMembersManager token={token || 'awssbg-admin-session-token-secure-hash'} />
+          )}
+
+          {/* TAB: DIGITAL ID CARDS & VERIFICATION */}
+          {activeTab === 'DigitalIDs' && (
+            <AdminDigitalIdManager token={token || 'awssbg-admin-session-token-secure-hash'} />
           )}
 
           {/* TAB 2: REGISTRATIONS TABLE */}

@@ -3,6 +3,8 @@ import path from 'path';
 import crypto from 'crypto';
 import postgres from 'postgres';
 import { normalizeOpportunityApplication } from './opportunityApplication';
+import { DigitalIdentity, DigitalIdType, DigitalIdStatus, VerificationLog } from '@/types/digitalIdentity';
+import { DIGITAL_ID_PREFIXES } from './digitalIdUtils';
 
 const DB_DIR = path.join(process.cwd(), 'src', 'data', 'db');
 
@@ -61,7 +63,7 @@ function requireDatabaseAvailability(): void {
 }
 
 // PostgreSQL integration
-let sql: any = null;
+export let sql: any = null;
 const postgresCandidates = getPostgresCandidates();
 
 for (const connectionString of postgresCandidates) {
@@ -83,8 +85,10 @@ if (!sql && postgresCandidates.length > 0) {
   console.warn('No valid PostgreSQL connection string could be initialized. Falling back to JSON storage.');
 }
 
+let postgresTableEnsured = false;
+
 async function ensurePostgresTable() {
-  if (!sql) return;
+  if (!sql || postgresTableEnsured) return;
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS kv_store (
@@ -94,13 +98,83 @@ async function ensurePostgresTable() {
     `;
     await ensureExamsTables();
     await ensureEmailTables();
+    await ensureDigitalIdentityTables();
+    postgresTableEnsured = true;
   } catch (err) {
     console.error('Failed to ensure kv_store table exists in PostgreSQL:', err);
   }
 }
 
+let digitalIdentityTablesEnsured = false;
+
+async function ensureDigitalIdentityTables() {
+  if (!sql || digitalIdentityTablesEnsured) return;
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS digital_identities (
+        id VARCHAR(255) PRIMARY KEY,
+        public_id VARCHAR(100) NOT NULL UNIQUE,
+        member_type VARCHAR(100) NOT NULL,
+        full_name VARCHAR(255) NOT NULL,
+        photo_url TEXT NOT NULL,
+        role VARCHAR(255) NOT NULL,
+        domain VARCHAR(255),
+        university VARCHAR(255),
+        course VARCHAR(255),
+        branch VARCHAR(255),
+        current_year VARCHAR(50),
+        email VARCHAR(255),
+        linkedin VARCHAR(255),
+        joining_date VARCHAR(100),
+        additional_information TEXT,
+        status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+        verification_token VARCHAR(255),
+        issued_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        suspended_at TIMESTAMP WITH TIME ZONE,
+        revoked_at TIMESTAMP WITH TIME ZONE,
+        revoked_reason TEXT,
+        revoked_by VARCHAR(255),
+        source_type VARCHAR(100),
+        source_record_id VARCHAR(255),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_digital_identities_public_id ON digital_identities(public_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_digital_identities_status ON digital_identities(status)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_digital_identities_member_type ON digital_identities(member_type)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_digital_identities_email ON digital_identities(email)`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS digital_id_counters (
+        prefix VARCHAR(50) PRIMARY KEY,
+        last_number INTEGER NOT NULL DEFAULT 0
+      )
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS digital_id_verifications (
+        id VARCHAR(255) PRIMARY KEY,
+        digital_id VARCHAR(100) NOT NULL,
+        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        result VARCHAR(50) NOT NULL,
+        device_type VARCHAR(100),
+        browser VARCHAR(100),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_digital_id_verifications_digital_id ON digital_id_verifications(digital_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_digital_id_verifications_timestamp ON digital_id_verifications(timestamp)`;
+    digitalIdentityTablesEnsured = true;
+  } catch (err) {
+    console.error('Failed to ensure digital identity tables exist in PostgreSQL:', err);
+  }
+}
+
+let emailTablesEnsured = false;
+
 async function ensureEmailTables() {
-  if (!sql) return;
+  if (!sql || emailTablesEnsured) return;
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS email_logs (
@@ -156,13 +230,16 @@ async function ensureEmailTables() {
       )
     `;
     await sql`CREATE INDEX IF NOT EXISTS idx_email_automation_event_type ON email_automation_settings(event_type)`;
+    emailTablesEnsured = true;
   } catch (err) {
     console.error('Failed to ensure email tables exist in PostgreSQL:', err);
   }
 }
 
+let examsTablesEnsured = false;
+
 async function ensureExamsTables() {
-  if (!sql) return;
+  if (!sql || examsTablesEnsured) return;
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS exams (
@@ -246,6 +323,7 @@ async function ensureExamsTables() {
       )
     `;
     await sql`CREATE INDEX IF NOT EXISTS idx_exam_audit_logs_exam ON exam_audit_logs(exam_id)`;
+    examsTablesEnsured = true;
   } catch (err) {
     console.error('Failed to ensure exam tables exist in PostgreSQL:', err);
   }
@@ -687,7 +765,10 @@ function isRealtimeCollection(filename: string): boolean {
     filename === 'email_templates.json' ||
     filename === 'email_automation_settings.json' ||
     filename === 'founding_members.json' ||
-    filename === 'founding_member_form_config.json'
+    filename === 'founding_member_form_config.json' ||
+    filename === 'digital_identities.json' ||
+    filename === 'digital_id_counters.json' ||
+    filename === 'digital_id_verifications.json'
   );
 }
 
@@ -3500,6 +3581,383 @@ export const db = {
         await writeJsonFile('maintenance_settings.json', updated);
         return updated;
       });
+    }
+  },
+  digitalIdentities: {
+    getAll: async (): Promise<DigitalIdentity[]> => {
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
+      }
+      if (sql) {
+        await ensureDigitalIdentityTables();
+        const rows = await sql`SELECT * FROM digital_identities ORDER BY created_at DESC`;
+        return rows.map((r: any) => ({
+          id: r.id,
+          publicId: r.public_id,
+          memberType: r.member_type as DigitalIdType,
+          fullName: r.full_name,
+          photoUrl: r.photo_url,
+          role: r.role,
+          domain: r.domain || '',
+          university: r.university || 'Chandigarh University – Uttar Pradesh',
+          course: r.course || '',
+          branch: r.branch || '',
+          currentYear: r.current_year || '',
+          email: r.email || '',
+          linkedin: r.linkedin || '',
+          joiningDate: r.joining_date || '',
+          additionalInformation: r.additional_information || '',
+          status: r.status as DigitalIdStatus,
+          verificationToken: r.verification_token || '',
+          issuedAt: r.issued_at ? new Date(r.issued_at).toISOString() : new Date().toISOString(),
+          updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString(),
+          suspendedAt: r.suspended_at ? new Date(r.suspended_at).toISOString() : undefined,
+          revokedAt: r.revoked_at ? new Date(r.revoked_at).toISOString() : undefined,
+          revokedReason: r.revoked_reason || '',
+          revokedBy: r.revoked_by || '',
+          sourceType: r.source_type || '',
+          sourceRecordId: r.source_record_id || '',
+          createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString()
+        }));
+      }
+      return await readJsonFile<DigitalIdentity[]>('digital_identities.json', []);
+    },
+    getByPublicId: async (publicId: string): Promise<DigitalIdentity | null> => {
+      if (!publicId) return null;
+      const cleanId = String(publicId).trim().toUpperCase();
+      if (sql) {
+        await ensureDigitalIdentityTables();
+        const rows = await sql`SELECT * FROM digital_identities WHERE UPPER(public_id) = ${cleanId} LIMIT 1`;
+        if (rows.length === 0) return null;
+        const r = rows[0];
+        return {
+          id: r.id,
+          publicId: r.public_id,
+          memberType: r.member_type as DigitalIdType,
+          fullName: r.full_name,
+          photoUrl: r.photo_url,
+          role: r.role,
+          domain: r.domain || '',
+          university: r.university || 'Chandigarh University – Uttar Pradesh',
+          course: r.course || '',
+          branch: r.branch || '',
+          currentYear: r.current_year || '',
+          email: r.email || '',
+          linkedin: r.linkedin || '',
+          joiningDate: r.joining_date || '',
+          additionalInformation: r.additional_information || '',
+          status: r.status as DigitalIdStatus,
+          verificationToken: r.verification_token || '',
+          issuedAt: r.issued_at ? new Date(r.issued_at).toISOString() : new Date().toISOString(),
+          updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString(),
+          suspendedAt: r.suspended_at ? new Date(r.suspended_at).toISOString() : undefined,
+          revokedAt: r.revoked_at ? new Date(r.revoked_at).toISOString() : undefined,
+          revokedReason: r.revoked_reason || '',
+          revokedBy: r.revoked_by || '',
+          sourceType: r.source_type || '',
+          sourceRecordId: r.source_record_id || '',
+          createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString()
+        };
+      }
+      const list = await db.digitalIdentities.getAll();
+      return list.find(m => m.publicId?.trim().toUpperCase() === cleanId) || null;
+    },
+    getById: async (id: string): Promise<DigitalIdentity | null> => {
+      if (!id) return null;
+      if (sql) {
+        await ensureDigitalIdentityTables();
+        const rows = await sql`SELECT * FROM digital_identities WHERE id = ${id} LIMIT 1`;
+        if (rows.length === 0) return null;
+        const r = rows[0];
+        return {
+          id: r.id,
+          publicId: r.public_id,
+          memberType: r.member_type as DigitalIdType,
+          fullName: r.full_name,
+          photoUrl: r.photo_url,
+          role: r.role,
+          domain: r.domain || '',
+          university: r.university || 'Chandigarh University – Uttar Pradesh',
+          course: r.course || '',
+          branch: r.branch || '',
+          currentYear: r.current_year || '',
+          email: r.email || '',
+          linkedin: r.linkedin || '',
+          joiningDate: r.joining_date || '',
+          additionalInformation: r.additional_information || '',
+          status: r.status as DigitalIdStatus,
+          verificationToken: r.verification_token || '',
+          issuedAt: r.issued_at ? new Date(r.issued_at).toISOString() : new Date().toISOString(),
+          updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString(),
+          suspendedAt: r.suspended_at ? new Date(r.suspended_at).toISOString() : undefined,
+          revokedAt: r.revoked_at ? new Date(r.revoked_at).toISOString() : undefined,
+          revokedReason: r.revoked_reason || '',
+          revokedBy: r.revoked_by || '',
+          sourceType: r.source_type || '',
+          sourceRecordId: r.source_record_id || '',
+          createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString()
+        };
+      }
+      const list = await db.digitalIdentities.getAll();
+      return list.find(m => m.id === id) || null;
+    },
+    getByEmail: async (email: string): Promise<DigitalIdentity | null> => {
+      if (!email) return null;
+      const cleanEmail = email.trim().toLowerCase();
+      const list = await db.digitalIdentities.getAll();
+      return list.find(m => String(m.email || '').trim().toLowerCase() === cleanEmail) || null;
+    },
+    getNextPublicId: async (memberType: DigitalIdType): Promise<string> => {
+      const prefix = DIGITAL_ID_PREFIXES[memberType] || 'DID-CUUP-';
+      return withCollectionLock('digital_identities.json', async () => {
+        if (sql) {
+          await ensureDigitalIdentityTables();
+          // First seed counter from existing max if counter row not present
+          const existingMaxRow = await sql`
+            SELECT public_id FROM digital_identities WHERE public_id LIKE ${prefix + '%'}
+          `;
+          let maxSeen = 0;
+          for (const row of existingMaxRow) {
+            const numPart = String(row.public_id).replace(prefix, '');
+            const parsed = parseInt(numPart, 10);
+            if (!isNaN(parsed) && parsed > maxSeen) maxSeen = parsed;
+          }
+
+          const counterRow = await sql`
+            INSERT INTO digital_id_counters (prefix, last_number)
+            VALUES (${prefix}, ${Math.max(1, maxSeen + 1)})
+            ON CONFLICT (prefix)
+            DO UPDATE SET last_number = GREATEST(digital_id_counters.last_number + 1, ${maxSeen + 1})
+            RETURNING last_number
+          `;
+          const num = counterRow[0].last_number;
+          return `${prefix}${String(num).padStart(3, '0')}`;
+        }
+
+        // JSON file / KV fallback with monotonic counter registry
+        const counters = await readJsonFile<Record<string, number>>('digital_id_counters.json', {});
+        const list = await readJsonFile<DigitalIdentity[]>('digital_identities.json', []);
+        
+        let maxSeen = counters[prefix] || 0;
+        for (const item of list) {
+          if (item.publicId && item.publicId.startsWith(prefix)) {
+            const numPart = item.publicId.slice(prefix.length);
+            const parsed = parseInt(numPart, 10);
+            if (!isNaN(parsed) && parsed > maxSeen) maxSeen = parsed;
+          }
+        }
+
+        const nextNum = maxSeen + 1;
+        counters[prefix] = nextNum;
+        await writeJsonFile('digital_id_counters.json', counters);
+        return `${prefix}${String(nextNum).padStart(3, '0')}`;
+      });
+    },
+    insertOne: async (identity: DigitalIdentity): Promise<DigitalIdentity> => {
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
+      }
+      return withCollectionLock('digital_identities.json', async () => {
+        if (sql) {
+          await ensureDigitalIdentityTables();
+          await sql`
+            INSERT INTO digital_identities (
+              id, public_id, member_type, full_name, photo_url, role, domain, university, course, branch,
+              current_year, email, linkedin, joining_date, additional_information, status,
+              verification_token, issued_at, updated_at, suspended_at, revoked_at, revoked_reason,
+              revoked_by, source_type, source_record_id, created_at
+            ) VALUES (
+              ${identity.id}, ${identity.publicId}, ${identity.memberType}, ${identity.fullName}, ${identity.photoUrl},
+              ${identity.role}, ${identity.domain || ''}, ${identity.university || 'Chandigarh University – Uttar Pradesh'},
+              ${identity.course || ''}, ${identity.branch || ''}, ${identity.currentYear || ''}, ${identity.email || ''},
+              ${identity.linkedin || ''}, ${identity.joiningDate || ''}, ${identity.additionalInformation || ''},
+              ${identity.status || 'ACTIVE'}, ${identity.verificationToken || ''},
+              ${identity.issuedAt ? new Date(identity.issuedAt) : new Date()},
+              ${identity.updatedAt ? new Date(identity.updatedAt) : new Date()},
+              ${identity.suspendedAt ? new Date(identity.suspendedAt) : null},
+              ${identity.revokedAt ? new Date(identity.revokedAt) : null},
+              ${identity.revokedReason || ''}, ${identity.revokedBy || ''}, ${identity.sourceType || ''},
+              ${identity.sourceRecordId || ''}, ${identity.createdAt ? new Date(identity.createdAt) : new Date()}
+            )
+          `;
+          return identity;
+        }
+        const list = await readJsonFile<DigitalIdentity[]>('digital_identities.json', []);
+        list.unshift(identity);
+        await writeJsonFile('digital_identities.json', list);
+        return identity;
+      });
+    },
+    updateOne: async (id: string, fields: Partial<DigitalIdentity>): Promise<DigitalIdentity | null> => {
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
+      }
+      return withCollectionLock('digital_identities.json', async () => {
+        if (sql) {
+          await ensureDigitalIdentityTables();
+          const now = new Date();
+          await sql`
+            UPDATE digital_identities
+            SET
+              full_name = ${fields.fullName !== undefined ? fields.fullName : sql`full_name`},
+              photo_url = ${fields.photoUrl !== undefined ? fields.photoUrl : sql`photo_url`},
+              member_type = ${fields.memberType !== undefined ? fields.memberType : sql`member_type`},
+              role = ${fields.role !== undefined ? fields.role : sql`role`},
+              domain = ${fields.domain !== undefined ? fields.domain : sql`domain`},
+              university = ${fields.university !== undefined ? fields.university : sql`university`},
+              course = ${fields.course !== undefined ? fields.course : sql`course`},
+              branch = ${fields.branch !== undefined ? fields.branch : sql`branch`},
+              current_year = ${fields.currentYear !== undefined ? fields.currentYear : sql`current_year`},
+              email = ${fields.email !== undefined ? fields.email : sql`email`},
+              linkedin = ${fields.linkedin !== undefined ? fields.linkedin : sql`linkedin`},
+              joining_date = ${fields.joiningDate !== undefined ? fields.joiningDate : sql`joining_date`},
+              additional_information = ${fields.additionalInformation !== undefined ? fields.additionalInformation : sql`additional_information`},
+              status = ${fields.status !== undefined ? fields.status : sql`status`},
+              suspended_at = ${fields.suspendedAt !== undefined ? (fields.suspendedAt ? new Date(fields.suspendedAt) : null) : sql`suspended_at`},
+              revoked_at = ${fields.revokedAt !== undefined ? (fields.revokedAt ? new Date(fields.revokedAt) : null) : sql`revoked_at`},
+              revoked_reason = ${fields.revokedReason !== undefined ? fields.revokedReason : sql`revoked_reason`},
+              revoked_by = ${fields.revokedBy !== undefined ? fields.revokedBy : sql`revoked_by`},
+              updated_at = ${now}
+            WHERE id = ${id} OR public_id = ${id}
+          `;
+          return await db.digitalIdentities.getById(id) || await db.digitalIdentities.getByPublicId(id);
+        }
+        const list = await readJsonFile<DigitalIdentity[]>('digital_identities.json', []);
+        const idx = list.findIndex(m => m.id === id || m.publicId === id);
+        if (idx !== -1) {
+          list[idx] = {
+            ...list[idx],
+            ...fields,
+            updatedAt: new Date().toISOString()
+          };
+          await writeJsonFile('digital_identities.json', list);
+          return list[idx];
+        }
+        return null;
+      });
+    },
+    updateStatus: async (
+      publicId: string,
+      status: DigitalIdStatus,
+      reason?: string,
+      actor?: string
+    ): Promise<DigitalIdentity | null> => {
+      const now = new Date().toISOString();
+      const updates: Partial<DigitalIdentity> = {
+        status,
+        updatedAt: now
+      };
+      if (status === 'ACTIVE') {
+        updates.suspendedAt = undefined;
+      } else if (status === 'SUSPENDED') {
+        updates.suspendedAt = now;
+      } else if (status === 'REVOKED') {
+        updates.revokedAt = now;
+        updates.revokedReason = reason || 'Revoked by administrator';
+        updates.revokedBy = actor || 'Administrator';
+      }
+      return await db.digitalIdentities.updateOne(publicId, updates);
+    },
+    deleteById: async (id: string): Promise<void> => {
+      if (hasConfiguredDatabase() && !sql) {
+        throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
+      }
+      return withCollectionLock('digital_identities.json', async () => {
+        if (sql) {
+          await ensureDigitalIdentityTables();
+          await sql`DELETE FROM digital_identities WHERE id = ${id} OR public_id = ${id}`;
+          return;
+        }
+        let list = await readJsonFile<DigitalIdentity[]>('digital_identities.json', []);
+        list = list.filter(m => m.id !== id && m.publicId !== id);
+        await writeJsonFile('digital_identities.json', list);
+      });
+    },
+    saveAll: async (data: DigitalIdentity[]): Promise<void> => {
+      return withCollectionLock('digital_identities.json', async () => {
+        await writeJsonFile('digital_identities.json', data);
+      });
+    }
+  },
+  digitalIdVerifications: {
+    logVerification: async (entry: Omit<VerificationLog, 'id'>): Promise<VerificationLog> => {
+      const logEntry: VerificationLog = {
+        id: `vlog-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
+        ...entry
+      };
+      if (sql) {
+        try {
+          await ensureDigitalIdentityTables();
+          await sql`
+            INSERT INTO digital_id_verifications (id, digital_id, result, device_type, browser)
+            VALUES (
+              ${logEntry.id}, ${logEntry.digitalId},
+              ${logEntry.result}, ${logEntry.deviceType || ''}, ${logEntry.browser || ''}
+            )
+          `;
+        } catch (err) {
+          console.error('Failed to log verification in Postgres, falling back to local store:', err);
+        }
+      }
+      return withCollectionLock('digital_id_verifications.json', async () => {
+        const logs = await readJsonFile<VerificationLog[]>('digital_id_verifications.json', []);
+        logs.unshift(logEntry);
+        await writeJsonFile('digital_id_verifications.json', logs.slice(0, 3000));
+        return logEntry;
+      });
+    },
+    getByDigitalId: async (publicId: string, limit: number = 50): Promise<VerificationLog[]> => {
+      if (!publicId) return [];
+      const cleanId = String(publicId).trim().toUpperCase();
+      if (sql) {
+        try {
+          await ensureDigitalIdentityTables();
+          const rows = await sql`
+            SELECT * FROM digital_id_verifications
+            WHERE UPPER(digital_id) = ${cleanId}
+            LIMIT ${limit}
+          `;
+          if (rows && rows.length > 0) {
+            return rows.map((r: any) => ({
+              id: r.id,
+              digitalId: r.digital_id,
+              timestamp: r.timestamp ? new Date(r.timestamp).toISOString() : (r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString()),
+              result: r.result,
+              deviceType: r.device_type,
+              browser: r.browser
+            }));
+          }
+        } catch (err) {
+          console.error('Failed to get verification logs in Postgres, falling back to local store:', err);
+        }
+      }
+      const logs = await readJsonFile<VerificationLog[]>('digital_id_verifications.json', []);
+      return logs.filter(l => String(l.digitalId).toUpperCase() === cleanId).slice(0, limit);
+    },
+    getAll: async (limit: number = 100): Promise<VerificationLog[]> => {
+      if (sql) {
+        try {
+          await ensureDigitalIdentityTables();
+          const rows = await sql`
+            SELECT * FROM digital_id_verifications
+            LIMIT ${limit}
+          `;
+          if (rows && rows.length > 0) {
+            return rows.map((r: any) => ({
+              id: r.id,
+              digitalId: r.digital_id,
+              timestamp: r.timestamp ? new Date(r.timestamp).toISOString() : (r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString()),
+              result: r.result,
+              deviceType: r.device_type,
+              browser: r.browser
+            }));
+          }
+        } catch (err) {
+          console.error('Failed to get verification logs in Postgres, falling back to local store:', err);
+        }
+      }
+      const logs = await readJsonFile<VerificationLog[]>('digital_id_verifications.json', []);
+      return logs.slice(0, limit);
     }
   }
 };
