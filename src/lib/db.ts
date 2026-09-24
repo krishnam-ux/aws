@@ -3858,19 +3858,41 @@ export const db = {
       }
       return await db.digitalIdentities.updateOne(publicId, updates);
     },
-    deleteById: async (id: string): Promise<void> => {
+    deleteById: async (id: string): Promise<boolean> => {
       if (hasConfiguredDatabase() && !sql) {
         throw new Error('A PostgreSQL connection string is configured but the PostgreSQL client failed to initialize.');
       }
       return withCollectionLock('digital_identities.json', async () => {
+        let deleted = false;
+        let targetPublicId = id;
         if (sql) {
           await ensureDigitalIdentityTables();
-          await sql`DELETE FROM digital_identities WHERE id = ${id} OR public_id = ${id}`;
-          return;
+          const existing = await sql`SELECT id, public_id FROM digital_identities WHERE id = ${id} OR public_id = ${id}`;
+          if (existing && existing.length > 0) {
+            targetPublicId = existing[0].public_id;
+            deleted = true;
+            await sql`DELETE FROM digital_identities WHERE id = ${id} OR public_id = ${id}`;
+            if (targetPublicId) {
+              await sql`DELETE FROM digital_id_verifications WHERE UPPER(digital_id) = ${targetPublicId.toUpperCase()}`;
+            }
+          }
+          return deleted;
         }
         let list = await readJsonFile<DigitalIdentity[]>('digital_identities.json', []);
+        const match = list.find(m => m.id === id || m.publicId === id);
+        if (match) {
+          targetPublicId = match.publicId;
+          deleted = true;
+        }
         list = list.filter(m => m.id !== id && m.publicId !== id);
         await writeJsonFile('digital_identities.json', list);
+
+        if (targetPublicId) {
+          let logs = await readJsonFile<VerificationLog[]>('digital_id_verifications.json', []);
+          logs = logs.filter(l => l.digitalId?.toUpperCase() !== targetPublicId.toUpperCase());
+          await writeJsonFile('digital_id_verifications.json', logs);
+        }
+        return deleted;
       });
     },
     saveAll: async (data: DigitalIdentity[]): Promise<void> => {

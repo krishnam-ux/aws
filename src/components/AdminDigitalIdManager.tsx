@@ -57,11 +57,13 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   // Active / Selected item states
   const [selectedItem, setSelectedItem] = useState<DigitalIdentity | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [formData, setFormData] = useState(initialFormState);
   const [revokeReason, setRevokeReason] = useState('');
   const [itemLogs, setItemLogs] = useState<VerificationLog[]>([]);
@@ -302,6 +304,47 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
     setSelectedItem(item);
     setRevokeReason('');
     setIsRevokeModalOpen(true);
+  };
+
+  // Open Delete Confirmation Modal
+  const openDeleteModal = (item: DigitalIdentity) => {
+    setSelectedItem(item);
+    setDeleteConfirmText('');
+    setIsDeleteModalOpen(true);
+  };
+
+  // Submit Permanent Delete
+  const handleDeleteSubmit = async () => {
+    if (!selectedItem) return;
+    try {
+      setActionLoading(true);
+      setActionError('');
+      setActionSuccess('');
+
+      const res = await fetch(`/api/admin/digital-ids?id=${encodeURIComponent(selectedItem.id)}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token || 'awssbg-admin-session-token-secure-hash'}`
+        }
+      });
+
+      const resData = await res.json();
+      if (res.ok && resData.success) {
+        setActionSuccess(resData.message || `Digital ID ${selectedItem.publicId} permanently deleted.`);
+        setIsDeleteModalOpen(false);
+        setIsViewModalOpen(false);
+        setSelectedItem(null);
+        setDeleteConfirmText('');
+        fetchData();
+        setTimeout(() => setActionSuccess(''), 5000);
+      } else {
+        setActionError(resData.error || 'Failed to delete Digital ID.');
+      }
+    } catch (err: any) {
+      setActionError(err.message || 'Network error while deleting Digital ID.');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   // Open QR Modal
@@ -750,6 +793,15 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
                             className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded transition-colors cursor-pointer"
                           >
                             📊
+                          </button>
+
+                          {/* Permanent Delete Action */}
+                          <button
+                            onClick={() => openDeleteModal(item)}
+                            title="Permanently Delete Digital ID"
+                            className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded transition-colors cursor-pointer text-xs font-semibold border border-red-200"
+                          >
+                            🗑️
                           </button>
                         </div>
                       </td>
@@ -1294,7 +1346,7 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
               )}
             </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100 gap-2">
               <a
                 href={getCardUrl(selectedItem.publicId)}
                 target="_blank"
@@ -1303,12 +1355,24 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
               >
                 Open Card Page ↗
               </a>
-              <button
-                onClick={() => setIsViewModalOpen(false)}
-                className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer"
-              >
-                Close
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsViewModalOpen(false);
+                    openDeleteModal(selectedItem);
+                  }}
+                  className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                >
+                  🗑️ Delete ID
+                </button>
+                <button
+                  onClick={() => setIsViewModalOpen(false)}
+                  className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1405,6 +1469,106 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 11. PERMANENT DELETE CONFIRMATION MODAL */}
+      {/* ======================================================== */}
+      {isDeleteModalOpen && selectedItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-red-300 max-w-md w-full p-6 space-y-5 animate-scaleUp my-8">
+            <div className="flex items-center space-x-3">
+              <div className="h-12 w-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-2xl font-bold flex-shrink-0 shadow-inner">
+                🗑️
+              </div>
+              <div>
+                <h3 className="font-display font-extrabold text-slate-900 text-base">Permanently Delete Digital ID?</h3>
+                <p className="text-xs text-red-600 font-mono font-bold">{selectedItem.publicId} • {selectedItem.fullName}</p>
+              </div>
+            </div>
+
+            {/* Warning Box */}
+            <div className="p-4 bg-red-50 rounded-xl border border-red-200 text-xs text-red-900 space-y-2 leading-relaxed">
+              <div className="flex items-center space-x-1.5 font-bold text-red-700">
+                <span>⚠️</span>
+                <span>Irreversible Permanent Action</span>
+              </div>
+              <ul className="list-disc list-inside space-y-1 text-[11px] text-red-800">
+                <li>This will permanently remove the member record, profile data, and verification registry entry.</li>
+                <li>Public verification at <strong className="font-mono text-[10px]">/verify/{selectedItem.publicId}</strong> will return <strong>NOT FOUND (404)</strong>.</li>
+                <li>The ID number <strong className="font-mono text-[10px]">{selectedItem.publicId}</strong> will <strong>NEVER be reused or reassigned</strong>.</li>
+                <li>Future Digital IDs continue forward monotonically in sequence.</li>
+              </ul>
+            </div>
+
+            {/* Target Identity Summary */}
+            <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs space-y-1">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Name:</span>
+                <span className="font-bold text-slate-800">{selectedItem.fullName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Member Type:</span>
+                <span className="font-semibold text-slate-800">{selectedItem.memberType}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Role:</span>
+                <span className="font-semibold text-slate-800">{selectedItem.role}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Current Status:</span>
+                <span className="font-bold text-slate-800">{selectedItem.status}</span>
+              </div>
+            </div>
+
+            {/* Confirmation input */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Type <strong className="font-mono text-red-600">{selectedItem.publicId}</strong> or <strong className="font-mono text-red-600">DELETE</strong> to confirm:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder={`Type ${selectedItem.publicId} or DELETE`}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              />
+            </div>
+
+            {/* Buttons */}
+            <div className="flex items-center justify-end space-x-3 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setDeleteConfirmText('');
+                }}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={
+                  actionLoading ||
+                  (deleteConfirmText.trim() !== selectedItem.publicId &&
+                   deleteConfirmText.trim().toUpperCase() !== 'DELETE')
+                }
+                onClick={handleDeleteSubmit}
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center space-x-1.5"
+              >
+                {actionLoading ? (
+                  <>
+                    <span className="inline-block animate-spin text-xs">⚙️</span>
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <span>Permanently Delete ID</span>
+                )}
               </button>
             </div>
           </div>

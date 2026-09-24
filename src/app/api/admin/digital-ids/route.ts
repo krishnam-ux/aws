@@ -242,7 +242,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ logs }, { headers: noStoreHeaders });
     }
 
-    // 5. DELETE RECORD (Optional admin action)
+    // 5. DELETE RECORD (Admin action)
     if (action === 'delete') {
       const { id, publicId } = body;
       const targetId = id || publicId;
@@ -252,9 +252,16 @@ export async function POST(request: Request) {
           { status: 400, headers: noStoreHeaders }
         );
       }
-      await db.digitalIdentities.deleteById(targetId);
+      const existing = await db.digitalIdentities.getByPublicId(targetId) || await db.digitalIdentities.getById(targetId);
+      if (!existing) {
+        return NextResponse.json(
+          { error: 'Digital ID record not found.' },
+          { status: 404, headers: noStoreHeaders }
+        );
+      }
+      await db.digitalIdentities.deleteById(existing.id);
       return NextResponse.json(
-        { success: true, message: 'Digital ID record deleted successfully.' },
+        { success: true, message: `Digital ID ${existing.publicId} (${existing.fullName}) permanently deleted.` },
         { headers: noStoreHeaders }
       );
     }
@@ -408,9 +415,17 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await db.digitalIdentities.deleteById(targetId);
+    const existing = await db.digitalIdentities.getByPublicId(targetId) || await db.digitalIdentities.getById(targetId);
+    if (!existing) {
+      return NextResponse.json(
+        { error: 'Digital ID record not found.' },
+        { status: 404, headers: noStoreHeaders }
+      );
+    }
+
+    await db.digitalIdentities.deleteById(existing.id);
     return NextResponse.json(
-      { success: true, message: 'Digital ID record deleted successfully.' },
+      { success: true, message: `Digital ID ${existing.publicId} (${existing.fullName}) permanently deleted.` },
       { headers: noStoreHeaders }
     );
   } catch (err: any) {

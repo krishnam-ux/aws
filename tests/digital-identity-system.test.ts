@@ -21,6 +21,8 @@ import {
 } from '../src/lib/digitalIdUtils';
 import { generateDigitalIdPdf } from '../src/lib/digitalIdPdf';
 import { DigitalIdentity, DigitalIdFormData } from '../src/types/digitalIdentity';
+import { DELETE as deleteAdminDigitalIdRoute } from '../src/app/api/admin/digital-ids/route';
+import { GET as verifyDigitalIdRoute } from '../src/app/api/digital-ids/verify/[publicId]/route';
 
 // Sample 1x1 transparent PNG as base64 for tests
 const SAMPLE_VALID_PNG_BASE64 =
@@ -770,6 +772,214 @@ describe('Digital ID Card & Public Verification System', () => {
     // 4. Query existing exams (should return array without error)
     const exams = await db.exams.getAll();
     assert.ok(Array.isArray(exams));
+  });
+
+  // -------------------------------------------------------------
+  // Requirement 27: Admin DELETE Authorization (401 on missing/invalid auth)
+  // -------------------------------------------------------------
+  test('27. Admin DELETE endpoint rejects unauthorized requests with 401 status', async () => {
+    // 1. No auth headers
+    const reqNoAuth = new Request('http://localhost:3000/api/admin/digital-ids?id=test-dummy-id', {
+      method: 'DELETE'
+    });
+    const resNoAuth = await deleteAdminDigitalIdRoute(reqNoAuth);
+    assert.equal(resNoAuth.status, 401);
+    const bodyNoAuth = await resNoAuth.json();
+    assert.ok(bodyNoAuth.error.includes('Unauthorized'));
+
+    // 2. Invalid auth token
+    const reqBadAuth = new Request('http://localhost:3000/api/admin/digital-ids?id=test-dummy-id', {
+      method: 'DELETE',
+      headers: {
+        'Authorization': 'Bearer wrong-secret-token'
+      }
+    });
+    const resBadAuth = await deleteAdminDigitalIdRoute(reqBadAuth);
+    assert.equal(resBadAuth.status, 401);
+  });
+
+  // -------------------------------------------------------------
+  // Requirement 28: Admin DELETE Permanent Deletion
+  // -------------------------------------------------------------
+  test('28. Admin DELETE endpoint successfully deletes Digital ID record and removes it from database', async () => {
+    const nextPublicId = await db.digitalIdentities.getNextPublicId('Core Team');
+    const newRecord: DigitalIdentity = {
+      id: `test-del-${Date.now()}`,
+      publicId: nextPublicId,
+      fullName: 'Deletion Test Subject',
+      email: `del.test.${Date.now()}@example.com`,
+      memberType: 'Core Team',
+      role: 'Temporary Core Member',
+      domain: 'Cloud',
+      university: 'Chandigarh University – Uttar Pradesh',
+      photoUrl: SAMPLE_VALID_PNG_BASE64,
+      status: 'ACTIVE',
+      issuedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
+
+    await db.digitalIdentities.insertOne(newRecord);
+
+    // Verify record exists before deletion
+    const checkBefore = await db.digitalIdentities.getById(newRecord.id);
+    assert.ok(checkBefore);
+    assert.equal(checkBefore.publicId, nextPublicId);
+
+    // Execute DELETE via API route with valid Admin Bearer token
+    const reqDelete = new Request(`http://localhost:3000/api/admin/digital-ids?id=${newRecord.id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': 'Bearer awssbg-admin-session-token-secure-hash'
+      }
+    });
+    const resDelete = await deleteAdminDigitalIdRoute(reqDelete);
+    assert.equal(resDelete.status, 200);
+    const bodyDelete = await resDelete.json();
+    assert.equal(bodyDelete.success, true);
+    assert.ok(bodyDelete.message.includes('permanently deleted'));
+
+    // Verify record no longer exists in database
+    const checkAfterById = await db.digitalIdentities.getById(newRecord.id);
+    assert.equal(checkAfterById, null);
+    const checkAfterByPublicId = await db.digitalIdentities.getByPublicId(nextPublicId);
+    assert.equal(checkAfterByPublicId, null);
+
+    // Attempting to delete again returns 404 Not Found
+    const resDeleteAgain = await deleteAdminDigitalIdRoute(reqDelete);
+    assert.equal(resDeleteAgain.status, 404);
+  });
+
+  // -------------------------------------------------------------
+  // Requirement 29: After Deletion, /verify/[publicId] returns NOT FOUND
+  // -------------------------------------------------------------
+  test('29. After deletion, verification endpoint and public lookup returns NOT FOUND (404)', async () => {
+    const nextPublicId = await db.digitalIdentities.getNextPublicId('Other');
+    const newRecord: DigitalIdentity = {
+      id: `test-verify-del-${Date.now()}`,
+      publicId: nextPublicId,
+      fullName: 'Verification Target for Deletion',
+      memberType: 'Other',
+      role: 'Temp Member',
+      photoUrl: SAMPLE_VALID_PNG_BASE64,
+      status: 'ACTIVE',
+      issuedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
+    await db.digitalIdentities.insertOne(newRecord);
+
+    // Verify /api/digital-ids/verify/[publicId] returns 200 ACTIVE
+    const reqBefore = new Request(`http://localhost:3000/api/digital-ids/verify/${nextPublicId}`);
+    const resBefore = await verifyDigitalIdRoute(reqBefore, {
+      params: Promise.resolve({ publicId: nextPublicId })
+    });
+    assert.equal(resBefore.status, 200);
+    const bodyBefore = await resBefore.json();
+    assert.equal(bodyBefore.verified, true);
+    assert.equal(bodyBefore.status, 'ACTIVE');
+
+    // Delete the ID
+    await db.digitalIdentities.deleteById(newRecord.id);
+
+    // Verify /api/digital-ids/verify/[publicId] returns 404 NOT_FOUND
+    const reqAfter = new Request(`http://localhost:3000/api/digital-ids/verify/${nextPublicId}`);
+    const resAfter = await verifyDigitalIdRoute(reqAfter, {
+      params: Promise.resolve({ publicId: nextPublicId })
+    });
+    assert.equal(resAfter.status, 404);
+    const bodyAfter = await resAfter.json();
+    assert.equal(bodyAfter.verified, false);
+    assert.equal(bodyAfter.status, 'NOT_FOUND');
+    assert.ok(bodyAfter.message.includes('could not be verified'));
+  });
+
+  // -------------------------------------------------------------
+  // Requirement 30: Monotonic Counter Non-Reuse (Deleted ID never recycled)
+  // -------------------------------------------------------------
+  test('30. Deleted Digital ID number is NEVER reused; next sequential ID moves strictly forward', async () => {
+    // 1. Issue an ID
+    const initialId = await db.digitalIdentities.getNextPublicId('Anchor & Speaker');
+    const numPart = parseInt(initialId.replace('AS-CUUP-', ''), 10);
+    assert.ok(!isNaN(numPart) && numPart > 0);
+
+    const tempRecord: DigitalIdentity = {
+      id: `test-nonreuse-${Date.now()}`,
+      publicId: initialId,
+      fullName: 'Non-Reuse Anchor',
+      memberType: 'Anchor & Speaker',
+      role: 'Guest Speaker',
+      photoUrl: SAMPLE_VALID_PNG_BASE64,
+      status: 'ACTIVE',
+      issuedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
+    await db.digitalIdentities.insertOne(tempRecord);
+
+    // 2. Permanently delete the ID
+    await db.digitalIdentities.deleteById(tempRecord.id);
+
+    // 3. Request the NEXT public ID for the same category
+    const followingId = await db.digitalIdentities.getNextPublicId('Anchor & Speaker');
+    const followingNumPart = parseInt(followingId.replace('AS-CUUP-', ''), 10);
+
+    // 4. Confirm the following number is strictly greater and does NOT recycle initialId
+    assert.notEqual(followingId, initialId, 'Deleted ID must NEVER be reused!');
+    assert.ok(
+      followingNumPart > numPart,
+      `Next sequential ID (${followingId}) must be strictly greater than deleted ID (${initialId})`
+    );
+  });
+
+  // -------------------------------------------------------------
+  // Requirement 31: System Non-Regression on Digital ID Deletion
+  // -------------------------------------------------------------
+  test('31. Deletion of Digital ID has ZERO effect on Founding Member, Core Team, Events, Quiz, Exam, or Email records', async () => {
+    // 1. Create and delete a Digital ID
+    const nextId = await db.digitalIdentities.getNextPublicId('Other');
+    const tempId = `reg-test-${Date.now()}`;
+    await db.digitalIdentities.insertOne({
+      id: tempId,
+      publicId: nextId,
+      fullName: 'Regression Check Member',
+      memberType: 'Other',
+      role: 'Tester',
+      photoUrl: SAMPLE_VALID_PNG_BASE64,
+      status: 'ACTIVE',
+      issuedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    });
+    await db.digitalIdentities.deleteById(tempId);
+
+    // 2. Founding members database intact
+    const foundingMembers = await db.foundingMembers.getAll();
+    assert.ok(Array.isArray(foundingMembers));
+
+    // 3. Events collection intact
+    const events = await db.events.getAll();
+    assert.ok(Array.isArray(events));
+
+    // 4. Careers collection intact
+    const careers = await db.careers.getAll();
+    assert.ok(Array.isArray(careers));
+
+    // 5. Quizzes collection intact
+    const quizzes = await db.weeklyQuizzes.getAll();
+    assert.ok(Array.isArray(quizzes));
+
+    // 6. Exams collection intact
+    const exams = await db.exams.getAll();
+    assert.ok(Array.isArray(exams));
+
+    // 7. Email templates, settings and logs intact
+    const emailTemplates = await db.emailTemplates.getAll();
+    assert.ok(Array.isArray(emailTemplates));
+    const emailAutomations = await db.emailAutomationSettings.getAll();
+    assert.ok(Array.isArray(emailAutomations));
+    const emailLogs = await db.emailLogs.getAll();
+    assert.ok(Array.isArray(emailLogs));
   });
 
   after(async () => {

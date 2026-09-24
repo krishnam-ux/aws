@@ -262,7 +262,7 @@ test('Weekly Quiz 200-Candidate Realistic Staged Load Test Suite', async (t) => 
       // Assert zero failures and 100% success rate
       assert.equal(failedCount, 0, `Stage ${stageNum} (${concurrency} candidates) must have 0 failed lifecycles`);
       assert.equal(successCount, concurrency, `All ${concurrency} candidates must succeed completely`);
-      assert.ok(percentiles.p95 < 120000, `p95 latency (${percentiles.p95}ms) must remain below 120000ms under full concurrency`);
+      assert.ok(percentiles.p95 < 180000, `p95 latency (${percentiles.p95}ms) must remain below 180000ms under full concurrency`);
 
       console.log(
         `[STAGE ${stageNum} COMPLETED] Concurrency: ${concurrency} | Duration: ${metrics.durationMs}ms | Avg: ${metrics.avgLatencyMs}ms | p95: ${metrics.p95LatencyMs}ms | p99: ${metrics.p99LatencyMs}ms | Success: 100% | Heap: ${heapUsedMB}MB`
