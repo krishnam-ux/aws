@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { db } from '@/lib/db';
 import { DigitalIdentity, DigitalIdStats } from '@/types/digitalIdentity';
 import { validateDigitalIdPayload } from '@/lib/digitalIdUtils';
+import { sendDigitalIdEmail } from '@/lib/digitalIdEmail';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -41,7 +42,15 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Digital ID not found.' }, { status: 404, headers: noStoreHeaders });
       }
       const logs = await db.digitalIdVerifications.getByDigitalId(publicId, 20);
-      return NextResponse.json({ item, logs }, { headers: noStoreHeaders });
+      const allEmailLogs = await db.emailLogs.getAll();
+      const cleanId = String(publicId).trim().toUpperCase();
+      const emailLogs = allEmailLogs.filter(
+        (l: any) =>
+          l.metadata?.digitalId?.toUpperCase() === cleanId ||
+          l.metadata?.publicId?.toUpperCase() === cleanId ||
+          (item.email && l.recipient?.toLowerCase() === item.email.toLowerCase() && l.type === 'digital_id_card_delivery')
+      );
+      return NextResponse.json({ item, logs, emailLogs }, { headers: noStoreHeaders });
     }
 
     const list = await db.digitalIdentities.getAll();
@@ -262,6 +271,45 @@ export async function POST(request: Request) {
       await db.digitalIdentities.deleteById(existing.id);
       return NextResponse.json(
         { success: true, message: `Digital ID ${existing.publicId} (${existing.fullName}) permanently deleted.` },
+        { headers: noStoreHeaders }
+      );
+    }
+
+    // 6. SEND DIGITAL ID EMAIL
+    if (action === 'send-email' || action === 'send_email' || action === 'send') {
+      const { publicId, id, email, recipientEmail, adminId } = body;
+      const targetId = publicId || id;
+      if (!targetId) {
+        return NextResponse.json(
+          { error: 'Digital ID (publicId or id) is required.' },
+          { status: 400, headers: noStoreHeaders }
+        );
+      }
+
+      const sendResult = await sendDigitalIdEmail({
+        identityOrPublicId: targetId,
+        recipientEmail: recipientEmail || email,
+        adminId: adminId || 'admin'
+      });
+
+      if (!sendResult.success) {
+        return NextResponse.json(
+          {
+            error: sendResult.error || 'Failed to send Digital ID email.',
+            identity: sendResult.identity
+          },
+          { status: sendResult.status || 400, headers: noStoreHeaders }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: sendResult.message || `Digital ID sent successfully to ${sendResult.recipient}.`,
+          recipient: sendResult.recipient,
+          pdfFilename: sendResult.pdfFilename,
+          sendResult: sendResult.sendResult
+        },
         { headers: noStoreHeaders }
       );
     }

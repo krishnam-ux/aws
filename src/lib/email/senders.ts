@@ -99,6 +99,11 @@ export function getSenderForEmailType(
     return formatSenderAddress(OFFICIAL_SENDERS.COMMUNICATION);
   }
 
+  // 6. Digital Identity Routing (Official Automated Service)
+  if (type?.startsWith('digital_id_') || category === 'IDENTITY') {
+    return formatSenderAddress(OFFICIAL_SENDERS.NOREPLY);
+  }
+
   // Default fallback
   return formatSenderAddress(OFFICIAL_SENDERS.NOTIFICATIONS);
 }

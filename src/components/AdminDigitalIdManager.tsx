@@ -60,6 +60,7 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [isSendModalOpen, setIsSendModalOpen] = useState(false);
 
   // Active / Selected item states
   const [selectedItem, setSelectedItem] = useState<DigitalIdentity | null>(null);
@@ -67,7 +68,12 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
   const [formData, setFormData] = useState(initialFormState);
   const [revokeReason, setRevokeReason] = useState('');
   const [itemLogs, setItemLogs] = useState<VerificationLog[]>([]);
+  const [itemEmailLogs, setItemEmailLogs] = useState<any[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [logsTab, setLogsTab] = useState<'verifications' | 'emails'>('verifications');
+  const [sendRecipientEmail, setSendRecipientEmail] = useState('');
+  const [sendLoading, setSendLoading] = useState(false);
+  const [sendModalError, setSendModalError] = useState('');
 
   // Fetch Items & Stats
   const fetchData = async () => {
@@ -353,11 +359,66 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
     setIsQrModalOpen(true);
   };
 
+  // Open Send Digital ID Modal
+  const openSendModal = (item: DigitalIdentity) => {
+    setSelectedItem(item);
+    setSendRecipientEmail(item.email || '');
+    setSendModalError('');
+    setIsSendModalOpen(true);
+  };
+
+  // Submit Send Digital ID Email
+  const handleSendSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedItem) return;
+    setSendModalError('');
+
+    if (selectedItem.status !== 'ACTIVE') {
+      setSendModalError(`Cannot send email: Digital ID ${selectedItem.publicId} is currently ${selectedItem.status}. Only ACTIVE Digital IDs can be emailed.`);
+      return;
+    }
+
+    if (!sendRecipientEmail.trim()) {
+      setSendModalError('Recipient email address is required.');
+      return;
+    }
+
+    try {
+      setSendLoading(true);
+      const res = await fetch('/api/admin/digital-ids/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token || 'awssbg-admin-session-token-secure-hash'}`
+        },
+        body: JSON.stringify({
+          publicId: selectedItem.publicId,
+          recipientEmail: sendRecipientEmail.trim()
+        })
+      });
+
+      const resData = await res.json();
+      if (res.ok && resData.success) {
+        setActionSuccess(`Digital ID ${selectedItem.publicId} sent successfully to ${sendRecipientEmail.trim()}!`);
+        setIsSendModalOpen(false);
+        fetchData();
+        setTimeout(() => setActionSuccess(''), 5000);
+      } else {
+        setSendModalError(resData.error || 'Failed to send Digital ID email.');
+      }
+    } catch (err: any) {
+      setSendModalError(err.message || 'Network error while sending Digital ID email.');
+    } finally {
+      setSendLoading(false);
+    }
+  };
+
   // Open Logs Modal
   const openLogsModal = async (item: DigitalIdentity) => {
     setSelectedItem(item);
     setIsLogsModalOpen(true);
     setLogsLoading(true);
+    setLogsTab('verifications');
     try {
       const res = await fetch(`/api/admin/digital-ids?publicId=${item.publicId}`, {
         headers: {
@@ -367,6 +428,7 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
       if (res.ok) {
         const data = await res.json();
         setItemLogs(data.logs || []);
+        setItemEmailLogs(data.emailLogs || []);
       }
     } catch (e) {
       console.error('Failed to fetch logs:', e);
@@ -745,6 +807,15 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
                             className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition-colors cursor-pointer text-xs font-semibold"
                           >
                             👁️
+                          </button>
+
+                          {/* Send Digital ID Email */}
+                          <button
+                            onClick={() => openSendModal(item)}
+                            title="Send Digital ID to Member Email"
+                            className="p-1.5 bg-amber-50 hover:bg-amber-100 text-[#EA580C] hover:text-[#9A3412] rounded transition-colors cursor-pointer text-xs font-bold border border-amber-200"
+                          >
+                            ✉️
                           </button>
 
                           <button
@@ -1346,15 +1417,27 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
               )}
             </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100 gap-2">
-              <a
-                href={getCardUrl(selectedItem.publicId)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-1.5 bg-[#081A2A] text-white rounded-lg text-xs font-bold hover:bg-slate-800"
-              >
-                Open Card Page ↗
-              </a>
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100 gap-2 flex-wrap">
+              <div className="flex items-center space-x-2">
+                <a
+                  href={getCardUrl(selectedItem.publicId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-[#081A2A] text-white rounded-lg text-xs font-bold hover:bg-slate-800"
+                >
+                  Open Card Page ↗
+                </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsViewModalOpen(false);
+                    openSendModal(selectedItem);
+                  }}
+                  className="px-3 py-1.5 bg-[#FF9900] hover:bg-[#EC7211] text-[#081A2A] hover:text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm"
+                >
+                  ✉️ Send Digital ID
+                </button>
+              </div>
               <div className="flex items-center space-x-2">
                 <button
                   type="button"
@@ -1420,47 +1503,125 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
       )}
 
       {/* ======================================================== */}
-      {/* 10. VERIFICATION AUDIT LOGS MODAL */}
+      {/* 10. VERIFICATION & EMAIL AUDIT LOGS MODAL */}
       {/* ======================================================== */}
       {isLogsModalOpen && selectedItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 space-y-4 my-8 animate-scaleUp max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="font-display font-extrabold text-slate-900 text-base">Verification Scan History</h3>
+                <h3 className="font-display font-extrabold text-slate-900 text-base">Digital ID Activity History</h3>
                 <p className="text-xs text-slate-500 font-mono">{selectedItem.publicId} — {selectedItem.fullName}</p>
               </div>
-              <button onClick={() => setIsLogsModalOpen(false)} className="text-slate-400 hover:text-slate-600 font-bold p-1">✕</button>
+              <button onClick={() => setIsLogsModalOpen(false)} className="text-slate-400 hover:text-slate-600 font-bold p-1 cursor-pointer">✕</button>
             </div>
 
-            {logsLoading ? (
-              <div className="py-8 text-center text-slate-400 text-xs">Loading audit records...</div>
-            ) : itemLogs.length === 0 ? (
-              <div className="py-8 text-center text-slate-400 text-xs">
-                No public verifications recorded yet for this ID.
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {itemLogs.map((log) => (
-                  <div key={log.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between text-xs">
-                    <div>
-                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
-                        log.result === 'VERIFIED' ? 'bg-emerald-100 text-emerald-800' :
-                        log.result === 'SUSPENDED' ? 'bg-amber-100 text-amber-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {log.result}
-                      </span>
-                      <p className="text-[10px] text-slate-400 mt-1">
-                        Device: {log.deviceType || 'Unknown'} • Browser: {log.browser || 'Unknown'}
-                      </p>
+            {/* Tab switchers */}
+            <div className="flex border-b border-slate-200 text-xs">
+              <button
+                type="button"
+                onClick={() => setLogsTab('verifications')}
+                className={`py-2 px-3 font-bold border-b-2 transition-colors cursor-pointer ${
+                  logsTab === 'verifications'
+                    ? 'border-[#FF9900] text-[#081A2A]'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                Verification Scans ({itemLogs.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setLogsTab('emails')}
+                className={`py-2 px-3 font-bold border-b-2 transition-colors cursor-pointer ${
+                  logsTab === 'emails'
+                    ? 'border-[#FF9900] text-[#081A2A]'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                Email Deliveries ({itemEmailLogs.length})
+              </button>
+            </div>
+
+            {/* Verification scans tab */}
+            {logsTab === 'verifications' && (
+              logsLoading ? (
+                <div className="py-8 text-center text-slate-400 text-xs">Loading audit records...</div>
+              ) : itemLogs.length === 0 ? (
+                <div className="py-8 text-center text-slate-400 text-xs">
+                  No public verifications recorded yet for this ID.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[350px] overflow-y-auto">
+                  {itemLogs.map((log) => (
+                    <div key={log.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between text-xs">
+                      <div>
+                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                          log.result === 'VERIFIED' ? 'bg-emerald-100 text-emerald-800' :
+                          log.result === 'SUSPENDED' ? 'bg-amber-100 text-amber-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {log.result}
+                        </span>
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          Device: {log.deviceType || 'Unknown'} • Browser: {log.browser || 'Unknown'}
+                        </p>
+                      </div>
+                      <div className="text-right text-[11px] text-slate-500 font-medium">
+                        {new Date(log.timestamp).toLocaleString()}
+                      </div>
                     </div>
-                    <div className="text-right text-[11px] text-slate-500 font-medium">
-                      {new Date(log.timestamp).toLocaleString()}
+                  ))}
+                </div>
+              )
+            )}
+
+            {/* Email deliveries tab */}
+            {logsTab === 'emails' && (
+              logsLoading ? (
+                <div className="py-8 text-center text-slate-400 text-xs">Loading email delivery records...</div>
+              ) : itemEmailLogs.length === 0 ? (
+                <div className="py-8 text-center text-slate-400 text-xs">
+                  No email deliveries recorded yet for this Digital ID.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[350px] overflow-y-auto">
+                  {itemEmailLogs.map((log: any) => (
+                    <div key={log.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                          log.status === 'SENT' ? 'bg-emerald-100 text-emerald-800' :
+                          log.status === 'SIMULATED' ? 'bg-blue-100 text-blue-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {log.status}
+                        </span>
+                        <span className="text-[11px] text-slate-500 font-medium">
+                          {new Date(log.sentAt || log.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-slate-700">
+                        <span className="text-slate-400 font-semibold">To:</span>
+                        <span className="font-semibold text-slate-900">{log.recipient}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-700">
+                        <span className="text-slate-400">Subject:</span>
+                        <span className="truncate max-w-[280px] font-medium">{log.subject}</span>
+                      </div>
+                      {log.providerId && (
+                        <div className="flex justify-between text-[10px] text-slate-400 font-mono">
+                          <span>Message ID:</span>
+                          <span>{log.providerId}</span>
+                        </div>
+                      )}
+                      {log.errorMessage && (
+                        <div className="text-[10px] text-red-600 font-semibold bg-red-50 p-1.5 rounded border border-red-200 mt-1">
+                          Error: {log.errorMessage}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )
             )}
 
             <div className="flex justify-end pt-3 border-t border-slate-100">
@@ -1571,6 +1732,162 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 12. SEND DIGITAL ID EMAIL CONFIRMATION MODAL */}
+      {/* ======================================================== */}
+      {isSendModalOpen && selectedItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 sm:p-7 space-y-5 animate-scaleUp my-8 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center space-x-3">
+                <div className="h-10 w-10 rounded-xl bg-[#FF9900]/10 text-[#FF9900] flex items-center justify-center text-xl font-bold border border-[#FF9900]/20">
+                  ✉️
+                </div>
+                <div>
+                  <h3 className="font-display font-extrabold text-slate-900 text-base">Send Digital ID</h3>
+                  <p className="text-xs text-slate-500">Deliver official verified card &amp; attached PDF badge</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsSendModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* In-Modal Error Alert */}
+            {sendModalError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-xs font-semibold flex items-start space-x-2">
+                <span className="text-red-500 font-bold mt-0.5">⚠️</span>
+                <span className="flex-1">{sendModalError}</span>
+              </div>
+            )}
+
+            {/* Recipient Member Card Preview */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+              <div className="flex items-center space-x-3">
+                <div className="h-12 w-12 rounded-full border border-slate-300 bg-white overflow-hidden flex items-center justify-center flex-shrink-0">
+                  {selectedItem.photoUrl ? (
+                    <img src={selectedItem.photoUrl} alt={selectedItem.fullName} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="font-extrabold text-slate-700 text-base">{selectedItem.fullName.charAt(0)}</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-slate-900 text-sm truncate">{selectedItem.fullName}</h4>
+                    <span className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold ${
+                      selectedItem.status === 'ACTIVE'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : selectedItem.status === 'SUSPENDED'
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${
+                        selectedItem.status === 'ACTIVE' ? 'bg-emerald-500' : selectedItem.status === 'SUSPENDED' ? 'bg-amber-500' : 'bg-red-500'
+                      }`}></span>
+                      <span>{selectedItem.status}</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <span className="font-mono text-xs font-bold text-slate-800 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                      {selectedItem.publicId}
+                    </span>
+                    <span className="text-xs text-slate-500 truncate">{selectedItem.role}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Status Warning if NOT Active */}
+            {selectedItem.status !== 'ACTIVE' && (
+              <div className="p-3 bg-amber-50 border border-amber-300 rounded-lg text-amber-900 text-xs space-y-1">
+                <div className="font-bold flex items-center space-x-1.5 text-amber-800">
+                  <span>⚠️</span>
+                  <span>Credential Status is {selectedItem.status}</span>
+                </div>
+                <p>Digital IDs cannot be emailed while suspended or revoked. Please reactivate this identity to ACTIVE before sending.</p>
+              </div>
+            )}
+
+            {/* Form */}
+            <form onSubmit={handleSendSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Recipient Email Address *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={sendRecipientEmail}
+                  onChange={(e) => setSendRecipientEmail(e.target.value)}
+                  placeholder="member@university.edu"
+                  disabled={sendLoading || selectedItem.status !== 'ACTIVE'}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-[#FF9900] disabled:bg-slate-100 disabled:text-slate-400"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Defaults to member's registered email address. You may update this address before sending.
+                </p>
+              </div>
+
+              {/* Delivery Features Callout */}
+              <div className="bg-orange-50/60 p-3.5 rounded-xl border border-orange-200 text-xs text-slate-700 space-y-2">
+                <div className="font-bold text-orange-950 flex items-center space-x-1.5 text-[11px] uppercase tracking-wider">
+                  <span>✨</span>
+                  <span>Email Package Contents</span>
+                </div>
+                <ul className="space-y-1 text-[11px] text-slate-600">
+                  <li className="flex items-start space-x-2">
+                    <span className="text-emerald-600 font-bold">✓</span>
+                    <span><strong>Dual-sided PDF Card Attachment:</strong> Generated server-side with verified credentials &amp; QR scanner badge.</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-emerald-600 font-bold">✓</span>
+                    <span><strong>Interactive Card CTA:</strong> Direct button to open live interactive 3D digital card.</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-emerald-600 font-bold">✓</span>
+                    <span><strong>Public Verification Link:</strong> Canonical link to real-time verification registry at <span className="font-mono text-[10px]">/verify/{selectedItem.publicId}</span>.</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-emerald-600 font-bold">✓</span>
+                    <span><strong>Official Sender:</strong> Dispatched from <span className="font-mono text-[10px]">noreply@awssbgcuup.tech</span> via Resend.</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex items-center justify-end space-x-3 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsSendModalOpen(false)}
+                  disabled={sendLoading}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={sendLoading || selectedItem.status !== 'ACTIVE' || !sendRecipientEmail.trim()}
+                  className="px-5 py-2 bg-[#FF9900] hover:bg-[#EC7211] text-[#081A2A] hover:text-white rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center space-x-1.5"
+                >
+                  {sendLoading ? (
+                    <>
+                      <span className="inline-block animate-spin text-xs">⚙️</span>
+                      <span>Sending Digital ID...</span>
+                    </>
+                  ) : (
+                    <span>✉️ Send Digital ID Now</span>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

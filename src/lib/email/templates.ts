@@ -260,6 +260,12 @@ const DEFAULT_FALLBACKS: Record<string, string> = {
   memberRole: 'Core Team Lead',
   memberDomain: 'Cloud & Infrastructure',
   memberEmail: '',
+  digitalId: 'DID-CUUP-001',
+  publicId: 'DID-CUUP-001',
+  memberType: 'Core Team',
+  verificationUrl: 'https://www.awssbgcuup.tech/verify',
+  cardUrl: 'https://www.awssbgcuup.tech/id',
+  issuedDate: 'Issued',
   eventVenue: 'Chandigarh University – Uttar Pradesh',
   eventDate: 'TBA',
   eventTime: 'TBA',
@@ -320,6 +326,28 @@ function resolveVariableValue(key: string, variables: Record<string, any>): stri
   if (['memberemail', 'email', 'recipientemail', 'member_email'].includes(lowerKey)) {
     const emailVal = variables.memberEmail || variables.email || variables.recipientEmail || variables.member_email;
     if (emailVal !== undefined && emailVal !== null) return String(emailVal).trim();
+  }
+
+  // Digital ID & Public ID Aliases
+  if (['publicid', 'digitalid', 'did', 'id', 'memberid'].includes(lowerKey)) {
+    const val = variables.publicId || variables.digitalId || variables.did || variables.public_id || variables.digital_id || variables.memberId || variables.id;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['membertype', 'type', 'member_type'].includes(lowerKey)) {
+    const val = variables.memberType || variables.member_type || variables.type;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['cardurl', 'digitalcardurl', 'idurl', 'card_url'].includes(lowerKey)) {
+    const val = variables.cardUrl || variables.digitalCardUrl || variables.idUrl || variables.card_url;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['verificationurl', 'verifyurl', 'verify_url', 'verification_url'].includes(lowerKey)) {
+    const val = variables.verificationUrl || variables.verifyUrl || variables.verification_url || variables.verify_url;
+    if (val !== undefined && val !== null) return String(val).trim();
+  }
+  if (['issueddate', 'issued_date', 'issuedat', 'issue_date'].includes(lowerKey)) {
+    const val = variables.issuedDate || variables.issueDate || variables.issuedAt || variables.issued_date;
+    if (val !== undefined && val !== null) return String(val).trim();
   }
 
   // Event Aliases
@@ -2735,6 +2763,172 @@ Recipient: {{memberName}} ({{memberRole}} — {{memberDomain}})
 {{messageContent}}
 
 Best regards,
+AWS Student Builder Group (CU-UP)`
+  },
+
+  // 24. Digital Identity Card Delivery
+  {
+    id: 'tpl-digital_id_card_delivery',
+    name: 'Official Digital ID Card Delivery',
+    type: 'digital_id_card_delivery',
+    category: 'IDENTITY',
+    subject: 'Your Official Digital ID: {{publicId}} – AWS Student Builder Group',
+    description: 'Sent to members with their verified Digital ID Card, verification link, and attached PDF credential.',
+    variables: [
+      'memberName',
+      'fullName',
+      'publicId',
+      'digitalId',
+      'memberRole',
+      'memberType',
+      'domain',
+      'verificationUrl',
+      'cardUrl',
+      'issuedDate'
+    ],
+    isActive: true,
+    updatedAt: new Date().toISOString(),
+    bodyHtml: `<!-- HERO SECTION (Dark Ambient Navy) -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#090E1A" style="background: linear-gradient(180deg, #090E1A 0%, #111A2E 100%); padding: 32px 28px; border-bottom: 1px solid #1E293B;">
+  <tr>
+    <td align="left" valign="top" class="mobile-stack">
+      <div style="font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #FF9900; text-transform: uppercase; margin-bottom: 8px;">
+        OFFICIAL DIGITAL IDENTITY CREDENTIAL
+      </div>
+      <h1 class="hero-title-mobile" style="margin: 0 0 16px 0; font-size: 32px; font-weight: 800; color: #FFFFFF; line-height: 1.2; letter-spacing: -0.5px;">
+        Your <span style="color: #FF9900;">Digital ID</span> is Ready!
+      </h1>
+      <div style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin-bottom: 8px;">
+        Dear {{memberName}},
+      </div>
+      <div style="font-size: 14px; line-height: 1.6; color: #CBD5E1; max-width: 480px;">
+        Congratulations! Your official <strong>Digital Identity Card</strong> has been generated and registered in the AWS Student Builder Group community verification registry.
+      </div>
+    </td>
+    <td align="right" valign="top" class="mobile-hide" style="width: 130px; padding-left: 16px;">
+      <div style="background: rgba(255, 153, 0, 0.08); border: 1px solid rgba(255, 153, 0, 0.25); border-radius: 12px; padding: 14px 10px; text-align: center;">
+        <div style="font-size: 24px; margin-bottom: 4px;">🪪</div>
+        <div style="font-size: 11px; color: #FF9900; font-weight: 800; font-family: SFMono-Regular, Consolas, monospace;">{{publicId}}</div>
+        <div style="font-size: 9px; color: #94A3B8; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-top: 4px;">VERIFIED</div>
+      </div>
+    </td>
+  </tr>
+</table>
+
+<!-- LIGHT CARD CONTAINER -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#F1F5F9" style="background-color: #F1F5F9; padding: 28px 24px;">
+  <tr>
+    <td>
+      <!-- PRIMARY IDENTITY DETAILS CARD -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); padding: 24px; margin-bottom: 20px;">
+        <tr>
+          <td>
+            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-bottom: 6px;">
+              Digital Identity Credentials
+            </div>
+            <div style="font-size: 13px; color: #64748B; line-height: 1.5; margin-bottom: 18px;">
+              This permanent digital credential certifies your role and official affiliation with AWS Student Builder Group at Chandigarh University – Uttar Pradesh.
+            </div>
+
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border-top: 1px solid #F1F5F9; padding-top: 12px;">
+              ${renderMetaRow('🪪', 'Permanent Digital ID', '{{publicId}}', true)}
+              ${renderMetaRow('👤', 'Member Name', '{{memberName}}')}
+              ${renderMetaRow('🎖️', 'Role / Position', '{{memberRole}}')}
+              ${renderMetaRow('🏷️', 'Member Type', '{{memberType}}')}
+              ${renderMetaRow('🌐', 'Domain / Track', '{{memberDomain}}')}
+              ${renderMetaRow('📅', 'Issue Date', '{{issuedDate}}')}
+              ${renderMetaRow('✅', 'Status', 'ACTIVE')}
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      <!-- HIGHLIGHTED PDF ATTACHMENT CALLOUT -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFF7ED" style="background-color: #FFF7ED; border: 1px solid #FED7AA; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;">
+        <tr>
+          <td width="42" valign="top" style="width: 42px; padding-right: 14px;">
+            <div style="width: 38px; height: 38px; background-color: #FFEDD5; border: 1px solid #FDBA74; border-radius: 10px; text-align: center; line-height: 38px; font-size: 20px;">📄</div>
+          </td>
+          <td valign="middle">
+            <div style="font-size: 14px; font-weight: 800; color: #9A3412; margin-bottom: 3px;">
+              Digital ID Card PDF Attached
+            </div>
+            <div style="font-size: 13px; color: #334155; line-height: 1.5;">
+              Your official high-resolution, dual-sided Digital ID Card PDF with scannable QR verification code is attached to this email for your records and printing.
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <!-- DUAL ACTION BUTTONS -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top: 12px; margin-bottom: 20px;">
+        <tr>
+          <td align="center" class="mobile-stack" style="padding: 6px;">
+            <a href="{{cardUrl}}" target="_blank" class="btn-cta-primary" style="display: inline-block; background-color: #FF9900; background: linear-gradient(135deg, #FF9900 0%, #EA580C 100%); color: #FFFFFF !important; font-size: 14px; font-weight: 800; text-decoration: none; padding: 14px 28px; border-radius: 8px; box-shadow: 0 4px 14px rgba(255, 153, 0, 0.35); text-align: center; margin: 4px;">
+              View Digital ID Card &rarr;
+            </a>
+            <a href="{{verificationUrl}}" target="_blank" style="display: inline-block; background-color: #081A2A; color: #FFFFFF !important; font-size: 14px; font-weight: 800; text-decoration: none; padding: 14px 28px; border-radius: 8px; box-shadow: 0 4px 14px rgba(8, 26, 42, 0.35); text-align: center; margin: 4px; border: 1px solid #1E293B;">
+              Verify Identity &rarr;
+            </a>
+          </td>
+        </tr>
+      </table>
+
+      <!-- CANONICAL VERIFICATION BOX -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF" style="background-color: #FFFFFF; border: 1px dashed #CBD5E1; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px;">
+        <tr>
+          <td>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+              Canonical Public Verification URL
+            </div>
+            <div style="font-size: 13px; font-family: SFMono-Regular, Consolas, monospace; color: #EA580C; word-break: break-all;">
+              <a href="{{verificationUrl}}" target="_blank" style="color: #EA580C; text-decoration: underline;">
+                {{verificationUrl}}
+              </a>
+            </div>
+            <div style="font-size: 11px; color: #94A3B8; margin-top: 6px; line-height: 1.4;">
+              Anyone can scan the QR code on your card or visit this URL to verify the real-time authenticity and active standing of your Digital ID.
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <!-- WARM CLOSING -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top: 16px;">
+        <tr>
+          <td align="center">
+            <div style="font-size: 14px; font-weight: 700; color: #0F172A;">
+              Learn &bull; Build &bull; Grow &bull; Together
+            </div>
+            <div style="font-size: 12px; font-weight: 600; color: #64748B; margin-top: 3px;">
+              AWS Student Builder Group &bull; Chandigarh University – Uttar Pradesh
+            </div>
+            <div style="width: 36px; height: 3px; background-color: #FF9900; border-radius: 2px; margin: 10px auto 0 auto;"></div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
+    bodyText: `Dear {{memberName}},
+
+Congratulations! Your official Digital Identity Card has been issued and registered in the AWS Student Builder Group verification registry.
+
+Digital Identity Details:
+- Digital ID: {{publicId}}
+- Full Name: {{memberName}}
+- Role / Position: {{memberRole}}
+- Member Type: {{memberType}}
+- Domain: {{memberDomain}}
+- Status: ACTIVE
+- Issue Date: {{issuedDate}}
+
+View Digital ID Card: {{cardUrl}}
+Verify Identity in Registry: {{verificationUrl}}
+
+Your printable official Digital ID PDF Card is attached to this email.
+
+Learn | Build | Grow | Together
 AWS Student Builder Group (CU-UP)`
   }
 ];

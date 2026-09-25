@@ -36,11 +36,13 @@ export type EmailType =
   | 'founding_members_coordination'
   | 'founding_members_recognition'
   | 'founding_members_update'
+  // Digital Identity
+  | 'digital_id_card_delivery'
   | 'system_test_email';
 
 export type EmailDeliveryStatus = 'SENT' | 'FAILED' | 'PENDING' | 'SIMULATED';
 
-export type EmailCategory = 'EVENTS' | 'OPPORTUNITIES' | 'EXAMS' | 'COMMUNITY' | 'ADMIN' | 'TEAM';
+export type EmailCategory = 'EVENTS' | 'OPPORTUNITIES' | 'EXAMS' | 'COMMUNITY' | 'ADMIN' | 'TEAM' | 'IDENTITY';
 
 export interface EmailAttachment {
   filename: string;
