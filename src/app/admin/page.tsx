@@ -7,6 +7,7 @@ import AdminWeeklyQuizProctoring from '@/components/AdminWeeklyQuizProctoring';
 import AdminEmailManager from '@/components/AdminEmailManager';
 import AdminFoundingMembersManager from '@/components/AdminFoundingMembersManager';
 import AdminDigitalIdManager from '@/components/AdminDigitalIdManager';
+import AdminDigitalBadgesManager from '@/components/AdminDigitalBadgesManager';
 import AdminSendStudentEmailModal from '@/components/AdminSendStudentEmailModal';
 import AdminBulkSendStudentEmailModal from '@/components/AdminBulkSendStudentEmailModal';
 import AdminOpportunityApplicationDetailsModal from '@/components/AdminOpportunityApplicationDetailsModal';
@@ -150,7 +151,7 @@ export default function AdminDashboard() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   // Tabs structure matching user specifications
-  const [activeTab, setActiveTab] = useState<'Dashboard' | 'Registrations' | 'EventRegistrations' | 'Verification' | 'Collaborations' | 'Events' | 'Announcements' | 'Resources' | 'Opportunities' | 'CoreTeam' | 'FoundingMembers' | 'DigitalIDs' | 'Content' | 'Settings' | 'ContactMessages' | 'Feedback' | 'Exams' | 'Emails' | 'WeeklyQuizProctoring'>('Dashboard');
+  const [activeTab, setActiveTab] = useState<'Dashboard' | 'Registrations' | 'EventRegistrations' | 'Verification' | 'Collaborations' | 'Events' | 'Announcements' | 'Resources' | 'Opportunities' | 'CoreTeam' | 'FoundingMembers' | 'DigitalIDs' | 'DigitalBadges' | 'Content' | 'Settings' | 'ContactMessages' | 'Feedback' | 'Exams' | 'Emails' | 'WeeklyQuizProctoring'>('Dashboard');
 
   // Stats / Dashboard data
   const [stats, setStats] = useState<any>({
@@ -2135,6 +2136,27 @@ export default function AdminDashboard() {
                     </span>
                   )}
                 </button>
+                <button
+                  id="sidebar-nav-digital-badges"
+                  onClick={() => {
+                    setActiveTab('DigitalBadges');
+                    if (typeof window !== 'undefined' && window.innerWidth < 768) setIsSidebarCollapsed(true);
+                  }}
+                  className={getNavClass('DigitalBadges')}
+                  title="Digital Badges & Credentials System"
+                >
+                  <div className="relative flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm">🏅</span>
+                  </div>
+                  {!isSidebarCollapsed && (
+                    <span className="flex items-center justify-between w-full">
+                      <span className="font-bold">Digital Badges</span>
+                      <span className="text-[8px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono font-bold">
+                        CREDENTIALS
+                      </span>
+                    </span>
+                  )}
+                </button>
               </div>
 
               {/* Group: Organization */}
@@ -2507,6 +2529,11 @@ export default function AdminDashboard() {
           {/* TAB: DIGITAL ID CARDS & VERIFICATION */}
           {activeTab === 'DigitalIDs' && (
             <AdminDigitalIdManager token={token || 'awssbg-admin-session-token-secure-hash'} />
+          )}
+
+          {/* TAB: DIGITAL BADGES & CREDENTIALS REGISTRY */}
+          {activeTab === 'DigitalBadges' && (
+            <AdminDigitalBadgesManager token={token || 'awssbg-admin-session-token-secure-hash'} />
           )}
 
           {/* TAB 2: REGISTRATIONS TABLE */}

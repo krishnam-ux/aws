@@ -5,6 +5,7 @@ import { FoundingMember, FoundingMemberFormConfig, FormQuestion } from '../src/t
 import { generateSingleFoundingMemberPdf, generateMultipleFoundingMembersPdf } from '../src/lib/foundingMemberPdf';
 import { GET as pdfGet, POST as pdfPost } from '../src/app/api/admin/founding-members/pdf/route';
 import { GET as formConfigGet, POST as formConfigPost } from '../src/app/api/admin/founding-members/form-config/route';
+import { GET as publicFormGet, POST as publicFormPost } from '../src/app/api/founding-members/form/route';
 
 const ADMIN_TOKEN = 'awssbg-admin-session-token-secure-hash';
 const ADMIN_AUTH_HEADER = { Authorization: `Bearer ${ADMIN_TOKEN}` };
@@ -386,4 +387,70 @@ test('Dynamic PDF Generation - Single & Multi-Member Profiles with Photo and Dyn
   );
   assert.ok(multiPdfBuffer && multiPdfBuffer.length > singlePdfBuffer.length, 'Multi PDF buffer must be generated and larger than single');
   assert.equal(multiPdfBuffer.subarray(0, 4).toString(), '%PDF', 'Multi Buffer must have PDF magic header');
+});
+
+test('Public Founding Members Form - Profile Photograph Mandatory Requirement Enforcement', async () => {
+  // 1. Verify GET config returns photoUrl as required: true
+  const getReq = new Request('http://localhost/api/founding-members/form');
+  const getRes = await publicFormGet(getReq);
+  const getData = await getRes.json();
+  assert.equal(getRes.status, 200);
+  const photoQuestion = getData.config.questions.find((q: FormQuestion) => q.id === 'photoUrl');
+  assert.ok(photoQuestion, 'photoUrl question should exist in config');
+  assert.equal(photoQuestion.required, true, 'photoUrl must be configured as required: true');
+
+  // 2. Attempt submission without photo - MUST be rejected with 400 Bad Request
+  const badEmail = `no.photo.${Date.now()}@culko.in`;
+  const invalidReq = new Request('http://localhost/api/founding-members/form', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      fullName: 'No Photo Candidate',
+      email: badEmail,
+      phone: '+91 9999988888',
+      university: 'Chandigarh University',
+      courseBranch: 'B.Tech CSE',
+      yearSemester: '3rd Year / 6th Sem',
+      studentId: '23BCS9999',
+      domain: 'Cloud & Infrastructure',
+      skills: 'AWS S3, EC2',
+      experience: 'Cloud enthusiast',
+      photoUrl: '' // Empty photo
+    })
+  });
+  const invalidRes = await publicFormPost(invalidReq);
+  const invalidData = await invalidRes.json();
+  assert.equal(invalidRes.status, 400, 'Submission without photo must be rejected with status 400');
+  assert.ok(invalidData.error?.includes('Profile Photograph is required'));
+
+  // 3. Valid submission with photo - MUST succeed
+  const validEmail = `with.photo.${Date.now()}@culko.in`;
+  const validPhotoBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+  const validReq = new Request('http://localhost/api/founding-members/form', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      fullName: 'Valid Photo Builder',
+      email: validEmail,
+      phone: '+91 9999977777',
+      university: 'Chandigarh University',
+      courseBranch: 'B.Tech CSE',
+      yearSemester: '3rd Year / 6th Sem',
+      studentId: '23BCS9998',
+      domain: 'Cloud & Infrastructure',
+      skills: 'AWS S3, EC2, Lambda, DynamoDB',
+      experience: 'Created cloud automation systems',
+      photoUrl: validPhotoBase64
+    })
+  });
+  const validRes = await publicFormPost(validReq);
+  const validData = await validRes.json();
+  assert.equal(validRes.status, 200, 'Valid submission with photo must succeed with 200');
+  assert.equal(validData.success, true);
+
+  // Clean up created member
+  const created = await db.foundingMembers.getByEmail(validEmail);
+  if (created) {
+    await db.foundingMembers.deleteById(created.id);
+  }
 });

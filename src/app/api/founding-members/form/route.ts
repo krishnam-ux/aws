@@ -152,6 +152,14 @@ export async function POST(request: Request) {
     // 2. Check if member already exists in Founding Members data store by email
     const existingMember = await db.foundingMembers.getByEmail(cleanEmail);
 
+    const cleanPhoto = (photoUrl ? String(photoUrl).trim() : '') || (existingMember?.photoUrl ? String(existingMember.photoUrl).trim() : '');
+    if (!cleanPhoto) {
+      return NextResponse.json(
+        { error: 'Profile Photograph is required for your official Founding Member dossier.' },
+        { status: 400, headers: noStoreHeaders }
+      );
+    }
+
     let savedMemberId: string;
     let savedDbId: string;
     let isUpdate = false;
@@ -177,7 +185,7 @@ export async function POST(request: Request) {
         courseBranch: String(courseBranch).trim(),
         yearSemester: String(yearSemester).trim(),
         studentId: String(studentId).trim(),
-        photoUrl: photoUrl ? String(photoUrl).trim() : existingMember.photoUrl || '',
+        photoUrl: cleanPhoto,
         linkedin: linkedin ? String(linkedin).trim() : existingMember.linkedin || '',
         github: github ? String(github).trim() : existingMember.github || '',
         portfolio: portfolio ? String(portfolio).trim() : existingMember.portfolio || '',
@@ -209,7 +217,7 @@ export async function POST(request: Request) {
         courseBranch: String(courseBranch).trim(),
         yearSemester: String(yearSemester).trim(),
         studentId: String(studentId).trim(),
-        photoUrl: photoUrl ? String(photoUrl).trim() : '',
+        photoUrl: cleanPhoto,
         linkedin: linkedin ? String(linkedin).trim() : '',
         github: github ? String(github).trim() : '',
         portfolio: portfolio ? String(portfolio).trim() : '',

@@ -123,6 +123,19 @@ export default function FoundingMembersPublicFormPage() {
     }
   };
 
+  const downloadPhoto = (dataUrl: string, filename?: string) => {
+    if (!dataUrl) return;
+    const cleanName = (filename || formData.fullName || 'founding-member-profile-photo')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '-');
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = `${cleanName}.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   const handleCustomAnswerChange = (qId: string, value: any) => {
     setCustomAnswers((prev) => ({
       ...prev,
@@ -157,6 +170,10 @@ export default function FoundingMembersPublicFormPage() {
       }
       if (!formData.phone.trim()) {
         setSubmitError('Please enter your contact / WhatsApp phone number.');
+        return false;
+      }
+      if (!formData.photoUrl || !formData.photoUrl.trim()) {
+        setSubmitError('Please upload your profile photograph (PNG, JPG, or WEBP).');
         return false;
       }
     } else if (step === 2) {
@@ -416,6 +433,15 @@ export default function FoundingMembersPublicFormPage() {
             </div>
 
             <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+              {photoPreview && (
+                <button
+                  type="button"
+                  onClick={() => downloadPhoto(photoPreview, `${submittedMember.fullName}-profile-photo`)}
+                  className="px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-lg text-xs font-bold shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>📸 Download Profile Photo</span>
+                </button>
+              )}
               <Link
                 href="/"
                 className="px-6 py-2.5 bg-[#FF9900] hover:bg-[#E08800] text-white rounded-lg text-xs font-bold shadow-lg transition-all"
@@ -561,7 +587,7 @@ export default function FoundingMembersPublicFormPage() {
                     {/* Photo Upload with Drag & Drop */}
                     <div className="sm:col-span-2 space-y-2 pt-2">
                       <label className="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">
-                        Profile Photograph (Included in Official PDF Dossier)
+                        Profile Photograph (Included in Official PDF Dossier) <span className="text-[#FF9900]">*</span>
                       </label>
                       <div
                         onDragOver={(e) => {
@@ -574,6 +600,8 @@ export default function FoundingMembersPublicFormPage() {
                         className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
                           isDraggingPhoto
                             ? 'border-[#FF9900] bg-[#FF9900]/10'
+                            : !formData.photoUrl && submitError
+                            ? 'border-red-500/60 bg-red-950/20 hover:border-red-400'
                             : 'border-white/20 bg-[#07131F]/80 hover:border-white/40'
                         }`}
                       >
@@ -599,27 +627,40 @@ export default function FoundingMembersPublicFormPage() {
                             <div className="text-left space-y-1">
                               <span className="text-xs font-bold text-white block">Photo attached &amp; optimized</span>
                               <span className="text-[10px] text-slate-400 block">Click or drag a new image to replace</span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPhotoPreview('');
-                                  setFormData((prev) => ({ ...prev, photoUrl: '' }));
-                                }}
-                                className="text-[10px] text-red-400 hover:text-red-300 underline"
-                              >
-                                Remove Photo
-                              </button>
+                              <div className="flex items-center space-x-3 pt-0.5">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    downloadPhoto(photoPreview, `${formData.fullName || 'member'}-profile-photo`);
+                                  }}
+                                  className="text-[10px] text-[#FF9900] hover:text-amber-300 font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                                >
+                                  <span>⬇️ Download Photo</span>
+                                </button>
+                                <span className="text-slate-600">•</span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setPhotoPreview('');
+                                    setFormData((prev) => ({ ...prev, photoUrl: '' }));
+                                  }}
+                                  className="text-[10px] text-red-400 hover:text-red-300 underline cursor-pointer"
+                                >
+                                  Remove Photo
+                                </button>
+                              </div>
                             </div>
                           </div>
                         ) : (
                           <div className="space-y-1.5">
                             <span className="text-2xl block">📸</span>
                             <span className="text-xs font-semibold text-slate-300 block">
-                              Click or Drag &amp; Drop Profile Photo here
+                              Click or Drag &amp; Drop Profile Photo here <span className="text-[#FF9900] font-bold">*</span>
                             </span>
-                            <span className="text-[10px] text-slate-500 block">
-                              PNG, JPG, or WEBP (Automatically optimized &amp; resized)
+                            <span className="text-[10px] text-slate-400 block">
+                              PNG, JPG, or WEBP (Mandatory for Official ID &amp; PDF Dossier)
                             </span>
                           </div>
                         )}
@@ -980,22 +1021,33 @@ export default function FoundingMembersPublicFormPage() {
 
                   {/* Summary Breakdown Card */}
                   <div className="bg-[#07131F] border border-white/10 rounded-xl p-5 space-y-4 text-xs font-sans">
-                    <div className="flex items-center space-x-3 border-b border-white/10 pb-3">
-                      {photoPreview ? (
-                        <img
-                          src={photoPreview}
-                          alt="Avatar"
-                          className="w-12 h-12 rounded-full object-cover border border-[#FF9900]"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-amber-500/20 text-[#FF9900] border border-[#FF9900]/40 flex items-center justify-center font-bold text-base">
-                          {formData.fullName.charAt(0).toUpperCase() || 'F'}
+                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                      <div className="flex items-center space-x-3">
+                        {photoPreview ? (
+                          <img
+                            src={photoPreview}
+                            alt="Avatar"
+                            className="w-12 h-12 rounded-full object-cover border border-[#FF9900]"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-amber-500/20 text-[#FF9900] border border-[#FF9900]/40 flex items-center justify-center font-bold text-base">
+                            {formData.fullName.charAt(0).toUpperCase() || 'F'}
+                          </div>
+                        )}
+                        <div>
+                          <h3 className="font-bold text-white text-sm">{formData.fullName}</h3>
+                          <span className="text-[#FF9900] font-semibold text-[11px]">{formData.domain}</span>
                         </div>
-                      )}
-                      <div>
-                        <h3 className="font-bold text-white text-sm">{formData.fullName}</h3>
-                        <span className="text-[#FF9900] font-semibold text-[11px]">{formData.domain}</span>
                       </div>
+                      {photoPreview && (
+                        <button
+                          type="button"
+                          onClick={() => downloadPhoto(photoPreview, `${formData.fullName || 'member'}-profile-photo`)}
+                          className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-amber-300 border border-white/10 rounded text-[10px] font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>⬇️ Download Photo</span>
+                        </button>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-300">

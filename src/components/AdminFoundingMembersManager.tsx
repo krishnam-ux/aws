@@ -486,6 +486,23 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
     }
   };
 
+  const downloadMemberPhoto = (member: FoundingMember) => {
+    if (!member.photoUrl) {
+      showToast('No profile photo available for this member.', 'error');
+      return;
+    }
+    const link = document.createElement('a');
+    link.href = member.photoUrl;
+    const cleanName = (member.fullName || member.name || member.memberId || 'founding-member')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '-');
+    link.download = `${cleanName}-profile-photo.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast(`Downloading profile photo for ${member.fullName || member.name}...`);
+  };
+
   // Form Builder: Save Basic Info
   const handleSaveBasicInfo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1001,11 +1018,21 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
                         <td className="px-4 py-3 font-semibold text-[#111827]">
                           <div className="flex items-center space-x-2.5">
                             {member.photoUrl ? (
-                              <img
-                                src={member.photoUrl}
-                                alt={member.fullName || member.name}
-                                className="w-8 h-8 rounded-full object-cover border border-amber-300"
-                              />
+                              <button
+                                type="button"
+                                onClick={() => downloadMemberPhoto(member)}
+                                title="Click to download profile photo"
+                                className="relative group cursor-pointer"
+                              >
+                                <img
+                                  src={member.photoUrl}
+                                  alt={member.fullName || member.name}
+                                  className="w-8 h-8 rounded-full object-cover border border-amber-300 group-hover:border-[#FF9900] group-hover:opacity-80 transition-all"
+                                />
+                                <span className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center text-[9px] text-white transition-opacity">
+                                  ⬇️
+                                </span>
+                              </button>
                             ) : (
                               <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center justify-center font-bold text-[11px]">
                                 {(member.fullName || member.name || 'F').charAt(0).toUpperCase()}
@@ -1053,7 +1080,18 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
                         </td>
 
                         {/* PDF & Actions */}
-                        <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                        <td className="px-4 py-3 text-right space-x-1.5 whitespace-nowrap">
+                          {member.photoUrl && (
+                            <button
+                              type="button"
+                              onClick={() => downloadMemberPhoto(member)}
+                              title="Download member profile photo"
+                              className="px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold rounded text-[11px] cursor-pointer shadow-2xs inline-flex items-center gap-1"
+                            >
+                              <span>📸</span>
+                              <span>Photo</span>
+                            </button>
+                          )}
                           <button
                             onClick={() => downloadSinglePdf(member)}
                             disabled={downloadingPdf}
@@ -1536,7 +1574,7 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
             {/* Content Details */}
             <div className="space-y-4">
               {/* Submission Status & PDF trigger */}
-              <div className="p-3.5 bg-amber-50/60 border border-amber-200 rounded-xl flex items-center justify-between">
+              <div className="p-3.5 bg-amber-50/60 border border-amber-200 rounded-xl flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <span className="font-bold text-slate-800 block text-xs">Permanent ID: {viewMember.memberId}</span>
                   <span className="text-[11px] text-slate-600">
@@ -1545,14 +1583,27 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
                       : 'Pending form submission'}
                   </span>
                 </div>
-                <button
-                  onClick={() => downloadSinglePdf(viewMember)}
-                  disabled={downloadingPdf}
-                  className="px-3.5 py-1.5 bg-[#FF9900] hover:bg-[#E08800] text-white font-bold rounded-lg text-xs cursor-pointer shadow-xs flex items-center space-x-1"
-                >
-                  <span>📄</span>
-                  <span>Download Member PDF</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  {viewMember.photoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => downloadMemberPhoto(viewMember)}
+                      className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 font-bold rounded-lg text-xs cursor-pointer shadow-xs flex items-center space-x-1"
+                      title="Download original profile photo"
+                    >
+                      <span>📸</span>
+                      <span>Download Photo</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => downloadSinglePdf(viewMember)}
+                    disabled={downloadingPdf}
+                    className="px-3.5 py-1.5 bg-[#FF9900] hover:bg-[#E08800] text-white font-bold rounded-lg text-xs cursor-pointer shadow-xs flex items-center space-x-1"
+                  >
+                    <span>📄</span>
+                    <span>Download Member PDF</span>
+                  </button>
+                </div>
               </div>
 
               {/* Personal & Academic */}

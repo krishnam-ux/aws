@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import postgres from 'postgres';
 import { normalizeOpportunityApplication } from './opportunityApplication';
 import { DigitalIdentity, DigitalIdType, DigitalIdStatus, VerificationLog } from '@/types/digitalIdentity';
+import { DigitalBadge, DigitalBadgeEvent, BadgeStatus } from '@/types/digitalBadge';
 import { DIGITAL_ID_PREFIXES } from './digitalIdUtils';
 
 const DB_DIR = path.join(process.cwd(), 'src', 'data', 'db');
@@ -168,6 +169,69 @@ async function ensureDigitalIdentityTables() {
     digitalIdentityTablesEnsured = true;
   } catch (err) {
     console.error('Failed to ensure digital identity tables exist in PostgreSQL:', err);
+  }
+}
+
+let digitalBadgeTablesEnsured = false;
+
+async function ensureDigitalBadgeTables() {
+  if (!sql || digitalBadgeTablesEnsured) return;
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS digital_badges (
+        id VARCHAR(255) PRIMARY KEY,
+        credential_id VARCHAR(100) NOT NULL UNIQUE,
+        recipient_name VARCHAR(255) NOT NULL,
+        recipient_email VARCHAR(255) NOT NULL,
+        badge_title VARCHAR(255) NOT NULL,
+        badge_description TEXT NOT NULL,
+        badge_image TEXT NOT NULL,
+        issue_date VARCHAR(100) NOT NULL,
+        issuer_name VARCHAR(255) NOT NULL,
+        issuer_logo TEXT,
+        skills JSONB NOT NULL DEFAULT '[]'::jsonb,
+        earning_criteria TEXT NOT NULL,
+        credential_url VARCHAR(500) NOT NULL,
+        verification_url VARCHAR(500) NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+        issued_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        revoked_at TIMESTAMP WITH TIME ZONE,
+        revoked_reason TEXT,
+        revoked_by VARCHAR(255),
+        additional_information TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_digital_badges_credential_id ON digital_badges(credential_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_digital_badges_status ON digital_badges(status)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_digital_badges_email ON digital_badges(recipient_email)`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS digital_badge_counters (
+        prefix VARCHAR(50) PRIMARY KEY,
+        last_number INTEGER NOT NULL DEFAULT 0
+      )
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS digital_badge_events (
+        id VARCHAR(255) PRIMARY KEY,
+        credential_id VARCHAR(100) NOT NULL,
+        event_type VARCHAR(100) NOT NULL,
+        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        admin_identity VARCHAR(255),
+        details JSONB,
+        ip_address VARCHAR(100),
+        user_agent TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_digital_badge_events_credential_id ON digital_badge_events(credential_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_digital_badge_events_timestamp ON digital_badge_events(timestamp)`;
+    digitalBadgeTablesEnsured = true;
+  } catch (err) {
+    console.error('Failed to ensure digital badge tables exist in PostgreSQL:', err);
   }
 }
 
@@ -768,7 +832,10 @@ function isRealtimeCollection(filename: string): boolean {
     filename === 'founding_member_form_config.json' ||
     filename === 'digital_identities.json' ||
     filename === 'digital_id_counters.json' ||
-    filename === 'digital_id_verifications.json'
+    filename === 'digital_id_verifications.json' ||
+    filename === 'digital_badges.json' ||
+    filename === 'digital_badge_counters.json' ||
+    filename === 'digital_badge_events.json'
   );
 }
 
@@ -3980,6 +4047,368 @@ export const db = {
       }
       const logs = await readJsonFile<VerificationLog[]>('digital_id_verifications.json', []);
       return logs.slice(0, limit);
+    }
+  },
+  digitalBadges: {
+    getAll: async (): Promise<DigitalBadge[]> => {
+      if (sql) {
+        try {
+          await ensureDigitalBadgeTables();
+          const rows = await sql`SELECT * FROM digital_badges ORDER BY created_at DESC`;
+          if (rows && rows.length > 0) {
+            return rows.map((r: any) => ({
+              id: r.id,
+              credentialId: r.credential_id,
+              recipientName: r.recipient_name,
+              recipientEmail: r.recipient_email,
+              badgeTitle: r.badge_title,
+              badgeDescription: r.badge_description,
+              badgeImage: r.badge_image,
+              issueDate: r.issue_date,
+              issuerName: r.issuer_name,
+              issuerLogo: r.issuer_logo,
+              skills: Array.isArray(r.skills) ? r.skills : (typeof r.skills === 'string' ? JSON.parse(r.skills || '[]') : []),
+              earningCriteria: r.earning_criteria,
+              credentialUrl: r.credential_url,
+              verificationUrl: r.verification_url,
+              status: (r.status || 'ACTIVE') as BadgeStatus,
+              issuedAt: r.issued_at ? new Date(r.issued_at).toISOString() : new Date().toISOString(),
+              revokedAt: r.revoked_at ? new Date(r.revoked_at).toISOString() : null,
+              revokedReason: r.revoked_reason || null,
+              revokedBy: r.revoked_by || null,
+              additionalInformation: r.additional_information || undefined,
+              createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+              updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString()
+            }));
+          }
+        } catch (err) {
+          console.error('Failed to get digital badges from Postgres, falling back to local store:', err);
+        }
+      }
+      return await readJsonFile<DigitalBadge[]>('digital_badges.json', []);
+    },
+
+    getByCredentialId: async (credentialId: string): Promise<DigitalBadge | null> => {
+      if (!credentialId) return null;
+      const cleanId = String(credentialId).trim().toUpperCase();
+      if (sql) {
+        try {
+          await ensureDigitalBadgeTables();
+          const rows = await sql`SELECT * FROM digital_badges WHERE UPPER(credential_id) = ${cleanId} LIMIT 1`;
+          if (rows && rows.length > 0) {
+            const r = rows[0];
+            return {
+              id: r.id,
+              credentialId: r.credential_id,
+              recipientName: r.recipient_name,
+              recipientEmail: r.recipient_email,
+              badgeTitle: r.badge_title,
+              badgeDescription: r.badge_description,
+              badgeImage: r.badge_image,
+              issueDate: r.issue_date,
+              issuerName: r.issuer_name,
+              issuerLogo: r.issuer_logo,
+              skills: Array.isArray(r.skills) ? r.skills : (typeof r.skills === 'string' ? JSON.parse(r.skills || '[]') : []),
+              earningCriteria: r.earning_criteria,
+              credentialUrl: r.credential_url,
+              verificationUrl: r.verification_url,
+              status: (r.status || 'ACTIVE') as BadgeStatus,
+              issuedAt: r.issued_at ? new Date(r.issued_at).toISOString() : new Date().toISOString(),
+              revokedAt: r.revoked_at ? new Date(r.revoked_at).toISOString() : null,
+              revokedReason: r.revoked_reason || null,
+              revokedBy: r.revoked_by || null,
+              additionalInformation: r.additional_information || undefined,
+              createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+              updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString()
+            };
+          }
+        } catch (err) {
+          console.error('Failed to get digital badge by credentialId from Postgres, falling back to local store:', err);
+        }
+      }
+      const list = await readJsonFile<DigitalBadge[]>('digital_badges.json', []);
+      return list.find((b) => b.credentialId && String(b.credentialId).trim().toUpperCase() === cleanId) || null;
+    },
+
+    getById: async (id: string): Promise<DigitalBadge | null> => {
+      if (!id) return null;
+      const cleanId = String(id).trim();
+      if (sql) {
+        try {
+          await ensureDigitalBadgeTables();
+          const rows = await sql`SELECT * FROM digital_badges WHERE id = ${cleanId} OR UPPER(credential_id) = ${cleanId.toUpperCase()} LIMIT 1`;
+          if (rows && rows.length > 0) {
+            const r = rows[0];
+            return {
+              id: r.id,
+              credentialId: r.credential_id,
+              recipientName: r.recipient_name,
+              recipientEmail: r.recipient_email,
+              badgeTitle: r.badge_title,
+              badgeDescription: r.badge_description,
+              badgeImage: r.badge_image,
+              issueDate: r.issue_date,
+              issuerName: r.issuer_name,
+              issuerLogo: r.issuer_logo,
+              skills: Array.isArray(r.skills) ? r.skills : (typeof r.skills === 'string' ? JSON.parse(r.skills || '[]') : []),
+              earningCriteria: r.earning_criteria,
+              credentialUrl: r.credential_url,
+              verificationUrl: r.verification_url,
+              status: (r.status || 'ACTIVE') as BadgeStatus,
+              issuedAt: r.issued_at ? new Date(r.issued_at).toISOString() : new Date().toISOString(),
+              revokedAt: r.revoked_at ? new Date(r.revoked_at).toISOString() : null,
+              revokedReason: r.revoked_reason || null,
+              revokedBy: r.revoked_by || null,
+              additionalInformation: r.additional_information || undefined,
+              createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+              updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString()
+            };
+          }
+        } catch (err) {
+          console.error('Failed to get digital badge by id from Postgres, falling back to local store:', err);
+        }
+      }
+      const list = await readJsonFile<DigitalBadge[]>('digital_badges.json', []);
+      return list.find((b) => b.id === cleanId || String(b.credentialId).toUpperCase() === cleanId.toUpperCase()) || null;
+    },
+
+    getNextCredentialId: async (): Promise<string> => {
+      const prefix = 'BADGE-CUUP-';
+      return withCollectionLock('digital_badges.json', async () => {
+        if (sql) {
+          await ensureDigitalBadgeTables();
+          const existingMaxRow = await sql`
+            SELECT credential_id FROM digital_badges WHERE credential_id LIKE ${prefix + '%'}
+          `;
+          let maxSeen = 0;
+          for (const row of existingMaxRow) {
+            const numPart = String(row.credential_id).replace(prefix, '');
+            const parsed = parseInt(numPart, 10);
+            if (!isNaN(parsed) && parsed > maxSeen) maxSeen = parsed;
+          }
+
+          const counterRow = await sql`
+            INSERT INTO digital_badge_counters (prefix, last_number)
+            VALUES (${prefix}, ${Math.max(1, maxSeen + 1)})
+            ON CONFLICT (prefix)
+            DO UPDATE SET last_number = GREATEST(digital_badge_counters.last_number + 1, ${maxSeen + 1})
+            RETURNING last_number
+          `;
+          const num = counterRow[0].last_number;
+          return `${prefix}${String(num).padStart(6, '0')}`;
+        }
+
+        const counters = await readJsonFile<Record<string, number>>('digital_badge_counters.json', {});
+        const list = await readJsonFile<DigitalBadge[]>('digital_badges.json', []);
+
+        let maxSeen = counters[prefix] || 0;
+        for (const item of list) {
+          if (item.credentialId && item.credentialId.startsWith(prefix)) {
+            const numPart = item.credentialId.slice(prefix.length);
+            const parsed = parseInt(numPart, 10);
+            if (!isNaN(parsed) && parsed > maxSeen) maxSeen = parsed;
+          }
+        }
+
+        const nextNum = maxSeen + 1;
+        counters[prefix] = nextNum;
+        await writeJsonFile('digital_badge_counters.json', counters);
+        return `${prefix}${String(nextNum).padStart(6, '0')}`;
+      });
+    },
+
+    insertOne: async (badge: DigitalBadge): Promise<DigitalBadge> => {
+      return withCollectionLock('digital_badges.json', async () => {
+        if (sql) {
+          await ensureDigitalBadgeTables();
+          await sql`
+            INSERT INTO digital_badges (
+              id, credential_id, recipient_name, recipient_email, badge_title,
+              badge_description, badge_image, issue_date, issuer_name, issuer_logo,
+              skills, earning_criteria, credential_url, verification_url, status,
+              issued_at, revoked_at, revoked_reason, revoked_by, additional_information,
+              created_at, updated_at
+            ) VALUES (
+              ${badge.id}, ${badge.credentialId}, ${badge.recipientName}, ${badge.recipientEmail}, ${badge.badgeTitle},
+              ${badge.badgeDescription}, ${badge.badgeImage}, ${badge.issueDate}, ${badge.issuerName}, ${badge.issuerLogo || null},
+              ${JSON.stringify(badge.skills || [])}, ${badge.earningCriteria}, ${badge.credentialUrl}, ${badge.verificationUrl}, ${badge.status},
+              ${badge.issuedAt}, ${badge.revokedAt || null}, ${badge.revokedReason || null}, ${badge.revokedBy || null}, ${badge.additionalInformation || null},
+              ${badge.createdAt}, ${badge.updatedAt}
+            )
+          `;
+        }
+
+        const list = await readJsonFile<DigitalBadge[]>('digital_badges.json', []);
+        list.unshift(badge);
+        await writeJsonFile('digital_badges.json', list);
+        return badge;
+      });
+    },
+
+    updateOne: async (idOrCredentialId: string, updates: Partial<DigitalBadge>): Promise<DigitalBadge | null> => {
+      const targetId = String(idOrCredentialId).trim();
+      return withCollectionLock('digital_badges.json', async () => {
+        const now = new Date().toISOString();
+        if (sql) {
+          await ensureDigitalBadgeTables();
+          const existing = await sql`SELECT * FROM digital_badges WHERE id = ${targetId} OR UPPER(credential_id) = ${targetId.toUpperCase()} LIMIT 1`;
+          if (existing && existing.length > 0) {
+            const prev = existing[0];
+            const updatedSkills = updates.skills !== undefined ? JSON.stringify(updates.skills) : prev.skills;
+            await sql`
+              UPDATE digital_badges SET
+                recipient_name = ${updates.recipientName !== undefined ? updates.recipientName : prev.recipient_name},
+                recipient_email = ${updates.recipientEmail !== undefined ? updates.recipientEmail : prev.recipient_email},
+                badge_title = ${updates.badgeTitle !== undefined ? updates.badgeTitle : prev.badge_title},
+                badge_description = ${updates.badgeDescription !== undefined ? updates.badgeDescription : prev.badge_description},
+                badge_image = ${updates.badgeImage !== undefined ? updates.badgeImage : prev.badge_image},
+                issue_date = ${updates.issueDate !== undefined ? updates.issueDate : prev.issue_date},
+                skills = ${updatedSkills},
+                earning_criteria = ${updates.earningCriteria !== undefined ? updates.earningCriteria : prev.earning_criteria},
+                status = ${updates.status !== undefined ? updates.status : prev.status},
+                revoked_at = ${updates.revokedAt !== undefined ? updates.revokedAt : prev.revoked_at},
+                revoked_reason = ${updates.revokedReason !== undefined ? updates.revokedReason : prev.revoked_reason},
+                revoked_by = ${updates.revokedBy !== undefined ? updates.revokedBy : prev.revoked_by},
+                additional_information = ${updates.additionalInformation !== undefined ? updates.additionalInformation : prev.additional_information},
+                updated_at = ${now}
+              WHERE id = ${prev.id}
+            `;
+          }
+        }
+
+        const list = await readJsonFile<DigitalBadge[]>('digital_badges.json', []);
+        const idx = list.findIndex((b) => b.id === targetId || String(b.credentialId).toUpperCase() === targetId.toUpperCase());
+        if (idx === -1) return null;
+
+        const updated: DigitalBadge = {
+          ...list[idx],
+          ...updates,
+          updatedAt: now
+        };
+        list[idx] = updated;
+        await writeJsonFile('digital_badges.json', list);
+        return updated;
+      });
+    },
+
+    revoke: async (
+      idOrCredentialId: string,
+      options: { revokedReason?: string; revokedBy?: string; adminId?: string }
+    ): Promise<DigitalBadge | null> => {
+      const now = new Date().toISOString();
+      const updatedBadge = await db.digitalBadges.updateOne(idOrCredentialId, {
+        status: 'REVOKED',
+        revokedAt: now,
+        revokedReason: options.revokedReason || 'Revoked by administrator',
+        revokedBy: options.revokedBy || options.adminId || 'admin',
+        updatedAt: now
+      });
+
+      if (updatedBadge) {
+        await db.digitalBadges.logEvent({
+          id: `evt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          credentialId: updatedBadge.credentialId,
+          eventType: 'BADGE_REVOKED',
+          timestamp: now,
+          adminIdentity: options.adminId || 'admin',
+          details: {
+            reason: options.revokedReason,
+            revokedBy: options.revokedBy
+          }
+        });
+      }
+
+      return updatedBadge;
+    },
+
+    deleteById: async (idOrCredentialId: string): Promise<boolean> => {
+      const targetId = String(idOrCredentialId).trim();
+      return withCollectionLock('digital_badges.json', async () => {
+        if (sql) {
+          await ensureDigitalBadgeTables();
+          await sql`DELETE FROM digital_badges WHERE id = ${targetId} OR UPPER(credential_id) = ${targetId.toUpperCase()}`;
+        }
+        const list = await readJsonFile<DigitalBadge[]>('digital_badges.json', []);
+        const nextList = list.filter((b) => b.id !== targetId && String(b.credentialId).toUpperCase() !== targetId.toUpperCase());
+        if (nextList.length !== list.length) {
+          await writeJsonFile('digital_badges.json', nextList);
+          return true;
+        }
+        return false;
+      });
+    },
+
+    logEvent: async (event: DigitalBadgeEvent): Promise<DigitalBadgeEvent> => {
+      const fullEvent: DigitalBadgeEvent = {
+        ...event,
+        id: event.id || `evt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        timestamp: event.timestamp || new Date().toISOString()
+      };
+      if (sql) {
+        try {
+          await ensureDigitalBadgeTables();
+          await sql`
+            INSERT INTO digital_badge_events (
+              id, credential_id, event_type, timestamp, admin_identity, details, ip_address, user_agent
+            ) VALUES (
+              ${fullEvent.id}, ${fullEvent.credentialId}, ${fullEvent.eventType},
+              ${fullEvent.timestamp}, ${fullEvent.adminIdentity || null},
+              ${JSON.stringify(fullEvent.details || {})},
+              ${fullEvent.ipAddress || null}, ${fullEvent.userAgent || null}
+            )
+          `;
+        } catch (err) {
+          console.error('Failed to log digital badge event to Postgres:', err);
+        }
+      }
+      return withCollectionLock('digital_badge_events.json', async () => {
+        const events = await readJsonFile<DigitalBadgeEvent[]>('digital_badge_events.json', []);
+        events.unshift(fullEvent);
+        await writeJsonFile('digital_badge_events.json', events.slice(0, 5000));
+        return fullEvent;
+      });
+    },
+
+    getEvents: async (credentialId?: string, limit: number = 50): Promise<DigitalBadgeEvent[]> => {
+      if (sql) {
+        try {
+          await ensureDigitalBadgeTables();
+          let rows;
+          if (credentialId) {
+            const cleanId = String(credentialId).trim().toUpperCase();
+            rows = await sql`
+              SELECT * FROM digital_badge_events
+              WHERE UPPER(credential_id) = ${cleanId}
+              ORDER BY timestamp DESC
+              LIMIT ${limit}
+            `;
+          } else {
+            rows = await sql`
+              SELECT * FROM digital_badge_events
+              ORDER BY timestamp DESC
+              LIMIT ${limit}
+            `;
+          }
+          if (rows && rows.length > 0) {
+            return rows.map((r: any) => ({
+              id: r.id,
+              credentialId: r.credential_id,
+              eventType: r.event_type,
+              timestamp: r.timestamp ? new Date(r.timestamp).toISOString() : new Date().toISOString(),
+              adminIdentity: r.admin_identity || undefined,
+              details: typeof r.details === 'string' ? JSON.parse(r.details || '{}') : (r.details || {}),
+              ipAddress: r.ip_address || undefined,
+              userAgent: r.user_agent || undefined
+            }));
+          }
+        } catch (err) {
+          console.error('Failed to fetch digital badge events from Postgres:', err);
+        }
+      }
+      const events = await readJsonFile<DigitalBadgeEvent[]>('digital_badge_events.json', []);
+      if (!credentialId) return events.slice(0, limit);
+      const cleanId = String(credentialId).trim().toUpperCase();
+      return events.filter((e) => e.credentialId && String(e.credentialId).toUpperCase() === cleanId).slice(0, limit);
     }
   }
 };
