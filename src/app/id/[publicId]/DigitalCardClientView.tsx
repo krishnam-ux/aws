@@ -35,12 +35,12 @@ export default function DigitalCardClientView({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${identity.fullName} - Digital ID Card`,
-          text: `Official Digital Identity for ${identity.fullName} (${identity.publicId}) at AWS Student Builder Group CU-UP.`,
+          title: `${identity.fullName} - AWS SBG Digital ID`,
+          text: `Official Member Profile for ${identity.fullName} (${identity.publicId}) - AWS Student Builder Group at Chandigarh University – Uttar Pradesh:`,
           url: verificationUrl
         });
       } catch (err) {
-        // Share cancelled or not supported
+        // Share cancelled
       }
     } else {
       handleCopyLink();
@@ -53,25 +53,27 @@ export default function DigitalCardClientView({
 
   return (
     <div className="w-full max-w-4xl flex flex-col items-center space-y-8 animate-fadeIn">
-      {/* Top Breadcrumb & Community Branding */}
-      <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-800/80 pb-6 print:hidden">
-        <div className="flex items-center space-x-3">
-          <img
-            src="/aws-logo.svg"
-            alt="AWS"
-            className="h-6 w-auto brightness-0 invert"
-          />
-          <span className="text-slate-600">|</span>
-          <img
-            src="/chandigarh-university-logo.jpg"
-            alt="Chandigarh University"
-            className="h-7 w-auto rounded object-contain bg-white/10 p-0.5"
-          />
+      {/* Top Header & Breadcrumbs (Hidden in print) */}
+      <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-800 pb-6 print:hidden">
+        <div className="flex items-center space-x-3.5">
+          <div className="flex items-center space-x-2 bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-xl">
+            <img
+              src="/aws-logo.svg"
+              alt="AWS"
+              className="h-5 w-auto brightness-0 invert"
+            />
+            <span className="text-slate-600 font-bold text-xs">|</span>
+            <img
+              src="/chandigarh-university-logo.jpg"
+              alt="Chandigarh University – Uttar Pradesh"
+              className="h-6 w-auto rounded object-contain bg-white p-0.5"
+            />
+          </div>
           <div>
-            <p className="font-display font-bold text-xs uppercase tracking-wider text-slate-300">
+            <p className="font-extrabold text-xs uppercase tracking-wider text-white">
               AWS Student Builder Group
             </p>
-            <p className="text-[10px] text-slate-400 font-medium">
+            <p className="text-[11px] text-[#FF9900] font-semibold">
               Chandigarh University – Uttar Pradesh
             </p>
           </div>
@@ -80,10 +82,10 @@ export default function DigitalCardClientView({
         <div className="flex items-center space-x-2">
           <Link
             href={`/verify/${identity.publicId}`}
-            className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition-all"
+            className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition-all"
           >
             <span>✓</span>
-            <span>Live Verification Page</span>
+            <span>Live Registry Record</span>
           </Link>
         </div>
       </div>
@@ -91,34 +93,36 @@ export default function DigitalCardClientView({
       {/* CARD FLIP CONTROLS & INSTRUCTION (Hidden in print) */}
       <div className="flex items-center justify-center space-x-3 print:hidden">
         <button
+          type="button"
           onClick={() => setIsFlipped(false)}
           className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
             !isFlipped
-              ? 'bg-[#FF9900] text-[#081A2A] shadow-md shadow-[#FF9900]/20'
+              ? 'bg-[#FF9900] text-[#081A2A] shadow-lg shadow-[#FF9900]/25'
               : 'bg-slate-800 text-slate-400 hover:text-white'
           }`}
         >
           Front Side
         </button>
         <button
+          type="button"
           onClick={() => setIsFlipped(true)}
           className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
             isFlipped
-              ? 'bg-[#FF9900] text-[#081A2A] shadow-md shadow-[#FF9900]/20'
+              ? 'bg-[#FF9900] text-[#081A2A] shadow-lg shadow-[#FF9900]/25'
               : 'bg-slate-800 text-slate-400 hover:text-white'
           }`}
         >
-          Back Side (QR)
+          Back Side (QR & Verification)
         </button>
-        <span className="text-[11px] text-slate-500 hidden sm:inline ml-2">
-          (Click card or buttons to flip)
+        <span className="text-[11px] text-slate-400 hidden sm:inline ml-2">
+          (Click card to flip 3D)
         </span>
       </div>
 
       {/* 3D INTERACTIVE CARD CONTAINER */}
       <div
-        className="w-full max-w-[340px] sm:max-w-[380px] h-[580px] sm:h-[600px] cursor-pointer print:max-w-none print:h-auto"
-        style={{ perspective: '1200px' }}
+        className="w-full max-w-[360px] sm:max-w-[390px] h-[590px] sm:h-[610px] cursor-pointer print:max-w-none print:h-auto select-none"
+        style={{ perspective: '1400px' }}
         onClick={() => setIsFlipped(!isFlipped)}
       >
         <div
@@ -132,41 +136,56 @@ export default function DigitalCardClientView({
           {/* FRONT OF CARD */}
           {/* ======================================================== */}
           <div
-            className="absolute inset-0 w-full h-full rounded-2xl p-6 flex flex-col justify-between overflow-hidden border border-slate-700/60 shadow-2xl bg-gradient-to-b from-[#0B1E33] via-[#081A2A] to-[#040E18]"
+            className="absolute inset-0 w-full h-full rounded-2xl p-5 sm:p-6 flex flex-col justify-between overflow-hidden border border-slate-700/80 shadow-2xl bg-[#081726] text-white"
             style={{
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden'
             }}
           >
-            {/* Holographic Security Overlay / Texture */}
-            <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#FF9900_1px,transparent_1px)] [background-size:12px_12px]"></div>
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#FF9900]/10 rounded-full blur-2xl pointer-events-none"></div>
+            {/* Subtle AWS Orange Top Accent Line */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#FF9900] to-transparent"></div>
 
-            {/* Front Header */}
-            <div className="relative z-10 border-b border-slate-700/60 pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <img src="/aws-logo.svg" alt="AWS" className="h-4 w-auto brightness-0 invert" />
-                  <span className="text-slate-600 text-[10px]">|</span>
-                  <span className="font-display font-extrabold text-[10px] text-white tracking-tight uppercase">
-                    AWS SBG CU-UP
+            {/* FRONT HEADER */}
+            <div className="relative z-10 border-b border-slate-800 pb-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center space-x-2.5">
+                  <img
+                    src="/aws-logo.svg"
+                    alt="AWS"
+                    className="h-5 w-auto brightness-0 invert"
+                  />
+                  <span className="text-slate-600 font-bold text-xs">|</span>
+                  <div className="bg-white p-1 rounded-md shadow-sm flex items-center justify-center">
+                    <img
+                      src="/chandigarh-university-logo.jpg"
+                      alt="Chandigarh University – Uttar Pradesh"
+                      className="h-5 w-auto object-contain max-w-[90px]"
+                    />
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-[9px] font-mono font-bold text-[#FF9900] bg-[#FF9900]/10 border border-[#FF9900]/30 px-2 py-0.5 rounded-md">
+                    STUDENT CHAPTER
                   </span>
                 </div>
-                <span className="text-[9px] font-mono font-bold text-[#FF9900] bg-[#FF9900]/10 border border-[#FF9900]/30 px-2 py-0.5 rounded">
-                  STUDENT COMMUNITY
-                </span>
               </div>
-              <p className="text-[8.5px] text-slate-400 font-medium mt-1">
-                Chandigarh University – Uttar Pradesh
-              </p>
+
+              <div className="mt-2.5">
+                <h1 className="font-extrabold text-xs tracking-wider uppercase text-white">
+                  AWS Student Builder Group
+                </h1>
+                <p className="text-[10px] text-[#FF9900] font-semibold tracking-normal">
+                  Chandigarh University – Uttar Pradesh
+                </p>
+              </div>
             </div>
 
-            {/* Front Center: Photo & Primary Credentials */}
-            <div className="relative z-10 flex flex-col items-center text-center my-auto space-y-3 py-2">
-              {/* Photo Frame with glowing accent */}
+            {/* FRONT CENTER: MEMBER PHOTOGRAPH & CREDENTIALS */}
+            <div className="relative z-10 flex flex-col items-center text-center my-auto space-y-3 py-1">
+              {/* Professional Photo Frame with crisp border */}
               <div className="relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-[#FF9900] to-amber-500 rounded-full blur-sm opacity-60"></div>
-                <div className="relative h-28 w-28 sm:h-32 sm:w-32 rounded-full border-2 border-[#FF9900] overflow-hidden bg-slate-800 flex items-center justify-center shadow-xl">
+                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl border-2 border-[#FF9900] overflow-hidden bg-slate-900 shadow-xl flex items-center justify-center">
                   {identity.photoUrl ? (
                     <img
                       src={identity.photoUrl}
@@ -174,172 +193,211 @@ export default function DigitalCardClientView({
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <span className="font-display font-extrabold text-4xl text-slate-300">
+                    <span className="font-extrabold text-3xl sm:text-4xl text-[#FF9900]">
                       {identity.fullName.charAt(0).toUpperCase()}
                     </span>
                   )}
                 </div>
               </div>
 
-              {/* Name & Role */}
-              <div className="space-y-1 w-full px-2">
-                <h2 className="font-display font-extrabold text-xl sm:text-2xl text-white tracking-tight leading-tight line-clamp-2">
+              {/* Large Readable Member Name */}
+              <div className="space-y-0.5 w-full px-2">
+                <h2 className="font-extrabold text-xl sm:text-2xl text-white tracking-tight leading-tight line-clamp-2">
                   {identity.fullName}
                 </h2>
-                <p className="text-xs sm:text-sm font-bold text-[#FF9900] tracking-wide line-clamp-1">
+                {/* Role / Designation */}
+                <p className="text-sm sm:text-base font-bold text-[#FF9900] tracking-wide line-clamp-1">
                   {identity.role}
                 </p>
-              </div>
-
-              {/* Member Type Pill */}
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-[10px] font-bold text-slate-200 shadow-inner">
-                <span>{identity.memberType}</span>
-                {identity.domain && (
-                  <>
-                    <span className="mx-1.5 text-slate-600">•</span>
-                    <span className="text-slate-400">{identity.domain}</span>
-                  </>
-                )}
+                {/* Team / Domain */}
+                <p className="text-xs text-slate-300 font-medium">
+                  {identity.domain || 'Cloud & Emerging Tech'}
+                </p>
               </div>
             </div>
 
-            {/* Front Footer: Digital ID Pill & Status */}
-            <div className="relative z-10 space-y-3 pt-3 border-t border-slate-700/60">
-              <div className="bg-[#040E18]/80 border border-slate-700/80 rounded-xl p-2.5 flex items-center justify-between">
+            {/* FRONT LOWER: HIGHLIGHTED MEMBER ID & STATUS */}
+            <div className="relative z-10 space-y-2.5 pt-2">
+              {/* Dedicated Highlighted Section for Member ID */}
+              <div className="bg-[#040E18] border border-[#FF9900]/40 rounded-xl p-3 flex items-center justify-between shadow-inner">
                 <div>
-                  <p className="text-[8px] uppercase tracking-wider font-bold text-slate-400">Digital ID</p>
+                  <p className="text-[9px] uppercase tracking-wider font-bold text-slate-400">
+                    Member ID
+                  </p>
                   <p className="font-mono font-extrabold text-base sm:text-lg text-white tracking-wider">
                     {identity.publicId}
                   </p>
                 </div>
 
                 <div className="text-right">
-                  <p className="text-[8px] uppercase tracking-wider font-bold text-slate-400">Status</p>
-                  <span className={`inline-flex items-center space-x-1.5 text-xs font-bold ${
-                    isActive ? 'text-emerald-400' : isSuspended ? 'text-amber-400' : 'text-red-400'
-                  }`}>
-                    <span className={`h-2 w-2 rounded-full ${
-                      isActive ? 'bg-emerald-400 animate-pulse' : isSuspended ? 'bg-amber-400' : 'bg-red-400'
-                    }`}></span>
-                    <span>{identity.status}</span>
+                  <p className="text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">
+                    Status
+                  </p>
+                  <span
+                    className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide uppercase ${
+                      isActive
+                        ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
+                        : isSuspended
+                        ? 'bg-amber-500/15 border border-amber-500/30 text-amber-400'
+                        : 'bg-red-500/15 border border-red-500/30 text-red-400'
+                    }`}
+                  >
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        isActive
+                          ? 'bg-emerald-400 animate-pulse'
+                          : isSuspended
+                          ? 'bg-amber-400'
+                          : 'bg-red-400'
+                      }`}
+                    ></span>
+                    <span>{isActive ? 'ACTIVE MEMBER' : identity.status}</span>
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-[9px] text-slate-500 font-mono">
-                <span>Issued: {formatDisplayDate(identity.issuedAt || identity.createdAt)}</span>
-                <span className="text-[#FF9900] font-semibold">awssbgcuup.tech</span>
+              {/* MINIMAL FOOTER */}
+              <div className="border-t border-slate-800/80 pt-2 text-center">
+                <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+                  Student Community Membership ID
+                </p>
               </div>
             </div>
           </div>
 
           {/* ======================================================== */}
-          {/* BACK OF CARD (VERIFICATION & QR) */}
+          {/* BACK OF CARD (QR & VERIFICATION) */}
           {/* ======================================================== */}
           <div
-            className="absolute inset-0 w-full h-full rounded-2xl p-6 flex flex-col justify-between overflow-hidden border border-slate-700/60 shadow-2xl bg-gradient-to-b from-[#0B1E33] via-[#081A2A] to-[#040E18]"
+            className="absolute inset-0 w-full h-full rounded-2xl p-5 sm:p-6 flex flex-col justify-between overflow-hidden border border-slate-700/80 shadow-2xl bg-[#081726] text-white"
             style={{
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden',
               transform: 'rotateY(180deg)'
             }}
           >
-            {/* Background Texture */}
-            <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#FF9900_1px,transparent_1px)] [background-size:12px_12px]"></div>
+            {/* Subtle AWS Orange Top Accent Line */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#FF9900] to-transparent"></div>
 
-            {/* Back Header */}
-            <div className="relative z-10 border-b border-slate-700/60 pb-3 text-center">
-              <p className="font-display font-extrabold text-xs uppercase tracking-wider text-white">
-                Digital ID Verification
-              </p>
-              <p className="text-[9px] text-[#FF9900] font-semibold">
-                Official Live Registry Scanner
+            {/* BACK HEADER */}
+            <div className="relative z-10 border-b border-slate-800 pb-2.5 text-center">
+              <h2 className="font-extrabold text-xs uppercase tracking-wider text-white">
+                DIGITAL MEMBER VERIFICATION
+              </h2>
+              <p className="text-[9.5px] text-[#FF9900] font-semibold mt-0.5">
+                Official Verification Registry • Scannable QR
               </p>
             </div>
 
-            {/* QR Box in Center */}
-            <div className="relative z-10 flex flex-col items-center my-auto space-y-3">
-              <div className="p-3 bg-white rounded-xl shadow-xl border-2 border-[#FF9900]/40">
+            {/* BACK CENTER: PROMINENT SCANNABLE QR CODE */}
+            <div className="relative z-10 flex flex-col items-center my-auto space-y-2 py-1">
+              <div className="p-3 bg-white rounded-2xl shadow-2xl border-2 border-[#FF9900]/50">
                 <img
                   src={qrDataUrl}
                   alt="Verification QR Code"
-                  className="h-36 w-36 sm:h-40 sm:w-40 object-contain rounded"
+                  className="h-32 w-32 sm:h-36 sm:w-36 object-contain"
                 />
               </div>
-              <div className="text-center space-y-0.5">
-                <p className="text-[11px] font-bold text-slate-200">Scan to verify this identity</p>
-                <p className="text-[9px] text-slate-400 font-mono select-all">
-                  {identity.publicId}
-                </p>
-              </div>
+              <p className="text-[10px] font-semibold text-slate-300">
+                Scan with any device camera to verify
+              </p>
             </div>
 
-            {/* Registry Info & Disclaimer */}
-            <div className="relative z-10 space-y-2.5 pt-3 border-t border-slate-700/60 text-center">
-              <div className="bg-[#040E18]/70 border border-slate-700/60 rounded-lg p-2.5 text-[9px] text-slate-400 leading-relaxed space-y-1">
-                <p className="font-bold text-slate-300">Official Verification URL:</p>
-                <p className="text-[#FF9900] font-mono select-all break-all text-[8.5px]">
-                  {verificationUrl}
-                </p>
-                <p className="text-[8px] text-slate-500 pt-1">
-                  This Digital ID is valid only while the associated identity remains active in the official verification registry.
-                </p>
+            {/* BACK LOWER: MEMBER METADATA & MANDATORY STATEMENT */}
+            <div className="relative z-10 space-y-2.5">
+              {/* Structured Key-Value Details */}
+              <div className="bg-[#040E18] border border-slate-800 rounded-xl p-2.5 text-[10px] space-y-1">
+                <div className="flex justify-between items-center py-0.5 border-b border-slate-800/80">
+                  <span className="text-slate-400 font-semibold">Member ID:</span>
+                  <span className="font-mono font-bold text-white select-all">{identity.publicId}</span>
+                </div>
+                <div className="flex justify-between items-center py-0.5 border-b border-slate-800/80">
+                  <span className="text-slate-400 font-semibold">Member Name:</span>
+                  <span className="font-bold text-white truncate max-w-[190px]">{identity.fullName}</span>
+                </div>
+                <div className="flex justify-between items-center py-0.5 border-b border-slate-800/80">
+                  <span className="text-slate-400 font-semibold">Role:</span>
+                  <span className="font-bold text-[#FF9900] truncate max-w-[190px]">{identity.role}</span>
+                </div>
+                <div className="flex justify-between items-center py-0.5 border-b border-slate-800/80">
+                  <span className="text-slate-400 font-semibold">Team / Domain:</span>
+                  <span className="font-medium text-slate-200 truncate max-w-[190px]">{identity.domain || 'Cloud & Emerging Tech'}</span>
+                </div>
+                <div className="flex justify-between items-center py-0.5 border-b border-slate-800/80">
+                  <span className="text-slate-400 font-semibold">Membership Status:</span>
+                  <span className={`font-bold ${isActive ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {identity.status}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-0.5 border-b border-slate-800/80">
+                  <span className="text-slate-400 font-semibold">Issue Date:</span>
+                  <span className="font-medium text-slate-300">
+                    {formatDisplayDate(identity.issuedAt || identity.createdAt)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-0.5">
+                  <span className="text-slate-400 font-semibold">Verification URL:</span>
+                  <span className="font-mono text-[9px] text-[#FF9900] truncate max-w-[180px]">
+                    {verificationUrl.replace(/^https?:\/\//, '')}
+                  </span>
+                </div>
               </div>
 
-              <div className="flex items-center justify-between text-[8.5px] text-slate-500">
-                <span>Status: <strong className={isActive ? 'text-emerald-400' : 'text-red-400'}>{identity.status}</strong></span>
-                <span>AWS SBG CU-UP</span>
+              {/* Mandatory Official Verification Statement */}
+              <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 text-[9px] text-slate-300 leading-relaxed text-center">
+                “This card identifies the holder as a registered member of the AWS Student Builder Group at Chandigarh University – Uttar Pradesh. Membership can be verified through the official verification URL or QR code.”
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ======================================================== */}
       {/* QUICK ACTIONS TOOLBAR (Hidden in print) */}
-      {/* ======================================================== */}
-      <div className="w-full max-w-md bg-slate-900/80 border border-slate-800 p-4 rounded-xl shadow-lg flex flex-wrap items-center justify-center gap-2.5 print:hidden">
+      <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 p-4 rounded-2xl shadow-xl flex flex-wrap items-center justify-center gap-2.5 print:hidden">
         {/* PDF Download Button */}
         <a
           href={`/api/digital-ids/pdf/${identity.publicId}`}
           download
-          className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-lg bg-[#FF9900] hover:bg-[#EC7211] text-[#081A2A] font-bold text-xs shadow-sm transition-all cursor-pointer"
+          className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[#FF9900] hover:bg-[#EC7211] text-[#081A2A] font-bold text-xs shadow-md shadow-[#FF9900]/20 transition-all cursor-pointer"
         >
-          <span>📄 Download PDF Card</span>
+          <span>📄 Download Official PDF</span>
         </a>
 
         {/* Print Card */}
         <button
+          type="button"
           onClick={handlePrint}
-          className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors cursor-pointer"
+          className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors cursor-pointer"
         >
           <span>🖨️ Print Card</span>
         </button>
 
         {/* Copy Link */}
         <button
+          type="button"
           onClick={handleCopyLink}
-          className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors cursor-pointer"
+          className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors cursor-pointer"
         >
-          <span>{copied ? '✓ Copied!' : '🔗 Copy Link'}</span>
+          <span>{copied ? '✓ Link Copied!' : '🔗 Copy Link'}</span>
         </button>
 
         {/* Share Link */}
         <button
+          type="button"
           onClick={handleShare}
-          className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors cursor-pointer"
+          className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors cursor-pointer"
         >
           <span>↗ Share</span>
         </button>
       </div>
 
-      {/* Legal & Community Disclaimer Footer */}
-      <div className="max-w-xl text-center space-y-2 text-[10px] text-slate-500 leading-relaxed border-t border-slate-800/80 pt-6">
+      {/* Community Disclaimer Footer */}
+      <div className="max-w-xl text-center space-y-1.5 text-[10px] text-slate-400 leading-relaxed border-t border-slate-800 pt-6">
         <p>
-          This Digital ID Card is issued by the student-led <strong>AWS Student Builder Group</strong> at <strong>Chandigarh University – Uttar Pradesh</strong>. It certifies community participation, leadership, or contribution within the student chapter.
+          This Digital ID Card is issued by the student-led <strong>AWS Student Builder Group</strong> at <strong>Chandigarh University – Uttar Pradesh</strong> for registered community members.
         </p>
-        <p>
-          It is not an official employee credential or corporate identity issued by Amazon Web Services, Inc.
+        <p className="text-slate-400">
+          This is a student community membership credential, not an official Amazon Web Services corporate employee ID or certification.
         </p>
       </div>
     </div>

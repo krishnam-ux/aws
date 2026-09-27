@@ -3314,11 +3314,19 @@ export const db = {
     getConfig: async (): Promise<any> => {
       const defaultConfig = {
         id: 'founding-members-default-form',
-        title: 'Founding Members Registration Form',
-        description: 'Official registration and profile record for Founding Members of AWS Student Builder Group (CU-UP).',
+        title: 'AWS Student Builder Group – Member Registration & Profile Form',
+        subtitle: 'Member Record • Role Verification • Community Profile',
+        description: 'Official member profile and record form for members of AWS Student Builder Group at Chandigarh University – Uttar Pradesh.',
+        purpose: 'To maintain a centralized and up-to-date record of AWS SBG members, their roles, skills, contributions, participation, and recognition.',
+        organizationName: 'AWS Student Builder Group at Chandigarh University – Uttar Pradesh',
+        headerText: 'AWS STUDENT BUILDER GROUP • CU-UP',
+        submitButtonText: 'Submit Member Profile',
+        successTitle: 'Member Profile Submitted Successfully!',
+        successMessage: 'Thank you for submitting your member profile. Your information has been received for AWS Student Builder Group records. The team may contact you if any verification or clarification is required.',
+        consentText: 'I confirm that the information provided is accurate and up to date. I consent to its use for AWS Student Builder Group membership records, member verification, team coordination, event participation, recognition, certificates, digital badges, and related community activities.',
         status: 'Published',
         publishedUrl: 'https://www.awssbgcuup.tech/founding-members/form',
-        version: 1,
+        version: 400,
         updatedAt: new Date().toISOString(),
         questions: []
       };
@@ -3335,7 +3343,18 @@ export const db = {
   },
   foundingMembers: {
     getAll: async (): Promise<any[]> => {
-      return await readJsonFile<any[]>('founding_members.json', []);
+      const list = await readJsonFile<any[]>('founding_members.json', []);
+      let modified = false;
+      for (const m of list) {
+        if (!m.formToken) {
+          m.formToken = `fm_tok_${Date.now().toString(36)}${Math.random().toString(36).substring(2, 10)}`;
+          modified = true;
+        }
+      }
+      if (modified) {
+        await writeJsonFile('founding_members.json', list);
+      }
+      return list;
     },
     getById: async (id: string): Promise<any | null> => {
       const list = await db.foundingMembers.getAll();
@@ -3386,6 +3405,9 @@ export const db = {
             }
           }
           member.memberId = `FMB-CUUP-${String(maxNum + 1).padStart(3, '0')}`;
+        }
+        if (!member.formToken) {
+          member.formToken = `fm_tok_${Date.now().toString(36)}${Math.random().toString(36).substring(2, 10)}`;
         }
         list.push(member);
         await writeJsonFile('founding_members.json', list);

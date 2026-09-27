@@ -324,24 +324,41 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
     }
 
     const headers = [
-      'Founding Member ID',
+      'Member ID',
       'Full Name',
       'Email',
       'Phone',
       'University',
-      'Course/Branch',
-      'Year/Semester',
+      'Course / Program',
+      'Year of Study',
       'Student ID (UID)',
-      'Domain Track',
-      'Role',
-      'Skills',
-      'Experience',
+      'Member Role / Type',
+      'Team / Domain',
+      'Designation',
+      'Date of Joining',
+      'Membership Status',
+      'Primary Skills',
+      'Technical Interests',
+      'Speaker / Anchor Role',
+      'Speaking Experience',
+      'Speaking Topics',
+      'Demo Video URL',
+      'Languages',
+      'Event Availability',
+      'Previous Experience',
+      'Areas of Contribution',
+      'Assigned Responsibilities',
+      'Major Achievements',
+      'Certifications',
+      'Digital Badges',
+      'Events Participated',
+      'Additional Notes',
       'LinkedIn',
       'GitHub',
       'Portfolio',
       'Form Submitted',
       'Submission Date',
-      'Status'
+      'Consent Given'
     ];
 
     const rows = members.map((m) => [
@@ -350,26 +367,43 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
       `"${(m.email || '').replace(/"/g, '""')}"`,
       `"${(m.phone || '').replace(/"/g, '""')}"`,
       `"${(m.university || '').replace(/"/g, '""')}"`,
-      `"${(m.courseBranch || '').replace(/"/g, '""')}"`,
+      `"${(m.courseBranch || m.course || '').replace(/"/g, '""')}"`,
       `"${(m.yearSemester || '').replace(/"/g, '""')}"`,
       `"${(m.studentId || '').replace(/"/g, '""')}"`,
+      `"${(m.memberRole || m.role || '').replace(/"/g, '""')}"`,
       `"${(m.domain || '').replace(/"/g, '""')}"`,
-      `"${(m.role || '').replace(/"/g, '""')}"`,
+      `"${(m.designation || '').replace(/"/g, '""')}"`,
+      `"${(m.dateOfJoining || '').replace(/"/g, '""')}"`,
+      `"${(m.membershipStatus || m.status || 'Active').replace(/"/g, '""')}"`,
       `"${(m.skills || '').replace(/"/g, '""')}"`,
-      `"${(m.experience || '').replace(/"/g, '""')}"`,
+      `"${(m.interests || '').replace(/"/g, '""')}"`,
+      `"${(m.speakerRoleType || '').replace(/"/g, '""')}"`,
+      `"${(m.speakingExperience || '').replace(/"/g, '""')}"`,
+      `"${(m.speakingTopics || '').replace(/"/g, '""')}"`,
+      `"${(m.demoVideoUrl || '').replace(/"/g, '""')}"`,
+      `"${(m.languages || '').replace(/"/g, '""')}"`,
+      `"${(m.eventAvailability || '').replace(/"/g, '""')}"`,
+      `"${(m.previousExperience || m.experience || '').replace(/"/g, '""')}"`,
+      `"${(m.contributionAreas || '').replace(/"/g, '""')}"`,
+      `"${(m.assignedResponsibilities || '').replace(/"/g, '""')}"`,
+      `"${(m.majorAchievements || '').replace(/"/g, '""')}"`,
+      `"${(m.certifications || '').replace(/"/g, '""')}"`,
+      `"${(m.digitalBadges || '').replace(/"/g, '""')}"`,
+      `"${(m.eventsParticipated || '').replace(/"/g, '""')}"`,
+      `"${(m.additionalNotes || m.notes || '').replace(/"/g, '""')}"`,
       `"${(m.linkedin || '').replace(/"/g, '""')}"`,
       `"${(m.github || '').replace(/"/g, '""')}"`,
       `"${(m.portfolio || '').replace(/"/g, '""')}"`,
       m.formSubmitted ? 'Yes' : 'No',
       m.formSubmittedAt ? `"${new Date(m.formSubmittedAt).toLocaleDateString()}"` : '""',
-      `"${m.status || 'Active'}"`
+      m.consentGiven !== false ? 'Yes' : 'No'
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `founding-members-${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `aws-sbg-members-${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1543,44 +1577,68 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
       {/* ======================================================== */}
       {/* MODAL: VIEW DETAILS */}
       {/* ======================================================== */}
+      {/* MODAL: VIEW MEMBER DETAILS (CENTRALIZED PROFILE) */}
+      {/* ======================================================== */}
       {viewMember && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs text-xs font-sans">
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xl max-w-2xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto animate-fadeIn">
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xl max-w-3xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto animate-fadeIn">
+            {/* Modal Header */}
             <div className="flex items-start justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3.5">
                 {viewMember.photoUrl ? (
-                  <img src={viewMember.photoUrl} alt="Avatar" className="w-12 h-12 rounded-full object-cover border-2 border-[#FF9900]" />
+                  <img src={viewMember.photoUrl} alt="Avatar" className="w-14 h-14 rounded-xl object-cover border-2 border-[#FF9900] shadow-sm" />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center justify-center font-bold text-base">
-                    {(viewMember.fullName || viewMember.name || 'F').charAt(0).toUpperCase()}
+                  <div className="w-14 h-14 rounded-xl bg-amber-100 text-amber-900 border border-amber-300 flex items-center justify-center font-bold text-lg shadow-sm">
+                    {(viewMember.fullName || viewMember.name || 'M').charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div>
-                  <h3 className="font-display font-extrabold text-base text-slate-900">
+                  <h3 className="font-display font-extrabold text-lg text-slate-900">
                     {viewMember.fullName || viewMember.name}
                   </h3>
-                  <div className="flex items-center space-x-2 mt-0.5">
-                    <span className="font-mono text-[11px] text-[#FF9900] font-bold">{viewMember.memberId}</span>
-                    <span className="text-slate-300">•</span>
-                    <span className="text-[11px] text-slate-600 font-semibold">{viewMember.domain}</span>
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <span className="font-mono text-xs text-[#FF9900] bg-orange-50 px-2 py-0.5 rounded border border-orange-200 font-bold">
+                      {viewMember.memberId || 'ID Pending'}
+                    </span>
+                    <span className="text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold">
+                      {viewMember.memberRole || viewMember.role || 'Member'}
+                    </span>
+                    {viewMember.designation && (
+                      <span className="text-[11px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-bold">
+                        {viewMember.designation}
+                      </span>
+                    )}
+                    <span className="text-[11px] bg-blue-50 text-blue-800 px-2 py-0.5 rounded font-semibold">
+                      {viewMember.domain || 'Cloud & Infrastructure'}
+                    </span>
                   </div>
                 </div>
               </div>
-              <button onClick={() => setViewMember(null)} className="text-slate-400 hover:text-slate-600 text-base cursor-pointer">
+              <button onClick={() => setViewMember(null)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">
                 ✕
               </button>
             </div>
 
             {/* Content Details */}
             <div className="space-y-4">
-              {/* Submission Status & PDF trigger */}
-              <div className="p-3.5 bg-amber-50/60 border border-amber-200 rounded-xl flex flex-wrap items-center justify-between gap-2">
+              {/* Status & Actions Banner */}
+              <div className="p-3.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <span className="font-bold text-slate-800 block text-xs">Permanent ID: {viewMember.memberId}</span>
-                  <span className="text-[11px] text-slate-600">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-slate-900 text-xs">Record Status:</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      viewMember.membershipStatus === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'
+                    }`}>
+                      {viewMember.membershipStatus || 'Active'}
+                    </span>
+                    {viewMember.dateOfJoining && (
+                      <span className="text-[11px] text-slate-600">Joined: {viewMember.dateOfJoining}</span>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-slate-500 block mt-0.5">
                     {viewMember.formSubmitted
-                      ? `Submitted on ${viewMember.formSubmittedAt ? new Date(viewMember.formSubmittedAt).toLocaleString() : 'Record'}`
-                      : 'Pending form submission'}
+                      ? `Profile submitted on ${viewMember.formSubmittedAt ? new Date(viewMember.formSubmittedAt).toLocaleString() : 'Record'}`
+                      : 'Pending online profile submission'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1606,80 +1664,202 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
                 </div>
               </div>
 
-              {/* Personal & Academic */}
-              <div className="grid grid-cols-2 gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Email Address</span>
-                  <span className="font-mono font-semibold text-slate-900 select-all">{viewMember.email}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Phone</span>
-                  <span className="font-mono font-semibold text-slate-900">{viewMember.phone || '—'}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">University</span>
-                  <span className="font-semibold text-slate-900">{viewMember.university || '—'}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Course &amp; Branch</span>
-                  <span className="font-semibold text-slate-900">{viewMember.courseBranch || '—'}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Year &amp; Semester</span>
-                  <span className="font-semibold text-slate-900">{viewMember.yearSemester || '—'}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Student ID / UID</span>
-                  <span className="font-mono font-semibold text-slate-900">{viewMember.studentId || '—'}</span>
+              {/* 1. Personal & Academic Information */}
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Personal &amp; Academic Information</span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-slate-500 block">Email Address</span>
+                    <span className="font-mono font-semibold text-slate-900 select-all">{viewMember.email}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-slate-500 block">Phone</span>
+                    <span className="font-mono font-semibold text-slate-900">{viewMember.phone || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-slate-500 block">Student ID / UID</span>
+                    <span className="font-mono font-semibold text-slate-900">{viewMember.studentId || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-slate-500 block">University</span>
+                    <span className="font-semibold text-slate-900">{viewMember.university || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-slate-500 block">Course / Program</span>
+                    <span className="font-semibold text-slate-900">{viewMember.courseBranch || viewMember.course || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-slate-500 block">Year of Study</span>
+                    <span className="font-semibold text-slate-900">{viewMember.yearSemester || '—'}</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Profiles */}
-              <div className="grid grid-cols-3 gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">LinkedIn</span>
-                  {viewMember.linkedin ? (
-                    <a href={viewMember.linkedin} target="_blank" rel="noreferrer" className="text-blue-600 underline font-semibold truncate block">
-                      View Profile
-                    </a>
-                  ) : (
-                    <span className="text-slate-400">Not provided</span>
+              {/* 2. Skills & Professional Links */}
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Skills &amp; Professional Links</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-slate-500 block">Primary Skills</span>
+                    <p className="font-semibold text-slate-900 mt-0.5 whitespace-pre-wrap">{viewMember.skills || '—'}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-slate-500 block">Technical Interests</span>
+                    <p className="font-semibold text-slate-900 mt-0.5 whitespace-pre-wrap">{viewMember.interests || '—'}</p>
+                  </div>
+                  <div className="sm:col-span-2 pt-2 border-t border-slate-200 grid grid-cols-3 gap-2">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase text-slate-500 block">LinkedIn</span>
+                      {viewMember.linkedin ? (
+                        <a href={viewMember.linkedin} target="_blank" rel="noreferrer" className="text-blue-600 underline font-semibold truncate block">
+                          View LinkedIn ↗
+                        </a>
+                      ) : (
+                        <span className="text-slate-400">Not provided</span>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase text-slate-500 block">GitHub</span>
+                      {viewMember.github ? (
+                        <a href={viewMember.github} target="_blank" rel="noreferrer" className="text-slate-800 underline font-semibold truncate block">
+                          View GitHub ↗
+                        </a>
+                      ) : (
+                        <span className="text-slate-400">Not provided</span>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase text-slate-500 block">Portfolio</span>
+                      {viewMember.portfolio ? (
+                        <a href={viewMember.portfolio} target="_blank" rel="noreferrer" className="text-amber-700 underline font-semibold truncate block">
+                          View Portfolio ↗
+                        </a>
+                      ) : (
+                        <span className="text-slate-400">Not provided</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Anchor / Speaker Wing Details (if applicable) */}
+              {(viewMember.speakerRoleType ||
+                viewMember.speakingExperience ||
+                viewMember.demoVideoUrl ||
+                viewMember.speakingTopics ||
+                (viewMember.memberRole && (viewMember.memberRole.includes('Speaker') || viewMember.memberRole.includes('Anchor')))) && (
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 block">🎙️ Anchor &amp; Speaker Wing Details</span>
+                  <div className="p-3.5 bg-purple-50/50 border border-purple-200 rounded-xl space-y-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-purple-800 block">Preferred Role</span>
+                        <span className="font-bold text-slate-900">{viewMember.speakerRoleType || 'Speaker / Anchor'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-purple-800 block">Languages</span>
+                        <span className="font-semibold text-slate-900">{viewMember.languages || 'English & Hindi'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-purple-800 block">Event Availability</span>
+                        <span className="font-semibold text-slate-900">{viewMember.eventAvailability || 'Weekends & Evenings'}</span>
+                      </div>
+                    </div>
+                    {viewMember.speakingTopics && (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-purple-800 block">Topics Can Speak / Host On</span>
+                        <p className="font-medium text-slate-900 whitespace-pre-wrap mt-0.5">{viewMember.speakingTopics}</p>
+                      </div>
+                    )}
+                    {viewMember.speakingExperience && (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-purple-800 block">Hosting / Speaking Experience</span>
+                        <p className="font-medium text-slate-900 whitespace-pre-wrap mt-0.5">{viewMember.speakingExperience}</p>
+                      </div>
+                    )}
+                    {viewMember.demoVideoUrl && (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-purple-800 block">Introduction / Demo Video</span>
+                        <a href={viewMember.demoVideoUrl} target="_blank" rel="noreferrer" className="text-purple-700 underline font-semibold break-all">
+                          {viewMember.demoVideoUrl} ↗
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 4. Experience & Contribution */}
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Experience &amp; SBG Contribution</span>
+                <div className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-2.5">
+                  {viewMember.previousExperience && (
+                    <div>
+                      <span className="text-[10px] font-bold uppercase text-slate-500 block">Previous Club / Event / Project Experience</span>
+                      <p className="font-medium text-slate-800 whitespace-pre-wrap mt-0.5">{viewMember.previousExperience}</p>
+                    </div>
+                  )}
+                  {viewMember.contributionAreas && (
+                    <div>
+                      <span className="text-[10px] font-bold uppercase text-slate-500 block">Areas of Contribution</span>
+                      <p className="font-medium text-slate-800 whitespace-pre-wrap mt-0.5">{viewMember.contributionAreas}</p>
+                    </div>
+                  )}
+                  {viewMember.assignedResponsibilities && (
+                    <div>
+                      <span className="text-[10px] font-bold uppercase text-slate-500 block">Assigned Responsibilities</span>
+                      <p className="font-medium text-slate-800 whitespace-pre-wrap mt-0.5">{viewMember.assignedResponsibilities}</p>
+                    </div>
+                  )}
+                  {viewMember.majorAchievements && (
+                    <div>
+                      <span className="text-[10px] font-bold uppercase text-slate-500 block">Major Contributions / Key Achievements</span>
+                      <p className="font-medium text-slate-800 whitespace-pre-wrap mt-0.5">{viewMember.majorAchievements}</p>
+                    </div>
+                  )}
+                  {viewMember.experience && !viewMember.previousExperience && (
+                    <div>
+                      <span className="text-[10px] font-bold uppercase text-slate-500 block">Experience Summary</span>
+                      <p className="font-medium text-slate-800 whitespace-pre-wrap mt-0.5">{viewMember.experience}</p>
+                    </div>
                   )}
                 </div>
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">GitHub</span>
-                  {viewMember.github ? (
-                    <a href={viewMember.github} target="_blank" rel="noreferrer" className="text-slate-800 underline font-semibold truncate block">
-                      View GitHub
-                    </a>
-                  ) : (
-                    <span className="text-slate-400">Not provided</span>
-                  )}
+              </div>
+
+              {/* 5. Recognition & Records */}
+              {(viewMember.certifications || viewMember.digitalBadges || viewMember.eventsParticipated || viewMember.additionalNotes) && (
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Recognition &amp; Records</span>
+                  <div className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-2.5">
+                    {viewMember.certifications && (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-slate-500 block">Certificates &amp; Recognition</span>
+                        <p className="font-medium text-slate-800 whitespace-pre-wrap mt-0.5">{viewMember.certifications}</p>
+                      </div>
+                    )}
+                    {viewMember.digitalBadges && (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-slate-500 block">Digital Badges Earned</span>
+                        <p className="font-medium text-slate-800 whitespace-pre-wrap mt-0.5">{viewMember.digitalBadges}</p>
+                      </div>
+                    )}
+                    {viewMember.eventsParticipated && (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-slate-500 block">Events / Sessions Participated In</span>
+                        <p className="font-medium text-slate-800 whitespace-pre-wrap mt-0.5">{viewMember.eventsParticipated}</p>
+                      </div>
+                    )}
+                    {viewMember.additionalNotes && (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-slate-500 block">Additional Notes &amp; Remarks</span>
+                        <p className="font-medium text-slate-800 whitespace-pre-wrap mt-0.5">{viewMember.additionalNotes}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Portfolio</span>
-                  {viewMember.portfolio ? (
-                    <a href={viewMember.portfolio} target="_blank" rel="noreferrer" className="text-amber-700 underline font-semibold truncate block">
-                      View Portfolio
-                    </a>
-                  ) : (
-                    <span className="text-slate-400">Not provided</span>
-                  )}
-                </div>
-              </div>
+              )}
 
-              {/* Skills & Experience */}
-              <div className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-1.5">
-                <span className="text-[10px] font-bold uppercase text-slate-500 block">Technical Skills &amp; Tools</span>
-                <p className="font-medium text-slate-800 leading-relaxed whitespace-pre-wrap">{viewMember.skills || 'No skills recorded.'}</p>
-              </div>
-
-              <div className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-1.5">
-                <span className="text-[10px] font-bold uppercase text-slate-500 block">Experience &amp; Contributions</span>
-                <p className="font-medium text-slate-800 leading-relaxed whitespace-pre-wrap">{viewMember.experience || 'No experience details recorded.'}</p>
-              </div>
-
-              {/* Dynamic Answers if present */}
+              {/* Dynamic Custom Answers if present */}
               {viewMember.customAnswers && Object.keys(viewMember.customAnswers).length > 0 && (
                 <div className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-2">
                   <span className="text-[10px] font-bold uppercase text-slate-500 block">Dynamic Custom Question Answers</span>
@@ -1699,12 +1879,14 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
                 </div>
               )}
 
-              {viewMember.bio && (
-                <div className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-1.5">
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Bio &amp; Vision</span>
-                  <p className="font-medium text-slate-800 leading-relaxed whitespace-pre-wrap">{viewMember.bio}</p>
+              {/* Consent Record */}
+              <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl text-[11px] text-emerald-900 flex items-start space-x-2">
+                <span className="text-base leading-none">🛡️</span>
+                <div>
+                  <span className="font-bold block">Consent Confirmed</span>
+                  <span className="text-slate-600">Member confirmed accuracy of information and consented to AWS Student Builder Group community records, verification, recognition, certificates, and badges.</span>
                 </div>
-              )}
+              </div>
             </div>
 
             <div className="pt-3 border-t border-slate-100 flex justify-end space-x-2">
@@ -1862,7 +2044,28 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
-                    Domain Track
+                    Member Type / Role <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={newMemberForm.role}
+                    onChange={(e) => setNewMemberForm({ ...newMemberForm, role: e.target.value })}
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg bg-white text-xs focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                  >
+                    <option value="Founding Member">⭐ Founding Member</option>
+                    <option value="Core Team">⚡ Core Team</option>
+                    <option value="Event Speaker">🎙️ Event Speaker</option>
+                    <option value="Anchor">🎤 Anchor</option>
+                    <option value="Technical Member">💻 Technical Member</option>
+                    <option value="Growth & Community">🚀 Growth &amp; Community</option>
+                    <option value="Media & Creative">🎨 Media &amp; Creative</option>
+                    <option value="Volunteer">🤝 Volunteer</option>
+                    <option value="Member">👤 General Member</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
+                    Team / Domain Track
                   </label>
                   <select
                     value={newMemberForm.domain}
@@ -1875,9 +2078,12 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
                     <option value="Full-Stack Web & Mobile">Full-Stack Web &amp; Mobile</option>
                     <option value="Security & Governance">Security &amp; Governance</option>
                     <option value="Community, Events & Operations">Community &amp; Events</option>
+                    <option value="Media & Content Creation">Media &amp; Content Creation</option>
                   </select>
                 </div>
+              </div>
 
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
                     Student ID / UID
@@ -1890,10 +2096,23 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
                     className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg font-mono text-xs focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
                   />
                 </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">
+                    Course / Branch
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="B.Tech CSE"
+                    value={newMemberForm.courseBranch}
+                    onChange={(e) => setNewMemberForm({ ...newMemberForm, courseBranch: e.target.value })}
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                  />
+                </div>
               </div>
 
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-[11px]">
-                💡 A unique permanent Founding Member ID (<code>FMB-CUUP-XXX</code>) will be automatically allocated upon creation.
+                💡 A unique permanent Member ID (e.g. <code>FMB-CUUP-XXX</code>) will be automatically allocated upon creation.
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex justify-end space-x-2">
@@ -1909,7 +2128,7 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
                   disabled={loading}
                   className="px-5 py-2 bg-[#FF9900] hover:bg-[#E08800] text-white font-bold rounded-lg shadow-xs cursor-pointer"
                 >
-                  Create Founding Member
+                  Create Member Record
                 </button>
               </div>
             </form>
@@ -1918,17 +2137,17 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
       )}
 
       {/* ======================================================== */}
-      {/* MODAL: EDIT FOUNDING MEMBER */}
+      {/* MODAL: EDIT MEMBER (CENTRALIZED PROFILE) */}
       {/* ======================================================== */}
       {editMember && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs text-xs font-sans">
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xl max-w-2xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto animate-fadeIn">
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xl max-w-3xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto animate-fadeIn">
             <div className="flex items-start justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="font-display font-extrabold text-base text-slate-900">
-                  Edit Founding Member ({editMember.fullName || editMember.name})
+                  Edit Member Record — {editMember.fullName || editMember.name}
                 </h3>
-                <span className="text-[11px] font-mono text-amber-800 font-bold">ID: {editMember.memberId}</span>
+                <span className="text-[11px] font-mono text-amber-800 font-bold">Member ID: {editMember.memberId}</span>
               </div>
               <button onClick={() => setEditMember(null)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 ✕
@@ -1936,107 +2155,314 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
             </div>
 
             <form onSubmit={handleUpdateMember} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Full Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={editMember.fullName || editMember.name || ''}
-                    onChange={(e) => setEditMember({ ...editMember, fullName: e.target.value, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Email Address</label>
-                  <input
-                    type="email"
-                    required
-                    value={editMember.email || ''}
-                    onChange={(e) => setEditMember({ ...editMember, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg font-mono text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Phone Number</label>
-                  <input
-                    type="text"
-                    value={editMember.phone || ''}
-                    onChange={(e) => setEditMember({ ...editMember, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Domain</label>
-                  <input
-                    type="text"
-                    value={editMember.domain || ''}
-                    onChange={(e) => setEditMember({ ...editMember, domain: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Role Title</label>
-                  <input
-                    type="text"
-                    value={editMember.role || ''}
-                    onChange={(e) => setEditMember({ ...editMember, role: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg"
-                  />
+              {/* Personal Information */}
+              <div className="space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Personal Information</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Full Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editMember.fullName || editMember.name || ''}
+                      onChange={(e) => setEditMember({ ...editMember, fullName: e.target.value, name: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Email Address *</label>
+                    <input
+                      type="email"
+                      required
+                      value={editMember.email || ''}
+                      onChange={(e) => setEditMember({ ...editMember, email: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg font-mono text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Phone Number</label>
+                    <input
+                      type="text"
+                      value={editMember.phone || ''}
+                      onChange={(e) => setEditMember({ ...editMember, phone: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">University</label>
-                  <input
-                    type="text"
-                    value={editMember.university || ''}
-                    onChange={(e) => setEditMember({ ...editMember, university: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Course / Branch</label>
-                  <input
-                    type="text"
-                    value={editMember.courseBranch || ''}
-                    onChange={(e) => setEditMember({ ...editMember, courseBranch: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Student ID / UID</label>
-                  <input
-                    type="text"
-                    value={editMember.studentId || ''}
-                    onChange={(e) => setEditMember({ ...editMember, studentId: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg font-mono"
-                  />
+              {/* AWS SBG Membership */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">AWS SBG Membership Details</span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Member Role / Type</label>
+                    <input
+                      type="text"
+                      value={editMember.memberRole || editMember.role || ''}
+                      onChange={(e) => setEditMember({ ...editMember, memberRole: e.target.value, role: e.target.value })}
+                      placeholder="e.g. Core Team / Speaker"
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Team / Domain</label>
+                    <input
+                      type="text"
+                      value={editMember.domain || ''}
+                      onChange={(e) => setEditMember({ ...editMember, domain: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Designation</label>
+                    <input
+                      type="text"
+                      value={editMember.designation || ''}
+                      onChange={(e) => setEditMember({ ...editMember, designation: e.target.value })}
+                      placeholder="e.g. Cloud Lead"
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Status</label>
+                    <select
+                      value={editMember.membershipStatus || 'Active'}
+                      onChange={(e) => setEditMember({ ...editMember, membershipStatus: e.target.value as any })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg bg-white"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Probation / Onboarding">Probation / Onboarding</option>
+                      <option value="Alumni / Senior Advisor">Alumni / Senior Advisor</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Technical Skills</label>
-                <textarea
-                  rows={2}
-                  value={editMember.skills || ''}
-                  onChange={(e) => setEditMember({ ...editMember, skills: e.target.value })}
-                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg"
-                />
+              {/* Academic Information */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Academic Information</span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">University</label>
+                    <input
+                      type="text"
+                      value={editMember.university || ''}
+                      onChange={(e) => setEditMember({ ...editMember, university: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Course / Program</label>
+                    <input
+                      type="text"
+                      value={editMember.courseBranch || editMember.course || ''}
+                      onChange={(e) => setEditMember({ ...editMember, courseBranch: e.target.value, course: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Year of Study</label>
+                    <input
+                      type="text"
+                      value={editMember.yearSemester || ''}
+                      onChange={(e) => setEditMember({ ...editMember, yearSemester: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Student ID / UID</label>
+                    <input
+                      type="text"
+                      value={editMember.studentId || ''}
+                      onChange={(e) => setEditMember({ ...editMember, studentId: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Experience &amp; Contributions</label>
-                <textarea
-                  rows={3}
-                  value={editMember.experience || ''}
-                  onChange={(e) => setEditMember({ ...editMember, experience: e.target.value })}
-                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg"
-                />
+              {/* Skills & Profiles */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Skills &amp; Profiles</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Primary Skills</label>
+                    <textarea
+                      rows={2}
+                      value={editMember.skills || ''}
+                      onChange={(e) => setEditMember({ ...editMember, skills: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Technical Interests</label>
+                    <textarea
+                      rows={2}
+                      value={editMember.interests || ''}
+                      onChange={(e) => setEditMember({ ...editMember, interests: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">LinkedIn</label>
+                    <input
+                      type="text"
+                      value={editMember.linkedin || ''}
+                      onChange={(e) => setEditMember({ ...editMember, linkedin: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">GitHub</label>
+                    <input
+                      type="text"
+                      value={editMember.github || ''}
+                      onChange={(e) => setEditMember({ ...editMember, github: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Portfolio</label>
+                    <input
+                      type="text"
+                      value={editMember.portfolio || ''}
+                      onChange={(e) => setEditMember({ ...editMember, portfolio: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Anchor & Speaker Wing */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 block">🎙️ Anchor &amp; Speaker Wing</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Preferred Role</label>
+                    <select
+                      value={editMember.speakerRoleType || ''}
+                      onChange={(e) => setEditMember({ ...editMember, speakerRoleType: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg bg-white"
+                    >
+                      <option value="">None / Not Applicable</option>
+                      <option value="Speaker">Event Speaker</option>
+                      <option value="Anchor">Event Anchor / Host</option>
+                      <option value="Both (Anchor & Speaker)">Both (Anchor &amp; Speaker)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Languages</label>
+                    <input
+                      type="text"
+                      value={editMember.languages || ''}
+                      onChange={(e) => setEditMember({ ...editMember, languages: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Event Availability</label>
+                    <input
+                      type="text"
+                      value={editMember.eventAvailability || ''}
+                      onChange={(e) => setEditMember({ ...editMember, eventAvailability: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Topics Can Speak / Host On</label>
+                    <input
+                      type="text"
+                      value={editMember.speakingTopics || ''}
+                      onChange={(e) => setEditMember({ ...editMember, speakingTopics: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Demo Video URL</label>
+                    <input
+                      type="text"
+                      value={editMember.demoVideoUrl || ''}
+                      onChange={(e) => setEditMember({ ...editMember, demoVideoUrl: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Experience & Contribution */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Experience &amp; SBG Contribution</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Previous Club / Event Experience</label>
+                    <textarea
+                      rows={2}
+                      value={editMember.previousExperience || ''}
+                      onChange={(e) => setEditMember({ ...editMember, previousExperience: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Areas of Contribution</label>
+                    <textarea
+                      rows={2}
+                      value={editMember.contributionAreas || ''}
+                      onChange={(e) => setEditMember({ ...editMember, contributionAreas: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Assigned Responsibilities</label>
+                    <textarea
+                      rows={2}
+                      value={editMember.assignedResponsibilities || ''}
+                      onChange={(e) => setEditMember({ ...editMember, assignedResponsibilities: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Major Achievements</label>
+                    <textarea
+                      rows={2}
+                      value={editMember.majorAchievements || ''}
+                      onChange={(e) => setEditMember({ ...editMember, majorAchievements: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Recognition & Records */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Recognition &amp; Records</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Certifications &amp; Badges</label>
+                    <textarea
+                      rows={2}
+                      value={editMember.certifications || ''}
+                      onChange={(e) => setEditMember({ ...editMember, certifications: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider block text-[10px]">Events Participated / Additional Notes</label>
+                    <textarea
+                      rows={2}
+                      value={editMember.eventsParticipated || editMember.additionalNotes || ''}
+                      onChange={(e) => setEditMember({ ...editMember, eventsParticipated: e.target.value, additionalNotes: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex justify-end space-x-2">

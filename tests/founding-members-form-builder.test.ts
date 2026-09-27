@@ -32,17 +32,17 @@ test('Form Builder Configuration - Form Basic Information Editing & Persistence'
     body: JSON.stringify({
       action: 'save_config',
       config: {
-        title: 'AWS Founding Members Registration 2026',
-        subtitle: 'Official Onboarding Portal',
-        description: 'Updated comprehensive description for founding members.',
-        purpose: 'This form records verified technical specializations and cloud portfolio assets.',
-        instructions: 'Please provide exact GitHub handles and active LinkedIn profile URLs.',
-        organizationName: 'AWS Student Builder Group - CU Uttar Pradesh',
-        headerText: 'FOUNDING BUILDERS REGISTRATION',
-        footerText: 'AWS Cloud Community Portal © 2026',
-        submitButtonText: 'Submit My Official Dossier',
-        successTitle: 'Dossier Successfully Submitted!',
-        successMessage: 'Your Founding Member profile has been updated in the cloud registry.'
+        ...initialConfig,
+        title: 'AWS Student Builder Group – Member Registration & Profile Form',
+        subtitle: 'Member Record • Role Verification • Community Profile',
+        description: 'Official member profile and record form for members of AWS Student Builder Group at Chandigarh University – Uttar Pradesh.',
+        purpose: 'To maintain a centralized and up-to-date record of AWS SBG members, their roles, skills, contributions, participation, and recognition.',
+        organizationName: 'AWS Student Builder Group at Chandigarh University – Uttar Pradesh',
+        headerText: 'AWS STUDENT BUILDER GROUP • CU-UP',
+        submitButtonText: 'Submit Member Profile',
+        successTitle: 'Member Profile Submitted Successfully!',
+        successMessage: 'Thank you for submitting your member profile. Your information has been received for AWS Student Builder Group records. The team may contact you if any verification or clarification is required.',
+        consentText: 'I confirm that the information provided is accurate and up to date. I consent to its use for AWS Student Builder Group membership records, member verification, team coordination, event participation, recognition, certificates, digital badges, and related community activities.'
       }
     })
   });
@@ -51,13 +51,10 @@ test('Form Builder Configuration - Form Basic Information Editing & Persistence'
   const data = await res.json();
   assert.equal(res.status, 200, 'Config update should succeed');
   assert.equal(data.success, true);
-  assert.equal(data.config.title, 'AWS Founding Members Registration 2026');
-  assert.equal(data.config.subtitle, 'Official Onboarding Portal');
-  assert.equal(data.config.description, 'Updated comprehensive description for founding members.');
-  assert.equal(data.config.purpose, 'This form records verified technical specializations and cloud portfolio assets.');
-  assert.equal(data.config.instructions, 'Please provide exact GitHub handles and active LinkedIn profile URLs.');
-  assert.equal(data.config.submitButtonText, 'Submit My Official Dossier');
-  assert.equal(data.config.successTitle, 'Dossier Successfully Submitted!');
+  assert.equal(data.config.title, 'AWS Student Builder Group – Member Registration & Profile Form');
+  assert.equal(data.config.subtitle, 'Member Record • Role Verification • Community Profile');
+  assert.equal(data.config.submitButtonText, 'Submit Member Profile');
+  assert.equal(data.config.successTitle, 'Member Profile Submitted Successfully!');
 
   // Verify persistence via GET endpoint
   const getReq = new Request('http://localhost/api/admin/founding-members/form-config', {
@@ -66,7 +63,7 @@ test('Form Builder Configuration - Form Basic Information Editing & Persistence'
   const getRes = await formConfigGet(getReq);
   const getData = await getRes.json();
   assert.equal(getRes.status, 200);
-  assert.equal(getData.config.purpose, 'This form records verified technical specializations and cloud portfolio assets.');
+  assert.equal(getData.config.purpose, 'To maintain a centralized and up-to-date record of AWS SBG members, their roles, skills, contributions, participation, and recognition.');
 });
 
 test('Form Builder Configuration - CRUD, Reordering, Enable/Disable, Required/Optional & Delete', async () => {
@@ -421,7 +418,7 @@ test('Public Founding Members Form - Profile Photograph Mandatory Requirement En
   const invalidRes = await publicFormPost(invalidReq);
   const invalidData = await invalidRes.json();
   assert.equal(invalidRes.status, 400, 'Submission without photo must be rejected with status 400');
-  assert.ok(invalidData.error?.includes('Profile Photograph is required'));
+  assert.ok(invalidData.error?.toLowerCase().includes('profile photo'));
 
   // 3. Valid submission with photo - MUST succeed
   const validEmail = `with.photo.${Date.now()}@culko.in`;
@@ -440,7 +437,9 @@ test('Public Founding Members Form - Profile Photograph Mandatory Requirement En
       domain: 'Cloud & Infrastructure',
       skills: 'AWS S3, EC2, Lambda, DynamoDB',
       experience: 'Created cloud automation systems',
-      photoUrl: validPhotoBase64
+      photoUrl: validPhotoBase64,
+      consent: true,
+      consentGiven: true
     })
   });
   const validRes = await publicFormPost(validReq);
@@ -453,4 +452,124 @@ test('Public Founding Members Form - Profile Photograph Mandatory Requirement En
   if (created) {
     await db.foundingMembers.deleteById(created.id);
   }
+});
+
+test('Centralized AWS SBG Member Registration & Profile Form - Complete Multi-Section Verification & Consent Enforcement', async () => {
+  // 1. Verify Default Form Config Metadata
+  const config = await db.foundingMemberFormConfig.getConfig();
+  assert.equal(config.title, 'AWS Student Builder Group – Member Registration & Profile Form');
+  assert.equal(config.subtitle, 'Member Record • Role Verification • Community Profile');
+  assert.equal(config.description, 'Official member profile and record form for members of AWS Student Builder Group at Chandigarh University – Uttar Pradesh.');
+  assert.equal(config.purpose, 'To maintain a centralized and up-to-date record of AWS SBG members, their roles, skills, contributions, participation, and recognition.');
+  assert.equal(config.organizationName, 'AWS Student Builder Group at Chandigarh University – Uttar Pradesh');
+  assert.equal(config.headerText, 'AWS STUDENT BUILDER GROUP • CU-UP');
+  assert.equal(config.submitButtonText, 'Submit Member Profile');
+  assert.equal(config.successTitle, 'Member Profile Submitted Successfully!');
+  assert.ok(config.successMessage?.includes('Thank you for submitting your member profile. Your information has been received for AWS Student Builder Group records.'));
+
+  // 2. Rejection when Consent is false or missing
+  const noConsentEmail = `no.consent.${Date.now()}@culko.in`;
+  const noConsentReq = new Request('http://localhost/api/founding-members/form', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      fullName: 'Consent Test User',
+      email: noConsentEmail,
+      phone: '+91 9876543210',
+      university: 'Chandigarh University',
+      courseBranch: 'B.Tech CSE',
+      yearSemester: '3rd Year',
+      studentId: '23BCS1234',
+      domain: 'Cloud & Infrastructure',
+      skills: 'AWS S3',
+      photoUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      consent: false,
+      consentGiven: false
+    })
+  });
+  const noConsentRes = await publicFormPost(noConsentReq);
+  const noConsentData = await noConsentRes.json();
+  assert.equal(noConsentRes.status, 400, 'Submission without consent must be rejected with 400');
+  assert.ok(noConsentData.error?.toLowerCase().includes('consent'));
+
+  // 3. Full Centralized Profile Submission with All 8 Sections & Fields
+  const fullTestEmail = `full.profile.${Date.now()}@culko.in`;
+  const fullProfileReq = new Request('http://localhost/api/founding-members/form', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      // Section 1: Personal Information
+      fullName: 'Alex Rivero',
+      photoUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      email: fullTestEmail,
+      phone: '+91 98765 01234',
+
+      // Section 2: Academic Information
+      university: 'Chandigarh University – Uttar Pradesh',
+      course: 'B.Tech Computer Science & Engineering (Cloud Computing)',
+      yearSemester: '3rd Year (6th Semester)',
+      studentId: '23BCS9911',
+
+      // Section 3: AWS SBG Membership
+      memberRole: 'Event Speaker',
+      role: 'Event Speaker',
+      domain: 'Cloud & Infrastructure',
+      designation: 'Cloud Solutions Evangelist',
+      dateOfJoining: '2024-08-15',
+      membershipStatus: 'Active',
+
+      // Section 4: Skills & Professional Profile
+      skills: 'AWS Architecture, DynamoDB, Lambda, Terraform, Kubernetes',
+      interests: 'Serverless Systems, Distributed Architecture, Cloud Cost Optimization',
+      linkedin: 'https://linkedin.com/in/alexrivero-cloud',
+      github: 'https://github.com/alexrivero-cloud',
+      portfolio: 'https://alexrivero.dev',
+
+      // Section 5: Anchor / Speaker Details (Conditional)
+      speakerRoleType: 'Both (Anchor & Speaker)',
+      speakingExperience: 'Delivered keynote and tech talks at 5+ university cloud sessions.',
+      demoVideoUrl: 'https://youtube.com/watch?v=demo-speaker-video',
+      speakingTopics: 'Getting Started with AWS CDK, Real-World Serverless Architecture',
+      languages: 'English & Hindi (Fluent)',
+      eventAvailability: 'Available on Weekends & Offline Tech Bootcamps',
+
+      // Section 6: Experience & Contribution
+      previousExperience: 'Organized HackCloud 2024 and led 4 AWS hands-on workshops.',
+      contributionAreas: 'Hands-on Labs, Technical Content, Speaker Sessions',
+      assignedResponsibilities: 'Mentoring 50+ students in Cloud Foundations series.',
+      majorAchievements: 'AWS Community Builder & 1st place in AWS Student Hackathon.',
+
+      // Section 7: Recognition & Records
+      certifications: 'AWS Certified Solutions Architect - Associate (SAA-C03), AWS Cloud Practitioner',
+      digitalBadges: 'Cloud Foundations Completion, Event Speaker Honor Badge',
+      eventsParticipated: 'CloudXplore Series 1-4, AWS Builders Day 2025',
+      additionalNotes: 'Ready to lead upcoming AWS Bedrock workshops.',
+
+      // Section 8: Consent
+      consentGiven: true
+    })
+  });
+
+  const fullProfileRes = await publicFormPost(fullProfileReq);
+  const fullProfileData = await fullProfileRes.json();
+  assert.equal(fullProfileRes.status, 200, 'Full profile submission must succeed with status 200');
+  assert.equal(fullProfileData.success, true);
+  assert.ok(fullProfileData.member);
+  assert.ok(fullProfileData.member.memberId, 'Permanent Member ID must be generated');
+
+  // Verify stored data in db
+  const stored = await db.foundingMembers.getByEmail(fullTestEmail);
+  assert.ok(stored, 'Member record must be retrievable from database');
+  assert.equal(stored.fullName, 'Alex Rivero');
+  assert.equal(stored.memberRole, 'Event Speaker');
+  assert.equal(stored.designation, 'Cloud Solutions Evangelist');
+  assert.equal(stored.speakerRoleType, 'Both (Anchor & Speaker)');
+  assert.equal(stored.speakingExperience, 'Delivered keynote and tech talks at 5+ university cloud sessions.');
+  assert.equal(stored.demoVideoUrl, 'https://youtube.com/watch?v=demo-speaker-video');
+  assert.equal(stored.languages, 'English & Hindi (Fluent)');
+  assert.equal(stored.certifications, 'AWS Certified Solutions Architect - Associate (SAA-C03), AWS Cloud Practitioner');
+  assert.equal(stored.consentGiven, true);
+
+  // Clean up
+  await db.foundingMembers.deleteById(stored.id);
 });

@@ -4,33 +4,53 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { FormQuestion, FoundingMemberFormConfig } from '@/types/foundingMember';
 
-export default function FoundingMembersPublicFormPage() {
+export default function MemberRegistrationAndProfileFormPage() {
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [formConfig, setFormConfig] = useState<FoundingMemberFormConfig | null>(null);
   const [questions, setQuestions] = useState<FormQuestion[]>([]);
   const [isPublished, setIsPublished] = useState(true);
 
-  // Stepper state (1 to 5)
+  // Stepper state (1 to 7)
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 5;
+  const totalSteps = 7;
 
   // Form State
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     phone: '',
-    university: 'Chandigarh University',
-    courseBranch: '',
-    yearSemester: '3rd Year / 6th Semester',
-    studentId: '',
     photoUrl: '',
+    university: 'Chandigarh University – Uttar Pradesh',
+    courseBranch: '',
+    yearSemester: '3rd Year',
+    studentId: '',
+    memberRole: 'Founding Member',
+    domain: 'Cloud & Infrastructure',
+    designation: '',
+    memberId: '',
+    dateOfJoining: '',
+    membershipStatus: 'Active',
+    skills: '',
+    interests: '',
     linkedin: '',
     github: '',
     portfolio: '',
-    domain: 'Cloud & Infrastructure',
-    skills: '',
-    experience: '',
-    bio: ''
+    speakerRoleType: 'Anchor',
+    speakingExperience: '',
+    demoVideoUrl: '',
+    speakingTopics: '',
+    languages: 'English, Hindi',
+    eventAvailability: 'Flexible (Weekdays & Weekends)',
+    previousExperience: '',
+    contributionAreas: '',
+    assignedResponsibilities: '',
+    majorAchievements: '',
+    certifications: '',
+    digitalBadges: '',
+    eventsParticipated: '',
+    additionalNotes: '',
+    bio: '',
+    consent: false
   });
 
   const [customAnswers, setCustomAnswers] = useState<Record<string, any>>({});
@@ -46,6 +66,7 @@ export default function FoundingMembersPublicFormPage() {
     memberId: string;
     fullName: string;
     email: string;
+    memberRole: string;
     domain: string;
     formSubmittedAt: string;
   } | null>(null);
@@ -71,6 +92,14 @@ export default function FoundingMembersPublicFormPage() {
     }
     loadConfig();
   }, []);
+
+  // Check if role involves Anchor or Speaker
+  const isAnchorOrSpeaker =
+    formData.memberRole === 'Anchor' ||
+    formData.memberRole === 'Event Speaker' ||
+    formData.domain === 'Anchor & Speaker Wing' ||
+    formData.designation?.toLowerCase().includes('anchor') ||
+    formData.designation?.toLowerCase().includes('speaker');
 
   // Process & compress image via canvas
   const processImageFile = (file: File) => {
@@ -105,7 +134,7 @@ export default function FoundingMembersPublicFormPage() {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.88);
           setPhotoPreview(compressedDataUrl);
           setFormData((prev) => ({ ...prev, photoUrl: compressedDataUrl }));
         }
@@ -125,7 +154,7 @@ export default function FoundingMembersPublicFormPage() {
 
   const downloadPhoto = (dataUrl: string, filename?: string) => {
     if (!dataUrl) return;
-    const cleanName = (filename || formData.fullName || 'founding-member-profile-photo')
+    const cleanName = (filename || formData.fullName || 'aws-sbg-member-photo')
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '-');
     const a = document.createElement('a');
@@ -143,19 +172,6 @@ export default function FoundingMembersPublicFormPage() {
     }));
   };
 
-  const handleCheckboxToggle = (qId: string, option: string) => {
-    setCustomAnswers((prev) => {
-      const currentList: string[] = Array.isArray(prev[qId]) ? [...prev[qId]] : [];
-      const idx = currentList.indexOf(option);
-      if (idx > -1) {
-        currentList.splice(idx, 1);
-      } else {
-        currentList.push(option);
-      }
-      return { ...prev, [qId]: currentList };
-    });
-  };
-
   // Step Validation before progressing
   const validateStep = (step: number): boolean => {
     setSubmitError(null);
@@ -164,16 +180,16 @@ export default function FoundingMembersPublicFormPage() {
         setSubmitError('Please enter your full legal / university name.');
         return false;
       }
+      if (!formData.photoUrl || !formData.photoUrl.trim()) {
+        setSubmitError('Please upload your profile photograph (PNG, JPG, or WEBP).');
+        return false;
+      }
       if (!formData.email.trim() || !formData.email.includes('@')) {
         setSubmitError('Please enter a valid primary email address.');
         return false;
       }
       if (!formData.phone.trim()) {
-        setSubmitError('Please enter your contact / WhatsApp phone number.');
-        return false;
-      }
-      if (!formData.photoUrl || !formData.photoUrl.trim()) {
-        setSubmitError('Please upload your profile photograph (PNG, JPG, or WEBP).');
+        setSubmitError('Please enter your mobile / WhatsApp number.');
         return false;
       }
     } else if (step === 2) {
@@ -182,11 +198,11 @@ export default function FoundingMembersPublicFormPage() {
         return false;
       }
       if (!formData.courseBranch.trim()) {
-        setSubmitError('Please enter your Course & Branch.');
+        setSubmitError('Please enter your Course / Program.');
         return false;
       }
       if (!formData.yearSemester.trim()) {
-        setSubmitError('Please enter your Year / Semester.');
+        setSubmitError('Please select your Year of Study.');
         return false;
       }
       if (!formData.studentId.trim()) {
@@ -194,17 +210,22 @@ export default function FoundingMembersPublicFormPage() {
         return false;
       }
     } else if (step === 3) {
+      if (!formData.memberRole.trim()) {
+        setSubmitError('Please select your Member Type / Role.');
+        return false;
+      }
       if (!formData.domain.trim()) {
-        setSubmitError('Please select your primary Domain / Track of Focus.');
+        setSubmitError('Please select your Team / Domain.');
         return false;
       }
     } else if (step === 4) {
       if (!formData.skills.trim()) {
-        setSubmitError('Please summarize your technical skills and certifications.');
+        setSubmitError('Please summarize your Primary Skills.');
         return false;
       }
-      if (!formData.experience.trim()) {
-        setSubmitError('Please detail your experience and community contributions.');
+    } else if (step === 7) {
+      if (!formData.consent) {
+        setSubmitError('Please confirm and check the consent declaration to submit your profile.');
         return false;
       }
     }
@@ -227,7 +248,13 @@ export default function FoundingMembersPublicFormPage() {
   // Submit Handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateStep(1) || !validateStep(2) || !validateStep(3) || !validateStep(4)) {
+    if (
+      !validateStep(1) ||
+      !validateStep(2) ||
+      !validateStep(3) ||
+      !validateStep(4) ||
+      !validateStep(7)
+    ) {
       return;
     }
 
@@ -248,875 +275,1012 @@ export default function FoundingMembersPublicFormPage() {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        setSubmittedMember(data.member);
         setSubmitSuccess(true);
-        window.scrollTo({ top: 60, behavior: 'smooth' });
+        setSubmittedMember({
+          memberId: data.memberId || data.member?.memberId || 'MEM-CUUP-001',
+          fullName: data.member?.fullName || formData.fullName,
+          email: data.member?.email || formData.email,
+          memberRole: data.member?.memberRole || formData.memberRole,
+          domain: data.member?.domain || formData.domain,
+          formSubmittedAt: data.member?.formSubmittedAt || new Date().toISOString()
+        });
+        window.scrollTo({ top: 80, behavior: 'smooth' });
       } else {
-        setSubmitError(data.error || 'Failed to submit form. Please check your inputs.');
+        setSubmitError(data.error || 'Failed to submit member profile. Please check your information.');
       }
     } catch (err: any) {
-      setSubmitError(err.message || 'A network error occurred while submitting.');
+      setSubmitError(err.message || 'Network error while submitting profile. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const copyPermanentId = () => {
-    if (submittedMember?.memberId) {
-      navigator.clipboard.writeText(submittedMember.memberId);
-      setCopiedId(true);
-      setTimeout(() => setCopiedId(false), 3000);
-    }
-  };
+  const stepTitles = [
+    { num: 1, label: 'Personal Information', icon: '👤' },
+    { num: 2, label: 'Academic Information', icon: '🎓' },
+    { num: 3, label: 'AWS SBG Membership', icon: '⚡' },
+    { num: 4, label: 'Skills & Profile', icon: '🛠️' },
+    { num: 5, label: 'Anchor / Speaker', icon: '🎙️' },
+    { num: 6, label: 'Experience & Impact', icon: '🚀' },
+    { num: 7, label: 'Recognition & Consent', icon: '🏆' }
+  ];
 
-  // Filter extra dynamic questions for Step 4
-  const dynamicExtraQuestions = questions.filter(
-    (q) =>
-      q.enabled &&
-      ![
-        'fullName',
-        'email',
-        'phone',
-        'university',
-        'courseBranch',
-        'yearSemester',
-        'studentId',
-        'photoUrl',
-        'domain',
-        'skills',
-        'experience',
-        'linkedin',
-        'github',
-        'portfolio',
-        'bio'
-      ].includes(q.id)
-  );
+  if (loadingConfig) {
+    return (
+      <div className="min-h-screen bg-[#070D18] text-white flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="w-12 h-12 border-4 border-[#FF9900] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-300 font-medium">Loading AWS Student Builder Group Registration Portal...</p>
+        </div>
+      </div>
+    );
+  }
 
-  // Dynamic values with fallbacks
-  const formTitle = formConfig?.title || 'Founding Members Information Form';
-  const formSubtitle = formConfig?.subtitle || 'Official Registration & Credentials Dossier';
-  const formDesc = formConfig?.description || 'Official registration and profile record for Founding Members of AWS Student Builder Group at Chandigarh University – Uttar Pradesh.';
-  const formPurpose = formConfig?.purpose || 'This form is used to collect and maintain official information of AWS Student Builder Group at Chandigarh University – Uttar Pradesh Founding Members.';
-  const formInstructions = formConfig?.instructions || 'Please fill out your official profile, academic records, domain track, and technical expertise. Your primary email will be used to identify your record.';
-  const formHeaderBadge = formConfig?.headerText || '⭐ AWS STUDENT BUILDER GROUP • CU-UP';
-  const submitBtnText = formConfig?.submitButtonText || 'Submit Founding Member Profile';
-  const successTitleText = formConfig?.successTitle || 'Profile Recorded Successfully!';
-  const successMsgText = formConfig?.successMessage || 'Thank you. Your Founding Member details and domain credentials have been recorded in the central community directory.';
+  if (!isPublished) {
+    return (
+      <div className="min-h-screen bg-[#070D18] text-white flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-[#0D1829] border border-gray-800 rounded-2xl p-8 text-center shadow-2xl">
+          <div className="w-16 h-16 bg-yellow-500/10 text-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+            ⏳
+          </div>
+          <h1 className="text-2xl font-bold mb-2">Registration Temporarily Closed</h1>
+          <p className="text-gray-400 text-sm mb-6">
+            The AWS Student Builder Group Member Registration form is currently offline for administrative maintenance. Please check back later.
+          </p>
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center px-6 py-2.5 bg-[#FF9900] hover:bg-[#E08800] text-gray-950 font-bold rounded-xl text-sm transition-all"
+          >
+            Return to Homepage
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#07131F] text-slate-100 font-sans selection:bg-[#FF9900]/30 selection:text-white py-10 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* 3D Glassmorphic Backdrop Gradients */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-gradient-to-b from-[#FF9900]/15 via-blue-600/10 to-transparent blur-[140px] rounded-full pointer-events-none -z-10" />
-      <div className="absolute bottom-20 right-10 w-[500px] h-[400px] bg-blue-500/10 blur-[150px] rounded-full pointer-events-none -z-10" />
+    <div className="min-h-screen bg-[#070D18] text-gray-100 py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Header Branding Card */}
+        <div className="bg-gradient-to-r from-[#0B172A] via-[#0F1E36] to-[#0B172A] border border-gray-800 rounded-3xl p-6 sm:p-10 mb-8 shadow-2xl relative overflow-hidden">
+          <div className="absolute -top-24 -right-24 w-72 h-72 bg-[#FF9900]/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="max-w-3xl mx-auto space-y-7">
-        {/* Dynamic Brand Header & Form Purpose Banner */}
-        <div className="text-center space-y-3.5">
-          <div className="inline-flex items-center space-x-2 bg-white/5 border border-white/10 px-4 py-1.5 rounded-full text-xs font-mono text-[#FF9900] shadow-sm backdrop-blur-md">
-            <span>{formHeaderBadge}</span>
-          </div>
-
-          <div className="space-y-1">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-[#FF9900] block font-bold">
-              {formSubtitle}
-            </span>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold text-white tracking-tight">
-              {formTitle}
-            </h1>
-          </div>
-
-          <p className="text-xs sm:text-sm text-slate-350 max-w-xl mx-auto leading-relaxed">
-            {formDesc}
-          </p>
-
-          {/* Dynamic Purpose & Instructions Card */}
-          {formPurpose && (
-            <div className="bg-[#0D2235]/80 border border-[#FF9900]/30 rounded-2xl p-4 text-left text-xs max-w-2xl mx-auto space-y-2 shadow-lg backdrop-blur-md">
-              <div className="flex items-start space-x-2.5">
-                <span className="text-base text-[#FF9900] mt-0.5">ℹ️</span>
-                <div className="space-y-1">
-                  <span className="font-bold text-white block text-[11px] uppercase tracking-wider">
-                    Purpose &amp; Instructions
-                  </span>
-                  <p className="text-slate-300 leading-relaxed">{formPurpose}</p>
-                  {formInstructions && (
-                    <p className="text-slate-400 text-[11px] leading-relaxed pt-1 border-t border-white/10 mt-1">
-                      {formInstructions}
-                    </p>
-                  )}
-                </div>
+          <div className="relative z-10">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+              <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-[#FF9900]/15 border border-[#FF9900]/30 text-[#FF9900] text-xs font-bold tracking-wider uppercase">
+                <span className="w-2 h-2 rounded-full bg-[#FF9900] animate-ping"></span>
+                {formConfig?.headerText || 'AWS STUDENT BUILDER GROUP • CU-UP'}
+              </div>
+              <div className="text-xs text-gray-400 bg-gray-900/60 px-3 py-1 rounded-lg border border-gray-800 font-mono">
+                Official Member Portal • 2026
               </div>
             </div>
-          )}
-        </div>
 
-        {/* Loading State */}
-        {loadingConfig && (
-          <div className="bg-[#0D2235]/90 border border-white/10 rounded-2xl p-12 text-center space-y-4 shadow-2xl backdrop-blur-xl">
-            <div className="inline-block animate-spin h-9 w-9 border-3 border-[#FF9900] border-t-transparent rounded-full" />
-            <p className="text-xs text-slate-400 font-mono">Initializing secure Founding Members portal...</p>
-          </div>
-        )}
-
-        {/* Form Draft / Unfinished State */}
-        {!loadingConfig && !isPublished && (
-          <div className="bg-amber-950/40 border border-amber-500/40 rounded-2xl p-8 text-center space-y-4 shadow-xl backdrop-blur-md">
-            <div className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto text-2xl">
-              ⏳
-            </div>
-            <h2 className="text-lg font-bold text-white">Form Temporarily in Draft</h2>
-            <p className="text-xs text-amber-200 max-w-md mx-auto leading-relaxed">
-              The administrator is currently updating the Founding Members form configuration. Please check back shortly.
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight mb-2">
+              {formConfig?.title || 'AWS Student Builder Group – Member Registration & Profile Form'}
+            </h1>
+            <p className="text-base sm:text-lg text-[#FF9900] font-medium mb-3">
+              {formConfig?.subtitle || 'Member Record • Role Verification • Community Profile'}
+            </p>
+            <p className="text-sm sm:text-base text-gray-300 max-w-3xl leading-relaxed">
+              {formConfig?.description ||
+                'Official member profile and record form for members of AWS Student Builder Group at Chandigarh University – Uttar Pradesh.'}
             </p>
           </div>
+        </div>
+
+        {/* Stepper Progress Bar */}
+        {!submitSuccess && (
+          <div className="bg-[#0D1829] border border-gray-800/80 rounded-2xl p-4 sm:p-6 mb-8 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                Step {currentStep} of {totalSteps}:{' '}
+                <span className="text-[#FF9900]">{stepTitles[currentStep - 1]?.label}</span>
+              </span>
+              <span className="text-xs font-mono text-gray-400">
+                {Math.round((currentStep / totalSteps) * 100)}% Completed
+              </span>
+            </div>
+
+            {/* Progress line */}
+            <div className="w-full bg-gray-800 h-2 rounded-full overflow-hidden mb-6">
+              <div
+                className="bg-gradient-to-r from-[#FF9900] to-amber-400 h-full transition-all duration-300 ease-out"
+                style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+              ></div>
+            </div>
+
+            {/* Step icons grid */}
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+              {stepTitles.map((st) => {
+                const isActive = st.num === currentStep;
+                const isPassed = st.num < currentStep;
+                return (
+                  <button
+                    key={st.num}
+                    type="button"
+                    onClick={() => {
+                      if (st.num < currentStep || validateStep(currentStep)) {
+                        setCurrentStep(st.num);
+                      }
+                    }}
+                    className={`flex flex-col items-center gap-1.5 p-2 rounded-xl text-center transition-all ${
+                      isActive
+                        ? 'bg-[#FF9900]/20 border border-[#FF9900] text-white shadow-md'
+                        : isPassed
+                        ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                        : 'bg-gray-900/50 border border-gray-800/60 text-gray-500 hover:border-gray-700'
+                    }`}
+                  >
+                    <span className="text-base sm:text-lg">{isPassed ? '✓' : st.icon}</span>
+                    <span className="text-[10px] font-semibold truncate w-full hidden sm:block">
+                      {st.label.split(' ')[0]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         )}
 
-        {/* Success Confirmation Screen */}
-        {!loadingConfig && isPublished && submitSuccess && submittedMember && (
-          <div className="bg-[#0D2235]/95 border border-emerald-500/40 rounded-3xl p-8 sm:p-10 shadow-2xl space-y-6 text-center animate-fadeIn backdrop-blur-2xl relative overflow-hidden">
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-[#FF9900]/20 rounded-full blur-3xl pointer-events-none" />
+        {/* Global Error Banner */}
+        {submitError && (
+          <div className="mb-6 p-4 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 flex items-start gap-3 text-sm animate-shake">
+            <span className="text-lg">⚠️</span>
+            <div className="flex-1">
+              <p className="font-bold">Please check your inputs:</p>
+              <p>{submitError}</p>
+            </div>
+            <button
+              onClick={() => setSubmitError(null)}
+              className="text-red-400 hover:text-white font-bold text-xs"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600 to-emerald-400 text-white flex items-center justify-center mx-auto text-3xl shadow-lg shadow-emerald-500/20">
+        {/* SUCCESS VIEW */}
+        {submitSuccess && submittedMember ? (
+          <div className="bg-[#0D1829] border border-emerald-500/40 rounded-3xl p-8 sm:p-12 text-center shadow-2xl relative overflow-hidden animate-fade-in">
+            <div className="w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-500 text-emerald-400 flex items-center justify-center text-4xl mx-auto mb-6">
               ✓
             </div>
 
-            <div className="space-y-2">
-              <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-400 font-bold bg-emerald-950/60 px-3 py-1 rounded-full border border-emerald-500/30">
-                Official Submission Verified
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white font-display">
-                {successTitleText}
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-350 max-w-lg mx-auto leading-relaxed">
-                {successMsgText} (Registered: <strong>{submittedMember.fullName}</strong>)
-              </p>
-            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-3">
+              {formConfig?.successTitle || 'Member Profile Submitted Successfully!'}
+            </h2>
+            <p className="text-gray-300 text-sm sm:text-base max-w-2xl mx-auto mb-8 leading-relaxed">
+              {formConfig?.successMessage ||
+                'Thank you for submitting your member profile. Your information has been received for AWS Student Builder Group records. The team may contact you if any verification or clarification is required.'}
+            </p>
 
-            {/* Permanent Member ID Card */}
-            <div className="bg-[#07131F] border border-[#FF9900]/40 rounded-2xl p-5 sm:p-6 text-center max-w-md mx-auto space-y-3 shadow-xl">
-              <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400 block">
-                Permanent Founding Member ID
-              </span>
-              <div className="flex items-center justify-center space-x-3">
-                <span className="text-2xl sm:text-3xl font-mono font-extrabold text-[#FF9900] tracking-wider select-all">
-                  {submittedMember.memberId}
-                </span>
-                <button
-                  type="button"
-                  onClick={copyPermanentId}
-                  className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded cursor-pointer transition-colors"
-                >
-                  {copiedId ? '✓ Copied' : '📋 Copy'}
-                </button>
-              </div>
-              <p className="text-[11px] text-slate-400">
-                Keep this permanent ID for your official AWS SBG records and credential certificates.
-              </p>
-            </div>
-
-            {/* Details Summary Card */}
-            <div className="bg-[#081827]/80 border border-white/10 rounded-xl p-5 text-left text-xs font-sans space-y-3 max-w-lg mx-auto">
-              <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+            {/* Permanent Member ID Badge Card */}
+            <div className="max-w-md mx-auto bg-[#070D18] border border-gray-800 rounded-2xl p-6 mb-8 text-left shadow-inner">
+              <div className="flex items-center gap-4 mb-4">
+                {formData.photoUrl ? (
+                  <img
+                    src={formData.photoUrl}
+                    alt={submittedMember.fullName}
+                    className="w-16 h-16 rounded-xl object-cover border-2 border-[#FF9900]"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-xl bg-gray-800 flex items-center justify-center text-2xl font-bold text-[#FF9900]">
+                    {submittedMember.fullName.charAt(0)}
+                  </div>
+                )}
                 <div>
-                  <span className="font-bold text-white text-sm block">{submittedMember.fullName}</span>
-                  <span className="text-[11px] text-slate-400 font-mono">{submittedMember.email}</span>
+                  <h3 className="font-bold text-white text-lg">{submittedMember.fullName}</h3>
+                  <p className="text-xs text-[#FF9900] font-medium">
+                    {submittedMember.memberRole} • {submittedMember.domain}
+                  </p>
+                  <p className="text-xs text-gray-400">{submittedMember.email}</p>
                 </div>
-                <span className="px-2.5 py-1 bg-[#FF9900]/20 text-[#FF9900] border border-[#FF9900]/30 rounded text-[10px] font-bold">
-                  {submittedMember.domain}
-                </span>
               </div>
-              <div className="text-[11px] text-slate-400 flex items-center justify-between">
-                <span>Recorded: {new Date(submittedMember.formSubmittedAt).toLocaleString()}</span>
-                <span className="text-emerald-400 font-bold">Status: Active</span>
-              </div>
-            </div>
 
-            <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
-              {photoPreview && (
+              <div className="p-3 bg-gray-900/90 rounded-xl border border-gray-800 flex items-center justify-between gap-2">
+                <div>
+                  <div className="text-[10px] uppercase font-bold text-gray-400">Assigned Member ID</div>
+                  <div className="font-mono text-base font-bold text-white tracking-wider">
+                    {submittedMember.memberId}
+                  </div>
+                </div>
                 <button
                   type="button"
-                  onClick={() => downloadPhoto(photoPreview, `${submittedMember.fullName}-profile-photo`)}
-                  className="px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-lg text-xs font-bold shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                  onClick={() => {
+                    navigator.clipboard.writeText(submittedMember.memberId);
+                    setCopiedId(true);
+                    setTimeout(() => setCopiedId(false), 3000);
+                  }}
+                  className="px-3 py-1.5 bg-[#FF9900]/20 hover:bg-[#FF9900] text-[#FF9900] hover:text-gray-950 font-bold rounded-lg text-xs transition-all"
                 >
-                  <span>📸 Download Profile Photo</span>
+                  {copiedId ? 'Copied! ✓' : 'Copy ID'}
                 </button>
+              </div>
+
+              {formData.photoUrl && (
+                <div className="mt-4 pt-3 border-t border-gray-800/80 flex items-center justify-between">
+                  <span className="text-xs text-gray-400">Uploaded Profile Photo:</span>
+                  <button
+                    type="button"
+                    onClick={() => downloadPhoto(formData.photoUrl, `${submittedMember.memberId}-photo`)}
+                    className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1.5"
+                  >
+                    <span>⬇️</span> Download Photo
+                  </button>
+                </div>
               )}
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-4">
               <Link
                 href="/"
-                className="px-6 py-2.5 bg-[#FF9900] hover:bg-[#E08800] text-white rounded-lg text-xs font-bold shadow-lg transition-all"
+                className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl text-sm transition-all"
               >
-                AWS SBG CU-UP Home &rarr;
+                Return to Home
+              </Link>
+              <Link
+                href="/events"
+                className="px-6 py-3 bg-[#FF9900] hover:bg-[#E08800] text-gray-950 font-extrabold rounded-xl text-sm transition-all"
+              >
+                Explore Upcoming Events & Workshops
               </Link>
             </div>
           </div>
-        )}
+        ) : (
+          /* MULTI-STEP FORM CONTAINER */
+          <form onSubmit={handleSubmit} className="bg-[#0D1829] border border-gray-800 rounded-3xl p-6 sm:p-10 shadow-2xl">
+            {/* STEP 1: PERSONAL INFORMATION */}
+            {currentStep === 1 && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="border-b border-gray-800 pb-4">
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2.5">
+                    <span className="w-8 h-8 rounded-lg bg-[#FF9900]/20 text-[#FF9900] flex items-center justify-center text-sm font-black">
+                      1
+                    </span>
+                    Personal Information
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Please provide your legal contact identity and upload a clear professional headshot photograph.
+                  </p>
+                </div>
 
-        {/* Main 3D Multi-Step Form */}
-        {!loadingConfig && isPublished && !submitSuccess && (
-          <div className="space-y-6">
-            {/* 3D Progress Stepper */}
-            <div className="bg-[#0D2235]/90 border border-white/10 rounded-2xl p-4 shadow-xl backdrop-blur-xl">
-              <div className="grid grid-cols-5 gap-2 text-center text-xs">
-                {[
-                  { step: 1, label: 'Personal', icon: '👤' },
-                  { step: 2, label: 'Academic', icon: '🎓' },
-                  { step: 3, label: 'Domain', icon: '⚡' },
-                  { step: 4, label: 'Expertise', icon: '🛠️' },
-                  { step: 5, label: 'Review', icon: '✓' }
-                ].map((s) => {
-                  const isActive = currentStep === s.step;
-                  const isDone = currentStep > s.step;
-                  return (
-                    <button
-                      key={s.step}
-                      type="button"
-                      onClick={() => {
-                        if (s.step < currentStep || validateStep(currentStep)) {
-                          setCurrentStep(s.step);
+                {/* Profile Photo Upload Field */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-200 mb-2">
+                    Profile Photo <span className="text-red-400">*</span>
+                  </label>
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDraggingPhoto(true);
+                    }}
+                    onDragLeave={() => setIsDraggingPhoto(false)}
+                    onDrop={handlePhotoDrop}
+                    className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all ${
+                      isDraggingPhoto
+                        ? 'border-[#FF9900] bg-[#FF9900]/10'
+                        : photoPreview
+                        ? 'border-emerald-500/50 bg-emerald-500/5'
+                        : 'border-gray-700 bg-gray-900/40 hover:border-gray-600'
+                    }`}
+                  >
+                    {photoPreview ? (
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                        <img
+                          src={photoPreview}
+                          alt="Profile Preview"
+                          className="w-28 h-28 rounded-2xl object-cover border-2 border-[#FF9900] shadow-md"
+                        />
+                        <div className="text-left space-y-2">
+                          <div className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
+                            <span>✓</span> Photo processed & compressed successfully
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-xs font-semibold text-gray-200 rounded-lg"
+                            >
+                              Change Photo
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => downloadPhoto(photoPreview, `${formData.fullName || 'member'}-profile`)}
+                              className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-xs font-semibold text-blue-300 rounded-lg flex items-center gap-1"
+                            >
+                              <span>⬇️</span> Download Photo
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                        <div className="w-14 h-14 rounded-2xl bg-gray-800 text-gray-400 flex items-center justify-center text-2xl mb-3">
+                          📷
+                        </div>
+                        <p className="text-sm font-semibold text-gray-200">
+                          Click to upload or drag & drop profile photo
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          PNG, JPG, or WEBP (Passport/headshot format recommended)
+                        </p>
+                      </div>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png, image/jpeg, image/webp"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          processImageFile(e.target.files[0]);
                         }
                       }}
-                      className={`p-2 rounded-xl transition-all flex flex-col items-center justify-center space-y-1 ${
-                        isActive
-                          ? 'bg-[#FF9900] text-white font-bold shadow-md shadow-orange-500/20'
-                          : isDone
-                          ? 'bg-white/10 text-emerald-300 font-medium hover:bg-white/15'
-                          : 'bg-white/5 text-slate-400 opacity-60'
-                      }`}
-                    >
-                      <span className="text-sm">{isDone ? '✓' : s.icon}</span>
-                      <span className="text-[10px] hidden sm:block">{s.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Progress Line */}
-              <div className="w-full bg-white/10 h-1.5 rounded-full mt-3 overflow-hidden">
-                <div
-                  className="bg-[#FF9900] h-full transition-all duration-300 ease-out"
-                  style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Error Message */}
-            {submitError && (
-              <div className="bg-red-950/60 border border-red-500/40 rounded-xl p-4 text-xs text-red-200 flex items-center justify-between shadow-lg animate-shake">
-                <div className="flex items-center space-x-2">
-                  <span>⚠️</span>
-                  <span>{submitError}</span>
+                    />
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSubmitError(null)}
-                  className="opacity-70 hover:opacity-100 cursor-pointer"
-                >
-                  ✕
-                </button>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Full Name <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      placeholder="e.g. Alex Sharma"
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Email Address <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="member@culko.in or personal email"
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                    Mobile / WhatsApp Number <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="+91 98765 43210"
+                    className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                  />
+                  <p className="text-[11px] text-gray-500 mt-1">Used for official community alerts & emergency coordination.</p>
+                </div>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* STEP 1: Personal & Contact */}
-              {currentStep === 1 && (
-                <div className="bg-[#0D2235]/90 border border-white/10 rounded-2xl p-6 sm:p-8 space-y-5 shadow-2xl backdrop-blur-xl animate-fadeIn">
-                  <div className="border-b border-white/10 pb-3 flex items-center justify-between">
-                    <div>
-                      <h2 className="font-display font-extrabold text-base text-white flex items-center gap-2">
-                        <span>👤 Step 1: Personal &amp; Identification</span>
-                      </h2>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        Your primary email is used to uniquely identify and match your founding member record.
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-mono text-[#FF9900] bg-[#FF9900]/10 px-2.5 py-1 rounded-full border border-[#FF9900]/30 font-bold">
-                      1 / 5
+            {/* STEP 2: ACADEMIC INFORMATION */}
+            {currentStep === 2 && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="border-b border-gray-800 pb-4">
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2.5">
+                    <span className="w-8 h-8 rounded-lg bg-[#FF9900]/20 text-[#FF9900] flex items-center justify-center text-sm font-black">
+                      2
                     </span>
+                    Academic Information
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Your institutional affiliation, degree program, and official university identification number.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      University / Institute <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.university}
+                      onChange={(e) => setFormData({ ...formData, university: e.target.value })}
+                      placeholder="Chandigarh University – Uttar Pradesh"
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                    {/* Full Name */}
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <label className="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">
-                        Full Legal / University Name <span className="text-[#FF9900]">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. John Doe"
-                        value={formData.fullName}
-                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-[#07131F] border border-white/15 rounded-lg text-white focus:outline-none focus:border-[#FF9900] text-xs transition-colors"
-                      />
-                    </div>
-
-                    {/* Email */}
-                    <div className="space-y-1.5">
-                      <label className="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">
-                        Primary / Official Email <span className="text-[#FF9900]">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        placeholder="member@culko.in or personal"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-[#07131F] border border-white/15 rounded-lg text-white font-mono text-xs focus:outline-none focus:border-[#FF9900] transition-colors"
-                      />
-                      <span className="text-[10px] text-slate-400 block">
-                        Used to match your Founding Member record in the database.
-                      </span>
-                    </div>
-
-                    {/* Phone */}
-                    <div className="space-y-1.5">
-                      <label className="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">
-                        WhatsApp / Contact Phone <span className="text-[#FF9900]">*</span>
-                      </label>
-                      <input
-                        type="tel"
-                        required
-                        placeholder="+91 98765 43210"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-[#07131F] border border-white/15 rounded-lg text-white font-mono text-xs focus:outline-none focus:border-[#FF9900] transition-colors"
-                      />
-                    </div>
-
-                    {/* Photo Upload with Drag & Drop */}
-                    <div className="sm:col-span-2 space-y-2 pt-2">
-                      <label className="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">
-                        Profile Photograph (Included in Official PDF Dossier) <span className="text-[#FF9900]">*</span>
-                      </label>
-                      <div
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          setIsDraggingPhoto(true);
-                        }}
-                        onDragLeave={() => setIsDraggingPhoto(false)}
-                        onDrop={handlePhotoDrop}
-                        onClick={() => fileInputRef.current?.click()}
-                        className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
-                          isDraggingPhoto
-                            ? 'border-[#FF9900] bg-[#FF9900]/10'
-                            : !formData.photoUrl && submitError
-                            ? 'border-red-500/60 bg-red-950/20 hover:border-red-400'
-                            : 'border-white/20 bg-[#07131F]/80 hover:border-white/40'
-                        }`}
-                      >
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/png, image/jpeg, image/webp"
-                          className="hidden"
-                          onChange={(e) => {
-                            if (e.target.files && e.target.files[0]) {
-                              processImageFile(e.target.files[0]);
-                            }
-                          }}
-                        />
-
-                        {photoPreview ? (
-                          <div className="flex items-center justify-center space-x-4">
-                            <img
-                              src={photoPreview}
-                              alt="Profile Preview"
-                              className="w-16 h-16 rounded-full object-cover border-2 border-[#FF9900] shadow-md"
-                            />
-                            <div className="text-left space-y-1">
-                              <span className="text-xs font-bold text-white block">Photo attached &amp; optimized</span>
-                              <span className="text-[10px] text-slate-400 block">Click or drag a new image to replace</span>
-                              <div className="flex items-center space-x-3 pt-0.5">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    downloadPhoto(photoPreview, `${formData.fullName || 'member'}-profile-photo`);
-                                  }}
-                                  className="text-[10px] text-[#FF9900] hover:text-amber-300 font-bold flex items-center gap-1 cursor-pointer transition-colors"
-                                >
-                                  <span>⬇️ Download Photo</span>
-                                </button>
-                                <span className="text-slate-600">•</span>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setPhotoPreview('');
-                                    setFormData((prev) => ({ ...prev, photoUrl: '' }));
-                                  }}
-                                  className="text-[10px] text-red-400 hover:text-red-300 underline cursor-pointer"
-                                >
-                                  Remove Photo
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="space-y-1.5">
-                            <span className="text-2xl block">📸</span>
-                            <span className="text-xs font-semibold text-slate-300 block">
-                              Click or Drag &amp; Drop Profile Photo here <span className="text-[#FF9900] font-bold">*</span>
-                            </span>
-                            <span className="text-[10px] text-slate-400 block">
-                              PNG, JPG, or WEBP (Mandatory for Official ID &amp; PDF Dossier)
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Course / Program <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.courseBranch}
+                      onChange={(e) => setFormData({ ...formData, courseBranch: e.target.value })}
+                      placeholder="e.g. B.Tech CSE (Cloud Computing), BCA, MCA..."
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    />
                   </div>
                 </div>
-              )}
 
-              {/* STEP 2: Academic Credentials */}
-              {currentStep === 2 && (
-                <div className="bg-[#0D2235]/90 border border-white/10 rounded-2xl p-6 sm:p-8 space-y-5 shadow-2xl backdrop-blur-xl animate-fadeIn">
-                  <div className="border-b border-white/10 pb-3 flex items-center justify-between">
-                    <div>
-                      <h2 className="font-display font-extrabold text-base text-white flex items-center gap-2">
-                        <span>🎓 Step 2: Academic Credentials</span>
-                      </h2>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        Institutional details and student identity records.
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-mono text-[#FF9900] bg-[#FF9900]/10 px-2.5 py-1 rounded-full border border-[#FF9900]/30 font-bold">
-                      2 / 5
-                    </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Year of Study <span className="text-red-400">*</span>
+                    </label>
+                    <select
+                      value={formData.yearSemester}
+                      onChange={(e) => setFormData({ ...formData, yearSemester: e.target.value })}
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    >
+                      <option value="1st Year">1st Year</option>
+                      <option value="2nd Year">2nd Year</option>
+                      <option value="3rd Year">3rd Year</option>
+                      <option value="4th Year">4th Year</option>
+                      <option value="Postgraduate / Alumni">Postgraduate / Alumni</option>
+                    </select>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                    {/* University */}
-                    <div className="space-y-1.5">
-                      <label className="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">
-                        University / Institute <span className="text-[#FF9900]">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Chandigarh University"
-                        value={formData.university}
-                        onChange={(e) => setFormData({ ...formData, university: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-[#07131F] border border-white/15 rounded-lg text-white focus:outline-none focus:border-[#FF9900] text-xs transition-colors"
-                      />
-                    </div>
-
-                    {/* Course & Branch */}
-                    <div className="space-y-1.5">
-                      <label className="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">
-                        Course / Branch / Degree <span className="text-[#FF9900]">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. B.Tech CSE (Cloud Computing)"
-                        value={formData.courseBranch}
-                        onChange={(e) => setFormData({ ...formData, courseBranch: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-[#07131F] border border-white/15 rounded-lg text-white focus:outline-none focus:border-[#FF9900] text-xs transition-colors"
-                      />
-                    </div>
-
-                    {/* Year & Semester */}
-                    <div className="space-y-1.5">
-                      <label className="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">
-                        Academic Year &amp; Semester <span className="text-[#FF9900]">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. 3rd Year / 6th Semester"
-                        value={formData.yearSemester}
-                        onChange={(e) => setFormData({ ...formData, yearSemester: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-[#07131F] border border-white/15 rounded-lg text-white focus:outline-none focus:border-[#FF9900] text-xs transition-colors"
-                      />
-                    </div>
-
-                    {/* Roll Number / UID */}
-                    <div className="space-y-1.5">
-                      <label className="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">
-                        Student ID / Roll Number (UID) <span className="text-[#FF9900]">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. 23BCS1001"
-                        value={formData.studentId}
-                        onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-[#07131F] border border-white/15 rounded-lg text-white font-mono text-xs focus:outline-none focus:border-[#FF9900] transition-colors"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Student ID / UID <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.studentId}
+                      onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                      placeholder="e.g. 23BCS10001"
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors font-mono"
+                    />
                   </div>
                 </div>
-              )}
-
-              {/* STEP 3: Domain & Online Profiles */}
-              {currentStep === 3 && (
-                <div className="bg-[#0D2235]/90 border border-white/10 rounded-2xl p-6 sm:p-8 space-y-5 shadow-2xl backdrop-blur-xl animate-fadeIn">
-                  <div className="border-b border-white/10 pb-3 flex items-center justify-between">
-                    <div>
-                      <h2 className="font-display font-extrabold text-base text-white flex items-center gap-2">
-                        <span>⚡ Step 3: Domain Track &amp; Online Presence</span>
-                      </h2>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        Select your specialization track within AWS SBG and link your public profiles.
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-mono text-[#FF9900] bg-[#FF9900]/10 px-2.5 py-1 rounded-full border border-[#FF9900]/30 font-bold">
-                      3 / 5
-                    </span>
-                  </div>
-
-                  <div className="space-y-4 text-xs">
-                    {/* Domain Selection */}
-                    <div className="space-y-1.5">
-                      <label className="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">
-                        Primary Domain / Track of Focus <span className="text-[#FF9900]">*</span>
-                      </label>
-                      <select
-                        value={formData.domain}
-                        onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-[#07131F] border border-white/15 rounded-lg text-white focus:outline-none focus:border-[#FF9900] text-xs transition-colors font-medium"
-                      >
-                        <option value="Cloud & Infrastructure">Cloud &amp; Infrastructure (Core AWS / Architecture)</option>
-                        <option value="AI / ML & Data">AI / ML &amp; Data Engineering (SageMaker / Bedrock)</option>
-                        <option value="DevOps & SRE">DevOps &amp; SRE (CI/CD / Containers / Automation)</option>
-                        <option value="Full-Stack Web & Mobile">Full-Stack Web &amp; Mobile Development</option>
-                        <option value="Security & Governance">Cloud Security &amp; IAM Governance</option>
-                        <option value="Community, Events & Operations">Community, Events &amp; Operations</option>
-                        <option value="Content & Technical Documentation">Content &amp; Documentation</option>
-                        <option value="Design & Creative Media">Design &amp; Creative Media</option>
-                      </select>
-                    </div>
-
-                    {/* Social Profiles Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                      <div className="space-y-1.5">
-                        <label className="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">
-                          LinkedIn URL
-                        </label>
-                        <input
-                          type="url"
-                          placeholder="https://linkedin.com/in/username"
-                          value={formData.linkedin}
-                          onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
-                          className="w-full px-3 py-2 bg-[#07131F] border border-white/15 rounded-lg text-white font-mono text-[11px] focus:outline-none focus:border-[#FF9900]"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">
-                          GitHub URL
-                        </label>
-                        <input
-                          type="url"
-                          placeholder="https://github.com/username"
-                          value={formData.github}
-                          onChange={(e) => setFormData({ ...formData, github: e.target.value })}
-                          className="w-full px-3 py-2 bg-[#07131F] border border-white/15 rounded-lg text-white font-mono text-[11px] focus:outline-none focus:border-[#FF9900]"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">
-                          Portfolio / Website
-                        </label>
-                        <input
-                          type="url"
-                          placeholder="https://yourportfolio.dev"
-                          value={formData.portfolio}
-                          onChange={(e) => setFormData({ ...formData, portfolio: e.target.value })}
-                          className="w-full px-3 py-2 bg-[#07131F] border border-white/15 rounded-lg text-white font-mono text-[11px] focus:outline-none focus:border-[#FF9900]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 4: Technical Expertise, Experience & Dynamic Questions */}
-              {currentStep === 4 && (
-                <div className="bg-[#0D2235]/90 border border-white/10 rounded-2xl p-6 sm:p-8 space-y-5 shadow-2xl backdrop-blur-xl animate-fadeIn">
-                  <div className="border-b border-white/10 pb-3 flex items-center justify-between">
-                    <div>
-                      <h2 className="font-display font-extrabold text-base text-white flex items-center gap-2">
-                        <span>🛠️ Step 4: Technical Expertise &amp; Custom Questions</span>
-                      </h2>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        Details of your core skills, hands-on contributions, and builder background.
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-mono text-[#FF9900] bg-[#FF9900]/10 px-2.5 py-1 rounded-full border border-[#FF9900]/30 font-bold">
-                      4 / 5
-                    </span>
-                  </div>
-
-                  <div className="space-y-4 text-xs">
-                    {/* Technical Skills */}
-                    <div className="space-y-1.5">
-                      <label className="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">
-                        Core Technical Skills &amp; Certifications <span className="text-[#FF9900]">*</span>
-                      </label>
-                      <textarea
-                        rows={3}
-                        required
-                        placeholder="e.g. AWS Core Services, IAM, S3, EC2, Lambda, Docker, Next.js, Python, TypeScript..."
-                        value={formData.skills}
-                        onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-[#07131F] border border-white/15 rounded-lg text-white focus:outline-none focus:border-[#FF9900] leading-relaxed"
-                      />
-                    </div>
-
-                    {/* Past Experience & Contributions */}
-                    <div className="space-y-1.5">
-                      <label className="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">
-                        Experience &amp; Community Contributions <span className="text-[#FF9900]">*</span>
-                      </label>
-                      <textarea
-                        rows={3}
-                        required
-                        placeholder="Describe your hands-on cloud projects, hackathons, workshops conducted, or community involvement..."
-                        value={formData.experience}
-                        onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-[#07131F] border border-white/15 rounded-lg text-white focus:outline-none focus:border-[#FF9900] leading-relaxed"
-                      />
-                    </div>
-
-                    {/* Dynamic Questions configured via Admin Form Builder */}
-                    {dynamicExtraQuestions.map((q) => (
-                      <div key={q.id} className="space-y-1.5 pt-1">
-                        <label className="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">
-                          {q.label} {q.required && <span className="text-[#FF9900]">*</span>}
-                        </label>
-                        {q.helpText && <p className="text-[10px] text-slate-400">{q.helpText}</p>}
-
-                        {/* Text / URL / Email / Phone / Number / Date */}
-                        {(q.type === 'text' ||
-                          q.type === 'email' ||
-                          q.type === 'phone' ||
-                          q.type === 'number' ||
-                          q.type === 'url' ||
-                          q.type === 'date') && (
-                          <input
-                            type={q.type === 'number' ? 'number' : q.type === 'date' ? 'date' : 'text'}
-                            required={q.required}
-                            placeholder={q.placeholder || ''}
-                            value={customAnswers[q.id] || ''}
-                            onChange={(e) => handleCustomAnswerChange(q.id, e.target.value)}
-                            className="w-full px-3.5 py-2.5 bg-[#07131F] border border-white/15 rounded-lg text-white focus:outline-none focus:border-[#FF9900]"
-                          />
-                        )}
-
-                        {/* Long Text */}
-                        {q.type === 'textarea' && (
-                          <textarea
-                            rows={3}
-                            required={q.required}
-                            placeholder={q.placeholder || ''}
-                            value={customAnswers[q.id] || ''}
-                            onChange={(e) => handleCustomAnswerChange(q.id, e.target.value)}
-                            className="w-full px-3.5 py-2.5 bg-[#07131F] border border-white/15 rounded-lg text-white focus:outline-none focus:border-[#FF9900]"
-                          />
-                        )}
-
-                        {/* Dropdown */}
-                        {q.type === 'dropdown' && (
-                          <select
-                            required={q.required}
-                            value={customAnswers[q.id] || ''}
-                            onChange={(e) => handleCustomAnswerChange(q.id, e.target.value)}
-                            className="w-full px-3.5 py-2.5 bg-[#07131F] border border-white/15 rounded-lg text-white focus:outline-none focus:border-[#FF9900]"
-                          >
-                            <option value="">{q.placeholder || 'Select an option...'}</option>
-                            {(q.options || []).map((opt) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-
-                        {/* Radio / Multiple Choice */}
-                        {q.type === 'radio' && (
-                          <div className="space-y-1.5 pt-1">
-                            {(q.options || []).map((opt) => (
-                              <label key={opt} className="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
-                                <input
-                                  type="radio"
-                                  name={q.id}
-                                  value={opt}
-                                  checked={customAnswers[q.id] === opt}
-                                  onChange={() => handleCustomAnswerChange(q.id, opt)}
-                                  className="text-[#FF9900] focus:ring-[#FF9900]"
-                                />
-                                <span>{opt}</span>
-                              </label>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Checkbox / Multi-Select */}
-                        {q.type === 'checkbox' && (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                            {(q.options || []).map((opt) => {
-                              const checked = Array.isArray(customAnswers[q.id]) && customAnswers[q.id].includes(opt);
-                              return (
-                                <label
-                                  key={opt}
-                                  className={`p-2.5 rounded-lg border flex items-center space-x-2 cursor-pointer transition-colors ${
-                                    checked
-                                      ? 'bg-[#FF9900]/15 border-[#FF9900] text-white'
-                                      : 'bg-[#07131F] border-white/10 text-slate-300 hover:border-white/20'
-                                  }`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={() => handleCheckboxToggle(q.id, opt)}
-                                    className="text-[#FF9900] focus:ring-[#FF9900] rounded"
-                                  />
-                                  <span className="text-xs">{opt}</span>
-                                </label>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-
-                    {/* Bio & Vision */}
-                    <div className="space-y-1.5 pt-1">
-                      <label className="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">
-                        Bio &amp; Vision for AWS SBG (Optional)
-                      </label>
-                      <textarea
-                        rows={2}
-                        placeholder="Share any other aspirations or closing thoughts..."
-                        value={formData.bio}
-                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-[#07131F] border border-white/15 rounded-lg text-white focus:outline-none focus:border-[#FF9900]"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 5: Review & Submit */}
-              {currentStep === 5 && (
-                <div className="bg-[#0D2235]/90 border border-white/10 rounded-2xl p-6 sm:p-8 space-y-5 shadow-2xl backdrop-blur-xl animate-fadeIn">
-                  <div className="border-b border-white/10 pb-3 flex items-center justify-between">
-                    <div>
-                      <h2 className="font-display font-extrabold text-base text-white flex items-center gap-2">
-                        <span>📋 Step 5: Review Profile &amp; Confirm</span>
-                      </h2>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        Please review your details before final submission.
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-mono text-[#FF9900] bg-[#FF9900]/10 px-2.5 py-1 rounded-full border border-[#FF9900]/30 font-bold">
-                      5 / 5
-                    </span>
-                  </div>
-
-                  {/* Summary Breakdown Card */}
-                  <div className="bg-[#07131F] border border-white/10 rounded-xl p-5 space-y-4 text-xs font-sans">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                      <div className="flex items-center space-x-3">
-                        {photoPreview ? (
-                          <img
-                            src={photoPreview}
-                            alt="Avatar"
-                            className="w-12 h-12 rounded-full object-cover border border-[#FF9900]"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-amber-500/20 text-[#FF9900] border border-[#FF9900]/40 flex items-center justify-center font-bold text-base">
-                            {formData.fullName.charAt(0).toUpperCase() || 'F'}
-                          </div>
-                        )}
-                        <div>
-                          <h3 className="font-bold text-white text-sm">{formData.fullName}</h3>
-                          <span className="text-[#FF9900] font-semibold text-[11px]">{formData.domain}</span>
-                        </div>
-                      </div>
-                      {photoPreview && (
-                        <button
-                          type="button"
-                          onClick={() => downloadPhoto(photoPreview, `${formData.fullName || 'member'}-profile-photo`)}
-                          className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-amber-300 border border-white/10 rounded text-[10px] font-bold transition-colors flex items-center gap-1 cursor-pointer"
-                        >
-                          <span>⬇️ Download Photo</span>
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-300">
-                      <div>
-                        <span className="text-[10px] uppercase font-bold text-slate-500 block">Primary Email</span>
-                        <span className="font-mono text-white select-all">{formData.email}</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] uppercase font-bold text-slate-500 block">Phone</span>
-                        <span className="font-mono text-white">{formData.phone}</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] uppercase font-bold text-slate-500 block">University &amp; Branch</span>
-                        <span className="text-white">{formData.university} • {formData.courseBranch}</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] uppercase font-bold text-slate-500 block">UID / Roll Number</span>
-                        <span className="font-mono text-white">{formData.studentId}</span>
-                      </div>
-                    </div>
-
-                    <div className="pt-2 border-t border-white/10 space-y-2">
-                      <span className="text-[10px] uppercase font-bold text-slate-500 block">Skills &amp; Contributions</span>
-                      <p className="text-slate-300 leading-relaxed text-[11px] whitespace-pre-wrap">{formData.skills}</p>
-                    </div>
-                  </div>
-
-                  <div className="p-3.5 bg-amber-950/40 border border-amber-500/30 rounded-xl text-[11px] text-amber-200">
-                    🛡️ By submitting, you confirm that the information provided is accurate and authorize AWS Student Builder Group to maintain your official Founding Member dossier.
-                  </div>
-                </div>
-              )}
-
-              {/* Navigation Controls Bar */}
-              <div className="bg-[#0D2235]/90 border border-white/10 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-3 shadow-xl backdrop-blur-xl">
-                {currentStep > 1 ? (
-                  <button
-                    type="button"
-                    onClick={prevStep}
-                    className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
-                  >
-                    &larr; Back
-                  </button>
-                ) : (
-                  <div />
-                )}
-
-                {currentStep < totalSteps ? (
-                  <button
-                    type="button"
-                    onClick={nextStep}
-                    className="px-7 py-2.5 bg-[#FF9900] hover:bg-[#E08800] text-white rounded-lg text-xs font-bold shadow-lg shadow-orange-500/20 transition-all cursor-pointer flex items-center space-x-1.5"
-                  >
-                    <span>Next Step</span>
-                    <span>&rarr;</span>
-                  </button>
-                ) : (
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-8 py-3 bg-gradient-to-r from-[#FF9900] to-orange-600 hover:from-[#E08800] hover:to-orange-700 text-white text-xs font-extrabold rounded-lg shadow-xl shadow-orange-500/25 transition-all cursor-pointer disabled:opacity-50 flex items-center space-x-2"
-                  >
-                    <span>{submitting ? 'Recording Credentials...' : `✓ ${submitBtnText}`}</span>
-                  </button>
-                )}
               </div>
-            </form>
-          </div>
+            )}
+
+            {/* STEP 3: AWS SBG MEMBERSHIP */}
+            {currentStep === 3 && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="border-b border-gray-800 pb-4">
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2.5">
+                    <span className="w-8 h-8 rounded-lg bg-[#FF9900]/20 text-[#FF9900] flex items-center justify-center text-sm font-black">
+                      3
+                    </span>
+                    AWS SBG Membership
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Your functional role, team track, and membership status within the community.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Member Type / Role <span className="text-red-400">*</span>
+                    </label>
+                    <select
+                      value={formData.memberRole}
+                      onChange={(e) => setFormData({ ...formData, memberRole: e.target.value })}
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    >
+                      <option value="Founding Member">Founding Member</option>
+                      <option value="Core Team">Core Team</option>
+                      <option value="Event Speaker">Event Speaker</option>
+                      <option value="Anchor">Anchor</option>
+                      <option value="Technical Member">Technical Member</option>
+                      <option value="Growth & Community">Growth & Community</option>
+                      <option value="Media & Creative">Media & Creative</option>
+                      <option value="Volunteer">Volunteer</option>
+                      <option value="General Member">General Member</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Team / Domain <span className="text-red-400">*</span>
+                    </label>
+                    <select
+                      value={formData.domain}
+                      onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    >
+                      <option value="Cloud & Infrastructure">Cloud & Infrastructure</option>
+                      <option value="AI / ML & Data Science">AI / ML & Data Science</option>
+                      <option value="DevOps & SRE">DevOps & SRE</option>
+                      <option value="Full-Stack Web & Mobile">Full-Stack Web & Mobile</option>
+                      <option value="Security & Governance">Security & Governance</option>
+                      <option value="Anchor & Speaker Wing">Anchor & Speaker Wing</option>
+                      <option value="Growth & Community Operations">Growth & Community Operations</option>
+                      <option value="Media, Design & Creative">Media, Design & Creative</option>
+                      <option value="Event Management & Logistics">Event Management & Logistics</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Current Designation / Specific Role
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.designation}
+                      onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+                      placeholder="e.g. Cloud Lead, Technical Specialist, Anchor, Volunteer..."
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Member ID (Optional / Auto-Generated)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.memberId}
+                      onChange={(e) => setFormData({ ...formData, memberId: e.target.value })}
+                      placeholder="Leave blank for auto sequential assignment"
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Date of Joining / Selection
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.dateOfJoining}
+                      onChange={(e) => setFormData({ ...formData, dateOfJoining: e.target.value })}
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Membership Status
+                    </label>
+                    <select
+                      value={formData.membershipStatus}
+                      onChange={(e) => setFormData({ ...formData, membershipStatus: e.target.value })}
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Probation / Onboarding">Probation / Onboarding</option>
+                      <option value="Alumni / Senior Advisor">Alumni / Senior Advisor</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 4: SKILLS & PROFESSIONAL PROFILE */}
+            {currentStep === 4 && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="border-b border-gray-800 pb-4">
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2.5">
+                    <span className="w-8 h-8 rounded-lg bg-[#FF9900]/20 text-[#FF9900] flex items-center justify-center text-sm font-black">
+                      4
+                    </span>
+                    Skills & Professional Profile
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Detail your core competencies, technical interests, and online profiles.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                    Primary Skills <span className="text-red-400">*</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={formData.skills}
+                    onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
+                    placeholder="e.g. AWS Core Services (EC2, S3, IAM, Lambda), Python, TypeScript, Docker, Public Speaking, Graphic Design, Video Editing..."
+                    className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                    Technical / Professional Interests
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.interests}
+                    onChange={(e) => setFormData({ ...formData, interests: e.target.value })}
+                    placeholder="e.g. Cloud Architecture, Generative AI & Bedrock, Serverless, DevOps automation, Tech Community Building..."
+                    className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      LinkedIn Profile
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.linkedin}
+                      onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
+                      placeholder="https://linkedin.com/in/username"
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      GitHub Profile
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.github}
+                      onChange={(e) => setFormData({ ...formData, github: e.target.value })}
+                      placeholder="https://github.com/username"
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Portfolio / Website
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.portfolio}
+                      onChange={(e) => setFormData({ ...formData, portfolio: e.target.value })}
+                      placeholder="https://yourportfolio.dev"
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 5: ANCHOR / SPEAKER DETAILS (CONDITIONAL / OPTIONAL) */}
+            {currentStep === 5 && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="border-b border-gray-800 pb-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2.5">
+                      <span className="w-8 h-8 rounded-lg bg-[#FF9900]/20 text-[#FF9900] flex items-center justify-center text-sm font-black">
+                        5
+                      </span>
+                      Anchor / Speaker Details
+                    </h2>
+                    {isAnchorOrSpeaker ? (
+                      <span className="px-2.5 py-1 rounded-full bg-[#FF9900]/20 text-[#FF9900] text-xs font-bold">
+                        Role Active
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-full bg-gray-800 text-gray-400 text-xs">
+                        Optional for your role
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {isAnchorOrSpeaker
+                      ? 'Detailed speaker credentials for scheduling sessions, hosting live events, and moderating panels.'
+                      : 'You can fill these details if you wish to host or deliver sessions for AWS SBG in the future.'}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Preferred Speaking / Hosting Role
+                    </label>
+                    <select
+                      value={formData.speakerRoleType}
+                      onChange={(e) => setFormData({ ...formData, speakerRoleType: e.target.value })}
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    >
+                      <option value="Anchor">Anchor / Event Host</option>
+                      <option value="Speaker">Technical Speaker</option>
+                      <option value="Both (Anchor & Speaker)">Both (Anchor & Speaker)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Introduction / Demo Video Link
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.demoVideoUrl}
+                      onChange={(e) => setFormData({ ...formData, demoVideoUrl: e.target.value })}
+                      placeholder="https://drive.google.com/... or https://youtube.com/..."
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                    Hosting / Speaking Experience
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={formData.speakingExperience}
+                    onChange={(e) => setFormData({ ...formData, speakingExperience: e.target.value })}
+                    placeholder="Describe previous events hosted, webinars, seminars, college fests, presentations, or tech talks conducted..."
+                    className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                    Topics you can speak / host on
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.speakingTopics}
+                    onChange={(e) => setFormData({ ...formData, speakingTopics: e.target.value })}
+                    placeholder="e.g. AWS Cloud Fundamentals, Serverless computing, Tech Panel Moderation, DevOps workflows..."
+                    className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Languages Comfortable Hosting In
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.languages}
+                      onChange={(e) => setFormData({ ...formData, languages: e.target.value })}
+                      placeholder="e.g. English, Hindi, Bilingual"
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Event Availability
+                    </label>
+                    <select
+                      value={formData.eventAvailability}
+                      onChange={(e) => setFormData({ ...formData, eventAvailability: e.target.value })}
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    >
+                      <option value="Flexible (Weekdays & Weekends)">Flexible (Weekdays & Weekends)</option>
+                      <option value="Weekday Evenings">Weekday Evenings</option>
+                      <option value="Weekends Only">Weekends Only</option>
+                      <option value="Specific Event Calls">Specific Event Calls</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 6: EXPERIENCE & CONTRIBUTION */}
+            {currentStep === 6 && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="border-b border-gray-800 pb-4">
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2.5">
+                    <span className="w-8 h-8 rounded-lg bg-[#FF9900]/20 text-[#FF9900] flex items-center justify-center text-sm font-black">
+                      6
+                    </span>
+                    Experience & Contribution
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Your prior community experience, areas of leadership, assigned roles, and milestones.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                    Previous Club / Community / Event / Project Experience
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={formData.previousExperience}
+                    onChange={(e) => setFormData({ ...formData, previousExperience: e.target.value })}
+                    placeholder="Detail past club memberships, student chapters, hackathons organized, open source projects..."
+                    className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                    Areas of Contribution in AWS SBG
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.contributionAreas}
+                    onChange={(e) => setFormData({ ...formData, contributionAreas: e.target.value })}
+                    placeholder="e.g. Workshop Organization, Hands-on Cloud Labs, Content Writing, Graphic Design, Community Moderation..."
+                    className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Assigned Responsibilities
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={formData.assignedResponsibilities}
+                      onChange={(e) => setFormData({ ...formData, assignedResponsibilities: e.target.value })}
+                      placeholder="Detail specific operational responsibilities held within AWS SBG..."
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Major Contributions / Achievements
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={formData.majorAchievements}
+                      onChange={(e) => setFormData({ ...formData, majorAchievements: e.target.value })}
+                      placeholder="Highlight notable milestones, certifications, events successfully delivered, awards won..."
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 7: RECOGNITION, RECORDS & CONSENT */}
+            {currentStep === 7 && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="border-b border-gray-800 pb-4">
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2.5">
+                    <span className="w-8 h-8 rounded-lg bg-[#FF9900]/20 text-[#FF9900] flex items-center justify-center text-sm font-black">
+                      7
+                    </span>
+                    Recognition, Records & Consent
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Record earned certificates, digital badges, participation logs, and provide authorization consent.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Certificates / Recognition
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={formData.certifications}
+                      onChange={(e) => setFormData({ ...formData, certifications: e.target.value })}
+                      placeholder="e.g. AWS Certified Cloud Practitioner, Solutions Architect Associate, University Tech Awards..."
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                      Digital Badges Earned
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={formData.digitalBadges}
+                      onChange={(e) => setFormData({ ...formData, digitalBadges: e.target.value })}
+                      placeholder="e.g. Cloud Foundations - Session Completion, CloudXplore Series, Credly Badges..."
+                      className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                    Events / Sessions Participated In
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.eventsParticipated}
+                    onChange={(e) => setFormData({ ...formData, eventsParticipated: e.target.value })}
+                    placeholder="e.g. CloudXplore Episode 1-4, AWS Community Day, Hands-on Lab Week 1-4..."
+                    className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                    Additional Notes (Optional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.additionalNotes}
+                    onChange={(e) => setFormData({ ...formData, additionalNotes: e.target.value })}
+                    placeholder="Any other comments, aspirations, or ideas for the group..."
+                    className="w-full bg-[#070D18] border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF9900] transition-colors"
+                  />
+                </div>
+
+                {/* CONSENT BOX */}
+                <div className="p-5 rounded-2xl bg-[#070D18] border-2 border-[#FF9900]/40 shadow-inner">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={formData.consent}
+                      onChange={(e) => setFormData({ ...formData, consent: e.target.checked })}
+                      className="mt-1 w-5 h-5 rounded border-gray-700 text-[#FF9900] focus:ring-[#FF9900] bg-gray-900 cursor-pointer"
+                    />
+                    <div className="text-xs text-gray-300 leading-relaxed">
+                      <span className="font-bold text-white block mb-1">Declaration & Authorization Consent *</span>
+                      “I confirm that the information provided is accurate and up to date. I consent to its use for
+                      AWS Student Builder Group membership records, member verification, team coordination, event
+                      participation, recognition, certificates, digital badges, and related community activities.”
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* STEP NAVIGATION BUTTONS */}
+            <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t border-gray-800">
+              {currentStep > 1 ? (
+                <button
+                  type="button"
+                  onClick={prevStep}
+                  className="px-5 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold text-sm transition-all flex items-center gap-2"
+                >
+                  <span>←</span> Back
+                </button>
+              ) : (
+                <div></div>
+              )}
+
+              {currentStep < totalSteps ? (
+                <button
+                  type="button"
+                  onClick={nextStep}
+                  className="px-6 py-2.5 rounded-xl bg-[#FF9900] hover:bg-[#E08800] text-gray-950 font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-[#FF9900]/20"
+                >
+                  Continue <span>→</span>
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#FF9900] to-amber-500 hover:from-[#E08800] hover:to-amber-600 text-gray-950 font-black text-sm transition-all shadow-xl shadow-[#FF9900]/25 flex items-center gap-2 disabled:opacity-50"
+                >
+                  {submitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-gray-950 border-t-transparent rounded-full animate-spin"></div>
+                      Recording Member Record...
+                    </>
+                  ) : (
+                    <>
+                      <span>✓</span> {formConfig?.submitButtonText || 'Submit Member Profile'}
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </form>
         )}
+
+        {/* Footer info */}
+        <div className="mt-8 text-center text-xs text-gray-400">
+          <p>{formConfig?.footerText || 'AWS Student Builder Group • Chandigarh University – Uttar Pradesh © 2026'}</p>
+          <p className="mt-1 text-gray-400">
+            For member profile updates or queries, contact the AWS SBG Core Team.
+          </p>
+        </div>
       </div>
     </div>
   );

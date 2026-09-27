@@ -28,21 +28,39 @@ export async function GET(request: Request) {
           ? {
               id: existingMember.id,
               memberId: existingMember.memberId,
-              fullName: existingMember.fullName || existingMember.name,
-              email: existingMember.email,
+              fullName: existingMember.fullName || existingMember.name || '',
+              email: existingMember.email || '',
               phone: existingMember.phone || '',
+              photoUrl: existingMember.photoUrl || '',
               university: existingMember.university || '',
               courseBranch: existingMember.courseBranch || '',
               yearSemester: existingMember.yearSemester || '',
               studentId: existingMember.studentId || '',
-              photoUrl: existingMember.photoUrl || '',
+              memberRole: existingMember.memberRole || existingMember.role || '',
+              domain: existingMember.domain || '',
+              designation: existingMember.designation || '',
+              dateOfJoining: existingMember.dateOfJoining || '',
+              membershipStatus: existingMember.membershipStatus || existingMember.status || 'Active',
+              skills: existingMember.skills || '',
+              interests: existingMember.interests || '',
               linkedin: existingMember.linkedin || '',
               github: existingMember.github || '',
               portfolio: existingMember.portfolio || '',
-              domain: existingMember.domain || '',
-              role: existingMember.role || '',
-              skills: existingMember.skills || '',
+              speakerRoleType: existingMember.speakerRoleType || '',
+              speakingExperience: existingMember.speakingExperience || '',
+              demoVideoUrl: existingMember.demoVideoUrl || '',
+              speakingTopics: existingMember.speakingTopics || '',
+              languages: existingMember.languages || '',
+              eventAvailability: existingMember.eventAvailability || '',
+              previousExperience: existingMember.previousExperience || '',
+              contributionAreas: existingMember.contributionAreas || '',
+              assignedResponsibilities: existingMember.assignedResponsibilities || '',
+              majorAchievements: existingMember.majorAchievements || '',
               experience: existingMember.experience || '',
+              certifications: existingMember.certifications || '',
+              digitalBadges: existingMember.digitalBadges || '',
+              eventsParticipated: existingMember.eventsParticipated || '',
+              additionalNotes: existingMember.additionalNotes || '',
               bio: existingMember.bio || '',
               customAnswers: existingMember.customAnswers || {},
               formSubmitted: Boolean(existingMember.formSubmitted),
@@ -53,7 +71,7 @@ export async function GET(request: Request) {
       { headers: noStoreHeaders }
     );
   } catch (err: any) {
-    console.error('Error in public founding members form GET:', err);
+    console.error('Error in public member registration form GET:', err);
     return NextResponse.json(
       { error: err.message || 'Failed to retrieve form information.' },
       { status: 500, headers: noStoreHeaders }
@@ -68,22 +86,43 @@ export async function POST(request: Request) {
       fullName,
       email,
       phone,
+      photoUrl,
       university,
       courseBranch,
       yearSemester,
       studentId,
-      photoUrl,
+      memberRole,
+      domain,
+      designation,
+      memberId: inputMemberId,
+      dateOfJoining,
+      membershipStatus,
+      skills,
+      interests,
       linkedin,
       github,
       portfolio,
-      domain,
-      skills,
+      speakerRoleType,
+      speakingExperience,
+      demoVideoUrl,
+      speakingTopics,
+      languages,
+      eventAvailability,
+      previousExperience,
+      contributionAreas,
+      assignedResponsibilities,
+      majorAchievements,
       experience,
+      certifications,
+      digitalBadges,
+      eventsParticipated,
+      additionalNotes,
       bio,
+      consent,
       customAnswers
     } = body;
 
-    // 1. Basic validation
+    // 1. Personal Information Validation
     if (!fullName || !String(fullName).trim()) {
       return NextResponse.json(
         { error: 'Full Name is required.' },
@@ -92,55 +131,52 @@ export async function POST(request: Request) {
     }
     if (!email || !String(email).trim() || !String(email).includes('@')) {
       return NextResponse.json(
-        { error: 'A valid Email Address is required to identify your profile.' },
+        { error: 'A valid Email Address is required to record your member profile.' },
         { status: 400, headers: noStoreHeaders }
       );
     }
     if (!phone || !String(phone).trim()) {
       return NextResponse.json(
-        { error: 'WhatsApp / Contact Phone Number is required.' },
+        { error: 'Mobile / WhatsApp Number is required.' },
         { status: 400, headers: noStoreHeaders }
       );
     }
+
+    // 2. Academic Information Validation
     if (!university || !String(university).trim()) {
       return NextResponse.json(
         { error: 'University / Institute Name is required.' },
         { status: 400, headers: noStoreHeaders }
       );
     }
-    if (!courseBranch || !String(courseBranch).trim()) {
+    const effectiveCourseBranch = String(courseBranch || body.course || '').trim();
+    if (!effectiveCourseBranch) {
       return NextResponse.json(
-        { error: 'Course / Branch is required.' },
+        { error: 'Course / Program is required.' },
         { status: 400, headers: noStoreHeaders }
       );
     }
     if (!yearSemester || !String(yearSemester).trim()) {
       return NextResponse.json(
-        { error: 'Year / Semester is required.' },
+        { error: 'Year of Study is required.' },
         { status: 400, headers: noStoreHeaders }
       );
     }
     if (!studentId || !String(studentId).trim()) {
       return NextResponse.json(
-        { error: 'Student ID / Roll Number is required.' },
+        { error: 'Student ID / UID is required.' },
         { status: 400, headers: noStoreHeaders }
       );
     }
-    if (!domain || !String(domain).trim()) {
-      return NextResponse.json(
-        { error: 'Primary Domain / Area of Focus is required.' },
-        { status: 400, headers: noStoreHeaders }
-      );
-    }
+
+    // 3. AWS SBG Membership Validation
+    const effectiveDomain = String(domain || 'Cloud & Infrastructure').trim();
+    const effectiveRole = String(memberRole || 'General Member').trim();
+
+    // 4. Skills & Professional Profile Validation
     if (!skills || !String(skills).trim()) {
       return NextResponse.json(
-        { error: 'Technical Skills summary is required.' },
-        { status: 400, headers: noStoreHeaders }
-      );
-    }
-    if (!experience || !String(experience).trim()) {
-      return NextResponse.json(
-        { error: 'Experience & Contributions details are required.' },
+        { error: 'Primary Skills are required.' },
         { status: 400, headers: noStoreHeaders }
       );
     }
@@ -149,16 +185,36 @@ export async function POST(request: Request) {
     const cleanName = String(fullName).trim();
     const now = new Date().toISOString();
 
-    // 2. Check if member already exists in Founding Members data store by email
+    // 5. Profile Photo Validation
     const existingMember = await db.foundingMembers.getByEmail(cleanEmail);
+    const cleanPhoto =
+      (photoUrl ? String(photoUrl).trim() : '') ||
+      (existingMember?.photoUrl ? String(existingMember.photoUrl).trim() : '');
 
-    const cleanPhoto = (photoUrl ? String(photoUrl).trim() : '') || (existingMember?.photoUrl ? String(existingMember.photoUrl).trim() : '');
     if (!cleanPhoto) {
       return NextResponse.json(
-        { error: 'Profile Photograph is required for your official Founding Member dossier.' },
+        { error: 'Profile Photo is required for your official AWS SBG member profile.' },
         { status: 400, headers: noStoreHeaders }
       );
     }
+
+    // 6. Consent Declaration Validation
+    const isConsentGiven = consent === true || body.consentGiven === true;
+    if (!isConsentGiven) {
+      return NextResponse.json(
+        { error: 'Declaration & Authorization Consent is required to submit your member profile.' },
+        { status: 400, headers: noStoreHeaders }
+      );
+    }
+
+    // Combine legacy experience if needed
+    const combinedExperience = String(
+      experience ||
+        [previousExperience, contributionAreas, assignedResponsibilities, majorAchievements]
+          .filter(Boolean)
+          .join('\n\n') ||
+        'AWS Student Builder Group Member Profile & Contributions'
+    ).trim();
 
     let savedMemberId: string;
     let savedDbId: string;
@@ -168,7 +224,10 @@ export async function POST(request: Request) {
       // Update existing record
       isUpdate = true;
       savedDbId = existingMember.id;
-      savedMemberId = existingMember.memberId || (await db.foundingMembers.getNextMemberId());
+      savedMemberId =
+        (inputMemberId && String(inputMemberId).trim()) ||
+        existingMember.memberId ||
+        (await db.foundingMembers.getNextMemberId());
 
       const mergedCustomAnswers = {
         ...(existingMember.customAnswers || {}),
@@ -181,18 +240,42 @@ export async function POST(request: Request) {
         name: cleanName,
         email: cleanEmail,
         phone: String(phone).trim(),
+        photoUrl: cleanPhoto,
         university: String(university).trim(),
-        courseBranch: String(courseBranch).trim(),
+        courseBranch: effectiveCourseBranch,
+        course: effectiveCourseBranch,
         yearSemester: String(yearSemester).trim(),
         studentId: String(studentId).trim(),
-        photoUrl: cleanPhoto,
+        memberRole: effectiveRole,
+        role: effectiveRole,
+        domain: effectiveDomain,
+        designation: designation ? String(designation).trim() : existingMember.designation || effectiveRole,
+        dateOfJoining: dateOfJoining ? String(dateOfJoining).trim() : existingMember.dateOfJoining || now.split('T')[0],
+        membershipStatus: (membershipStatus as any) || existingMember.membershipStatus || 'Active',
+        skills: String(skills).trim(),
+        interests: interests ? String(interests).trim() : existingMember.interests || '',
         linkedin: linkedin ? String(linkedin).trim() : existingMember.linkedin || '',
         github: github ? String(github).trim() : existingMember.github || '',
         portfolio: portfolio ? String(portfolio).trim() : existingMember.portfolio || '',
-        domain: String(domain).trim(),
-        skills: String(skills).trim(),
-        experience: String(experience).trim(),
+        speakerRoleType: speakerRoleType ? String(speakerRoleType).trim() : existingMember.speakerRoleType || '',
+        speakingExperience: speakingExperience ? String(speakingExperience).trim() : existingMember.speakingExperience || '',
+        demoVideoUrl: demoVideoUrl ? String(demoVideoUrl).trim() : existingMember.demoVideoUrl || '',
+        speakingTopics: speakingTopics ? String(speakingTopics).trim() : existingMember.speakingTopics || '',
+        languages: languages ? String(languages).trim() : existingMember.languages || '',
+        eventAvailability: eventAvailability ? String(eventAvailability).trim() : existingMember.eventAvailability || '',
+        previousExperience: previousExperience ? String(previousExperience).trim() : existingMember.previousExperience || '',
+        contributionAreas: contributionAreas ? String(contributionAreas).trim() : existingMember.contributionAreas || '',
+        assignedResponsibilities: assignedResponsibilities ? String(assignedResponsibilities).trim() : existingMember.assignedResponsibilities || '',
+        majorAchievements: majorAchievements ? String(majorAchievements).trim() : existingMember.majorAchievements || '',
+        experience: combinedExperience,
+        certifications: certifications ? String(certifications).trim() : existingMember.certifications || '',
+        digitalBadges: digitalBadges ? String(digitalBadges).trim() : existingMember.digitalBadges || '',
+        eventsParticipated: eventsParticipated ? String(eventsParticipated).trim() : existingMember.eventsParticipated || '',
+        additionalNotes: additionalNotes ? String(additionalNotes).trim() : existingMember.additionalNotes || '',
         bio: bio ? String(bio).trim() : existingMember.bio || '',
+        consentGiven: consent !== false,
+        consentText:
+          'I confirm that the information provided is accurate and up to date. I consent to its use for AWS Student Builder Group membership records, member verification, team coordination, event participation, recognition, certificates, digital badges, and related community activities.',
         customAnswers: mergedCustomAnswers,
         formSubmitted: true,
         formSubmittedAt: now,
@@ -202,8 +285,9 @@ export async function POST(request: Request) {
 
       await db.foundingMembers.updateOne(existingMember.id, updatePayload);
     } else {
-      // Create new Founding Member record with permanent memberId
-      savedMemberId = await db.foundingMembers.getNextMemberId();
+      // Create new Member record with permanent memberId
+      savedMemberId =
+        (inputMemberId && String(inputMemberId).trim()) || (await db.foundingMembers.getNextMemberId());
       savedDbId = `fm-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
 
       const newMember: FoundingMember = {
@@ -213,24 +297,47 @@ export async function POST(request: Request) {
         name: cleanName,
         email: cleanEmail,
         phone: String(phone).trim(),
+        photoUrl: cleanPhoto,
         university: String(university).trim(),
-        courseBranch: String(courseBranch).trim(),
+        courseBranch: effectiveCourseBranch,
+        course: effectiveCourseBranch,
         yearSemester: String(yearSemester).trim(),
         studentId: String(studentId).trim(),
-        photoUrl: cleanPhoto,
+        memberRole: effectiveRole,
+        role: effectiveRole,
+        domain: effectiveDomain,
+        designation: designation ? String(designation).trim() : effectiveRole,
+        dateOfJoining: dateOfJoining ? String(dateOfJoining).trim() : now.split('T')[0],
+        membershipStatus: (membershipStatus as any) || 'Active',
+        skills: String(skills).trim(),
+        interests: interests ? String(interests).trim() : '',
         linkedin: linkedin ? String(linkedin).trim() : '',
         github: github ? String(github).trim() : '',
         portfolio: portfolio ? String(portfolio).trim() : '',
-        domain: String(domain).trim(),
-        role: 'Founding Member',
-        skills: String(skills).trim(),
-        experience: String(experience).trim(),
+        speakerRoleType: speakerRoleType ? String(speakerRoleType).trim() : '',
+        speakingExperience: speakingExperience ? String(speakingExperience).trim() : '',
+        demoVideoUrl: demoVideoUrl ? String(demoVideoUrl).trim() : '',
+        speakingTopics: speakingTopics ? String(speakingTopics).trim() : '',
+        languages: languages ? String(languages).trim() : '',
+        eventAvailability: eventAvailability ? String(eventAvailability).trim() : '',
+        previousExperience: previousExperience ? String(previousExperience).trim() : '',
+        contributionAreas: contributionAreas ? String(contributionAreas).trim() : '',
+        assignedResponsibilities: assignedResponsibilities ? String(assignedResponsibilities).trim() : '',
+        majorAchievements: majorAchievements ? String(majorAchievements).trim() : '',
+        experience: combinedExperience,
+        certifications: certifications ? String(certifications).trim() : '',
+        digitalBadges: digitalBadges ? String(digitalBadges).trim() : '',
+        eventsParticipated: eventsParticipated ? String(eventsParticipated).trim() : '',
+        additionalNotes: additionalNotes ? String(additionalNotes).trim() : '',
         bio: bio ? String(bio).trim() : '',
+        consentGiven: consent !== false,
+        consentText:
+          'I confirm that the information provided is accurate and up to date. I consent to its use for AWS Student Builder Group membership records, member verification, team coordination, event participation, recognition, certificates, digital badges, and related community activities.',
         customAnswers: customAnswers || {},
         formSubmitted: true,
         formSubmittedAt: now,
         status: 'Active',
-        notes: 'Submitted via Shared Public Founding Member Form',
+        notes: 'Submitted via AWS SBG Member Registration & Profile Form',
         createdAt: now,
         updatedAt: now
       };
@@ -242,22 +349,23 @@ export async function POST(request: Request) {
       {
         success: true,
         message: isUpdate
-          ? `Founding Member details for ${cleanName} updated successfully!`
-          : `Welcome! Founding Member registration for ${cleanName} recorded successfully.`,
+          ? `Member profile for ${cleanName} updated successfully!`
+          : `Thank you for submitting your member profile. Your information has been received for AWS Student Builder Group records.`,
         memberId: savedMemberId,
         member: {
           id: savedDbId,
           memberId: savedMemberId,
           fullName: cleanName,
           email: cleanEmail,
-          domain: String(domain).trim(),
+          memberRole: effectiveRole,
+          domain: effectiveDomain,
           formSubmittedAt: now
         }
       },
       { headers: noStoreHeaders }
     );
   } catch (err: any) {
-    console.error('Error processing founding member form submission:', err);
+    console.error('Error processing member registration form submission:', err);
     return NextResponse.json(
       { error: err.message || 'Server error occurred while submitting form.' },
       { status: 500, headers: noStoreHeaders }

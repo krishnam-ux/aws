@@ -5,22 +5,23 @@ import { generateQrCodeDataUrl, getVerificationUrl, formatDisplayDate } from './
 const { jsPDF } = require('jspdf');
 
 const BRAND_COLORS = {
-  navyDark: [8, 26, 42],       // #081A2A
-  navyDeep: [15, 41, 66],      // #0F2942
-  navyLight: [241, 245, 249],  // #F1F5F9
-  orangePrimary: [255, 153, 0],// #FF9900
-  orangeDark: [236, 114, 17],  // #EC7211
-  slateDark: [30, 41, 59],     // #1E293B
-  slateMedium: [71, 85, 105],  // #475569
-  slateLight: [148, 163, 184], // #94A3B8
-  borderSlate: [226, 232, 240],// #E2E8F0
-  emeraldGreen: [16, 185, 129],// #10B981
+  navyDark: [8, 23, 38],        // #081726
+  navyDeep: [15, 34, 56],       // #0F2238
+  navyBox: [4, 14, 24],         // #040E18
+  navyLight: [241, 245, 249],   // #F1F5F9
+  orangePrimary: [255, 153, 0], // #FF9900
+  orangeDark: [236, 114, 17],   // #EC7211
+  slateDark: [30, 41, 59],      // #1E293B
+  slateMedium: [71, 85, 105],   // #475569
+  slateLight: [148, 163, 184],  // #94A3B8
+  borderSlate: [226, 232, 240], // #E2E8F0
+  emeraldGreen: [16, 185, 129], // #10B981
   white: [255, 255, 255],
   amberBadge: [245, 158, 11]
 };
 
 /**
- * Generates a complete professional 2-page or dual-card PDF buffer for a Digital Identity card.
+ * Generates a complete professional 2-card PDF sheet for a Digital Identity card.
  */
 export async function generateDigitalIdPdfBuffer(identity: DigitalIdentity): Promise<Buffer> {
   const doc = new jsPDF({
@@ -45,10 +46,10 @@ export async function generateDigitalIdPdfBuffer(identity: DigitalIdentity): Pro
   // Draw Page 1: Official Digital Identity Certificate & Card Sheet
   drawDocumentHeader(doc, pageWidth, margin);
 
-  // Card dimensions (standard ID badge proportion: ~320pt wide x 480pt high)
+  // Card dimensions (standard ID badge proportion: ~240pt wide x 390pt high)
   const cardWidth = 240;
-  const cardHeight = 380;
-  const cardY = 130;
+  const cardHeight = 390;
+  const cardY = 125;
   const card1X = margin + 15;
   const card2X = pageWidth - margin - cardWidth - 15;
 
@@ -79,7 +80,7 @@ function drawDocumentHeader(doc: any, pageWidth: number, margin: number) {
   // Title
   doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
+  doc.setFontSize(13);
   doc.text('AWS STUDENT BUILDER GROUP', margin, 32);
 
   doc.setFont('helvetica', 'normal');
@@ -90,7 +91,7 @@ function drawDocumentHeader(doc: any, pageWidth: number, margin: number) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(BRAND_COLORS.slateLight[0], BRAND_COLORS.slateLight[1], BRAND_COLORS.slateLight[2]);
-  doc.text('OFFICIAL DIGITAL IDENTITY CREDENTIAL', margin, 60);
+  doc.text('OFFICIAL DIGITAL MEMBER IDENTITY CARD', margin, 60);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
@@ -106,17 +107,17 @@ function drawCardFront(
   height: number,
   identity: DigitalIdentity
 ) {
-  // Card Shadow / Outline
+  // Card Container Background (Dark Navy)
   doc.setFillColor(BRAND_COLORS.navyDark[0], BRAND_COLORS.navyDark[1], BRAND_COLORS.navyDark[2]);
   doc.roundedRect(x, y, width, height, 8, 8, 'F');
 
-  // Decorative Top Arc / Accent
+  // Top Header Banner
   doc.setFillColor(BRAND_COLORS.navyDeep[0], BRAND_COLORS.navyDeep[1], BRAND_COLORS.navyDeep[2]);
-  doc.rect(x, y, width, 60, 'F');
+  doc.rect(x, y, width, 55, 'F');
   doc.setFillColor(BRAND_COLORS.orangePrimary[0], BRAND_COLORS.orangePrimary[1], BRAND_COLORS.orangePrimary[2]);
-  doc.rect(x, y + 60, width, 3, 'F');
+  doc.rect(x, y + 55, width, 2.5, 'F');
 
-  // Card Header Label
+  // Header Title
   doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
@@ -125,17 +126,17 @@ function drawCardFront(
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(BRAND_COLORS.orangePrimary[0], BRAND_COLORS.orangePrimary[1], BRAND_COLORS.orangePrimary[2]);
-  doc.text('CHANDIGARH UNIVERSITY – UP', x + width / 2, y + 36, { align: 'center' });
+  doc.text('Chandigarh University – Uttar Pradesh', x + width / 2, y + 36, { align: 'center' });
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(6);
   doc.setTextColor(BRAND_COLORS.slateLight[0], BRAND_COLORS.slateLight[1], BRAND_COLORS.slateLight[2]);
-  doc.text('DIGITAL IDENTITY CARD', x + width / 2, y + 48, { align: 'center' });
+  doc.text('STUDENT COMMUNITY MEMBERSHIP', x + width / 2, y + 47, { align: 'center' });
 
   // Photo Area
-  const photoSize = 80;
+  const photoSize = 75;
   const photoX = x + (width - photoSize) / 2;
-  const photoY = y + 75;
+  const photoY = y + 70;
 
   let photoEmbedded = false;
   if (identity.photoUrl && identity.photoUrl.startsWith('data:image/')) {
@@ -150,16 +151,16 @@ function drawCardFront(
 
   if (!photoEmbedded) {
     // Fallback Initial Avatar
-    doc.setFillColor(248, 250, 252);
+    doc.setFillColor(BRAND_COLORS.navyDeep[0], BRAND_COLORS.navyDeep[1], BRAND_COLORS.navyDeep[2]);
     doc.setDrawColor(BRAND_COLORS.orangePrimary[0], BRAND_COLORS.orangePrimary[1], BRAND_COLORS.orangePrimary[2]);
     doc.setLineWidth(1.5);
     doc.roundedRect(photoX, photoY, photoSize, photoSize, 6, 6, 'FD');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(28);
-    doc.setTextColor(BRAND_COLORS.navyDark[0], BRAND_COLORS.navyDark[1], BRAND_COLORS.navyDark[2]);
+    doc.setFontSize(26);
+    doc.setTextColor(BRAND_COLORS.orangePrimary[0], BRAND_COLORS.orangePrimary[1], BRAND_COLORS.orangePrimary[2]);
     const initial = (identity.fullName || 'M').charAt(0).toUpperCase();
-    doc.text(initial, photoX + photoSize / 2, photoY + photoSize / 2 + 10, { align: 'center' });
+    doc.text(initial, photoX + photoSize / 2, photoY + photoSize / 2 + 9, { align: 'center' });
   } else {
     // Outer border for embedded photo
     doc.setDrawColor(BRAND_COLORS.orangePrimary[0], BRAND_COLORS.orangePrimary[1], BRAND_COLORS.orangePrimary[2]);
@@ -167,75 +168,76 @@ function drawCardFront(
     doc.roundedRect(photoX, photoY, photoSize, photoSize, 4, 4, 'S');
   }
 
-  // Name
+  // Member Full Name (Large, Readable)
   doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
+  doc.setFontSize(11.5);
   const nameLines = doc.splitTextToSize(identity.fullName || 'Member', width - 24);
-  doc.text(nameLines.slice(0, 2), x + width / 2, y + 175, { align: 'center' });
+  doc.text(nameLines.slice(0, 2), x + width / 2, y + 165, { align: 'center' });
 
-  // Role / Position
+  // Role / Designation
   doc.setTextColor(BRAND_COLORS.orangePrimary[0], BRAND_COLORS.orangePrimary[1], BRAND_COLORS.orangePrimary[2]);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
   const roleLines = doc.splitTextToSize(identity.role || 'Member', width - 24);
-  doc.text(roleLines.slice(0, 2), x + width / 2, y + 198, { align: 'center' });
+  doc.text(roleLines.slice(0, 2), x + width / 2, y + 185, { align: 'center' });
 
-  // Member Type Badge
-  const badgeWidth = 110;
-  const badgeHeight = 16;
-  const badgeX = x + (width - badgeWidth) / 2;
-  const badgeY = y + 218;
+  // Team / Domain
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(BRAND_COLORS.slateLight[0], BRAND_COLORS.slateLight[1], BRAND_COLORS.slateLight[2]);
+  const domainText = identity.domain ? `Domain: ${identity.domain}` : (identity.memberType || 'Core Team');
+  doc.text(domainText, x + width / 2, y + 204, { align: 'center', maxWidth: width - 20 });
 
-  doc.setFillColor(BRAND_COLORS.navyDeep[0], BRAND_COLORS.navyDeep[1], BRAND_COLORS.navyDeep[2]);
-  doc.setDrawColor(BRAND_COLORS.slateMedium[0], BRAND_COLORS.slateMedium[1], BRAND_COLORS.slateMedium[2]);
-  doc.roundedRect(badgeX, badgeY, badgeWidth, badgeHeight, 3, 3, 'FD');
-
-  doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.5);
-  doc.text(String(identity.memberType || 'Core Team').toUpperCase(), x + width / 2, badgeY + 11, { align: 'center' });
-
-  // Domain (if present)
-  if (identity.domain) {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(BRAND_COLORS.slateLight[0], BRAND_COLORS.slateLight[1], BRAND_COLORS.slateLight[2]);
-    doc.text(`Domain: ${identity.domain}`, x + width / 2, y + 252, { align: 'center', maxWidth: width - 20 });
-  }
-
-  // Digital ID Box
-  const idBoxY = y + 275;
-  doc.setFillColor(15, 23, 42);
+  // Dedicated Highlighted Section for Member ID
+  const idBoxY = y + 224;
+  doc.setFillColor(BRAND_COLORS.navyBox[0], BRAND_COLORS.navyBox[1], BRAND_COLORS.navyBox[2]);
   doc.setDrawColor(BRAND_COLORS.orangePrimary[0], BRAND_COLORS.orangePrimary[1], BRAND_COLORS.orangePrimary[2]);
   doc.setLineWidth(1);
-  doc.roundedRect(x + 20, idBoxY, width - 40, 44, 4, 4, 'FD');
+  doc.roundedRect(x + 16, idBoxY, width - 32, 52, 4, 4, 'FD');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(6.5);
   doc.setTextColor(BRAND_COLORS.slateLight[0], BRAND_COLORS.slateLight[1], BRAND_COLORS.slateLight[2]);
-  doc.text('PERMANENT DIGITAL ID', x + width / 2, idBoxY + 14, { align: 'center' });
+  doc.text('MEMBER ID', x + 26, idBoxY + 16);
 
   doc.setFont('courier', 'bold');
-  doc.setFontSize(13);
+  doc.setFontSize(12);
   doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
-  doc.text(identity.publicId || 'ID-000', x + width / 2, idBoxY + 32, { align: 'center' });
+  doc.text(identity.publicId || 'ID-000', x + 26, idBoxY + 36);
 
-  // Status Indicator
+  // Status Indicator on the right of ID Box
+  const isActive = identity.status === 'ACTIVE';
   const isSuspended = identity.status === 'SUSPENDED';
   const isRevoked = identity.status === 'REVOKED';
   const statusColor = isRevoked ? [239, 68, 68] : isSuspended ? [245, 158, 11] : [16, 185, 129];
-  const statusText = identity.status || 'ACTIVE';
-
-  doc.setFillColor(statusColor[0], statusColor[1], statusColor[2]);
-  doc.circle(x + width / 2 - 25, y + 342, 3.5, 'F');
+  const statusText = isActive ? 'ACTIVE MEMBER' : (identity.status || 'ACTIVE');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
-  doc.text(statusText, x + width / 2 - 16, y + 345);
+  doc.setFontSize(6.5);
+  doc.setTextColor(BRAND_COLORS.slateLight[0], BRAND_COLORS.slateLight[1], BRAND_COLORS.slateLight[2]);
+  doc.text('STATUS', x + width - 26, idBoxY + 16, { align: 'right' });
 
-  // Label Front
+  doc.setFillColor(statusColor[0], statusColor[1], statusColor[2]);
+  doc.circle(x + width - 82, idBoxY + 32, 3, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
+  doc.text(statusText, x + width - 26, idBoxY + 35, { align: 'right' });
+
+  // Minimal Footer on Front Card
+  const footerY = y + height - 22;
+  doc.setDrawColor(BRAND_COLORS.slateMedium[0], BRAND_COLORS.slateMedium[1], BRAND_COLORS.slateMedium[2]);
+  doc.setLineWidth(0.5);
+  doc.line(x + 16, footerY, x + width - 16, footerY);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.5);
+  doc.setTextColor(BRAND_COLORS.slateLight[0], BRAND_COLORS.slateLight[1], BRAND_COLORS.slateLight[2]);
+  doc.text('Student Community Membership ID', x + width / 2, footerY + 14, { align: 'center' });
+
+  // Outer Label
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
   doc.setTextColor(BRAND_COLORS.slateMedium[0], BRAND_COLORS.slateMedium[1], BRAND_COLORS.slateMedium[2]);
@@ -257,27 +259,30 @@ function drawCardBack(
 
   // Top Banner
   doc.setFillColor(BRAND_COLORS.navyDeep[0], BRAND_COLORS.navyDeep[1], BRAND_COLORS.navyDeep[2]);
-  doc.rect(x, y, width, 45, 'F');
+  doc.rect(x, y, width, 44, 'F');
   doc.setFillColor(BRAND_COLORS.orangePrimary[0], BRAND_COLORS.orangePrimary[1], BRAND_COLORS.orangePrimary[2]);
-  doc.rect(x, y + 45, width, 3, 'F');
+  doc.rect(x, y + 44, width, 2.5, 'F');
 
+  // Title: DIGITAL MEMBER VERIFICATION
   doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
-  doc.text('DIGITAL ID VERIFICATION', x + width / 2, y + 20, { align: 'center' });
+  doc.text('DIGITAL MEMBER VERIFICATION', x + width / 2, y + 20, { align: 'center' });
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
-  doc.setTextColor(BRAND_COLORS.slateLight[0], BRAND_COLORS.slateLight[1], BRAND_COLORS.slateLight[2]);
-  doc.text('OFFICIAL REGISTRY SCANNER', x + width / 2, y + 34, { align: 'center' });
+  doc.setTextColor(BRAND_COLORS.orangePrimary[0], BRAND_COLORS.orangePrimary[1], BRAND_COLORS.orangePrimary[2]);
+  doc.text('Official Verification Registry • Scannable QR', x + width / 2, y + 33, { align: 'center' });
 
-  // QR Code Area
-  const qrBoxSize = 104;
+  // Large QR Code Area
+  const qrBoxSize = 96;
   const qrX = x + (width - qrBoxSize) / 2;
-  const qrY = y + 58;
+  const qrY = y + 54;
 
   doc.setFillColor(255, 255, 255);
-  doc.roundedRect(qrX, qrY, qrBoxSize, qrBoxSize, 4, 4, 'F');
+  doc.setDrawColor(BRAND_COLORS.orangePrimary[0], BRAND_COLORS.orangePrimary[1], BRAND_COLORS.orangePrimary[2]);
+  doc.setLineWidth(1);
+  doc.roundedRect(qrX, qrY, qrBoxSize, qrBoxSize, 4, 4, 'FD');
 
   if (qrDataUrl) {
     try {
@@ -288,67 +293,71 @@ function drawCardBack(
   }
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.5);
-  doc.setTextColor(BRAND_COLORS.orangePrimary[0], BRAND_COLORS.orangePrimary[1], BRAND_COLORS.orangePrimary[2]);
-  doc.text('SCAN TO VERIFY IDENTITY', x + width / 2, y + 176, { align: 'center' });
-
-  // Details List
-  const detailsY = y + 192;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.5);
+  doc.setFontSize(6);
   doc.setTextColor(BRAND_COLORS.slateLight[0], BRAND_COLORS.slateLight[1], BRAND_COLORS.slateLight[2]);
-  doc.text('Digital ID:', x + 16, detailsY);
-  doc.setFont('courier', 'bold');
-  doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
-  doc.text(identity.publicId, x + 70, detailsY);
+  doc.text('SCAN TO VERIFY CREDENTIALS', x + width / 2, y + 162, { align: 'center' });
 
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(BRAND_COLORS.slateLight[0], BRAND_COLORS.slateLight[1], BRAND_COLORS.slateLight[2]);
-  doc.text('Status:', x + 16, detailsY + 15);
-  const isRevoked = identity.status === 'REVOKED';
-  const isSuspended = identity.status === 'SUSPENDED';
-  const statusColor = isRevoked ? [239, 68, 68] : isSuspended ? [245, 158, 11] : [16, 185, 129];
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
-  doc.text(identity.status || 'ACTIVE', x + 70, detailsY + 15);
+  // Member Record Details List
+  const detailsY = y + 176;
+  doc.setFillColor(BRAND_COLORS.navyBox[0], BRAND_COLORS.navyBox[1], BRAND_COLORS.navyBox[2]);
+  doc.roundedRect(x + 12, detailsY, width - 24, 112, 4, 4, 'F');
 
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(BRAND_COLORS.slateLight[0], BRAND_COLORS.slateLight[1], BRAND_COLORS.slateLight[2]);
-  doc.text('Issued Date:', x + 16, detailsY + 30);
-  doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
-  doc.text(formatDisplayDate(identity.issuedAt || identity.createdAt), x + 70, detailsY + 30);
+  const drawBackRow = (label: string, value: string, rowYPos: number, isMono = false, isOrange = false) => {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.setTextColor(BRAND_COLORS.slateLight[0], BRAND_COLORS.slateLight[1], BRAND_COLORS.slateLight[2]);
+    doc.text(label, x + 20, rowYPos);
 
-  // Verification URL
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(BRAND_COLORS.slateLight[0], BRAND_COLORS.slateLight[1], BRAND_COLORS.slateLight[2]);
-  doc.text('Verify URL:', x + 16, detailsY + 45);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5.5);
-  doc.setTextColor(BRAND_COLORS.orangePrimary[0], BRAND_COLORS.orangePrimary[1], BRAND_COLORS.orangePrimary[2]);
-  const verUrl = getVerificationUrl(identity.publicId);
-  doc.text(verUrl, x + 70, detailsY + 45, { maxWidth: width - 80 });
+    if (isMono) {
+      doc.setFont('courier', 'bold');
+    } else {
+      doc.setFont('helvetica', 'bold');
+    }
+    doc.setFontSize(6);
 
-  // Security Disclaimer Box
-  const discY = y + 265;
+    if (isOrange) {
+      doc.setTextColor(BRAND_COLORS.orangePrimary[0], BRAND_COLORS.orangePrimary[1], BRAND_COLORS.orangePrimary[2]);
+    } else {
+      doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
+    }
+
+    doc.text(value, x + 82, rowYPos, { maxWidth: width - 106 });
+  };
+
+  let rY = detailsY + 14;
+  drawBackRow('Member ID:', identity.publicId, rY, true);
+  rY += 14;
+  drawBackRow('Member Name:', identity.fullName, rY);
+  rY += 14;
+  drawBackRow('Role:', identity.role, rY, false, true);
+  rY += 14;
+  drawBackRow('Team / Domain:', identity.domain || 'Cloud & Emerging Tech', rY);
+  rY += 14;
+
+  const isActive = identity.status === 'ACTIVE';
+  drawBackRow('Status:', identity.status || 'ACTIVE', rY);
+  rY += 14;
+  drawBackRow('Issue Date:', formatDisplayDate(identity.issuedAt || identity.createdAt), rY);
+  rY += 14;
+  const verUrl = getVerificationUrl(identity.publicId).replace(/^https?:\/\//, '');
+  drawBackRow('Verify URL:', verUrl, rY, true, true);
+
+  // Short Mandatory Statement
+  const discY = y + 296;
   doc.setFillColor(BRAND_COLORS.navyDeep[0], BRAND_COLORS.navyDeep[1], BRAND_COLORS.navyDeep[2]);
   doc.roundedRect(x + 12, discY, width - 24, 76, 4, 4, 'F');
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6);
-  doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
-  doc.text('SECURITY & VALIDITY NOTICE', x + width / 2, discY + 12, { align: 'center' });
-
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(5.5);
   doc.setTextColor(BRAND_COLORS.slateLight[0], BRAND_COLORS.slateLight[1], BRAND_COLORS.slateLight[2]);
-  const disclaimerText = "This Digital ID is valid only while the associated identity remains active in the official verification registry. Issued by AWS Student Builder Group at Chandigarh University – Uttar Pradesh as a student community identity.";
+  const disclaimerText = "“This card identifies the holder as a registered member of the AWS Student Builder Group at Chandigarh University – Uttar Pradesh. Membership can be verified through the official verification URL or QR code.”";
   const discLines = doc.splitTextToSize(disclaimerText, width - 40);
-  doc.text(discLines, x + 20, discY + 24);
+  doc.text(discLines, x + 20, discY + 18, { align: 'left', maxWidth: width - 40 });
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(5.5);
   doc.setTextColor(BRAND_COLORS.orangePrimary[0], BRAND_COLORS.orangePrimary[1], BRAND_COLORS.orangePrimary[2]);
-  doc.text('www.awssbgcuup.tech', x + width / 2, discY + 66, { align: 'center' });
+  doc.text('AWS STUDENT BUILDER GROUP • CU-UP', x + width / 2, discY + 64, { align: 'center' });
 
   // Label Back
   doc.setFont('helvetica', 'bold');
@@ -364,19 +373,19 @@ function drawDocumentFooter(
   margin: number,
   identity: DigitalIdentity
 ) {
-  const footerY = 560;
+  const footerY = 570;
   const contentWidth = pageWidth - margin * 2;
 
   // Information Container
   doc.setFillColor(248, 250, 252);
   doc.setDrawColor(BRAND_COLORS.borderSlate[0], BRAND_COLORS.borderSlate[1], BRAND_COLORS.borderSlate[2]);
-  doc.roundedRect(margin, footerY, contentWidth, 210, 6, 6, 'FD');
+  doc.roundedRect(margin, footerY, contentWidth, 200, 6, 6, 'FD');
 
   // Title
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(BRAND_COLORS.navyDark[0], BRAND_COLORS.navyDark[1], BRAND_COLORS.navyDark[2]);
-  doc.text('Official Digital ID Certificate & Registry Information', margin + 16, footerY + 24);
+  doc.text('Official Member Record & Identity Certificate', margin + 16, footerY + 24);
 
   // Table grid
   const col1X = margin + 16;
@@ -396,18 +405,18 @@ function drawDocumentFooter(
   };
 
   drawRow('Full Name:', identity.fullName, col1X, rowY);
-  drawRow('Digital ID:', identity.publicId, col2X, rowY);
+  drawRow('Member ID:', identity.publicId, col2X, rowY);
   rowY += 18;
 
   drawRow('Role / Position:', identity.role, col1X, rowY);
   drawRow('Member Type:', identity.memberType, col2X, rowY);
   rowY += 18;
 
-  drawRow('Domain:', identity.domain || 'Cloud Computing & AI', col1X, rowY);
+  drawRow('Team / Domain:', identity.domain || 'Cloud & Emerging Tech', col1X, rowY);
   drawRow('Status:', identity.status, col2X, rowY);
   rowY += 18;
 
-  drawRow('University:', identity.university || 'Chandigarh University – UP', col1X, rowY);
+  drawRow('University:', identity.university || 'Chandigarh University – Uttar Pradesh', col1X, rowY);
   drawRow('Issue Date:', formatDisplayDate(identity.issuedAt || identity.createdAt), col2X, rowY);
   rowY += 18;
 
@@ -417,7 +426,7 @@ function drawDocumentFooter(
   if (identity.course || identity.branch) {
     drawRow('Program/Branch:', `${identity.course || ''} ${identity.branch || ''}`.trim(), col2X, rowY);
   }
-  rowY += 24;
+  rowY += 22;
 
   // Horizontal divider
   doc.setDrawColor(BRAND_COLORS.borderSlate[0], BRAND_COLORS.borderSlate[1], BRAND_COLORS.borderSlate[2]);
@@ -428,7 +437,7 @@ function drawDocumentFooter(
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(BRAND_COLORS.slateMedium[0], BRAND_COLORS.slateMedium[1], BRAND_COLORS.slateMedium[2]);
-  const notice = "This document confirms that the above individual is registered in the official Digital ID registry of the AWS Student Builder Group at Chandigarh University – Uttar Pradesh. To verify in real-time, visit the official verification URL or scan the QR code above.";
+  const notice = "This document confirms that the above individual is registered in the official Member Registry of the AWS Student Builder Group at Chandigarh University – Uttar Pradesh. To verify in real-time, visit the official verification URL or scan the QR code above.";
   const lines = doc.splitTextToSize(notice, contentWidth - 32);
   doc.text(lines, col1X, rowY);
 
