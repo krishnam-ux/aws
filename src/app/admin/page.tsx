@@ -358,15 +358,44 @@ export default function AdminDashboard() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [exportingStates, setExportingStates] = useState<Record<string, boolean>>({});
 
-  // Hydration check
+  // Hydration check with active server verification
   useEffect(() => {
-    const savedToken = sessionStorage.getItem('adminToken');
+    const savedToken =
+      typeof window !== 'undefined'
+        ? sessionStorage.getItem('adminToken') ||
+          sessionStorage.getItem('admin_token') ||
+          localStorage.getItem('admin_token') ||
+          localStorage.getItem('adminToken')
+        : null;
+
     if (savedToken) {
-      setToken(savedToken);
-      if (typeof document !== 'undefined') {
-        document.cookie = `admin_token=${savedToken}; path=/; SameSite=Lax; max-age=86400`;
-        document.cookie = `adminToken=${savedToken}; path=/; SameSite=Lax; max-age=86400`;
-      }
+      fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${savedToken}`
+        },
+        body: JSON.stringify({ action: 'verify_token' })
+      })
+        .then(async (res) => {
+          if (res.ok) {
+            const data = await res.json().catch(() => ({}));
+            if (data && (data.success || data.valid)) {
+              setToken(savedToken);
+              if (typeof document !== 'undefined') {
+                document.cookie = `admin_token=${savedToken}; path=/; SameSite=Lax; max-age=86400`;
+                document.cookie = `adminToken=${savedToken}; path=/; SameSite=Lax; max-age=86400`;
+              }
+              return;
+            }
+          }
+          handleLogout();
+        })
+        .catch(() => {
+          handleLogout();
+        });
+    } else {
+      handleLogout();
     }
     fetchMaintenanceSettings();
   }, []);
@@ -421,6 +450,9 @@ export default function AdminDashboard() {
 
   const handleLogout = () => {
     sessionStorage.removeItem('adminToken');
+    sessionStorage.removeItem('admin_token');
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('admin_token');
     if (typeof document !== 'undefined') {
       document.cookie = 'admin_token=; path=/; max-age=0';
       document.cookie = 'adminToken=; path=/; max-age=0';
@@ -441,6 +473,11 @@ export default function AdminDashboard() {
         body: JSON.stringify(body)
       });
 
+      if (response.status === 401 || response.status === 403) {
+        handleLogout();
+        return null;
+      }
+
       const rawText = await response.text();
       let data: any = { success: false, error: 'Unexpected API response.' };
       try {
@@ -449,15 +486,15 @@ export default function AdminDashboard() {
         data = { success: false, error: rawText || 'Unexpected API response.' };
       }
 
-      if (response.status === 401) {
+      if (data && data.error && (data.error.includes('Unauthorized') || data.error.includes('invalid') || data.error.includes('expired'))) {
         handleLogout();
         return null;
       }
+
       return data;
-    } catch (err) {
-      console.error(err);
-      setActionError('API network transaction failed.');
-      return null;
+    } catch (err: any) {
+      console.error('API Call Error:', err);
+      return { success: false, error: 'Network communication error.' };
     }
   };
 

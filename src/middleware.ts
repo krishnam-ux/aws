@@ -23,10 +23,6 @@ function isEdgeTokenValid(token: string | undefined | null): boolean {
     }
   }
 
-  if (clean.startsWith('adm_') || clean.includes('session') || clean.startsWith('admin_')) {
-    return true;
-  }
-
   return false;
 }
 

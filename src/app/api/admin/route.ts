@@ -200,6 +200,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized administrative access.' }, { status: 401 });
     }
 
+    if (action === 'verify_token') {
+      return NextResponse.json({ success: true, valid: true });
+    }
+
     // Logo Upload handler
     if (action === 'upload-logo') {
       const { base64Data } = body;
