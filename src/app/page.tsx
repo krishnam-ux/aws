@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { siteConfig } from '@/data/siteConfig';
 import { db } from '@/lib/db';
 import { formatDisplayDate } from '@/lib/eventDateUtils';
+import HeroSlider from '@/components/HeroSlider';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,82 +83,18 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col w-full bg-white text-slate-900 font-sans">
-      {/* 1. HERO SECTION (55/45 Split Grid, max-width 1240px) */}
-      <section className="bg-white border-b border-border-gray py-12 sm:py-16">
-        <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          {/* Hero Left (55% content) */}
-          <div className="lg:col-span-7 space-y-4">
-            <span className="text-[10px] font-bold tracking-widest text-aws-orange font-display block uppercase">
-              AWS STUDENT BUILDER GROUP
-            </span>
-            <h1 className="font-display font-extrabold text-3xl sm:text-4xl md:text-5.5xl text-brand-navy tracking-tight leading-none">
-              Build. Learn. Explore.
-            </h1>
-            <h2 className="font-display font-semibold text-xs sm:text-sm text-slate-655 tracking-tight leading-tight uppercase tracking-wider">
-              AWS Student Builder Group at Chandigarh University – Uttar Pradesh
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 font-sans leading-relaxed max-w-lg">
-              A student-led technology community focused on cloud computing, artificial intelligence, data, DevOps and hands-on technology learning.
-            </p>
-            <div className="flex flex-wrap gap-3 pt-2">
-              <a
-                href="https://chat.whatsapp.com/HuEI5i4I8KkEya47yBKynD"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-primary py-1.5 px-4 text-xs"
-              >
-                Join the Community
-              </a>
-              <Link href="/activities" className="btn-secondary py-1.5 px-4 text-xs">
-                Explore Activities
-              </Link>
-            </div>
-          </div>
+      {/* 1. HERO SLIDER SECTION */}
+      <HeroSlider />
 
-          {/* Hero Right (45% visual): Premium Cloud Architecture Visual */}
-          <div className="lg:col-span-5 flex justify-center">
-            <div className="w-full max-w-sm aspect-square bg-[#F8FAFC] border border-border-gray rounded-md p-6 flex items-center justify-center relative overflow-hidden">
-              <svg className="w-full h-full text-slate-200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M10 10h180v180H10z" stroke="#ECEFF3" strokeWidth="1" strokeDasharray="4 4" />
-                <path d="M50 10v180M100 10v180M150 10v180M10 50h180M10 100h180M10 150h180" stroke="#F4F6F9" strokeWidth="1" />
-                
-                {/* Cloud Boundary Outline Path */}
-                <path d="M60 90a20 20 0 0118-20 25 25 0 0144-10 20 20 0 0134 10 20 20 0 014 40H60a20 20 0 010-20z" fill="none" stroke="#D1D5DB" strokeWidth="1.5" strokeDasharray="2 2" />
-
-                {/* Server blocks in deep navy (6-8px radius style) */}
-                <rect x="75" y="85" width="22" height="14" rx="2" fill="#0B1B2B" stroke="#D8DEE6" strokeWidth="1" />
-                <rect x="105" y="85" width="22" height="14" rx="2" fill="#0B1B2B" stroke="#D8DEE6" strokeWidth="1" />
-                <rect x="75" y="115" width="22" height="14" rx="2" fill="#0B1B2B" stroke="#D8DEE6" strokeWidth="1" />
-                <rect x="105" y="115" width="22" height="14" rx="2" fill="#0B1B2B" stroke="#D8DEE6" strokeWidth="1" />
-
-                {/* Network topology line mappings */}
-                <line x1="86" y1="99" x2="86" y2="115" stroke="#146EF5" strokeWidth="1.5" />
-                <line x1="116" y1="99" x2="116" y2="115" stroke="#146EF5" strokeWidth="1.5" />
-                <line x1="97" y1="92" x2="105" y2="92" stroke="#FF9900" strokeWidth="1.5" />
-                <line x1="97" y1="122" x2="105" y2="122" stroke="#FF9900" strokeWidth="1.5" />
-
-                {/* Connector Nodes */}
-                <circle cx="100" cy="50" r="5" fill="#146EF5" />
-                <circle cx="138" cy="70" r="4.5" fill="#FF9900" />
-                
-                {/* Connecting lines from Cloud to main network */}
-                <path d="M100 55v15M138 75l-10 10" stroke="#CBD5E1" strokeWidth="1" />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* 2. COMMUNITY SNAPSHOT (Light Gray Background, py-8 spacing, dividers) */}
       <section className="bg-[#F5F7FA] border-b border-border-gray py-8">
         <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-xs font-sans text-slate-500 divide-y md:divide-y-0 lg:divide-x divide-slate-200">
             <div className="flex items-center">
-              <img 
-                src="/aws-sbg-logo.png" 
-                alt="AWS Student Builder Group" 
-                className="h-10 md:h-11 w-auto object-contain shrink-0" 
-              />
+              <span className="font-display font-bold text-slate-900 text-sm md:text-base tracking-tight">
+                AWS Student Builder Group
+              </span>
             </div>
             <div className="pt-4 md:pt-0 lg:pl-6 space-y-1">
               <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400 font-display">UNIVERSITY</span>

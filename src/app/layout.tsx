@@ -71,9 +71,11 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
       className={`${inter.variable} ${outfit.variable} h-full scroll-smooth`}
     >
-      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-sans antialiased">
+      <body suppressHydrationWarning className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-sans antialiased">
         <MaintenanceGate initialMaintenance={initialMaintenance}>
           <Navbar />
           <main className="flex-grow flex flex-col relative bg-slate-50">

@@ -122,3 +122,17 @@ body {
 .btn-secondary:active {
   transform: scale(0.98);
 }
+
+@keyframes sliderProgress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-sliderProgress {
+  animation: sliderProgress linear forwards;
+}
+
