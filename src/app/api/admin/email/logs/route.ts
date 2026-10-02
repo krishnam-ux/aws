@@ -3,21 +3,13 @@ import { db } from '@/lib/db';
 import { retryFailedEmail } from '@/lib/email';
 import { EmailLog } from '@/types/email';
 
+import { isAuthorizedAdmin } from '@/lib/adminAuth';
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const SECURE_TOKEN = 'awssbg-admin-session-token-secure-hash';
-
 function isAuthorized(request: Request): boolean {
-  const authHeader = request.headers.get('Authorization');
-  if (authHeader && authHeader.startsWith('Bearer ') && authHeader.substring(7) === SECURE_TOKEN) {
-    return true;
-  }
-  const cookieHeader = request.headers.get('cookie') || '';
-  if (cookieHeader.includes(`admin_token=${SECURE_TOKEN}`)) {
-    return true;
-  }
-  return false;
+  return isAuthorizedAdmin(request);
 }
 
 const noStoreHeaders = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' };

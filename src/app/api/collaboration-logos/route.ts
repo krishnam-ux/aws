@@ -26,6 +26,8 @@ export async function GET(request: Request) {
     return new NextResponse(buffer, {
       headers: {
         'Content-Type': contentType,
+        'X-Content-Type-Options': 'nosniff',
+        'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
         'Cache-Control': 'public, max-age=31536000, immutable'
       }
     });

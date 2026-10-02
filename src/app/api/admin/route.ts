@@ -19,9 +19,10 @@ import {
   normalizeLegacyEventDate
 } from '@/lib/eventDateUtils';
 
-export const dynamic = 'force-dynamic';
+import { generateAdminToken, isAuthorizedAdmin } from '@/lib/adminAuth';
+import { sanitizeSvg } from '@/lib/security';
 
-const SECURE_TOKEN = 'awssbg-admin-session-token-secure-hash';
+export const dynamic = 'force-dynamic';
 
 function mergeEventUpdate(existingEvent: any, incomingEvent: any): any {
   const merged: Record<string, any> = { ...(existingEvent || {}) };
@@ -132,12 +133,7 @@ function normalizeEventPayload(event: any, options: { isNew?: boolean } = {}): a
 
 // Helper to verify admin auth token
 function isAuthorized(request: Request): boolean {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return false;
-  }
-  const token = authHeader.substring(7);
-  return token === SECURE_TOKEN;
+  return isAuthorizedAdmin(request);
 }
 
 export async function POST(request: Request) {
@@ -171,29 +167,23 @@ export async function POST(request: Request) {
         }
       }
 
-      // Fallback check for standard admin credentials, legacy usernames, and env passwords
-      if (!isAuthenticated) {
-        const isLegacyUser = (cleanUser === 'admin' || cleanUser === 'admin@aws-sbg.org' || cleanUser === 'awsadmin@culko.in');
-        const isLegacyPass = (
-          cleanPass === 'awssbgadmin123' ||
-          cleanPass === 'admin' ||
-          cleanPass === 'admin123' ||
-          (Boolean(process.env.ADMIN_PASSWORD) && cleanPass === process.env.ADMIN_PASSWORD)
-        );
-        if (isLegacyUser && isLegacyPass) {
+      // Check environment password if configured
+      if (!isAuthenticated && process.env.ADMIN_PASSWORD) {
+        if (cleanPass === process.env.ADMIN_PASSWORD) {
           isAuthenticated = true;
         }
       }
 
       if (isAuthenticated) {
-        const response = NextResponse.json({ success: true, token: SECURE_TOKEN });
-        response.cookies.set('admin_token', SECURE_TOKEN, {
+        const token = generateAdminToken(cleanUser);
+        const response = NextResponse.json({ success: true, token });
+        response.cookies.set('admin_token', token, {
           path: '/',
-          httpOnly: false,
+          httpOnly: true,
           sameSite: 'lax',
           maxAge: 86400
         });
-        response.cookies.set('adminToken', SECURE_TOKEN, {
+        response.cookies.set('adminToken', token, {
           path: '/',
           httpOnly: false,
           sameSite: 'lax',
@@ -232,9 +222,16 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'File too large. Maximum size allowed: 500KB.' }, { status: 400 });
       }
       
+      let finalBase64 = base64Data;
+      if (mimeType === 'image/svg+xml') {
+        const rawSvg = Buffer.from(matches[2], 'base64').toString('utf-8');
+        const cleanSvg = sanitizeSvg(rawSvg);
+        finalBase64 = `data:image/svg+xml;base64,${Buffer.from(cleanSvg).toString('base64')}`;
+      }
+
       const id = `logo-${Date.now()}`;
       const logosMap = await db.logos.getMap();
-      logosMap[id] = base64Data;
+      logosMap[id] = finalBase64;
       await db.logos.saveMap(logosMap);
       
       return NextResponse.json({ success: true, url: `/api/collaboration-logos?id=${id}` });

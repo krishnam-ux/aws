@@ -2508,7 +2508,7 @@ export default function AdminDashboard() {
 
           {/* TAB: LIVE WEEKLY QUIZ PROCTORING */}
           {activeTab === 'WeeklyQuizProctoring' && (
-            <AdminWeeklyQuizProctoring token={token || 'awssbg-admin-session-token-secure-hash'} />
+            <AdminWeeklyQuizProctoring token={token} />
           )}
 
           {/* TAB: SECURE CERTIFICATION EXAMS & LIVE CONTROL */}
@@ -2518,22 +2518,22 @@ export default function AdminDashboard() {
 
           {/* TAB: CENTRAL EMAIL & NOTIFICATION ENGINE */}
           {activeTab === 'Emails' && (
-            <AdminEmailManager token={token || 'awssbg-admin-session-token-secure-hash'} />
+            <AdminEmailManager token={token} />
           )}
 
           {/* TAB: FOUNDING MEMBERS CMS & FORM LINKS */}
           {activeTab === 'FoundingMembers' && (
-            <AdminFoundingMembersManager token={token || 'awssbg-admin-session-token-secure-hash'} />
+            <AdminFoundingMembersManager token={token} />
           )}
 
           {/* TAB: DIGITAL ID CARDS & VERIFICATION */}
           {activeTab === 'DigitalIDs' && (
-            <AdminDigitalIdManager token={token || 'awssbg-admin-session-token-secure-hash'} />
+            <AdminDigitalIdManager token={token} />
           )}
 
           {/* TAB: DIGITAL BADGES & CREDENTIALS REGISTRY */}
           {activeTab === 'DigitalBadges' && (
-            <AdminDigitalBadgesManager token={token || 'awssbg-admin-session-token-secure-hash'} />
+            <AdminDigitalBadgesManager token={token} />
           )}
 
           {/* TAB 2: REGISTRATIONS TABLE */}

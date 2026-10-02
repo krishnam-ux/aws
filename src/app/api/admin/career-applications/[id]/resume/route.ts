@@ -1,20 +1,15 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { isAuthorizedAdmin, unauthorizedAdminResponse } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
-
-const SECURE_TOKEN = 'awssbg-admin-session-token-secure-hash';
-
-function isAuthorized(request: Request): boolean {
-  return request.headers.get('Authorization') === `Bearer ${SECURE_TOKEN}`;
-}
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ error: 'Unauthorized administrative access.' }, { status: 401 });
+  if (!isAuthorizedAdmin(request)) {
+    return unauthorizedAdminResponse();
   }
 
   const { id } = await params;
@@ -32,9 +27,11 @@ export async function GET(
   const safeFileName = resumeFile.fileName.replace(/[\r\n"\\]/g, '_');
   return new NextResponse(Buffer.from(resumeFile.data, 'base64'), {
     headers: {
-      'Content-Type': resumeFile.mimeType,
+      'Content-Type': resumeFile.mimeType || 'application/pdf',
       'Content-Length': String(resumeFile.size),
       'Content-Disposition': `${download ? 'attachment' : 'inline'}; filename="${safeFileName}"`,
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy': "default-src 'none'; sandbox",
       'Cache-Control': 'private, no-store',
     },
   });

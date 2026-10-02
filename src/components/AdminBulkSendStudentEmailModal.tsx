@@ -398,7 +398,7 @@ export default function AdminBulkSendStudentEmailModal({
           localStorage.getItem('admin_token') ||
           sessionStorage.getItem('admin_token')
         : null) ||
-      'awssbg-admin-session-token-secure-hash';
+      '';
 
     try {
       const response = await fetch('/api/admin/email/send', {

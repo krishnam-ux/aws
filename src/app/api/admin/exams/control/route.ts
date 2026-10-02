@@ -3,17 +3,13 @@ import { db } from '@/lib/db';
 import { evaluateExamSubmission, logAdminAudit } from '@/lib/exam';
 import { ExamAttempt, Exam } from '@/types/exam';
 
+import { isAuthorizedAdmin } from '@/lib/adminAuth';
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const SECURE_TOKEN = 'awssbg-admin-session-token-secure-hash';
-
 function isAuthorized(request: Request): boolean {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return false;
-  }
-  return authHeader.substring(7) === SECURE_TOKEN;
+  return isAuthorizedAdmin(request);
 }
 
 const noStoreHeaders = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' };

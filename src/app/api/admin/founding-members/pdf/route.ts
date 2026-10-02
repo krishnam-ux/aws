@@ -7,7 +7,6 @@ import crypto from 'crypto';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const SECURE_TOKEN = 'awssbg-admin-session-token-secure-hash';
 const SIGNING_SECRET = process.env.ADMIN_SESSION_SECRET || 'awssbg-pdf-download-signature-hmac-key-2026';
 
 // Cryptographic short-lived signed download token helpers
@@ -57,23 +56,14 @@ export function verifySignedDownloadToken(tokenString: string, requestedScope?: 
   }
 }
 
+import { isAuthorizedAdmin, verifyAdminToken } from '@/lib/adminAuth';
+
 function isAuthorized(request: Request, requestedScope?: 'single' | 'selected' | 'all', requestedId?: string): boolean {
-  // 1. Authorization header (Bearer token)
-  const authHeader = request.headers.get('Authorization') || request.headers.get('authorization');
-  if (authHeader && authHeader.startsWith('Bearer ') && authHeader.substring(7).trim() === SECURE_TOKEN) {
+  if (isAuthorizedAdmin(request)) {
     return true;
   }
 
-  // 2. Cookie header
-  const cookieHeader = request.headers.get('cookie') || request.headers.get('Cookie') || '';
-  if (
-    cookieHeader.includes(`admin_token=${SECURE_TOKEN}`) ||
-    cookieHeader.includes(`adminToken=${SECURE_TOKEN}`)
-  ) {
-    return true;
-  }
-
-  // 3. Short-lived signed download token validation or direct token query parameter
+  // Short-lived signed download token validation or direct token query parameter
   try {
     const { searchParams } = new URL(request.url);
     const downloadToken = searchParams.get('downloadToken') || searchParams.get('dtoken');
@@ -90,7 +80,7 @@ function isAuthorized(request: Request, requestedScope?: 'single' | 'selected' |
 
     if (tokenParam) {
       const trimmed = tokenParam.trim();
-      if (trimmed === SECURE_TOKEN) {
+      if (verifyAdminToken(trimmed).valid) {
         return true;
       }
       if (verifySignedDownloadToken(trimmed, requestedScope, requestedId)) {

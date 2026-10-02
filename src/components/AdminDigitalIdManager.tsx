@@ -75,13 +75,15 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
   const [sendLoading, setSendLoading] = useState(false);
   const [sendModalError, setSendModalError] = useState('');
 
+  const effectiveToken = token || (typeof window !== 'undefined' ? sessionStorage.getItem('adminToken') || '' : '');
+
   // Fetch Items & Stats
   const fetchData = async () => {
     try {
       setLoading(true);
       const res = await fetch('/api/admin/digital-ids', {
         headers: {
-          'Authorization': `Bearer ${token || 'awssbg-admin-session-token-secure-hash'}`
+          'Authorization': `Bearer ${effectiveToken}`
         }
       });
       if (res.ok) {
@@ -179,7 +181,7 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token || 'awssbg-admin-session-token-secure-hash'}`
+          'Authorization': `Bearer ${effectiveToken}`
         },
         body: JSON.stringify({
           action: 'create',
@@ -217,7 +219,7 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token || 'awssbg-admin-session-token-secure-hash'}`
+          'Authorization': `Bearer ${effectiveToken}`
         },
         body: JSON.stringify({
           action: 'update',
@@ -251,7 +253,7 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token || 'awssbg-admin-session-token-secure-hash'}`
+          'Authorization': `Bearer ${effectiveToken}`
         },
         body: JSON.stringify({
           action: 'change-status',
@@ -330,7 +332,7 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
       const res = await fetch(`/api/admin/digital-ids?id=${encodeURIComponent(selectedItem.id)}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token || 'awssbg-admin-session-token-secure-hash'}`
+          'Authorization': `Bearer ${effectiveToken}`
         }
       });
 
@@ -389,7 +391,7 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token || 'awssbg-admin-session-token-secure-hash'}`
+          'Authorization': `Bearer ${effectiveToken}`
         },
         body: JSON.stringify({
           publicId: selectedItem.publicId,
@@ -422,7 +424,7 @@ export default function AdminDigitalIdManager({ token }: AdminDigitalIdManagerPr
     try {
       const res = await fetch(`/api/admin/digital-ids?publicId=${item.publicId}`, {
         headers: {
-          'Authorization': `Bearer ${token || 'awssbg-admin-session-token-secure-hash'}`
+          'Authorization': `Bearer ${effectiveToken}`
         }
       });
       if (res.ok) {

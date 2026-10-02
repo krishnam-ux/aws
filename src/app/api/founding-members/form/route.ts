@@ -14,59 +14,12 @@ export async function GET(request: Request) {
 
     const formConfig: FoundingMemberFormConfig = await db.foundingMemberFormConfig.getConfig();
 
-    let existingMember: FoundingMember | null = null;
-    if (emailParam) {
-      existingMember = await db.foundingMembers.getByEmail(emailParam);
-    }
-
     return NextResponse.json(
       {
         published: formConfig.status === 'Published',
         config: formConfig,
         questions: (formConfig.questions || []).filter((q) => q.enabled),
-        existingMember: existingMember
-          ? {
-              id: existingMember.id,
-              memberId: existingMember.memberId,
-              fullName: existingMember.fullName || existingMember.name || '',
-              email: existingMember.email || '',
-              phone: existingMember.phone || '',
-              photoUrl: existingMember.photoUrl || '',
-              university: existingMember.university || '',
-              courseBranch: existingMember.courseBranch || '',
-              yearSemester: existingMember.yearSemester || '',
-              studentId: existingMember.studentId || '',
-              memberRole: existingMember.memberRole || existingMember.role || '',
-              domain: existingMember.domain || '',
-              designation: existingMember.designation || '',
-              dateOfJoining: existingMember.dateOfJoining || '',
-              membershipStatus: existingMember.membershipStatus || existingMember.status || 'Active',
-              skills: existingMember.skills || '',
-              interests: existingMember.interests || '',
-              linkedin: existingMember.linkedin || '',
-              github: existingMember.github || '',
-              portfolio: existingMember.portfolio || '',
-              speakerRoleType: existingMember.speakerRoleType || '',
-              speakingExperience: existingMember.speakingExperience || '',
-              demoVideoUrl: existingMember.demoVideoUrl || '',
-              speakingTopics: existingMember.speakingTopics || '',
-              languages: existingMember.languages || '',
-              eventAvailability: existingMember.eventAvailability || '',
-              previousExperience: existingMember.previousExperience || '',
-              contributionAreas: existingMember.contributionAreas || '',
-              assignedResponsibilities: existingMember.assignedResponsibilities || '',
-              majorAchievements: existingMember.majorAchievements || '',
-              experience: existingMember.experience || '',
-              certifications: existingMember.certifications || '',
-              digitalBadges: existingMember.digitalBadges || '',
-              eventsParticipated: existingMember.eventsParticipated || '',
-              additionalNotes: existingMember.additionalNotes || '',
-              bio: existingMember.bio || '',
-              customAnswers: existingMember.customAnswers || {},
-              formSubmitted: Boolean(existingMember.formSubmitted),
-              formSubmittedAt: existingMember.formSubmittedAt || null
-            }
-          : null
+        existingMember: null
       },
       { headers: noStoreHeaders }
     );

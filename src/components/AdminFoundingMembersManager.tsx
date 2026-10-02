@@ -30,7 +30,7 @@ export default function AdminFoundingMembersManager({ token }: AdminFoundingMemb
         localStorage.getItem('admin_token') ||
         sessionStorage.getItem('admin_token')
       : null) ||
-    'awssbg-admin-session-token-secure-hash';
+    '';
 
   // Active Main Tab: 'directory' vs 'form-builder'
   const [activeTab, setActiveTab] = useState<'directory' | 'form-builder'>('directory');

@@ -599,7 +599,7 @@ test('admin login authentication works for awsadmin@culko.in and rejects invalid
   const req2 = new Request('http://localhost/api/admin', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'login', username: 'admin', password: 'admin123' })
+    body: JSON.stringify({ action: 'login', username: 'admin', password: 'awssbgadmin123' })
   });
   const res2 = await adminPost(req2);
   assert.equal(res2.status, 200);

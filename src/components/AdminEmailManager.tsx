@@ -25,7 +25,7 @@ export default function AdminEmailManager({ token }: AdminEmailManagerProps) {
         localStorage.getItem('admin_token') ||
         sessionStorage.getItem('admin_token')
       : null) ||
-    'awssbg-admin-session-token-secure-hash';
+    '';
 
   const [activeSubTab, setActiveSubTab] = useState<
     'dashboard' | 'compose' | 'templates' | 'automations' | 'logs' | 'settings'

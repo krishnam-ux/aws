@@ -1,21 +1,18 @@
 import { NextResponse } from 'next/server';
+import { isAuthorizedAdmin, unauthorizedAdminResponse } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  const keys = Object.keys(process.env).filter(key => 
-    key.toLowerCase().includes('db') || 
-    key.toLowerCase().includes('url') || 
-    key.toLowerCase().includes('kv') || 
-    key.toLowerCase().includes('blob') || 
-    key.toLowerCase().includes('vercel') ||
-    key.toLowerCase().includes('netlify')
-  );
-  
-  return NextResponse.json({ 
-    envKeys: Object.keys(process.env),
-    dbFilteredKeys: keys,
-    DATABASE_URL_exists: !!process.env.DATABASE_URL,
-    KV_REST_API_URL_exists: !!process.env.KV_REST_API_URL,
+export async function GET(request: Request) {
+  if (!isAuthorizedAdmin(request)) {
+    return unauthorizedAdminResponse();
+  }
+
+  return NextResponse.json({
+    status: 'healthy',
+    hasDatabase: !!process.env.DATABASE_URL || !!process.env.POSTGRES_URL,
+    hasKvStore: !!process.env.KV_REST_API_URL,
+    hasResend: !!process.env.RESEND_API_KEY,
+    timestamp: new Date().toISOString()
   });
 }

@@ -1,17 +1,12 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+import { isAuthorizedAdmin } from '@/lib/adminAuth';
+
 export const dynamic = 'force-dynamic';
 
-const SECURE_TOKEN = 'awssbg-admin-session-token-secure-hash';
-
 function isAuthorized(request: Request): boolean {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return false;
-  }
-  const token = authHeader.substring(7);
-  return token === SECURE_TOKEN;
+  return isAuthorizedAdmin(request);
 }
 
 export async function GET(request: Request) {

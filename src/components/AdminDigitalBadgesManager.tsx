@@ -79,7 +79,7 @@ export default function AdminDigitalBadgesManager({ token }: AdminDigitalBadgesM
   const [sendLoading, setSendLoading] = useState(false);
   const [sendModalError, setSendModalError] = useState('');
 
-  const adminAuthToken = token || 'awssbg-admin-session-token-secure-hash';
+  const adminAuthToken = token || (typeof window !== 'undefined' ? sessionStorage.getItem('adminToken') || '' : '');
 
   // Fetch Items & Stats
   const fetchData = async () => {

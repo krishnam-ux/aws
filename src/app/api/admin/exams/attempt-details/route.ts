@@ -3,16 +3,12 @@ import { db } from '@/lib/db';
 import { calculateRemainingSeconds } from '@/lib/exam';
 import { ExamAttempt, Exam, Question } from '@/types/exam';
 
+import { isAuthorizedAdmin } from '@/lib/adminAuth';
+
 export const dynamic = 'force-dynamic';
 
-const SECURE_TOKEN = 'awssbg-admin-session-token-secure-hash';
-
 function isAuthorized(request: Request): boolean {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return false;
-  }
-  return authHeader.substring(7) === SECURE_TOKEN;
+  return isAuthorizedAdmin(request);
 }
 
 export async function GET(request: Request) {

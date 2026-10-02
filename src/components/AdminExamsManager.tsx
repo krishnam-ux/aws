@@ -8,7 +8,7 @@ interface AdminExamsManagerProps {
 }
 
 export default function AdminExamsManager({ token }: AdminExamsManagerProps) {
-  const effectiveToken = token || (typeof window !== 'undefined' ? sessionStorage.getItem('adminToken') : null) || 'awssbg-admin-session-token-secure-hash';
+  const effectiveToken = token || (typeof window !== 'undefined' ? sessionStorage.getItem('adminToken') : null) || '';
   const [exams, setExams] = useState<Exam[]>([]);
   const [selectedExamId, setSelectedExamId] = useState<string>('');
   const [liveData, setLiveData] = useState<{

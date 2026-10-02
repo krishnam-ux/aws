@@ -1,23 +1,16 @@
 import { NextResponse } from 'next/server';
 import { runScheduledEmailReminders } from '@/lib/email/scheduled';
 
+import { isAuthorizedAdmin } from '@/lib/adminAuth';
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const SECURE_TOKEN = 'awssbg-admin-session-token-secure-hash';
-
 function isAuthorized(request: Request): boolean {
+  if (isAuthorizedAdmin(request)) return true;
   const authHeader = request.headers.get('Authorization');
-  if (authHeader && authHeader.startsWith('Bearer ') && authHeader.substring(7) === SECURE_TOKEN) {
-    return true;
-  }
-  // Vercel Cron authorization header support
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
-    return true;
-  }
-  const cookieHeader = request.headers.get('cookie') || '';
-  if (cookieHeader.includes(`admin_token=${SECURE_TOKEN}`)) {
     return true;
   }
   return false;

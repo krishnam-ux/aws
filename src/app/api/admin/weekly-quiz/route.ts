@@ -14,22 +14,13 @@ import {
 import { getCandidateSignalForAdmin } from '@/lib/webrtcSignaling';
 import { WeeklyQuiz, WeeklyQuizAttempt, WeeklyQuizSecurityEvent } from '@/types/weeklyQuiz';
 
+import { isAuthorizedAdmin } from '@/lib/adminAuth';
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const SECURE_TOKEN = 'awssbg-admin-session-token-secure-hash';
-
 function isAuthorized(request: Request): boolean {
-  const authHeader = request.headers.get('Authorization');
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7);
-    if (token === SECURE_TOKEN || token.startsWith('adm_') || token.includes('session')) return true;
-  }
-  const cookie = request.headers.get('cookie') || '';
-  if (cookie.includes('adminToken=') || cookie.includes('admin_token=')) {
-    return true;
-  }
-  return false;
+  return isAuthorizedAdmin(request);
 }
 
 const noStoreHeaders = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' };
