@@ -278,6 +278,8 @@ export type WeeklyQuizAdminAction =
   | 'CREATE_QUIZ'
   | 'UPDATE_QUIZ'
   | 'DELETE_QUIZ'
+  | 'DELETE_ATTEMPT'
+  | 'CLEAR_QUIZ_ATTEMPTS'
   | 'SEND_WARNING';
 
 export interface WeeklyQuizAuditLog {

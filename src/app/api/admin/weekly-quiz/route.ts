@@ -597,11 +597,99 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, message: 'Warning dispatched to candidate.' }, { status: 200, headers: noStoreHeaders });
     }
 
+    // 11. Delete Candidate Attempt
+    if (action === 'delete-attempt') {
+      if (!attemptId) {
+        return NextResponse.json({ error: 'Attempt ID required.' }, { status: 400, headers: noStoreHeaders });
+      }
+      const attempt = await db.weeklyQuizAttempts.getById(attemptId);
+      if (!attempt) {
+        return NextResponse.json({ error: 'Attempt not found.' }, { status: 404, headers: noStoreHeaders });
+      }
+
+      await db.weeklyQuizAttempts.deleteById(attemptId);
+      await logWeeklyQuizAuditAction({
+        quizId: attempt.quizId,
+        attemptId,
+        adminUser,
+        action: 'DELETE_ATTEMPT',
+        details: { studentName: attempt.studentName, email: attempt.email, rollNumber: attempt.rollNumber }
+      });
+
+      return NextResponse.json({ success: true, message: 'Attempt deleted successfully.' }, { status: 200, headers: noStoreHeaders });
+    }
+
+    // 12. Clear All Quiz Attempts (Bulk Cleanup)
+    if (action === 'clear-quiz-attempts') {
+      if (!quizId) {
+        return NextResponse.json({ error: 'Quiz ID required.' }, { status: 400, headers: noStoreHeaders });
+      }
+      const deletedCount = await db.weeklyQuizAttempts.deleteByQuizId(quizId);
+      await logWeeklyQuizAuditAction({
+        quizId,
+        adminUser,
+        action: 'CLEAR_QUIZ_ATTEMPTS',
+        details: { deletedAttemptsCount: deletedCount }
+      });
+      return NextResponse.json({ success: true, deletedCount }, { status: 200, headers: noStoreHeaders });
+    }
+
     return NextResponse.json({ error: 'Invalid action requested.' }, { status: 400, headers: noStoreHeaders });
   } catch (error: any) {
     console.error('Admin weekly quiz POST error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to process admin action.' },
+      { status: 500, headers: noStoreHeaders }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    if (!isAuthorized(request)) {
+      return NextResponse.json(
+        { error: 'Unauthorized administrative access.' },
+        { status: 401, headers: noStoreHeaders }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const quizId = searchParams.get('quizId');
+    const attemptId = searchParams.get('attemptId');
+    const adminUser = 'awsadmin@culko.in';
+
+    if (quizId) {
+      await db.weeklyQuizzes.deleteOne(quizId);
+      await logWeeklyQuizAuditAction({
+        quizId,
+        adminUser,
+        action: 'DELETE_QUIZ',
+        details: { quizId, via: 'HTTP_DELETE' }
+      });
+      return NextResponse.json({ success: true, message: 'Quiz deleted successfully.' }, { status: 200, headers: noStoreHeaders });
+    }
+
+    if (attemptId) {
+      const attempt = await db.weeklyQuizAttempts.getById(attemptId);
+      if (!attempt) {
+        return NextResponse.json({ error: 'Attempt not found.' }, { status: 404, headers: noStoreHeaders });
+      }
+      await db.weeklyQuizAttempts.deleteById(attemptId);
+      await logWeeklyQuizAuditAction({
+        quizId: attempt.quizId,
+        attemptId,
+        adminUser,
+        action: 'DELETE_ATTEMPT',
+        details: { attemptId, via: 'HTTP_DELETE' }
+      });
+      return NextResponse.json({ success: true, message: 'Attempt deleted successfully.' }, { status: 200, headers: noStoreHeaders });
+    }
+
+    return NextResponse.json({ error: 'quizId or attemptId parameter required.' }, { status: 400, headers: noStoreHeaders });
+  } catch (error: any) {
+    console.error('Admin weekly quiz DELETE error:', error);
+    return NextResponse.json(
+      { error: error.message || 'Failed to process deletion.' },
       { status: 500, headers: noStoreHeaders }
     );
   }
