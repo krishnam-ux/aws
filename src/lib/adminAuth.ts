@@ -126,15 +126,24 @@ export function verifyAdminToken(token: string | null | undefined): {
         return { valid: false, error: 'Invalid token signature.' };
       }
 
+      const header = JSON.parse(base64UrlDecode(encodedHeader));
+      if (!header || typeof header !== 'object' || header.alg !== 'HS256') {
+        return { valid: false, error: 'Unsupported or invalid token algorithm.' };
+      }
+
       const payload: TokenPayload = JSON.parse(base64UrlDecode(encodedPayload));
       const now = Date.now();
 
-      if (payload.exp && now > payload.exp) {
-        return { valid: false, error: 'Token has expired.' };
+      if (!payload.exp || typeof payload.exp !== 'number' || now > payload.exp) {
+        return { valid: false, error: 'Token has expired or missing expiration claim.' };
       }
 
       if (payload.role !== 'admin') {
         return { valid: false, error: 'Insufficient permissions.' };
+      }
+
+      if (!payload.sub || typeof payload.sub !== 'string' || !payload.sub.trim()) {
+        return { valid: false, error: 'Invalid token subject claim.' };
       }
 
       return { valid: true, username: payload.sub };
@@ -145,12 +154,7 @@ export function verifyAdminToken(token: string | null | undefined): {
 
   // 2. Compatibility check for test runner sessions (ONLY in non-production environments)
   if (process.env.NODE_ENV !== 'production') {
-    if (
-      cleanToken === 'awssbg-admin-session-token-secure-hash' ||
-      cleanToken.startsWith('adm_') ||
-      cleanToken.startsWith('admin_') ||
-      (cleanToken.includes('session') && cleanToken.length >= 20)
-    ) {
+    if (cleanToken === 'awssbg-admin-session-token-secure-hash') {
       return { valid: true, username: 'admin' };
     }
   }

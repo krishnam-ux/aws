@@ -144,6 +144,29 @@ describe('Security Hardening & Protection Test Suite', () => {
         const wrongToken = `${header}.${payload}.${wrongSig}`;
 
         assert.strictEqual(verifyAdminToken(wrongToken).valid, false);
+
+        // Reject wrong or insecure algorithm (e.g. none or HS512)
+        const noneHeader = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
+        assert.strictEqual(verifyAdminToken(`${noneHeader}.${payload}.${wrongSig}`).valid, false);
+
+        // Reject missing exp claim
+        const noExpPayload = Buffer.from(JSON.stringify({ sub: 'admin', role: 'admin' })).toString('base64url');
+        const noExpSig = crypto.createHmac('sha256', customSecret).update(`${header}.${noExpPayload}`).digest('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        assert.strictEqual(verifyAdminToken(`${header}.${noExpPayload}.${noExpSig}`).valid, false);
+
+        // Reject non-admin role
+        const userRolePayload = Buffer.from(JSON.stringify({ sub: 'admin', role: 'student', exp: Date.now() + 60000 })).toString('base64url');
+        const userRoleSig = crypto.createHmac('sha256', customSecret).update(`${header}.${userRolePayload}`).digest('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        assert.strictEqual(verifyAdminToken(`${header}.${userRolePayload}.${userRoleSig}`).valid, false);
+
+        // Reject empty or missing sub claim
+        const noSubPayload = Buffer.from(JSON.stringify({ sub: '', role: 'admin', exp: Date.now() + 60000 })).toString('base64url');
+        const noSubSig = crypto.createHmac('sha256', customSecret).update(`${header}.${noSubPayload}`).digest('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        assert.strictEqual(verifyAdminToken(`${header}.${noSubPayload}.${noSubSig}`).valid, false);
+
+        // Reject prefix-only or format-only pseudo tokens
+        assert.strictEqual(verifyAdminToken('adm_secret_token_12345').valid, false);
+        assert.strictEqual(verifyAdminToken('Bearer adm_secret_token_12345').valid, false);
       } finally {
         (process.env as any).NODE_ENV = origNodeEnv;
         if (origSecret) process.env.ADMIN_SECRET_KEY = origSecret;
@@ -431,6 +454,161 @@ describe('Security Hardening & Protection Test Suite', () => {
       const res6 = middleware(req6);
       assert.strictEqual(res6.status, 429);
       assert.strictEqual(res6.headers.get('Retry-After') !== null, true);
+    });
+
+    it('allows authenticated admin POST /api/admin requests beyond 5 requests without 429 lockout', () => {
+      resetRateLimitStore();
+      const ip = '10.0.0.99';
+      const validToken = generateAdminToken('admin');
+      for (let i = 0; i < 20; i++) {
+        const req = new NextRequest('http://localhost:3000/api/admin', {
+          method: 'POST',
+          headers: {
+            'x-forwarded-for': ip,
+            'authorization': `Bearer ${validToken}`,
+          },
+        });
+        const res = middleware(req);
+        assert.notStrictEqual(res.status, 429);
+      }
+    });
+
+    it('denies authenticated bucket to tampered tokens and triggers 429 after 5 requests under admin_login', () => {
+      resetRateLimitStore();
+      const ip = '10.0.0.101';
+      const validToken = generateAdminToken('admin');
+      const [header, payload] = validToken.split('.');
+      const tamperedToken = `${header}.${payload}.fake_tampered_signature_1234567890`;
+
+      for (let i = 0; i < 5; i++) {
+        const req = new NextRequest('http://localhost:3000/api/admin', {
+          method: 'POST',
+          headers: {
+            'x-forwarded-for': ip,
+            'authorization': `Bearer ${tamperedToken}`,
+          },
+        });
+        const res = middleware(req);
+        assert.notStrictEqual(res.status, 429);
+      }
+
+      // 6th request with tampered token MUST trigger HTTP 429 under admin_login rate limit
+      const req6 = new NextRequest('http://localhost:3000/api/admin', {
+        method: 'POST',
+        headers: {
+          'x-forwarded-for': ip,
+          'authorization': `Bearer ${tamperedToken}`,
+        },
+      });
+      const res6 = middleware(req6);
+      assert.strictEqual(res6.status, 429);
+      assert.strictEqual(res6.headers.get('Retry-After') !== null, true);
+    });
+
+    it('denies authenticated bucket to expired tokens and triggers 429 after 5 requests under admin_login', () => {
+      resetRateLimitStore();
+      const ip = '10.0.0.102';
+      const expiredPayload = Buffer.from(
+        JSON.stringify({ sub: 'admin', role: 'admin', iat: Date.now() - 100000, exp: Date.now() - 1000, jti: 'test' })
+      ).toString('base64url');
+      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+      const data = `${header}.${expiredPayload}`;
+      const crypto = require('crypto');
+      const secret = process.env.ADMIN_SECRET_KEY || process.env.ADMIN_JWT_SECRET || process.env.NEXTAUTH_SECRET || 'awssbg-admin-secure-signing-secret-key-2026';
+      const sig = crypto.createHmac('sha256', secret).update(data).digest('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      const expiredToken = `${data}.${sig}`;
+
+      for (let i = 0; i < 5; i++) {
+        const req = new NextRequest('http://localhost:3000/api/admin', {
+          method: 'POST',
+          headers: {
+            'x-forwarded-for': ip,
+            'authorization': `Bearer ${expiredToken}`,
+          },
+        });
+        const res = middleware(req);
+        assert.notStrictEqual(res.status, 429);
+      }
+
+      // 6th request with expired token MUST trigger HTTP 429
+      const req6 = new NextRequest('http://localhost:3000/api/admin', {
+        method: 'POST',
+        headers: {
+          'x-forwarded-for': ip,
+          'authorization': `Bearer ${expiredToken}`,
+        },
+      });
+      const res6 = middleware(req6);
+      assert.strictEqual(res6.status, 429);
+    });
+
+    it('allows multiple authenticated requests (25 requests) across both /api/admin and /api/admin/weekly-quiz with valid signed token without 429', () => {
+      resetRateLimitStore();
+      const ip = '10.0.0.103';
+      const validToken = generateAdminToken('admin');
+
+      for (let i = 0; i < 25; i++) {
+        const targetUrl = i % 2 === 0
+          ? 'http://localhost:3000/api/admin'
+          : 'http://localhost:3000/api/admin/weekly-quiz';
+        const req = new NextRequest(targetUrl, {
+          method: 'POST',
+          headers: {
+            'x-forwarded-for': ip,
+            'authorization': `Bearer ${validToken}`,
+          },
+        });
+        const res = middleware(req);
+        assert.notStrictEqual(res.status, 429, `Request ${i + 1} unexpectedly throttled with 429`);
+      }
+    });
+
+    it('denies authenticated bucket on /api/admin/weekly-quiz to tampered/unauthenticated requests and triggers 429 after 5 requests under admin_unauth', () => {
+      resetRateLimitStore();
+      const ip = '10.0.0.104';
+      const tamperedToken = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiJ9.invalid_signature_xyz';
+
+      for (let i = 0; i < 5; i++) {
+        const req = new NextRequest('http://localhost:3000/api/admin/weekly-quiz', {
+          method: 'GET',
+          headers: {
+            'x-forwarded-for': ip,
+            'authorization': `Bearer ${tamperedToken}`,
+          },
+        });
+        const res = middleware(req);
+        assert.notStrictEqual(res.status, 429);
+      }
+
+      // 6th request with tampered token to /api/admin/weekly-quiz must trigger HTTP 429
+      const req6 = new NextRequest('http://localhost:3000/api/admin/weekly-quiz', {
+        method: 'GET',
+        headers: {
+          'x-forwarded-for': ip,
+          'authorization': `Bearer ${tamperedToken}`,
+        },
+      });
+      const res6 = middleware(req6);
+      assert.strictEqual(res6.status, 429);
+    });
+
+    it('enforces API route authentication directly (defense in depth: 401 on tampered/expired tokens)', async () => {
+      const validToken = generateAdminToken('admin');
+      const [header, payload] = validToken.split('.');
+      const tamperedToken = `${header}.${payload}.invalid_sig_xyz`;
+
+      const req = new Request('http://localhost:3000/api/admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${tamperedToken}`
+        },
+        body: JSON.stringify({ action: 'verify_token' })
+      });
+      const res = await adminPost(req);
+      assert.strictEqual(res.status, 401);
+      const data = await res.json();
+      assert.strictEqual(data.error, 'Unauthorized administrative access.');
     });
 
     it('middleware rate limits Exam/Quiz auth POST /api/exam/auth after 10 requests', () => {

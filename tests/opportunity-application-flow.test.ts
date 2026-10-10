@@ -583,11 +583,12 @@ test('opportunity benefits are dynamically loaded from data and contain all 10 e
 });
 
 test('admin login authentication works for awsadmin@culko.in and rejects invalid passwords', async () => {
+  const adminPassword = process.env.ADMIN_PASSWORD || 'awssbg-dev-test-admin-password-only';
   // 1. Success with standard production credentials
   const req1 = new Request('http://localhost/api/admin', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'login', username: 'awsadmin@culko.in', password: 'awssbgadmin123' })
+    body: JSON.stringify({ action: 'login', username: 'awsadmin@culko.in', password: adminPassword })
   });
   const res1 = await adminPost(req1);
   assert.equal(res1.status, 200);
@@ -599,7 +600,7 @@ test('admin login authentication works for awsadmin@culko.in and rejects invalid
   const req2 = new Request('http://localhost/api/admin', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'login', username: 'admin', password: 'awssbgadmin123' })
+    body: JSON.stringify({ action: 'login', username: 'admin', password: adminPassword })
   });
   const res2 = await adminPost(req2);
   assert.equal(res2.status, 200);

@@ -5,6 +5,7 @@ import postgres from 'postgres';
 import { normalizeOpportunityApplication } from './opportunityApplication';
 import { DigitalIdentity, DigitalIdType, DigitalIdStatus, VerificationLog } from '@/types/digitalIdentity';
 import { DigitalBadge, DigitalBadgeEvent, BadgeStatus } from '@/types/digitalBadge';
+import { TeamAssessmentPeriod, TeamWorkAssessment, TeamAssessmentAuditLog } from '@/types/teamAssessment';
 import { DIGITAL_ID_PREFIXES } from './digitalIdUtils';
 
 const DB_DIR = path.join(process.cwd(), 'src', 'data', 'db');
@@ -996,10 +997,15 @@ async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
 // Initial/default configurations
 const DEFAULT_ADMINS = () => {
   const salt = generateSalt();
-  const passwordHash = hashPassword('awssbgadmin123', salt);
+  const defaultPassword =
+    process.env.ADMIN_PASSWORD ||
+    (process.env.NODE_ENV === 'production'
+      ? crypto.randomBytes(32).toString('hex')
+      : 'awssbg-dev-test-admin-password-only');
+  const passwordHash = hashPassword(defaultPassword, salt);
   return [
     {
-      username: 'awsadmin@culko.in',
+      username: process.env.ADMIN_EMAIL || 'awsadmin@culko.in',
       salt,
       passwordHash
     }
@@ -4431,6 +4437,109 @@ export const db = {
       if (!credentialId) return events.slice(0, limit);
       const cleanId = String(credentialId).trim().toUpperCase();
       return events.filter((e) => e.credentialId && String(e.credentialId).toUpperCase() === cleanId).slice(0, limit);
+    }
+  },
+  teamAssessmentPeriods: {
+    getAll: async (): Promise<TeamAssessmentPeriod[]> => {
+      return await readJsonFile<TeamAssessmentPeriod[]>('team_assessment_periods.json', []);
+    },
+    getActive: async (): Promise<TeamAssessmentPeriod | null> => {
+      const list = await db.teamAssessmentPeriods.getAll();
+      return list.find((p: TeamAssessmentPeriod) => p.status === 'Active') || null;
+    },
+    getById: async (id: string): Promise<TeamAssessmentPeriod | null> => {
+      if (!id) return null;
+      const list = await db.teamAssessmentPeriods.getAll();
+      return list.find((p: TeamAssessmentPeriod) => p.id === id) || null;
+    },
+    insertOne: async (period: TeamAssessmentPeriod): Promise<void> => {
+      return withCollectionLock('team_assessment_periods.json', async () => {
+        const list = await db.teamAssessmentPeriods.getAll();
+        list.unshift(period);
+        await writeJsonFile('team_assessment_periods.json', list);
+      });
+    },
+    updateOne: async (id: string, fields: Partial<TeamAssessmentPeriod>): Promise<TeamAssessmentPeriod | null> => {
+      return withCollectionLock('team_assessment_periods.json', async () => {
+        const list = await db.teamAssessmentPeriods.getAll();
+        const idx = list.findIndex((p: TeamAssessmentPeriod) => p.id === id);
+        if (idx !== -1) {
+          list[idx] = { ...list[idx], ...fields, updatedAt: new Date().toISOString() };
+          await writeJsonFile('team_assessment_periods.json', list);
+          return list[idx];
+        }
+        return null;
+      });
+    },
+    deleteOne: async (id: string): Promise<void> => {
+      return withCollectionLock('team_assessment_periods.json', async () => {
+        let list = await db.teamAssessmentPeriods.getAll();
+        list = list.filter((p: TeamAssessmentPeriod) => p.id !== id);
+        await writeJsonFile('team_assessment_periods.json', list);
+      });
+    }
+  },
+  teamAssessments: {
+    getAll: async (): Promise<TeamWorkAssessment[]> => {
+      return await readJsonFile<TeamWorkAssessment[]>('team_assessments.json', []);
+    },
+    getById: async (id: string): Promise<TeamWorkAssessment | null> => {
+      if (!id) return null;
+      const list = await db.teamAssessments.getAll();
+      return list.find((a: TeamWorkAssessment) => a.id === id) || null;
+    },
+    getBySessionToken: async (token: string): Promise<TeamWorkAssessment | null> => {
+      if (!token) return null;
+      const list = await db.teamAssessments.getAll();
+      return list.find((a: TeamWorkAssessment) => a.sessionToken === token) || null;
+    },
+    getByEmailAndPeriod: async (email: string, periodId: string): Promise<TeamWorkAssessment | null> => {
+      if (!email || !periodId) return null;
+      const cleanEmail = email.trim().toLowerCase();
+      const list = await db.teamAssessments.getAll();
+      return list.find((a: TeamWorkAssessment) => a.assessmentPeriodId === periodId && a.memberEmail?.toLowerCase() === cleanEmail) || null;
+    },
+    insertOne: async (assessment: TeamWorkAssessment): Promise<void> => {
+      return withCollectionLock('team_assessments.json', async () => {
+        const list = await db.teamAssessments.getAll();
+        list.unshift(assessment);
+        await writeJsonFile('team_assessments.json', list);
+      });
+    },
+    updateOne: async (id: string, fields: Partial<TeamWorkAssessment>): Promise<TeamWorkAssessment | null> => {
+      return withCollectionLock('team_assessments.json', async () => {
+        const list = await db.teamAssessments.getAll();
+        const idx = list.findIndex((a: TeamWorkAssessment) => a.id === id);
+        if (idx !== -1) {
+          list[idx] = { ...list[idx], ...fields, updatedAt: new Date().toISOString() };
+          await writeJsonFile('team_assessments.json', list);
+          return list[idx];
+        }
+        return null;
+      });
+    },
+    deleteOne: async (id: string): Promise<void> => {
+      return withCollectionLock('team_assessments.json', async () => {
+        let list = await db.teamAssessments.getAll();
+        list = list.filter((a: TeamWorkAssessment) => a.id !== id);
+        await writeJsonFile('team_assessments.json', list);
+      });
+    }
+  },
+  teamAssessmentAuditLogs: {
+    getAll: async (): Promise<TeamAssessmentAuditLog[]> => {
+      return await readJsonFile<TeamAssessmentAuditLog[]>('team_assessment_audit_logs.json', []);
+    },
+    getByAssessmentId: async (assessmentId: string): Promise<TeamAssessmentAuditLog[]> => {
+      const logs = await db.teamAssessmentAuditLogs.getAll();
+      return logs.filter((l: TeamAssessmentAuditLog) => l.assessmentId === assessmentId);
+    },
+    insertOne: async (log: TeamAssessmentAuditLog): Promise<void> => {
+      return withCollectionLock('team_assessment_audit_logs.json', async () => {
+        const list = await db.teamAssessmentAuditLogs.getAll();
+        list.unshift(log);
+        await writeJsonFile('team_assessment_audit_logs.json', list);
+      });
     }
   }
 };
