@@ -1161,6 +1161,15 @@ export default function AdminDashboard() {
   // Client-side image optimization helper using HTML5 Canvas
   const optimizeImageFile = (file: File, maxWidth = 1920, maxHeight = 1080, quality = 0.85): Promise<string> => {
     return new Promise((resolve, reject) => {
+      // SVGs do not need canvas rasterization
+      if (file.type === 'image/svg+xml') {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = new Image();
@@ -1168,14 +1177,11 @@ export default function AdminDashboard() {
           let width = img.width;
           let height = img.height;
 
+          // Accurately bound both width and height while strictly maintaining aspect ratio
           if (width > maxWidth || height > maxHeight) {
-            if (width / height > maxWidth / maxHeight) {
-              height = Math.round((height * maxWidth) / width);
-              width = maxWidth;
-            } else {
-              width = Math.round((width * maxHeight) / height);
-              maxHeight = maxHeight;
-            }
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.max(1, Math.round(width * ratio));
+            height = Math.max(1, Math.round(height * ratio));
           }
 
           const canvas = document.createElement('canvas');
@@ -1188,8 +1194,29 @@ export default function AdminDashboard() {
           }
 
           ctx.drawImage(img, 0, 0, width, height);
-          const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-          const optimizedDataUrl = canvas.toDataURL(mimeType, quality);
+
+          // Support WebP, PNG, and JPEG natively
+          let targetMime = 'image/jpeg';
+          if (file.type === 'image/webp') {
+            targetMime = 'image/webp';
+          } else if (file.type === 'image/png') {
+            targetMime = 'image/png';
+          }
+
+          let optimizedDataUrl = canvas.toDataURL(targetMime, quality);
+
+          // If PNG produces an oversized payload (> 4.2MB in base64, server limit is 5MB),
+          // convert to WebP (preserves alpha) or high-quality JPEG
+          const approxBytes = Math.round((optimizedDataUrl.length * 3) / 4);
+          if (approxBytes > 4.2 * 1024 * 1024 && targetMime === 'image/png') {
+            const webpUrl = canvas.toDataURL('image/webp', 0.88);
+            if (webpUrl && webpUrl.startsWith('data:image/webp')) {
+              optimizedDataUrl = webpUrl;
+            } else {
+              optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            }
+          }
+
           resolve(optimizedDataUrl);
         };
         img.onerror = () => resolve(e.target?.result as string);
@@ -1209,6 +1236,7 @@ export default function AdminDashboard() {
     );
 
     if (validImages.length === 0) {
+      setGalleryUploadProgress('');
       setGalleryUploadError('Please select valid image files (JPEG, PNG, WebP, SVG, GIF).');
       return;
     }
@@ -1219,6 +1247,7 @@ export default function AdminDashboard() {
 
     try {
       const uploadedPhotos: EventPhoto[] = [];
+      const errors: string[] = [];
 
       for (let i = 0; i < validImages.length; i++) {
         const file = validImages[i];
@@ -1235,25 +1264,38 @@ export default function AdminDashboard() {
           });
         }
 
-        const response = await fetch('/api/admin', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            action: 'upload-event-photo',
-            base64Data,
-            fileName: file.name,
-            eventId: isEdit && editEvent?.id ? editEvent.id : undefined
-          })
-        });
+        try {
+          const response = await fetch('/api/admin', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              action: 'upload-event-photo',
+              base64Data,
+              fileName: file.name,
+              eventId: isEdit && editEvent?.id ? editEvent.id : undefined
+            })
+          });
 
-        const data = await response.json();
-        if (response.ok && data.success && data.photo) {
-          uploadedPhotos.push(data.photo);
-        } else {
-          console.error('Failed to upload a photo:', data.error);
+          let data: any = {};
+          try {
+            data = await response.json();
+          } catch {
+            data = { error: `Server error (${response.status})` };
+          }
+
+          if (response.ok && data.success && data.photo) {
+            uploadedPhotos.push(data.photo);
+          } else {
+            const msg = data.error || (response.status === 413 ? 'Photo too large (exceeds server limit)' : `Server error (${response.status})`);
+            console.error(`Failed to upload ${file.name}:`, msg);
+            errors.push(`${file.name}: ${msg}`);
+          }
+        } catch (netErr: any) {
+          console.error(`Network error uploading ${file.name}:`, netErr);
+          errors.push(`${file.name}: Network communication error`);
         }
       }
 
@@ -1265,14 +1307,25 @@ export default function AdminDashboard() {
           const currentGallery = Array.isArray(eventForm?.gallery) ? eventForm.gallery : [];
           setEventForm({ ...eventForm, gallery: [...currentGallery, ...uploadedPhotos] });
         }
+      }
+
+      if (errors.length > 0) {
+        if (uploadedPhotos.length > 0) {
+          setGalleryUploadProgress(`Uploaded ${uploadedPhotos.length} of ${validImages.length} photos.`);
+          setGalleryUploadError(`Some uploads failed: ${errors.join(', ')}`);
+        } else {
+          setGalleryUploadProgress('');
+          setGalleryUploadError(errors.length === 1 ? errors[0] : `Failed to upload: ${errors.join('; ')}`);
+        }
+      } else {
+        setGalleryUploadError('');
         setGalleryUploadProgress(`Successfully uploaded ${uploadedPhotos.length} photo${uploadedPhotos.length > 1 ? 's' : ''}!`);
         setTimeout(() => setGalleryUploadProgress(''), 3000);
-      } else {
-        setGalleryUploadError('Failed to upload selected photos. Please try again.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Photo upload error:', err);
-      setGalleryUploadError('Network error while uploading photos.');
+      setGalleryUploadProgress('');
+      setGalleryUploadError(err.message || 'Network error while uploading photos.');
     } finally {
       setIsUploadingGallery(false);
     }
@@ -5261,7 +5314,7 @@ export default function AdminDashboard() {
                     <span>{galleryUploadProgress || 'Uploading photos...'}</span>
                   </div>
                 )}
-                {!isUploadingGallery && galleryUploadProgress && (
+                {!isUploadingGallery && galleryUploadProgress && !galleryUploadError && (
                   <div className="p-2 bg-emerald-50 border border-emerald-200 rounded text-emerald-700 text-[11px] font-medium">
                     {galleryUploadProgress}
                   </div>
@@ -5713,7 +5766,7 @@ export default function AdminDashboard() {
                     <span>{galleryUploadProgress || 'Uploading photos...'}</span>
                   </div>
                 )}
-                {!isUploadingGallery && galleryUploadProgress && (
+                {!isUploadingGallery && galleryUploadProgress && !galleryUploadError && (
                   <div className="p-2 bg-emerald-50 border border-emerald-200 rounded text-emerald-700 text-[11px] font-medium">
                     {galleryUploadProgress}
                   </div>

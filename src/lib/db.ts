@@ -101,6 +101,7 @@ async function ensurePostgresTable() {
     await ensureExamsTables();
     await ensureEmailTables();
     await ensureDigitalIdentityTables();
+    await ensureEventPhotosTable();
     postgresTableEnsured = true;
   } catch (err) {
     console.error('Failed to ensure kv_store table exists in PostgreSQL:', err);
@@ -647,6 +648,29 @@ async function ensureResumeFilesTable() {
   }
 }
 
+let eventPhotosTableEnsured = false;
+async function ensureEventPhotosTable() {
+  if (!sql || eventPhotosTableEnsured) return;
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS event_photos (
+        id VARCHAR(255) PRIMARY KEY,
+        file_name VARCHAR(255),
+        mime_type VARCHAR(100),
+        caption TEXT,
+        size INT,
+        data TEXT,
+        uploaded_at TIMESTAMPTZ DEFAULT NOW(),
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_event_photos_id ON event_photos(id)`;
+    eventPhotosTableEnsured = true;
+  } catch (err) {
+    console.error('Failed to ensure event photos table exists in PostgreSQL:', err);
+  }
+}
+
 async function ensureCertificatesTable() {
   if (!sql) return;
   try {
@@ -1163,6 +1187,49 @@ const DEFAULT_EVENTS = [
     image: '',
     registrationStatus: 'Open',
     maxRegistrations: -1
+  },
+  {
+    id: 'event-1791380488342',
+    number: 'Event 08',
+    month: 'October',
+    title: 'Cloud Connect – Special Guest Session',
+    focus: 'Cloud Computing, AWS, AI, Cloud Systems Administration, Industry Experience, Career Opportunities',
+    outcome: 'Participants will gain practical industry insights, understand real-world cloud roles and opportunities, and learn from the speaker’s professional experience in cloud and AI',
+    overview: 'Join us for Cloud Connect – a special online guest session featuring industry insights, experiences, and career opportunities in cloud and AI. Connect with an experienced cloud professional and gain practical insights into the world of cloud technology',
+    description: 'Join us for Cloud Connect – a special online guest session featuring industry insights, experiences, and career opportunities in cloud and AI. Connect with an experienced cloud professional and gain practical insights into the world of cloud technology',
+    format: 'Special Guest Session',
+    eventFormat: 'Special Guest Session',
+    whatYouWillLearn: [
+      'Real-world cloud industry insights',
+      'Cloud and AI career opportunities',
+      'Cloud systems and administration',
+      'Professional experiences and lessons',
+      'Industry-relevant skills and guidance'
+    ],
+    aboutTheEvent: 'Cloud Connect is a special guest session organized by the AWS Student Builder Group at Chandigarh University – Uttar Pradesh. The session is designed to give students an opportunity to learn directly from an experienced industry professional, explore real-world cloud experiences, understand career opportunities, and interact with the guest speaker.\nThe session will be conducted online and will include an interactive discussion, industry insights, and an opportunity for participants to ask questions and engage with the speaker',
+    requirements: '',
+    additionalInfo: '',
+    status: 'Planned',
+    date: '2026-10-11',
+    time: '08:00 PM',
+    endTime: '9:30 PM',
+    venue: 'Online Session',
+    city: 'Lucknow, Uttar Pradesh',
+    fullVenueAddress: 'Online – Google Meet',
+    speaker: 'Pritish Anand',
+    registrationLink: '',
+    image: '',
+    registrationStatus: 'Closed',
+    maxRegistrations: -1,
+    registrationDeadline: '',
+    collaborations: [],
+    customCollabLogo: '',
+    customCollab: '',
+    collaborationName: '',
+    collaborationDescription: '',
+    collaborationWebsite: '',
+    collaborationLogo: '',
+    gallery: []
   }
 ];
 
@@ -2305,22 +2372,113 @@ export const db = {
     saveMap: async (data: Record<string, string>) => await writeJsonFile('collaboration_logos.json', data)
   },
   eventPhotos: {
-    getMap: async () => await readJsonFile<Record<string, { id: string; data: string; mimeType: string; fileName?: string; caption?: string; uploadedAt?: string; size?: number }>>('event_photos.json', {}),
-    saveMap: async (data: Record<string, any>) => await writeJsonFile('event_photos.json', data),
+    getMap: async () => {
+      const localMap = await readJsonFile<Record<string, { id: string; data: string; mimeType: string; fileName?: string; caption?: string; uploadedAt?: string; size?: number }>>('event_photos.json', {});
+      if (sql) {
+        try {
+          await ensureEventPhotosTable();
+          const rows = await sql`SELECT id, file_name, mime_type, caption, size, data, uploaded_at FROM event_photos`;
+          const dbMap: Record<string, any> = {};
+          for (const r of rows) {
+            dbMap[r.id] = {
+              id: r.id,
+              data: r.data,
+              mimeType: r.mime_type,
+              fileName: r.file_name,
+              caption: r.caption || '',
+              size: Number(r.size || 0),
+              uploadedAt: r.uploaded_at ? new Date(r.uploaded_at).toISOString() : undefined
+            };
+          }
+          return { ...localMap, ...dbMap };
+        } catch (e) {
+          console.error('Error fetching event photos from PostgreSQL:', e);
+        }
+      }
+      return localMap;
+    },
+    saveMap: async (data: Record<string, any>) => {
+      await writeJsonFile('event_photos.json', data);
+      if (sql) {
+        try {
+          await ensureEventPhotosTable();
+          for (const [id, photo] of Object.entries(data)) {
+            await sql`
+              INSERT INTO event_photos (id, file_name, mime_type, caption, size, data, uploaded_at)
+              VALUES (${id}, ${photo.fileName || ''}, ${photo.mimeType || 'image/jpeg'}, ${photo.caption || ''}, ${photo.size || 0}, ${photo.data}, ${photo.uploadedAt || new Date().toISOString()})
+              ON CONFLICT (id) DO UPDATE SET
+                file_name = EXCLUDED.file_name,
+                mime_type = EXCLUDED.mime_type,
+                caption = EXCLUDED.caption,
+                size = EXCLUDED.size,
+                data = EXCLUDED.data,
+                uploaded_at = EXCLUDED.uploaded_at;
+            `;
+          }
+        } catch (e) {
+          console.error('Error saving event photos map to PostgreSQL:', e);
+        }
+      }
+    },
     get: async (id: string) => {
-      const map = await db.eventPhotos.getMap();
+      if (sql) {
+        try {
+          await ensureEventPhotosTable();
+          const rows = await sql`SELECT id, file_name, mime_type, caption, size, data, uploaded_at FROM event_photos WHERE id = ${id}`;
+          if (rows.length > 0) {
+            return {
+              id: rows[0].id,
+              data: rows[0].data,
+              mimeType: rows[0].mime_type,
+              fileName: rows[0].file_name,
+              caption: rows[0].caption || '',
+              size: Number(rows[0].size || 0),
+              uploadedAt: rows[0].uploaded_at ? new Date(rows[0].uploaded_at).toISOString() : undefined
+            };
+          }
+        } catch (e) {
+          console.error('Error fetching single event photo from PostgreSQL:', e);
+        }
+      }
+      const map = await readJsonFile<Record<string, any>>('event_photos.json', {});
       return map[id] || null;
     },
     save: async (id: string, photo: any) => {
-      const map = await db.eventPhotos.getMap();
+      const map = await readJsonFile<Record<string, any>>('event_photos.json', {});
       map[id] = photo;
-      await db.eventPhotos.saveMap(map);
+      await writeJsonFile('event_photos.json', map);
+      if (sql) {
+        try {
+          await ensureEventPhotosTable();
+          await sql`
+            INSERT INTO event_photos (id, file_name, mime_type, caption, size, data, uploaded_at)
+            VALUES (${id}, ${photo.fileName || ''}, ${photo.mimeType || 'image/jpeg'}, ${photo.caption || ''}, ${photo.size || 0}, ${photo.data}, ${photo.uploadedAt || new Date().toISOString()})
+            ON CONFLICT (id) DO UPDATE SET
+              file_name = EXCLUDED.file_name,
+              mime_type = EXCLUDED.mime_type,
+              caption = EXCLUDED.caption,
+              size = EXCLUDED.size,
+              data = EXCLUDED.data,
+              uploaded_at = EXCLUDED.uploaded_at;
+          `;
+        } catch (e) {
+          console.error('Error saving single event photo to PostgreSQL:', e);
+        }
+      }
     },
     delete: async (id: string) => {
-      const map = await db.eventPhotos.getMap();
+      const map = await readJsonFile<Record<string, any>>('event_photos.json', {});
       if (map[id]) {
         delete map[id];
-        await db.eventPhotos.saveMap(map);
+        await writeJsonFile('event_photos.json', map);
+      }
+      if (sql) {
+        try {
+          await ensureEventPhotosTable();
+          await sql`DELETE FROM event_photos WHERE id = ${id}`;
+        } catch (e) {
+          console.error('Error deleting event photo from PostgreSQL:', e);
+        }
       }
     }
   },

@@ -262,19 +262,36 @@ export async function POST(request: Request) {
       if (approxBytes > 5 * 1024 * 1024) {
         return NextResponse.json({ error: 'Photo too large. Maximum size allowed: 5MB.' }, { status: 400 });
       }
+
+      // If eventId is provided, verify event exists BEFORE committing photo
+      let events: any[] = [];
+      let eventIdx = -1;
+      if (eventId) {
+        events = await db.events.getAll();
+        eventIdx = events.findIndex((e: any) => e.id === eventId);
+        if (eventIdx === -1) {
+          return NextResponse.json({ error: 'Specified event not found.' }, { status: 404 });
+        }
+      }
       
       const id = `photo-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+      const ext = mimeType === 'image/webp' ? 'webp' : (mimeType === 'image/png' ? 'png' : (mimeType === 'image/svg+xml' ? 'svg' : 'jpg'));
       const photoRecord = {
         id,
         data: base64Data,
         mimeType,
-        fileName: fileName || `${id}.${mimeType.split('/')[1] || 'jpg'}`,
+        fileName: fileName || `${id}.${ext}`,
         caption: caption || '',
         uploadedAt: new Date().toISOString(),
         size: approxBytes
       };
       
-      await db.eventPhotos.save(id, photoRecord);
+      try {
+        await db.eventPhotos.save(id, photoRecord);
+      } catch (saveError: any) {
+        console.error('Error saving photo to database:', saveError);
+        return NextResponse.json({ error: 'Failed to save photo to storage.' }, { status: 500 });
+      }
       
       const photoMeta = {
         id,
@@ -283,13 +300,19 @@ export async function POST(request: Request) {
         uploadedAt: photoRecord.uploadedAt
       };
       
-      if (eventId) {
-        const events = await db.events.getAll();
-        const eventIdx = events.findIndex(e => e.id === eventId);
-        if (eventIdx !== -1) {
+      if (eventId && eventIdx !== -1) {
+        try {
           const currentGallery = Array.isArray(events[eventIdx].gallery) ? events[eventIdx].gallery : [];
-          events[eventIdx].gallery = [...currentGallery, photoMeta];
-          await db.events.saveAll(events);
+          // Prevent duplicates
+          if (!currentGallery.some((p: any) => (typeof p === 'object' && p?.id === photoMeta.id) || p === photoMeta.url)) {
+            events[eventIdx].gallery = [...currentGallery, photoMeta];
+            await db.events.saveAll(events);
+          }
+        } catch (eventSaveErr: any) {
+          console.error('Failed to update event gallery, rolling back photo:', eventSaveErr);
+          // Rollback newly saved photo so broken/orphaned records are not left behind
+          await db.eventPhotos.delete(id).catch(() => {});
+          return NextResponse.json({ error: 'Failed to update event record with uploaded photo.' }, { status: 500 });
         }
       }
       
@@ -305,14 +328,18 @@ export async function POST(request: Request) {
       await db.eventPhotos.delete(id);
 
       if (eventId) {
-        const events = await db.events.getAll();
-        const eventIdx = events.findIndex(e => e.id === eventId);
-        if (eventIdx !== -1 && Array.isArray(events[eventIdx].gallery)) {
-          events[eventIdx].gallery = events[eventIdx].gallery.filter((p: any) => {
-            if (typeof p === 'string') return !p.includes(id);
-            return p.id !== id && !p.url?.includes(id);
-          });
-          await db.events.saveAll(events);
+        try {
+          const events = await db.events.getAll();
+          const eventIdx = events.findIndex((e: any) => e.id === eventId);
+          if (eventIdx !== -1 && Array.isArray(events[eventIdx].gallery)) {
+            events[eventIdx].gallery = events[eventIdx].gallery.filter((p: any) => {
+              if (typeof p === 'string') return !p.includes(id);
+              return p.id !== id && !p.url?.includes(id);
+            });
+            await db.events.saveAll(events);
+          }
+        } catch (delErr) {
+          console.error('Error updating event during photo deletion:', delErr);
         }
       }
 
