@@ -167,9 +167,9 @@ export function verifyAdminToken(token: string | null | undefined): {
  */
 export function extractAdminToken(request: Request): string | null {
   // 1. Bearer Token in Authorization header
-  const authHeader = request.headers.get('Authorization');
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7).trim();
+  const authHeader = request.headers.get('Authorization') || request.headers.get('authorization');
+  if (authHeader && authHeader.trim().toLowerCase().startsWith('bearer ')) {
+    const token = authHeader.trim().substring(7).trim();
     if (token) return token;
   }
 

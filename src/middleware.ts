@@ -215,9 +215,9 @@ export function middleware(request: NextRequest) {
     const isAuthenticated = isEdgeTokenValid(token);
 
     if (isAuthenticated) {
-      // Authenticated admin operations (verify_token, get_dashboard_data, weekly-quiz, etc.): 60 req/min
+      // Authenticated admin operations (verify_token, get_dashboard_data, update-event, weekly-quiz, etc.): 120 req/min
       const rl = checkRateLimit(`admin_api:${ip}`, {
-        maxRequests: 60,
+        maxRequests: 120,
         windowMs: 60 * 1000,
       });
       if (!rl.allowed) {
@@ -231,7 +231,7 @@ export function middleware(request: NextRequest) {
             status: 429,
             headers: {
               'Retry-After': String(rl.retryAfter || 60),
-              'X-RateLimit-Limit': '60',
+              'X-RateLimit-Limit': '120',
               'X-RateLimit-Remaining': '0',
               'X-RateLimit-Reset': String(rl.resetAt),
             },

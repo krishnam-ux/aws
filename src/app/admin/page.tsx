@@ -486,6 +486,18 @@ export default function AdminDashboard() {
         data = { success: false, error: rawText || 'Unexpected API response.' };
       }
 
+      if (response.status === 429) {
+        const retrySec = response.headers.get('Retry-After');
+        const retryMsg = retrySec ? ` Please wait ${retrySec} seconds before retrying.` : ' Please wait a moment before retrying.';
+        const detailedMsg = data?.message || data?.error || 'Rate limit reached.';
+        return {
+          success: false,
+          status: 429,
+          error: `${detailedMsg}${retryMsg}`,
+          message: `${detailedMsg}${retryMsg}`
+        };
+      }
+
       if (data && data.error && (data.error.includes('Unauthorized') || data.error.includes('invalid') || data.error.includes('expired'))) {
         handleLogout();
         return null;
@@ -791,9 +803,17 @@ export default function AdminDashboard() {
   };
 
   const updateEventStatusField = async (eventId: string, field: string, value: string) => {
+    const stateKey = `${eventId}-${field}`;
+
+    // 1. In-flight guard: prevent duplicate submission while already saving
+    if (statusSaveState[stateKey] === 'saving') return;
+
     const prevEvents = [...events];
     const currentEvent = prevEvents.find(e => e.id === eventId) || ({} as CommunityEvent);
-    const stateKey = `${eventId}-${field}`;
+
+    // 2. No-op guard: ignore if the value hasn't changed
+    if ((currentEvent as any)?.[field] === value) return;
+
     const mergedEvent: CommunityEvent = { ...currentEvent, id: eventId, [field]: value } as CommunityEvent;
 
     setEvents(prevEvents.map((e: CommunityEvent) => e.id === eventId ? mergedEvent : e));
@@ -805,8 +825,10 @@ export default function AdminDashboard() {
     try {
       const res = await apiCall({ action: 'update-event', event: mergedEvent });
       if (res && res.success) {
-        await fetchTabItems();
-        await fetchStats();
+        // Direct state update with server-returned event instead of 4 redundant fetch calls
+        if (res.event) {
+          setEvents(prev => prev.map((e: CommunityEvent) => e.id === eventId ? { ...e, ...res.event } : e));
+        }
 
         setStatusSaveState(prev => ({ ...prev, [stateKey]: 'saved' }));
         setTimeout(() => {
@@ -814,7 +836,7 @@ export default function AdminDashboard() {
         }, 2000);
       } else {
         setEvents(prevEvents);
-        const errorMsg = res?.error || 'Update failed. Please try again.';
+        const errorMsg = res?.message || res?.error || 'Update failed. Please try again.';
         setStatusSaveState(prev => ({ ...prev, [stateKey]: 'failed' }));
         setStatusErrorState(prev => ({ ...prev, [stateKey]: errorMsg }));
         setActionError(errorMsg);
