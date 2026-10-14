@@ -146,7 +146,7 @@ export default function EventGallery({
       {/* Lightbox / Modal Viewer */}
       {lightboxIndex !== null && currentPhoto && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 sm:p-6 select-none animate-fadeIn"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 sm:p-6 select-none animate-fade-in"
           role="dialog"
           aria-modal="true"
           aria-label="Photo Lightbox"
@@ -173,7 +173,7 @@ export default function EventGallery({
 
             <button
               onClick={closeLightbox}
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-aws-orange"
+              className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-150 active:scale-90 cursor-pointer focus:outline-none focus:ring-2 focus:ring-aws-orange"
               aria-label="Close photo viewer"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
@@ -189,7 +189,7 @@ export default function EventGallery({
                 e.stopPropagation();
                 prevPhoto();
               }}
-              className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 p-2.5 sm:p-3 rounded-full bg-white/10 hover:bg-white/25 text-white transition-all cursor-pointer backdrop-blur-xs z-10 focus:outline-none focus:ring-2 focus:ring-aws-orange"
+              className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 p-2.5 sm:p-3 rounded-full bg-white/10 hover:bg-white/25 text-white transition-all duration-150 active:scale-90 cursor-pointer backdrop-blur-xs z-10 focus:outline-none focus:ring-2 focus:ring-aws-orange"
               aria-label="Previous photo"
             >
               <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
@@ -198,9 +198,25 @@ export default function EventGallery({
             </button>
           )}
 
+          {/* Next Arrow Button */}
+          {photos.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                nextPhoto();
+              }}
+              className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 p-2.5 sm:p-3 rounded-full bg-white/10 hover:bg-white/25 text-white transition-all duration-150 active:scale-90 cursor-pointer backdrop-blur-xs z-10 focus:outline-none focus:ring-2 focus:ring-aws-orange"
+              aria-label="Next photo"
+            >
+              <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            </button>
+          )}
+
           {/* Main Image Container */}
           <div
-            className="relative max-w-5xl max-h-[75vh] sm:max-h-[80vh] flex flex-col items-center justify-center"
+            className="relative max-w-5xl max-h-[75vh] sm:max-h-[80vh] flex flex-col items-center justify-center animate-fade-in-scale"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative overflow-hidden rounded-lg shadow-2xl border border-white/10 bg-black/40">

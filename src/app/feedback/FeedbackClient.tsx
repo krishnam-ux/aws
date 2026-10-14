@@ -152,7 +152,7 @@ export default function FeedbackClient({ isPublished }: { isPublished: boolean }
           </div>
 
           {submitted ? (
-            <div className="flex items-center justify-center py-4 sm:py-8 animate-fadeIn">
+            <div className="flex items-center justify-center py-4 sm:py-8 animate-fade-in">
               <div className="w-full max-w-xl rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-sm sm:p-8">
                 <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 ring-1 ring-emerald-100 text-emerald-600">
                   <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">

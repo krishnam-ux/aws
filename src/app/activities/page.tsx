@@ -37,7 +37,7 @@ export default function Activities() {
           {categories.map((cat, idx) => (
             <span
               key={idx}
-              className="inline-flex items-center px-3 py-1.5 rounded bg-white border border-slate-200 text-xs font-semibold text-slate-700 font-sans"
+              className="inline-flex items-center px-3 py-1.5 rounded bg-white border border-slate-200 text-xs font-semibold text-slate-700 font-sans hover:border-aws-orange hover:text-brand-navy hover:-translate-y-0.5 transition-all duration-150 shadow-2xs"
             >
               {cat}
             </span>

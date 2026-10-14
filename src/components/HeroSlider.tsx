@@ -339,7 +339,7 @@ export default function HeroSlider() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center flex-grow py-2">
             
             {/* Left Column: Typography, Mission & CTAs */}
-            <div className="lg:col-span-7 flex flex-col justify-center space-y-4">
+            <div key={slide.id} className="lg:col-span-7 flex flex-col justify-center space-y-4 animate-fade-in">
               
               {/* Category Tag */}
               <div>
@@ -480,7 +480,7 @@ export default function HeroSlider() {
                 </div>
 
                 {/* Main Workspace Body */}
-                <div className="flex-grow p-3 sm:p-4 flex items-center justify-center relative overflow-hidden text-slate-100 bg-[#08131F]">
+                <div key={`${slide.id}-${activeMediaTab}`} className="flex-grow p-3 sm:p-4 flex items-center justify-center relative overflow-hidden text-slate-100 bg-[#08131F] animate-fade-in">
                   {activeMediaTab === 'video' ? (
                     <SlideVideoPlayer
                       key={slide.id}

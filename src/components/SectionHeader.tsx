@@ -3,11 +3,12 @@ interface SectionHeaderProps {
   title: string;
   subtitle?: string;
   center?: boolean;
+  className?: string;
 }
 
-export default function SectionHeader({ eyebrow, title, subtitle, center = false }: SectionHeaderProps) {
+export default function SectionHeader({ eyebrow, title, subtitle, center = false, className = '' }: SectionHeaderProps) {
   return (
-    <div className={`mb-8 max-w-3xl ${center ? 'text-center mx-auto' : ''}`}>
+    <div className={`mb-8 max-w-3xl transition-all duration-300 ${center ? 'text-center mx-auto' : ''} ${className}`}>
       {eyebrow && (
         <span className="text-[10px] font-bold uppercase tracking-widest text-aws-orange font-display block mb-1">
           {eyebrow}

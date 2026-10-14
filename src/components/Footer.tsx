@@ -71,27 +71,27 @@ export default function Footer() {
             </h4>
             <ul className="space-y-1.5 text-[11px] font-sans text-slate-400">
               <li>
-                <Link href="/about" className="hover:text-aws-orange transition-colors">
+                <Link href="/about" className="hover:text-aws-orange transition-all duration-200 inline-block hover:translate-x-1">
                   About
                 </Link>
               </li>
               <li>
-                <Link href="/activities" className="hover:text-aws-orange transition-colors">
+                <Link href="/activities" className="hover:text-aws-orange transition-all duration-200 inline-block hover:translate-x-1">
                   Activities
                 </Link>
               </li>
               <li>
-                <Link href="/events" className="hover:text-aws-orange transition-colors">
+                <Link href="/events" className="hover:text-aws-orange transition-all duration-200 inline-block hover:translate-x-1">
                   Events
                 </Link>
               </li>
               <li>
-                <Link href="/opportunities" className="hover:text-aws-orange transition-colors">
+                <Link href="/opportunities" className="hover:text-aws-orange transition-all duration-200 inline-block hover:translate-x-1">
                   Opportunities
                 </Link>
               </li>
               <li>
-                <Link href="/leadership" className="hover:text-aws-orange transition-colors">
+                <Link href="/leadership" className="hover:text-aws-orange transition-all duration-200 inline-block hover:translate-x-1">
                   Leadership
                 </Link>
               </li>
@@ -105,27 +105,27 @@ export default function Footer() {
             </h4>
             <ul className="space-y-1.5 text-[11px] font-sans text-slate-400">
               <li>
-                <Link href="/resources" className="hover:text-aws-orange transition-colors">
+                <Link href="/resources" className="hover:text-aws-orange transition-all duration-200 inline-block hover:translate-x-1">
                   Resources
                 </Link>
               </li>
               <li>
-                <Link href="/exam" className="hover:text-aws-orange transition-colors">
+                <Link href="/exam" className="hover:text-aws-orange transition-all duration-200 inline-block hover:translate-x-1">
                   Certification Exams
                 </Link>
               </li>
               <li>
-                <Link href="/verification" className="hover:text-aws-orange transition-colors">
+                <Link href="/verification" className="hover:text-aws-orange transition-all duration-200 inline-block hover:translate-x-1">
                   Verification
                 </Link>
               </li>
               <li>
-                <Link href="/transparency" className="hover:text-aws-orange transition-colors">
+                <Link href="/transparency" className="hover:text-aws-orange transition-all duration-200 inline-block hover:translate-x-1">
                   Transparency
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="hover:text-aws-orange transition-colors">
+                <Link href="/faq" className="hover:text-aws-orange transition-all duration-200 inline-block hover:translate-x-1">
                   FAQ
                 </Link>
               </li>
@@ -143,23 +143,23 @@ export default function Footer() {
                   href="https://chat.whatsapp.com/HuEI5i4I8KkEya47yBKynD"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-aws-orange transition-colors"
+                  className="hover:text-aws-orange transition-all duration-200 inline-block hover:translate-x-1"
                 >
                   Join Community
                 </a>
               </li>
               <li>
-                <Link href="/collaborate" className="hover:text-aws-orange transition-colors">
+                <Link href="/collaborate" className="hover:text-aws-orange transition-all duration-200 inline-block hover:translate-x-1">
                   Collaborate
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-aws-orange transition-colors">
+                <Link href="/contact" className="hover:text-aws-orange transition-all duration-200 inline-block hover:translate-x-1">
                   Contact
                 </Link>
               </li>
               <li>
-                <Link href="/feedback" className="hover:text-aws-orange transition-colors">
+                <Link href="/feedback" className="hover:text-aws-orange transition-all duration-200 inline-block hover:translate-x-1">
                   Feedback
                 </Link>
               </li>

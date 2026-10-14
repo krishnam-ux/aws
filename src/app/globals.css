@@ -43,17 +43,24 @@ body {
 }
 
 /* Restrained Enterprise-Grade Cards */
+.tech-card,
 .tech-card-new {
   background-color: #FFFFFF;
   border: 1px solid #D5DCE5;
   border-radius: 8px;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
-  transition: all 0.2s ease-in-out;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s ease-in-out;
+  will-change: transform, box-shadow;
 }
 
+.tech-card:hover,
+.tech-card-new:hover,
 .tech-card-new-hover:hover {
+  transform: translateY(-3px);
   border-color: #FF9900;
-  box-shadow: 0 3px 6px 0 rgba(11, 27, 43, 0.05);
+  box-shadow: 0 10px 24px -4px rgba(11, 27, 43, 0.08), 0 4px 8px -2px rgba(11, 27, 43, 0.03);
 }
 
 .form-input-field {
@@ -65,13 +72,13 @@ body {
   color: #111827;
   font-size: 0.875rem;
   font-family: var(--font-sans);
-  transition: all 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 
 .form-input-field:focus {
   outline: none;
   border-color: #FF9900;
-  box-shadow: 0 0 0 1px #FF9900;
+  box-shadow: 0 0 0 3px rgba(255, 153, 0, 0.15);
 }
 
 .btn-primary {
@@ -85,17 +92,23 @@ body {
   font-weight: 700;
   font-size: 0.875rem;
   border-radius: 6px;
-  transition: all 0.15s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.2s ease,
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   cursor: pointer;
+  will-change: transform;
 }
 
 .btn-primary:hover {
   background-color: #E08800;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px 0 rgba(255, 153, 0, 0.28);
 }
 
 .btn-primary:active {
-  transform: scale(0.98);
+  transform: scale(0.97) translateY(0);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .btn-secondary {
@@ -110,17 +123,73 @@ body {
   font-weight: 700;
   font-size: 0.875rem;
   border-radius: 6px;
-  transition: all 0.15s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.2s ease,
+              border-color 0.2s ease,
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
+  will-change: transform;
 }
 
 .btn-secondary:hover {
   background-color: #F7F8FA;
-  border-color: #0B1B2B;
+  border-color: #FF9900;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px 0 rgba(11, 27, 43, 0.06);
 }
 
 .btn-secondary:active {
-  transform: scale(0.98);
+  transform: scale(0.97) translateY(0);
+}
+
+/* Keyframe Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes floatGentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes pulseSubtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.65;
+  }
 }
 
 @keyframes sliderProgress {
@@ -132,7 +201,149 @@ body {
   }
 }
 
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20%, 60% {
+    transform: translateX(-4px);
+  }
+  40%, 80% {
+    transform: translateX(4px);
+  }
+}
+
+/* Animation Utilities */
 .animate-sliderProgress {
   animation: sliderProgress linear forwards;
+}
+
+.animate-fade-in,
+.animate-fadeIn {
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in-up,
+.animate-slide-in {
+  animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in-scale,
+.animate-scaleUp {
+  animation: fadeInScale 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-float-gentle {
+  animation: floatGentle 4s ease-in-out infinite;
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+/* Scroll Reveal Classes (Progressive Enhancement) */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-fade {
+  opacity: 0;
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity;
+}
+
+.reveal-fade.is-revealed {
+  opacity: 1;
+}
+
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.97);
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-scale.is-revealed {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Stagger Delays for child cards / lists */
+.stagger-1 { transition-delay: 40ms; }
+.stagger-2 { transition-delay: 80ms; }
+.stagger-3 { transition-delay: 120ms; }
+.stagger-4 { transition-delay: 160ms; }
+.stagger-5 { transition-delay: 200ms; }
+.stagger-6 { transition-delay: 240ms; }
+.stagger-7 { transition-delay: 280ms; }
+.stagger-8 { transition-delay: 320ms; }
+
+/* Interactive Hover Lift Utility */
+.hover-lift {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px -4px rgba(11, 27, 43, 0.08);
+}
+
+/* Micro-interaction for links with arrows */
+.group:hover .group-hover-arrow {
+  transform: translateX(3px);
+}
+
+.group-hover-arrow {
+  display: inline-block;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Accessibility: Respect prefers-reduced-motion across the entire website */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .reveal,
+  .reveal-fade,
+  .reveal-scale {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .hover-lift:hover,
+  .tech-card:hover,
+  .tech-card-new:hover,
+  .tech-card-new-hover:hover,
+  .btn-primary:hover,
+  .btn-secondary:hover {
+    transform: none !important;
+  }
+
+  .group-hover-arrow {
+    transform: none !important;
+  }
 }
 

@@ -57,10 +57,10 @@ export default function Resources() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-3.5 py-1.5 rounded text-xs font-semibold font-sans transition-colors cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded text-xs font-semibold font-sans transition-all duration-150 cursor-pointer active:scale-95 ${
                 activeTab === tab
-                  ? 'bg-aws-orange text-brand-navy'
-                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                  ? 'bg-aws-orange text-brand-navy shadow-xs'
+                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
               }`}
             >
               {tab}
@@ -72,7 +72,7 @@ export default function Resources() {
       {/* Resources Grid */}
       <section className="space-y-10">
         {filteredResources.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div key={activeTab} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
             {filteredResources.map((res, idx) => {
               const difficultyBadge = 
                 res.difficulty === 'Beginner' 

@@ -206,14 +206,14 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
         </div>
 
         {/* Tab Contents */}
-        <div className="py-6">
+        <div key={activeTab} className="py-6 animate-fade-in">
           {activeTab === 'Upcoming' && (
             upcomingFiltered.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {upcomingFiltered.map((event, idx) => (
                   <div
                     key={idx}
-                    className="group relative rounded-lg p-6 bg-white border border-slate-200 shadow-sm flex flex-col justify-between h-full hover:border-aws-orange transition-all duration-200"
+                    className="group relative rounded-lg p-6 bg-white border border-slate-200 shadow-sm flex flex-col justify-between h-full hover:border-aws-orange hover:-translate-y-1 hover:shadow-md transition-all duration-200"
                   >
                     <div className="space-y-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -462,8 +462,8 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
 
       {/* Event Details Modal */}
       {selectedEvent && (
-        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm">
-          <div className="relative bg-white rounded-lg border border-slate-200 shadow-2xl max-w-lg w-full p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm animate-fade-in">
+          <div className="relative bg-white rounded-lg border border-slate-200 shadow-2xl max-w-lg w-full p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto animate-fade-in-scale">
             {/* Top Bar Header */}
             <div className="flex items-start justify-between">
               <div className="space-y-1.5">

@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import MaintenanceGate from "@/components/MaintenanceGate";
+import ScrollRevealProvider from "@/components/ScrollRevealProvider";
 import { db } from "@/lib/db";
 
 const inter = Inter({
@@ -78,9 +79,11 @@ export default async function RootLayout({
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-sans antialiased">
         <MaintenanceGate initialMaintenance={initialMaintenance}>
           <Navbar />
-          <main className="flex-grow flex flex-col relative bg-slate-50">
-            {children}
-          </main>
+          <ScrollRevealProvider>
+            <main className="flex-grow flex flex-col relative bg-slate-50">
+              {children}
+            </main>
+          </ScrollRevealProvider>
           <Footer />
         </MaintenanceGate>
       </body>

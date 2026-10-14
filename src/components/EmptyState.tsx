@@ -15,7 +15,7 @@ export default function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className="tech-card rounded-lg p-8 sm:p-12 text-center max-w-xl mx-auto border border-slate-200 bg-white shadow-sm">
-      <div className="mx-auto h-12 w-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center mb-6">
+      <div className="mx-auto h-12 w-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center mb-6 animate-float-gentle shadow-2xs">
         <svg
           className="h-5 w-5 text-slate-500"
           fill="none"

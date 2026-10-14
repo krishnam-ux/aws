@@ -97,7 +97,7 @@ export default async function OpportunitiesPage() {
               const statusBadge = getOpportunityStatus(career);
 
               return (
-                <article key={career.id} className="bg-white rounded-xl border border-slate-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:border-slate-300 transition-all duration-300 p-6 flex flex-col h-full group">
+                <article key={career.id} className="bg-white rounded-xl border border-slate-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_10px_24px_rgba(0,0,0,0.07)] hover:border-aws-orange hover:-translate-y-1 transition-all duration-250 p-6 flex flex-col h-full group">
                   {/* Top Header Section */}
                   <div className="flex items-start justify-between gap-3 mb-4">
                     <div className="flex items-center gap-3 min-w-0">

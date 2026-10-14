@@ -126,11 +126,11 @@ export default async function Home() {
             {exploreTechnologies.map((tech, idx) => (
               <div
                 key={idx}
-                className="group p-6 bg-navy-dark border border-slate-800 rounded-md flex flex-col justify-between h-full transition-colors hover:border-aws-orange"
+                className="group p-6 bg-navy-dark border border-slate-800 rounded-md flex flex-col justify-between h-full transition-all duration-200 hover:border-aws-orange hover:-translate-y-1 hover:shadow-lg hover:shadow-black/30"
               >
                 <div className="space-y-4">
                   {/* Clean Technical monochrome icon accent */}
-                  <div className="h-6 w-6 text-aws-orange mb-2">
+                  <div className="h-6 w-6 text-aws-orange mb-2 transition-transform duration-200 group-hover:scale-110">
                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                     </svg>
@@ -140,7 +140,7 @@ export default async function Home() {
                 </div>
                 <div className="pt-6 flex items-center text-[10px] font-bold text-aws-orange transition-colors">
                   <span>Explore Parameters</span>
-                  <span className="inline-block transition-transform duration-200 group-hover:translate-x-1 ml-1">&rarr;</span>
+                  <span className="inline-block transition-transform duration-200 group-hover:translate-x-1.5 ml-1">&rarr;</span>
                 </div>
               </div>
             ))}
@@ -295,12 +295,13 @@ export default async function Home() {
                 {upcomingEvents.map((event, idx) => (
                   <div
                     key={idx}
-                    className="group relative rounded-lg p-6 bg-white border border-slate-200 shadow-sm flex flex-col justify-between h-full hover:border-aws-orange transition-all duration-200 font-sans"
+                    className="group relative rounded-lg p-6 bg-white border border-slate-200 shadow-sm flex flex-col justify-between h-full hover:border-aws-orange hover:-translate-y-1 hover:shadow-md transition-all duration-200 font-sans"
                   >
                     <div className="space-y-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex flex-wrap gap-1.5">
-                          <span className="inline-flex px-2 py-0.5 rounded text-[8px] font-bold font-sans uppercase tracking-wider bg-orange-50 border border-orange-200 text-aws-orange">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[8px] font-bold font-sans uppercase tracking-wider bg-orange-50 border border-orange-200 text-aws-orange">
+                            <span className="w-1.5 h-1.5 rounded-full bg-aws-orange mr-1 animate-pulse-subtle"></span>
                             {event.status || 'Upcoming'}
                           </span>
                           {renderRegStatusBadge(event.registrationStatus)}
