@@ -1968,7 +1968,7 @@ export default function AdminDashboard() {
             <span className="text-slate-350 hidden sm:inline">|</span>
             <div className="flex flex-col hidden sm:flex">
               <span className="font-display font-extrabold text-xs text-[#111827] leading-none">
-                AWS SBG CU-UP
+                AWS Student Builder Group
               </span>
               <span className="text-[9px] text-[#64748B] font-semibold mt-1">Admin Panel</span>
             </div>

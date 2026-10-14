@@ -113,7 +113,7 @@ export default function Navbar() {
             
             <div className="flex flex-col justify-center">
               <span className="font-display font-black text-brand-navy text-sm sm:text-base tracking-tight leading-none">
-                AWS SBG CU-UP
+                AWS Student Builder Group
               </span>
               <span className="text-[9px] text-slate-500 font-sans tracking-wide leading-none mt-1">
                 Chandigarh University – Uttar Pradesh
