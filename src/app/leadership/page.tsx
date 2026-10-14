@@ -122,7 +122,7 @@ export default function Leadership() {
           </div>
         </div>
 
-        {/* Prof. Ajay Kumar Singh */}
+        {/* Krishnendu Rarhi */}
         <div className="tech-card-new rounded p-6 sm:p-8 bg-white border border-slate-200 relative overflow-hidden flex flex-col justify-between border-t-[4px] border-t-brand-navy">
           <div className="space-y-6">
             <div className="flex items-center space-x-4">

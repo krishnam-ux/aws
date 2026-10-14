@@ -73,7 +73,7 @@ export const siteConfig = {
   } as LeadershipMember,
   
   facultyContact: {
-    name: 'Prof. (Dr.) Ajay Kumar Singh',
+    name: 'Krishnendu Rarhi',
     role: 'Faculty / university contact associated with the AWS Student Community initiative',
     department: 'School of Computer Science and Engineering',
     organization: 'Chandigarh University – Uttar Pradesh',
