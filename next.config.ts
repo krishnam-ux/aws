@@ -68,6 +68,9 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  env: {
+    ADMIN_SECRET_KEY: process.env.ADMIN_SECRET_KEY || '',
+  },
 };
 
 export default nextConfig;

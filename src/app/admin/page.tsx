@@ -475,6 +475,7 @@ export default function AdminDashboard() {
       const response = await fetch('/api/admin', {
         method: 'POST',
         cache: 'no-store',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${activeToken || ''}`
@@ -625,19 +626,29 @@ export default function AdminDashboard() {
   // CRUD Actions
   // 1. Registrations
   const updateRegStatus = async (id: string, status: string) => {
+    setRegistrations(prev => prev.map(r => r.id === id ? { ...r, status } : r));
     const res = await apiCall({ action: 'update-registration', id, status });
     if (res && res.success) {
+      setActionSuccess('Registration status updated.');
+      setTimeout(() => setActionSuccess(''), 2000);
+    } else {
+      setActionError(res?.message || res?.error || 'Failed to update registration status.');
+      setTimeout(() => setActionError(''), 4000);
       fetchTabItems();
-      fetchStats();
     }
   };
 
   // 1b. Event Registrations CRUD
   const updateEventRegStatus = async (id: string, status: string) => {
+    setEventRegistrations(prev => prev.map(r => r.id === id ? { ...r, status } : r));
     const res = await apiCall({ action: 'update-event-registration', id, status });
     if (res && res.success) {
+      setActionSuccess('Attendee status updated.');
+      setTimeout(() => setActionSuccess(''), 2000);
+    } else {
+      setActionError(res?.message || res?.error || 'Failed to update attendee status.');
+      setTimeout(() => setActionError(''), 4000);
       fetchTabItems();
-      fetchStats();
     }
   };
 
