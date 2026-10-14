@@ -463,12 +463,21 @@ export default function AdminDashboard() {
   // Helper fetcher
   const apiCall = async (body: any) => {
     try {
+      const activeToken =
+        token ||
+        (typeof window !== 'undefined'
+          ? sessionStorage.getItem('adminToken') ||
+            sessionStorage.getItem('admin_token') ||
+            localStorage.getItem('adminToken') ||
+            localStorage.getItem('admin_token')
+          : null);
+
       const response = await fetch('/api/admin', {
         method: 'POST',
         cache: 'no-store',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${activeToken || ''}`
         },
         body: JSON.stringify(body)
       });

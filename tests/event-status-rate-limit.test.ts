@@ -158,7 +158,7 @@ describe('Event Status & Registration Status Rate Limiting and In-Flight Protect
     assert.strictEqual(res6.status, 429, 'Tampered token requests must be throttled under unauthenticated bucket');
   });
 
-  it('authenticated rate limit returns proper headers and limits up to 120 req/min', () => {
+  it('authenticated rate limit returns proper headers and limits up to 150 req/min', () => {
     resetRateLimitStore();
     const ip = '10.200.1.5';
     const validToken = generateAdminToken('admin');
