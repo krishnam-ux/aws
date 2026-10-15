@@ -28,6 +28,10 @@ export type EmailType =
   | 'exam_selected_qualified'
   | 'exam_certificate_available'
   // General & Admin
+  | 'welcome_email'
+  | 'email_verification'
+  | 'password_reset'
+  | 'admin_new_event_registration'
   | 'feedback_received_acknowledgement'
   | 'admin_custom_announcement'
   | 'admin_manual_message'
@@ -47,9 +51,11 @@ export type EmailCategory = 'EVENTS' | 'OPPORTUNITIES' | 'EXAMS' | 'COMMUNITY' |
 
 export interface EmailAttachment {
   filename: string;
-  content?: string; // Base64 or utf-8
+  content?: string | Buffer; // Base64, utf-8, or Buffer
   path?: string;
   contentType?: string;
+  content_id?: string;
+  cid?: string;
 }
 
 export interface EmailRecipient {

@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { db } from '@/lib/db';
 import {
   EmailPayload,
@@ -99,12 +101,95 @@ export async function sendEmail(payload: EmailPayload): Promise<EmailSendResult>
           emailParams.bcc = Array.isArray(payload.bcc) ? payload.bcc.map(normalizeEmail) : [normalizeEmail(payload.bcc)];
         }
 
+        const inlineAttachments: any[] = [];
         if (payload.attachments && payload.attachments.length > 0) {
-          emailParams.attachments = payload.attachments.map((att) => ({
-            filename: att.filename,
-            content: att.content,
-            path: att.path
-          }));
+          for (const att of payload.attachments) {
+            const rawCid = (att as any).contentId || (att as any).content_id || (att as any).cid;
+            const rawContentType = (att as any).contentType || (att as any).content_type;
+            inlineAttachments.push({
+              filename: att.filename,
+              content: att.content,
+              path: att.path,
+              ...(rawContentType ? { contentType: rawContentType } : {}),
+              ...(rawCid ? { contentId: rawCid } : {})
+            });
+          }
+        }
+
+        // Attach campus hero banner with proper camelCase contentId and contentType when referenced via CID
+        if (htmlContent.includes('cid:cu-campus-hero') && !inlineAttachments.some((a) => a.contentId === 'cu-campus-hero')) {
+          try {
+            const heroPath = path.join(process.cwd(), 'public', 'images', 'cu-campus-hero.png');
+            if (fs.existsSync(heroPath)) {
+              inlineAttachments.push({
+                filename: 'cu-campus-hero.png',
+                content: fs.readFileSync(heroPath),
+                contentType: 'image/png',
+                contentId: 'cu-campus-hero'
+              });
+            }
+          } catch (e) {}
+        }
+
+        if (htmlContent.includes('cid:cu-campus-hero-dark') && !inlineAttachments.some((a) => a.contentId === 'cu-campus-hero-dark')) {
+          try {
+            const darkHeroPath = path.join(process.cwd(), 'public', 'images', 'cu-campus-hero-dark.png');
+            if (fs.existsSync(darkHeroPath)) {
+              inlineAttachments.push({
+                filename: 'cu-campus-hero-dark.png',
+                content: fs.readFileSync(darkHeroPath),
+                contentType: 'image/png',
+                contentId: 'cu-campus-hero-dark'
+              });
+            }
+          } catch (e) {}
+        }
+
+        // Fallback for any legacy CID references to logos (standard templates use verified public HTTPS URLs)
+        if (htmlContent.includes('cid:cu-logo') && !inlineAttachments.some((a) => a.contentId === 'cu-logo')) {
+          try {
+            const cuPath = path.join(process.cwd(), 'public', 'chandigarh-university-logo.jpg');
+            if (fs.existsSync(cuPath)) {
+              inlineAttachments.push({
+                filename: 'chandigarh-university-logo.jpg',
+                content: fs.readFileSync(cuPath),
+                contentType: 'image/jpeg',
+                contentId: 'cu-logo'
+              });
+            }
+          } catch (e) {}
+        }
+
+        if (htmlContent.includes('cid:aws-logo') && !inlineAttachments.some((a) => a.contentId === 'aws-logo')) {
+          try {
+            const logoPath = path.join(process.cwd(), 'public', 'aws-logo.png');
+            if (fs.existsSync(logoPath)) {
+              inlineAttachments.push({
+                filename: 'aws-logo.png',
+                content: fs.readFileSync(logoPath),
+                contentType: 'image/png',
+                contentId: 'aws-logo'
+              });
+            }
+          } catch (e) {}
+        }
+
+        if (htmlContent.includes('cid:aws-sbg-logo') && !inlineAttachments.some((a) => a.contentId === 'aws-sbg-logo')) {
+          try {
+            const logoPath = path.join(process.cwd(), 'public', 'aws-sbg-logo.png');
+            if (fs.existsSync(logoPath)) {
+              inlineAttachments.push({
+                filename: 'aws-sbg-logo.png',
+                content: fs.readFileSync(logoPath),
+                contentType: 'image/png',
+                contentId: 'aws-sbg-logo'
+              });
+            }
+          } catch (e) {}
+        }
+
+        if (inlineAttachments.length > 0) {
+          emailParams.attachments = inlineAttachments;
         }
 
         const res = await resend.emails.send(emailParams);
@@ -202,7 +287,8 @@ export async function sendTemplateEmail(params: {
     title: subject,
     contentHtml: bodyHtml,
     ctaText,
-    ctaUrl
+    ctaUrl,
+    inlineCid: false
   });
 
   return await sendEmail({
