@@ -70,8 +70,8 @@ async function loginAdmin() {
   console.log('\n[SETUP] Logging in to Admin Portal...');
   const res = await httpJson(ADMIN_URL, {
     action: 'login',
-    username: 'awsadmin@culko.in',
-    password: 'awssbgadmin123'
+    username: process.env.ADMIN_EMAIL || 'awsadmin@culko.in',
+    password: process.env.ADMIN_PASSWORD || ''
   });
 
   if (res.status !== 200 || !res.body?.token) {

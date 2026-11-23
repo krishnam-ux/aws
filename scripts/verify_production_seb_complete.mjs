@@ -2,8 +2,8 @@ import fs from 'fs';
 import path from 'path';
 
 const base = 'https://www.awssbgcuup.tech';
-const adminUsername = 'awsadmin@culko.in';
-const adminPassword = 'awssbgadmin123';
+const adminUsername = process.env.ADMIN_EMAIL || 'awsadmin@culko.in';
+const adminPassword = process.env.ADMIN_PASSWORD || '';
 
 async function main() {
   console.log('=== PRODUCTION SEB VERIFICATION ===');

@@ -1,8 +1,8 @@
 import crypto from 'node:crypto';
 
 const baseUrl = process.argv[2] || 'http://localhost:3000';
-const username = process.argv[3] || 'awsadmin@culko.in';
-const password = process.argv[4] || 'awssbgadmin123';
+const username = process.argv[3] || process.env.ADMIN_EMAIL || 'awsadmin@culko.in';
+const password = process.argv[4] || process.env.ADMIN_PASSWORD || '';
 
 function buildSlug(label) {
   return `test-opportunity-${label.toLowerCase()}-${Date.now()}-${crypto.randomBytes(2).toString('hex')}`;

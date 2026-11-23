@@ -77,8 +77,8 @@ async function main() {
 
   const loginRes = await postJson(`${baseUrl}/api/admin`, {
     action: 'login',
-    username: 'awsadmin@culko.in',
-    password: 'awssbgadmin123'
+    username: process.env.ADMIN_EMAIL || 'awsadmin@culko.in',
+    password: process.env.ADMIN_PASSWORD || ''
   });
   console.log('LOGIN_STATUS', loginRes.status);
   const token = loginRes.data && loginRes.data.token ? loginRes.data.token : null;

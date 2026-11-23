@@ -1,8 +1,8 @@
 import fs from 'fs';
 
 const base = 'https://www.awssbgcuup.tech';
-const adminUsername = 'awsadmin@culko.in';
-const adminPassword = 'awssbgadmin123';
+const adminUsername = process.env.ADMIN_EMAIL || 'awsadmin@culko.in';
+const adminPassword = process.env.ADMIN_PASSWORD || '';
 
 async function main() {
   console.log('--- LOGGING IN TO PRODUCTION ADMIN API ---');

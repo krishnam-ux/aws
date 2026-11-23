@@ -34,8 +34,8 @@ function apiRequest(url, options = {}) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       action: 'login',
-      username: 'awsadmin@culko.in',
-      password: 'awssbgadmin123',
+      username: process.env.ADMIN_EMAIL || 'awsadmin@culko.in',
+      password: process.env.ADMIN_PASSWORD || '',
     }),
   });
 

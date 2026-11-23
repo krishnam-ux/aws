@@ -96,7 +96,7 @@ export default function Navbar() {
     };
   }, []);
 
-  if (pathname?.startsWith('/admin')) {
+  if (pathname?.startsWith('/admin') || pathname?.startsWith('/contest')) {
     return null;
   }
 
@@ -105,6 +105,7 @@ export default function Navbar() {
     { label: 'About', href: '/about' },
     { label: 'Activities', href: '/activities' },
     { label: 'Events', href: '/events' },
+    { label: 'Contest', href: '/contest' },
     ...(isExamPublished ? [{ label: 'Exams', href: '/exam' }] : []),
     { label: 'Resources', href: '/resources' },
     { label: 'Verification', href: '/verification' },

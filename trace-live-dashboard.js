@@ -17,7 +17,7 @@ function request(url, opts = {}) {
   const login = await request(base + '/api/admin', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'login', username: 'awsadmin@culko.in', password: 'awssbgadmin123' })
+    body: JSON.stringify({ action: 'login', username: process.env.ADMIN_EMAIL || 'awsadmin@culko.in', password: process.env.ADMIN_PASSWORD || '' })
   });
 
   const token = JSON.parse(login.body || '{}').token;

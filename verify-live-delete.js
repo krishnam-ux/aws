@@ -18,8 +18,8 @@ async function api(path, body, token) {
 async function main() {
   const login = await api('/api/admin', {
     action: 'login',
-    username: 'awsadmin@culko.in',
-    password: 'awssbgadmin123'
+    username: process.env.ADMIN_EMAIL || 'awsadmin@culko.in',
+    password: process.env.ADMIN_PASSWORD || ''
   });
   console.log('LOGIN', JSON.stringify(login));
   const token = login.data && login.data.token ? login.data.token : null;

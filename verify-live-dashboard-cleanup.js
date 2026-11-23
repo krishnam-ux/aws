@@ -25,7 +25,7 @@ function parseJson(raw, fallback) {
   const login = await request(base + '/api/admin', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'login', username: 'awsadmin@culko.in', password: 'awssbgadmin123' })
+    body: JSON.stringify({ action: 'login', username: process.env.ADMIN_EMAIL || 'awsadmin@culko.in', password: process.env.ADMIN_PASSWORD || '' })
   });
 
   const token = parseJson(login.body, {}).token;

@@ -38,8 +38,8 @@ async function main() {
 
   const loginRes = await httpJson(adminUrl, {
     action: 'login',
-    username: 'awsadmin@culko.in',
-    password: 'awssbgadmin123'
+    username: process.env.ADMIN_EMAIL || 'awsadmin@culko.in',
+    password: process.env.ADMIN_PASSWORD || ''
   });
 
   console.log('LOGIN', JSON.stringify(loginRes));

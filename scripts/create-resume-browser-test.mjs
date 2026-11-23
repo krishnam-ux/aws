@@ -1,6 +1,6 @@
 const base = 'https://www.awssbgcuup.tech';
-const username = 'awsadmin@culko.in';
-const password = 'awssbgadmin123';
+const username = process.env.ADMIN_EMAIL || 'awsadmin@culko.in';
+const password = process.env.ADMIN_PASSWORD || '';
 async function call(token, body) {
   const response = await fetch(`${base}/api/admin`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body) });
   const raw = await response.text();

@@ -76,11 +76,11 @@ export default async function RootLayout({
       suppressHydrationWarning
       className={`${inter.variable} ${outfit.variable} h-full scroll-smooth`}
     >
-      <body suppressHydrationWarning className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-sans antialiased">
+      <body suppressHydrationWarning className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-sans antialiased has-[[data-contest]]:bg-[#0B0908]">
         <MaintenanceGate initialMaintenance={initialMaintenance}>
           <Navbar />
           <ScrollRevealProvider>
-            <main className="flex-grow flex flex-col relative bg-slate-50">
+            <main className="flex-grow flex flex-col relative bg-slate-50 has-[[data-contest]]:bg-[#0B0908]">
               {children}
             </main>
           </ScrollRevealProvider>

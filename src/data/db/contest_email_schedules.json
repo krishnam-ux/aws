@@ -1,0 +1,515 @@
+[
+  {
+    "id": "ces-reg-1795449663238",
+    "registrationId": "reg-1795449663238",
+    "name": "Test Sched Participant",
+    "email": "sched.test.1795449663238@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": "2026-11-26T15:00:00.000Z",
+    "nextEligibleAt": "2026-11-27T21:00:00.000Z",
+    "sentTopicIds": [
+      "topic-explore-security-island"
+    ],
+    "finalDayReminderSent": false,
+    "unsubscribed": false,
+    "status": "ACTIVE",
+    "logs": [
+      {
+        "topicId": "topic-explore-security-island",
+        "sentAt": "2026-11-26T15:00:00.000Z",
+        "status": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "id": "ces-reg-dupe-1795449663243",
+    "registrationId": "reg-dupe-1795449663243",
+    "name": "Dupe Test User",
+    "email": "dupe.test.1795449663243@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": "2026-11-26T15:00:00.000Z",
+    "nextEligibleAt": "2026-11-29T02:00:00.000Z",
+    "sentTopicIds": [
+      "topic-explore-security-island"
+    ],
+    "finalDayReminderSent": false,
+    "unsubscribed": false,
+    "status": "ACTIVE",
+    "logs": [
+      {
+        "topicId": "topic-explore-security-island",
+        "sentAt": "2026-11-26T15:00:00.000Z",
+        "status": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "id": "ces-reg-unsub-1795449663335",
+    "registrationId": "reg-unsub-1795449663335",
+    "name": "Unsubscribe User",
+    "email": "unsub.1795449663335@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": null,
+    "nextEligibleAt": "2026-11-25T22:00:00.000Z",
+    "sentTopicIds": [],
+    "finalDayReminderSent": false,
+    "unsubscribed": true,
+    "status": "UNSUBSCRIBED",
+    "logs": []
+  },
+  {
+    "id": "ces-reg-1795449901260",
+    "registrationId": "reg-1795449901260",
+    "name": "Test Sched Participant",
+    "email": "sched.test.1795449901260@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": "2026-11-26T15:00:00.000Z",
+    "nextEligibleAt": "2026-11-29T08:00:00.000Z",
+    "sentTopicIds": [
+      "topic-explore-security-island"
+    ],
+    "finalDayReminderSent": false,
+    "unsubscribed": false,
+    "status": "ACTIVE",
+    "logs": [
+      {
+        "topicId": "topic-explore-security-island",
+        "sentAt": "2026-11-26T15:00:00.000Z",
+        "status": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "id": "ces-reg-dupe-1795449901265",
+    "registrationId": "reg-dupe-1795449901265",
+    "name": "Dupe Test User",
+    "email": "dupe.test.1795449901265@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": "2026-11-26T15:00:00.000Z",
+    "nextEligibleAt": "2026-11-27T20:00:00.000Z",
+    "sentTopicIds": [
+      "topic-explore-security-island"
+    ],
+    "finalDayReminderSent": false,
+    "unsubscribed": false,
+    "status": "ACTIVE",
+    "logs": [
+      {
+        "topicId": "topic-explore-security-island",
+        "sentAt": "2026-11-26T15:00:00.000Z",
+        "status": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "id": "ces-reg-unsub-1795449901316",
+    "registrationId": "reg-unsub-1795449901316",
+    "name": "Unsubscribe User",
+    "email": "unsub.1795449901316@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": null,
+    "nextEligibleAt": "2026-11-26T13:00:00.000Z",
+    "sentTopicIds": [],
+    "finalDayReminderSent": false,
+    "unsubscribed": true,
+    "status": "UNSUBSCRIBED",
+    "logs": []
+  },
+  {
+    "id": "ces-reg-1795450562326",
+    "registrationId": "reg-1795450562326",
+    "name": "Test Sched Participant",
+    "email": "sched.test.1795450562326@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": "2026-11-26T15:00:00.000Z",
+    "nextEligibleAt": "2026-11-28T02:00:00.000Z",
+    "sentTopicIds": [
+      "topic-explore-security-island"
+    ],
+    "finalDayReminderSent": false,
+    "unsubscribed": false,
+    "status": "ACTIVE",
+    "logs": [
+      {
+        "topicId": "topic-explore-security-island",
+        "sentAt": "2026-11-26T15:00:00.000Z",
+        "status": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "id": "ces-reg-dupe-1795450562332",
+    "registrationId": "reg-dupe-1795450562332",
+    "name": "Dupe Test User",
+    "email": "dupe.test.1795450562332@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": "2026-11-26T15:00:00.000Z",
+    "nextEligibleAt": "2026-11-29T09:00:00.000Z",
+    "sentTopicIds": [
+      "topic-explore-security-island"
+    ],
+    "finalDayReminderSent": false,
+    "unsubscribed": false,
+    "status": "ACTIVE",
+    "logs": [
+      {
+        "topicId": "topic-explore-security-island",
+        "sentAt": "2026-11-26T15:00:00.000Z",
+        "status": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "id": "ces-reg-unsub-1795450562407",
+    "registrationId": "reg-unsub-1795450562407",
+    "name": "Unsubscribe User",
+    "email": "unsub.1795450562407@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": null,
+    "nextEligibleAt": "2026-11-25T14:00:00.000Z",
+    "sentTopicIds": [],
+    "finalDayReminderSent": false,
+    "unsubscribed": true,
+    "status": "UNSUBSCRIBED",
+    "logs": []
+  },
+  {
+    "id": "ces-reg-1795454294758",
+    "registrationId": "reg-1795454294758",
+    "name": "Test Sched Participant",
+    "email": "sched.test.1795454294758@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": "2026-11-26T15:00:00.000Z",
+    "nextEligibleAt": "2026-11-29T08:00:00.000Z",
+    "sentTopicIds": [
+      "topic-explore-security-island"
+    ],
+    "finalDayReminderSent": false,
+    "unsubscribed": false,
+    "status": "ACTIVE",
+    "logs": [
+      {
+        "topicId": "topic-explore-security-island",
+        "sentAt": "2026-11-26T15:00:00.000Z",
+        "status": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "id": "ces-reg-dupe-1795454294763",
+    "registrationId": "reg-dupe-1795454294763",
+    "name": "Dupe Test User",
+    "email": "dupe.test.1795454294763@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": "2026-11-26T15:00:00.000Z",
+    "nextEligibleAt": "2026-11-27T19:00:00.000Z",
+    "sentTopicIds": [
+      "topic-explore-security-island"
+    ],
+    "finalDayReminderSent": false,
+    "unsubscribed": false,
+    "status": "ACTIVE",
+    "logs": [
+      {
+        "topicId": "topic-explore-security-island",
+        "sentAt": "2026-11-26T15:00:00.000Z",
+        "status": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "id": "ces-reg-unsub-1795454294843",
+    "registrationId": "reg-unsub-1795454294843",
+    "name": "Unsubscribe User",
+    "email": "unsub.1795454294843@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": null,
+    "nextEligibleAt": "2026-11-25T08:00:00.000Z",
+    "sentTopicIds": [],
+    "finalDayReminderSent": false,
+    "unsubscribed": true,
+    "status": "UNSUBSCRIBED",
+    "logs": []
+  },
+  {
+    "id": "ces-reg-1795455071127",
+    "registrationId": "reg-1795455071127",
+    "name": "Test Sched Participant",
+    "email": "sched.test.1795455071127@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": "2026-11-26T15:00:00.000Z",
+    "nextEligibleAt": "2026-11-27T20:00:00.000Z",
+    "sentTopicIds": [
+      "topic-explore-security-island"
+    ],
+    "finalDayReminderSent": false,
+    "unsubscribed": false,
+    "status": "ACTIVE",
+    "logs": [
+      {
+        "topicId": "topic-explore-security-island",
+        "sentAt": "2026-11-26T15:00:00.000Z",
+        "status": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "id": "ces-reg-dupe-1795455071134",
+    "registrationId": "reg-dupe-1795455071134",
+    "name": "Dupe Test User",
+    "email": "dupe.test.1795455071134@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": "2026-11-26T15:00:00.000Z",
+    "nextEligibleAt": "2026-11-28T15:00:00.000Z",
+    "sentTopicIds": [
+      "topic-explore-security-island"
+    ],
+    "finalDayReminderSent": false,
+    "unsubscribed": false,
+    "status": "ACTIVE",
+    "logs": [
+      {
+        "topicId": "topic-explore-security-island",
+        "sentAt": "2026-11-26T15:00:00.000Z",
+        "status": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "id": "ces-reg-unsub-1795455071214",
+    "registrationId": "reg-unsub-1795455071214",
+    "name": "Unsubscribe User",
+    "email": "unsub.1795455071214@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": null,
+    "nextEligibleAt": "2026-11-26T04:00:00.000Z",
+    "sentTopicIds": [],
+    "finalDayReminderSent": false,
+    "unsubscribed": true,
+    "status": "UNSUBSCRIBED",
+    "logs": []
+  },
+  {
+    "id": "ces-reg-1795455418143",
+    "registrationId": "reg-1795455418143",
+    "name": "Test Sched Participant",
+    "email": "sched.test.1795455418143@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": null,
+    "nextEligibleAt": "2026-11-26T23:00:00.000Z",
+    "sentTopicIds": [],
+    "finalDayReminderSent": false,
+    "unsubscribed": false,
+    "status": "ACTIVE",
+    "logs": []
+  },
+  {
+    "id": "ces-reg-dupe-1795455418147",
+    "registrationId": "reg-dupe-1795455418147",
+    "name": "Dupe Test User",
+    "email": "dupe.test.1795455418147@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": "2026-11-26T15:00:00.000Z",
+    "nextEligibleAt": "2026-11-29T05:00:00.000Z",
+    "sentTopicIds": [
+      "topic-explore-security-island"
+    ],
+    "finalDayReminderSent": false,
+    "unsubscribed": false,
+    "status": "ACTIVE",
+    "logs": [
+      {
+        "topicId": "topic-explore-security-island",
+        "sentAt": "2026-11-26T15:00:00.000Z",
+        "status": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "id": "ces-reg-unsub-1795455418182",
+    "registrationId": "reg-unsub-1795455418182",
+    "name": "Unsubscribe User",
+    "email": "unsub.1795455418182@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": null,
+    "nextEligibleAt": "2026-11-26T01:00:00.000Z",
+    "sentTopicIds": [],
+    "finalDayReminderSent": false,
+    "unsubscribed": true,
+    "status": "UNSUBSCRIBED",
+    "logs": []
+  },
+  {
+    "id": "ces-reg-1795456160034",
+    "registrationId": "reg-1795456160034",
+    "name": "Test Sched Participant",
+    "email": "sched.test.1795456160034@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": "2026-11-26T15:00:00.000Z",
+    "nextEligibleAt": "2026-11-28T21:00:00.000Z",
+    "sentTopicIds": [
+      "topic-explore-security-island"
+    ],
+    "finalDayReminderSent": false,
+    "unsubscribed": false,
+    "status": "ACTIVE",
+    "logs": [
+      {
+        "topicId": "topic-explore-security-island",
+        "sentAt": "2026-11-26T15:00:00.000Z",
+        "status": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "id": "ces-reg-dupe-1795456160039",
+    "registrationId": "reg-dupe-1795456160039",
+    "name": "Dupe Test User",
+    "email": "dupe.test.1795456160039@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": null,
+    "nextEligibleAt": "2026-11-27T04:00:00.000Z",
+    "sentTopicIds": [],
+    "finalDayReminderSent": false,
+    "unsubscribed": false,
+    "status": "ACTIVE",
+    "logs": []
+  },
+  {
+    "id": "ces-reg-unsub-1795456160122",
+    "registrationId": "reg-unsub-1795456160122",
+    "name": "Unsubscribe User",
+    "email": "unsub.1795456160122@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": null,
+    "nextEligibleAt": "2026-11-25T09:00:00.000Z",
+    "sentTopicIds": [],
+    "finalDayReminderSent": false,
+    "unsubscribed": true,
+    "status": "UNSUBSCRIBED",
+    "logs": []
+  },
+  {
+    "id": "ces-reg-1795456235103",
+    "registrationId": "reg-1795456235103",
+    "name": "Test Sched Participant",
+    "email": "sched.test.1795456235102@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": null,
+    "nextEligibleAt": "2026-11-26T18:00:00.000Z",
+    "sentTopicIds": [],
+    "finalDayReminderSent": false,
+    "unsubscribed": false,
+    "status": "ACTIVE",
+    "logs": []
+  },
+  {
+    "id": "ces-reg-dupe-1795456235107",
+    "registrationId": "reg-dupe-1795456235107",
+    "name": "Dupe Test User",
+    "email": "dupe.test.1795456235107@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": "2026-11-26T10:00:00.000Z",
+    "nextEligibleAt": "2026-11-26T23:00:00.000Z",
+    "sentTopicIds": [
+      "topic-explore-security-island"
+    ],
+    "finalDayReminderSent": false,
+    "unsubscribed": false,
+    "status": "ACTIVE",
+    "logs": []
+  },
+  {
+    "id": "ces-reg-unsub-1795456235136",
+    "registrationId": "reg-unsub-1795456235136",
+    "name": "Unsubscribe User",
+    "email": "unsub.1795456235136@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": null,
+    "nextEligibleAt": "2026-11-27T01:00:00.000Z",
+    "sentTopicIds": [],
+    "finalDayReminderSent": false,
+    "unsubscribed": true,
+    "status": "UNSUBSCRIBED",
+    "logs": []
+  },
+  {
+    "id": "ces-reg-1795456673355",
+    "registrationId": "reg-1795456673355",
+    "name": "Test Sched Participant",
+    "email": "sched.test.1795456673355@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": "2026-11-26T15:00:00.000Z",
+    "nextEligibleAt": "2026-11-28T02:00:00.000Z",
+    "sentTopicIds": [
+      "topic-explore-security-island"
+    ],
+    "finalDayReminderSent": false,
+    "unsubscribed": false,
+    "status": "ACTIVE",
+    "logs": [
+      {
+        "topicId": "topic-explore-security-island",
+        "sentAt": "2026-11-26T15:00:00.000Z",
+        "status": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "id": "ces-reg-dupe-1795456673360",
+    "registrationId": "reg-dupe-1795456673360",
+    "name": "Dupe Test User",
+    "email": "dupe.test.1795456673360@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": "2026-11-26T10:00:00.000Z",
+    "nextEligibleAt": "2026-11-26T16:00:00.000Z",
+    "sentTopicIds": [
+      "topic-explore-security-island"
+    ],
+    "finalDayReminderSent": false,
+    "unsubscribed": false,
+    "status": "ACTIVE",
+    "logs": []
+  },
+  {
+    "id": "ces-reg-unsub-1795456673399",
+    "registrationId": "reg-unsub-1795456673399",
+    "name": "Unsubscribe User",
+    "email": "unsub.1795456673399@example.com",
+    "university": "Chandigarh University – Uttar Pradesh",
+    "registeredAt": "2026-11-24T04:00:00.000Z",
+    "lastSentAt": null,
+    "nextEligibleAt": "2026-11-26T21:00:00.000Z",
+    "sentTopicIds": [],
+    "finalDayReminderSent": false,
+    "unsubscribed": true,
+    "status": "UNSUBSCRIBED",
+    "logs": []
+  }
+]

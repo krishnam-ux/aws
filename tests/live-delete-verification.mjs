@@ -1,8 +1,8 @@
 import crypto from 'node:crypto';
 
 const baseUrl = 'https://www.awssbgcuup.tech';
-const username = 'awsadmin@culko.in';
-const password = 'awssbgadmin123';
+const username = process.env.ADMIN_EMAIL || 'awsadmin@culko.in';
+const password = process.env.ADMIN_PASSWORD || '';
 
 function buildSlug() {
   return `live-delete-test-${Date.now()}-${crypto.randomBytes(2).toString('hex')}`;

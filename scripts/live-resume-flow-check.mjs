@@ -1,6 +1,6 @@
 const base = process.argv[2] || 'https://www.awssbgcuup.tech';
-const username = 'awsadmin@culko.in';
-const password = 'awssbgadmin123';
+const username = process.env.ADMIN_EMAIL || 'awsadmin@culko.in';
+const password = process.env.ADMIN_PASSWORD || '';
 const resumeName = 'AWS-TEST-Resume-2026.pdf';
 const resumeBytes = Buffer.from('%PDF-1.4\n% AWS Student Builder Group resume verification\n%%EOF\n');
 

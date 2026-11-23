@@ -9,8 +9,8 @@ export default function ScrollRevealProvider({ children }: { children: React.Rea
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Preserve admin dashboard and active proctored exam sessions without scroll-reveal alteration
-    if (pathname?.startsWith('/admin') || pathname?.startsWith('/exam/')) {
+    // Preserve admin dashboard, active proctored exam sessions, and custom contest landing page without scroll-reveal alteration
+    if (pathname?.startsWith('/admin') || pathname?.startsWith('/exam/') || pathname?.startsWith('/contest')) {
       return;
     }
 
