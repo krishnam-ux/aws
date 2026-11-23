@@ -56,14 +56,20 @@ export default function HowToJoinSection() {
     }
 
     // Check contest status from server
-    fetch('/api/contest/status')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.status) {
-          setContestStatus(data.status);
-        }
-      })
-      .catch((err) => console.error('Error fetching contest status:', err));
+    const checkStatus = () => {
+      fetch('/api/contest/status')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.status) {
+            setContestStatus(data.status);
+          }
+        })
+        .catch((err) => console.error('Error fetching contest status:', err));
+    };
+
+    checkStatus();
+    const interval = setInterval(checkStatus, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   // Cooldown timer for resend email button
@@ -256,19 +262,21 @@ export default function HowToJoinSection() {
               </div>
             ))}
 
-            {/* Desktop Alternative Note */}
-            <div className="pt-4 text-xs sm:text-sm text-[#B9AAA0] pl-2">
-              On a computer?{' '}
-              <a
-                href={CONTEST_CONFIG.webPlayUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#F5C451] underline hover:text-[#ffcf66] font-semibold transition-colors"
-              >
-                Play at cardclash.skillbuilder.aws
-              </a>{' '}
-              with the same account and your emailed event code.
-            </div>
+            {/* Desktop Alternative Note - Only shown at 9:00 AM IST when contest is LIVE */}
+            {contestStatus === 'LIVE' && (
+              <div className="pt-4 text-xs sm:text-sm text-[#B9AAA0] pl-2 animate-in fade-in duration-300">
+                On a computer?{' '}
+                <a
+                  href={CONTEST_CONFIG.webPlayUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#F5C451] underline hover:text-[#ffcf66] font-semibold transition-colors"
+                >
+                  Play at cardclash.skillbuilder.aws
+                </a>{' '}
+                with the same account and your emailed event code.
+              </div>
+            )}
           </div>
 
           {/* Right: Registration Form OR Success Screen OR Locked Countdown */}
