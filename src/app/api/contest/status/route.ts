@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getContestState, CONTEST_CONFIG } from '@/lib/contestConfig';
+import { executeContestShutdown, readShutdownState } from '@/lib/contestShutdown';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,13 @@ export async function GET(req: NextRequest) {
 
     const state = getContestState(overrideDate);
 
+    // If the contest has ended, ensure server-side shutdown is executed idempotently
+    if (state.isEnded) {
+      await executeContestShutdown({ overrideTime: overrideDate });
+    }
+
+    const shutdownState = readShutdownState();
+
     return NextResponse.json({
       success: true,
       ...state,
@@ -22,6 +30,12 @@ export async function GET(req: NextRequest) {
         launchDateIstString: CONTEST_CONFIG.launchDateIstString,
         endDateIstString: CONTEST_CONFIG.endDateIstString,
         timezone: CONTEST_CONFIG.timezone
+      },
+      shutdownState: {
+        hasShutdown: shutdownState.hasShutdown,
+        shutdownAt: shutdownState.shutdownAt,
+        winnersVerificationStatus: shutdownState.winnersVerificationStatus,
+        verifiedWinners: shutdownState.verifiedWinners
       }
     });
   } catch (error: any) {

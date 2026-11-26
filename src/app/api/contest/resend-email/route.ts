@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { CONTEST_CONFIG, maskEmail } from '@/lib/contestConfig';
+import { CONTEST_CONFIG, getContestState, maskEmail } from '@/lib/contestConfig';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { isValidEmail, normalizeEmail } from '@/lib/email/validation';
 import { sendEmail } from '@/lib/email/service';
@@ -10,6 +10,22 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
+    const testClockHeader = req.headers.get('x-test-contest-clock');
+    const { searchParams } = new URL(req.url);
+    const testClockParam = searchParams.get('testTime');
+    const overrideDate = testClockHeader || testClockParam || null;
+
+    const contestState = getContestState(overrideDate);
+    if (contestState.isEnded) {
+      return NextResponse.json(
+        {
+          success: false,
+          isEnded: true,
+          error: 'The AWS Card Clash contest concluded on 4 December 2026. Event code resend is closed.'
+        },
+        { status: 400 }
+      );
+    }
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
     const body = await req.json().catch(() => ({}));
     const { email } = body;

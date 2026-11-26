@@ -5,9 +5,10 @@ import Link from 'next/link';
 
 interface ContestNavbarProps {
   activeSection: string;
+  isCompletedMode?: boolean;
 }
 
-export default function ContestNavbar({ activeSection }: ContestNavbarProps) {
+export default function ContestNavbar({ activeSection, isCompletedMode = false }: ContestNavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -20,13 +21,22 @@ export default function ContestNavbar({ activeSection }: ContestNavbarProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navLinks = [
-    { label: 'The island', href: '#island' },
-    { label: 'The dragon', href: '#dragon' },
-    { label: 'The contest', href: '#contest' },
-    { label: 'How to join', href: '#how-to-join' },
-    { label: 'FAQ', href: '#faq' },
-  ];
+  const navLinks = isCompletedMode
+    ? [
+        { label: 'Overview', href: '#overview' },
+        { label: 'Top 5 Winners', href: '#winners' },
+        { label: 'The island', href: '#island' },
+        { label: 'The dragon', href: '#dragon' },
+        { label: 'Highlights', href: '#gallery' },
+        { label: 'FAQ', href: '#completed-faq' }
+      ]
+    : [
+        { label: 'The island', href: '#island' },
+        { label: 'The dragon', href: '#dragon' },
+        { label: 'The contest', href: '#contest' },
+        { label: 'How to join', href: '#how-to-join' },
+        { label: 'FAQ', href: '#faq' }
+      ];
 
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
@@ -55,8 +65,8 @@ export default function ContestNavbar({ activeSection }: ContestNavbarProps) {
         {/* Left: AWS Card Clash Logo */}
         <div className="flex items-center space-x-3">
           <Link
-            href="#top"
-            onClick={(e) => handleSmoothScroll(e, '#top')}
+            href={isCompletedMode ? '#overview' : '#top'}
+            onClick={(e) => handleSmoothScroll(e, isCompletedMode ? '#overview' : '#top')}
             className="flex items-center space-x-2 group focus:outline-none focus:ring-2 focus:ring-[#F5C451] rounded-lg p-1"
           >
             <img
@@ -69,7 +79,7 @@ export default function ContestNavbar({ activeSection }: ContestNavbarProps) {
                 AWS Student Builder Group
               </span>
               <span className="text-xs font-bold text-[#F8F2EA] tracking-tight">
-                Security Island Challenge
+                {isCompletedMode ? 'Security Island • Completed' : 'Security Island Challenge'}
               </span>
             </div>
           </Link>
@@ -99,15 +109,25 @@ export default function ContestNavbar({ activeSection }: ContestNavbarProps) {
           })}
         </nav>
 
-        {/* Right: Join the Contest CTA Button & Mobile Hamburger */}
+        {/* Right: CTA Button & Mobile Hamburger */}
         <div className="flex items-center space-x-4">
-          <a
-            href="#how-to-join"
-            onClick={(e) => handleSmoothScroll(e, '#how-to-join')}
-            className="inline-flex items-center justify-center px-5 sm:px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold text-[#0B0908] bg-[#F5C451] hover:bg-[#ffcf66] active:scale-95 transition-all duration-200 shadow-[0_0_15px_rgba(245,196,81,0.35)] hover:shadow-[0_0_25px_rgba(245,196,81,0.55)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F5C451]"
-          >
-            Join the contest
-          </a>
+          {isCompletedMode ? (
+            <a
+              href="#winners"
+              onClick={(e) => handleSmoothScroll(e, '#winners')}
+              className="inline-flex items-center justify-center px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold text-[#F5C451] bg-[#211713] hover:bg-[#2A1D17] border border-[#F5C451]/50 active:scale-95 transition-all duration-200 shadow-[0_0_15px_rgba(245,196,81,0.2)] focus:outline-none focus:ring-2 focus:ring-[#F5C451]"
+            >
+              🏆 Contest Completed
+            </a>
+          ) : (
+            <a
+              href="#how-to-join"
+              onClick={(e) => handleSmoothScroll(e, '#how-to-join')}
+              className="inline-flex items-center justify-center px-5 sm:px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold text-[#0B0908] bg-[#F5C451] hover:bg-[#ffcf66] active:scale-95 transition-all duration-200 shadow-[0_0_15px_rgba(245,196,81,0.35)] hover:shadow-[0_0_25px_rgba(245,196,81,0.55)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F5C451]"
+            >
+              Join the contest
+            </a>
+          )}
 
           {/* Mobile hamburger menu toggle */}
           <button
@@ -157,13 +177,23 @@ export default function ContestNavbar({ activeSection }: ContestNavbarProps) {
           </div>
 
           <div className="pt-2 border-t border-[#3A271E]/60 flex flex-col space-y-2">
-            <a
-              href="#how-to-join"
-              onClick={(e) => handleSmoothScroll(e, '#how-to-join')}
-              className="w-full text-center px-4 py-2.5 rounded-full text-sm font-bold text-[#0B0908] bg-[#F5C451] hover:bg-[#ffcf66] shadow-[0_0_15px_rgba(245,196,81,0.35)]"
-            >
-              Join the contest
-            </a>
+            {isCompletedMode ? (
+              <a
+                href="#winners"
+                onClick={(e) => handleSmoothScroll(e, '#winners')}
+                className="w-full text-center px-4 py-2.5 rounded-full text-sm font-bold text-[#F5C451] bg-[#211713] border border-[#F5C451]/50"
+              >
+                🏆 View Top 5 Standings
+              </a>
+            ) : (
+              <a
+                href="#how-to-join"
+                onClick={(e) => handleSmoothScroll(e, '#how-to-join')}
+                className="w-full text-center px-4 py-2.5 rounded-full text-sm font-bold text-[#0B0908] bg-[#F5C451] hover:bg-[#ffcf66] shadow-[0_0_15px_rgba(245,196,81,0.35)]"
+              >
+                Join the contest
+              </a>
+            )}
             <Link
               href="/"
               className="text-center text-xs text-[#B9AAA0] hover:text-[#F8F2EA] py-1"

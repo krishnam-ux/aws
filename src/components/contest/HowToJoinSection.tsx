@@ -479,6 +479,44 @@ export default function HowToJoinSection() {
                 </div>
 
               </div>
+            ) : contestStatus === 'ENDED' ? (
+
+              /* VIEW D: CONTEST COMPLETED / REGISTRATION CLOSED */
+              <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-[#211713] to-[#140E0B] border-2 border-[#F5C451]/50 shadow-2xl flex flex-col text-center relative overflow-hidden">
+                <div className="w-14 h-14 mx-auto rounded-full bg-[#F5C451]/15 border border-[#F5C451]/40 flex items-center justify-center text-[#F5C451] text-2xl mb-4 shadow-[0_0_20px_rgba(245,196,81,0.25)]">
+                  🏆
+                </div>
+
+                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#F5C451] mb-2 block">
+                  CONTEST COMPLETED
+                </span>
+
+                <h3 className="text-2xl font-bold text-[#F8F2EA] mb-3 font-display">
+                  Registration & Gameplay Closed
+                </h3>
+
+                <p className="text-xs text-[#B9AAA0] mb-6 leading-relaxed">
+                  The AWS Card Clash Security Island Contest concluded on <strong>4 December 2026</strong>. Registrations, gameplay, and event codes are no longer active.
+                </p>
+
+                <div className="p-4 rounded-2xl bg-[#0B0908] border border-[#3A271E] text-left mb-4 space-y-2">
+                  <div className="flex items-center space-x-2 text-xs font-semibold text-[#F5C451]">
+                    <span>🛡️</span>
+                    <span>Top 5 Verification in Progress</span>
+                  </div>
+                  <p className="text-[11px] text-[#B9AAA0] leading-snug">
+                    Scores and challenge logs are currently undergoing audit. Confirmed winners will receive AWS Certified AI Practitioner exam vouchers directly via email.
+                  </p>
+                </div>
+
+                <div className="pt-3 border-t border-[#3A271E] flex items-center justify-between text-[10px] text-[#B9AAA0]">
+                  <span className="flex items-center space-x-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span>Concluded 4 Dec 2026</span>
+                  </span>
+                  <span>Asia/Kolkata (IST)</span>
+                </div>
+              </div>
             ) : (
 
               /* VIEW C: ACTIVE REGISTRATION FORM (When Live) */

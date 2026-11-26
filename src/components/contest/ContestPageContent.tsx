@@ -13,9 +13,81 @@ import HowToJoinSection from './HowToJoinSection';
 import FAQSection from './FAQSection';
 import ContestFooter from './ContestFooter';
 import FlyingDragon from './FlyingDragon';
+import ContestCompletedContent from './ContestCompletedContent';
+import DevContestPreviewBar, { PreviewMode } from './DevContestPreviewBar';
 
-export default function ContestPageContent() {
+interface ContestPageContentProps {
+  initialPreview?: PreviewMode;
+}
+
+export default function ContestPageContent({ initialPreview }: ContestPageContentProps) {
   const [activeSection, setActiveSection] = useState<string>('');
+  const [contestStatus, setContestStatus] = useState<'LOCKED' | 'LIVE' | 'ENDED'>('LOCKED');
+  const [previewMode, setPreviewMode] = useState<PreviewMode>(() => {
+    if (initialPreview && ['LOCKED', 'LIVE', 'ENDED'].includes(initialPreview)) {
+      return initialPreview;
+    }
+    return 'AUTO';
+  });
+
+  // Read URL query parameter for development preview (safe, non-destructive)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isDev =
+        process.env.NODE_ENV !== 'production' ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1';
+
+      if (isDev) {
+        const params = new URLSearchParams(window.location.search);
+        const previewParam = (
+          params.get('preview') ||
+          params.get('mode') ||
+          params.get('state') ||
+          ''
+        ).toUpperCase();
+
+        if (previewParam === 'ENDED') {
+          setPreviewMode('ENDED');
+        } else if (previewParam === 'LIVE') {
+          setPreviewMode('LIVE');
+        } else if (previewParam === 'LOCKED') {
+          setPreviewMode('LOCKED');
+        }
+      }
+    }
+  }, []);
+
+  const handleSelectPreviewMode = (mode: PreviewMode) => {
+    setPreviewMode(mode);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (mode === 'AUTO') {
+        url.searchParams.delete('preview');
+      } else {
+        url.searchParams.set('preview', mode.toLowerCase());
+      }
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
+
+  useEffect(() => {
+    // 1. Fetch server-authoritative contest status
+    const checkStatus = () => {
+      fetch('/api/contest/status')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.status) {
+            setContestStatus(data.status);
+          }
+        })
+        .catch((err) => console.error('Error fetching contest status:', err));
+    };
+
+    checkStatus();
+    const interval = setInterval(checkStatus, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const sections = ['island', 'dragon', 'contest', 'how-to-join', 'faq'];
@@ -40,6 +112,20 @@ export default function ContestPageContent() {
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Compute effective status (preview override takes precedence only in local dev)
+  const effectiveStatus = previewMode !== 'AUTO' ? previewMode : contestStatus;
+
+  // When contest status is ENDED (or previewMode is ENDED), render the professional Completed View
+  if (effectiveStatus === 'ENDED') {
+    return (
+      <ContestCompletedContent
+        previewMode={previewMode}
+        effectiveStatus={effectiveStatus}
+        onSelectPreviewMode={handleSelectPreviewMode}
+      />
+    );
+  }
 
   return (
     <div className="bg-[#0B0908] text-[#F8F2EA] min-h-screen selection:bg-[#F5C451] selection:text-[#0B0908] overflow-x-hidden font-sans relative">
@@ -78,6 +164,13 @@ export default function ContestPageContent() {
 
       {/* Dark Footer */}
       <ContestFooter />
+
+      {/* Dev Preview Switcher Toolbar */}
+      <DevContestPreviewBar
+        currentMode={previewMode}
+        effectiveStatus={effectiveStatus}
+        onSelectMode={handleSelectPreviewMode}
+      />
     </div>
   );
 }

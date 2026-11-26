@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runContestEngagementScheduler } from '@/lib/contestEngagementScheduler';
 import { isAuthorizedAdmin } from '@/lib/adminAuth';
+import { getContestState } from '@/lib/contestConfig';
+import { executeContestShutdown } from '@/lib/contestShutdown';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -33,6 +35,25 @@ export async function POST(req: NextRequest) {
     const testClockParam = searchParams.get('testTime');
     const forceSend = searchParams.get('force') === 'true';
     const overrideTime = testClockHeader || testClockParam || null;
+
+    const contestState = getContestState(overrideTime);
+    if (contestState.isEnded) {
+      const shutdownResult = await executeContestShutdown({ overrideTime });
+      return NextResponse.json({
+        success: true,
+        summary: {
+          success: true,
+          processedCount: 0,
+          sentCount: 0,
+          skippedCount: 0,
+          failedCount: 0,
+          errors: [],
+          executionTimeIso: new Date().toISOString(),
+          message: 'Contest officially concluded on 4 December 2026. Engagement campaign terminated and contest shutdown verified.'
+        },
+        shutdownResult
+      }, { headers: noStoreHeaders });
+    }
 
     const summary = await runContestEngagementScheduler({
       overrideTime,

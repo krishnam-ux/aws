@@ -1,0 +1,436 @@
+{
+  "hasShutdown": false,
+  "shutdownAt": null,
+  "closingTimeIso": "2026-12-04T18:29:59.000Z",
+  "closingTimeIst": "4 December 2026, 11:59 PM IST",
+  "timezone": "Asia/Kolkata",
+  "status": "LIVE",
+  "archivedRegistrationsCount": 28,
+  "activeCampaignsTerminated": 0,
+  "eventStatusUpdated": true,
+  "winnersVerificationStatus": "PENDING_VERIFICATION",
+  "verifiedWinners": [
+    {
+      "rank": 1,
+      "name": "To Be Announced",
+      "prize": "AWS Certified AI Practitioner exam voucher",
+      "status": "PENDING"
+    },
+    {
+      "rank": 2,
+      "name": "To Be Announced",
+      "prize": "AWS Certified AI Practitioner exam voucher",
+      "status": "PENDING"
+    },
+    {
+      "rank": 3,
+      "name": "To Be Announced",
+      "prize": "AWS Certified AI Practitioner exam voucher",
+      "status": "PENDING"
+    },
+    {
+      "rank": 4,
+      "name": "To Be Announced",
+      "prize": "AWS Certified AI Practitioner exam voucher",
+      "status": "PENDING"
+    },
+    {
+      "rank": 5,
+      "name": "To Be Announced",
+      "prize": "AWS Certified AI Practitioner exam voucher",
+      "status": "PENDING"
+    }
+  ],
+  "executionLogs": [
+    {
+      "step": "START_SHUTDOWN",
+      "timestamp": "2026-12-04T18:30:00.000Z",
+      "status": "SUCCESS",
+      "details": "Shutdown triggered at 2026-12-04T18:30:00.000Z (Configured closing: 4 December 2026, 11:59 PM IST)"
+    },
+    {
+      "step": "TERMINATE_PROMOTIONAL_CAMPAIGNS",
+      "timestamp": "2026-11-26T10:23:38.629Z",
+      "status": "SUCCESS",
+      "details": "Stopped 20 active promotional email campaigns."
+    },
+    {
+      "step": "UPDATE_EVENT_RECORD",
+      "timestamp": "2026-11-26T10:23:38.638Z",
+      "status": "SUCCESS",
+      "details": "Event event-aws-card-clash-contest marked Completed. Preserved 17 registrations in admin portal."
+    },
+    {
+      "step": "COMPLETE_SHUTDOWN",
+      "timestamp": "2026-11-26T10:23:38.639Z",
+      "status": "SUCCESS",
+      "details": "Contest shutdown completed successfully and idempotently."
+    },
+    {
+      "step": "START_SHUTDOWN",
+      "timestamp": "2026-12-04T18:30:00.000Z",
+      "status": "SUCCESS",
+      "details": "Shutdown triggered at 2026-12-04T18:30:00.000Z (Configured closing: 4 December 2026, 11:59 PM IST)"
+    },
+    {
+      "step": "TERMINATE_PROMOTIONAL_CAMPAIGNS",
+      "timestamp": "2026-11-26T10:23:38.651Z",
+      "status": "SUCCESS",
+      "details": "Stopped 1 active promotional email campaigns."
+    },
+    {
+      "step": "UPDATE_EVENT_RECORD",
+      "timestamp": "2026-11-26T10:23:38.655Z",
+      "status": "SUCCESS",
+      "details": "Event event-aws-card-clash-contest marked Completed. Preserved 17 registrations in admin portal."
+    },
+    {
+      "step": "COMPLETE_SHUTDOWN",
+      "timestamp": "2026-11-26T10:23:38.656Z",
+      "status": "SUCCESS",
+      "details": "Contest shutdown completed successfully and idempotently."
+    },
+    {
+      "step": "START_SHUTDOWN",
+      "timestamp": "2026-12-04T18:30:00.000Z",
+      "status": "SUCCESS",
+      "details": "Shutdown triggered at 2026-12-04T18:30:00.000Z (Configured closing: 4 December 2026, 11:59 PM IST)"
+    },
+    {
+      "step": "TERMINATE_PROMOTIONAL_CAMPAIGNS",
+      "timestamp": "2026-11-26T10:23:38.665Z",
+      "status": "SUCCESS",
+      "details": "Stopped 0 active promotional email campaigns."
+    },
+    {
+      "step": "UPDATE_EVENT_RECORD",
+      "timestamp": "2026-11-26T10:23:38.666Z",
+      "status": "SUCCESS",
+      "details": "Event event-aws-card-clash-contest marked Completed. Preserved 18 registrations in admin portal."
+    },
+    {
+      "step": "COMPLETE_SHUTDOWN",
+      "timestamp": "2026-11-26T10:23:38.667Z",
+      "status": "SUCCESS",
+      "details": "Contest shutdown completed successfully and idempotently."
+    },
+    {
+      "step": "UPDATE_WINNERS",
+      "timestamp": "2026-11-26T10:23:38.671Z",
+      "status": "SUCCESS",
+      "details": "Updated 5 winners. Verification status: OFFICIALLY_CONFIRMED"
+    },
+    {
+      "step": "START_SHUTDOWN",
+      "timestamp": "2026-12-04T18:30:00.000Z",
+      "status": "SUCCESS",
+      "details": "Shutdown triggered at 2026-12-04T18:30:00.000Z (Configured closing: 4 December 2026, 11:59 PM IST)"
+    },
+    {
+      "step": "TERMINATE_PROMOTIONAL_CAMPAIGNS",
+      "timestamp": "2026-11-26T10:34:15.988Z",
+      "status": "SUCCESS",
+      "details": "Stopped 2 active promotional email campaigns."
+    },
+    {
+      "step": "UPDATE_EVENT_RECORD",
+      "timestamp": "2026-11-26T10:34:15.996Z",
+      "status": "SUCCESS",
+      "details": "Event event-aws-card-clash-contest marked Completed. Preserved 0 registrations in admin portal."
+    },
+    {
+      "step": "COMPLETE_SHUTDOWN",
+      "timestamp": "2026-11-26T10:34:15.997Z",
+      "status": "SUCCESS",
+      "details": "Contest shutdown completed successfully and idempotently."
+    },
+    {
+      "step": "START_SHUTDOWN",
+      "timestamp": "2026-12-04T18:30:00.000Z",
+      "status": "SUCCESS",
+      "details": "Shutdown triggered at 2026-12-04T18:30:00.000Z (Configured closing: 4 December 2026, 11:59 PM IST)"
+    },
+    {
+      "step": "TERMINATE_PROMOTIONAL_CAMPAIGNS",
+      "timestamp": "2026-11-26T10:34:16.012Z",
+      "status": "SUCCESS",
+      "details": "Stopped 2 active promotional email campaigns."
+    },
+    {
+      "step": "UPDATE_EVENT_RECORD",
+      "timestamp": "2026-11-26T10:34:16.018Z",
+      "status": "SUCCESS",
+      "details": "Event event-aws-card-clash-contest marked Completed. Preserved 20 registrations in admin portal."
+    },
+    {
+      "step": "COMPLETE_SHUTDOWN",
+      "timestamp": "2026-11-26T10:34:16.018Z",
+      "status": "SUCCESS",
+      "details": "Contest shutdown completed successfully and idempotently."
+    },
+    {
+      "step": "START_SHUTDOWN",
+      "timestamp": "2026-12-04T18:30:00.000Z",
+      "status": "SUCCESS",
+      "details": "Shutdown triggered at 2026-12-04T18:30:00.000Z (Configured closing: 4 December 2026, 11:59 PM IST)"
+    },
+    {
+      "step": "TERMINATE_PROMOTIONAL_CAMPAIGNS",
+      "timestamp": "2026-11-26T10:34:16.027Z",
+      "status": "SUCCESS",
+      "details": "Stopped 0 active promotional email campaigns."
+    },
+    {
+      "step": "UPDATE_EVENT_RECORD",
+      "timestamp": "2026-11-26T10:34:16.027Z",
+      "status": "SUCCESS",
+      "details": "Event event-aws-card-clash-contest marked Completed. Preserved 21 registrations in admin portal."
+    },
+    {
+      "step": "COMPLETE_SHUTDOWN",
+      "timestamp": "2026-11-26T10:34:16.028Z",
+      "status": "SUCCESS",
+      "details": "Contest shutdown completed successfully and idempotently."
+    },
+    {
+      "step": "UPDATE_WINNERS",
+      "timestamp": "2026-11-26T10:34:16.032Z",
+      "status": "SUCCESS",
+      "details": "Updated 5 winners. Verification status: OFFICIALLY_CONFIRMED"
+    },
+    {
+      "step": "START_SHUTDOWN",
+      "timestamp": "2026-12-04T18:30:00.000Z",
+      "status": "SUCCESS",
+      "details": "Shutdown triggered at 2026-12-04T18:30:00.000Z (Configured closing: 4 December 2026, 11:59 PM IST)"
+    },
+    {
+      "step": "TERMINATE_PROMOTIONAL_CAMPAIGNS",
+      "timestamp": "2026-11-26T10:35:56.510Z",
+      "status": "SUCCESS",
+      "details": "Stopped 4 active promotional email campaigns."
+    },
+    {
+      "step": "UPDATE_EVENT_RECORD",
+      "timestamp": "2026-11-26T10:35:56.519Z",
+      "status": "SUCCESS",
+      "details": "Event event-aws-card-clash-contest marked Completed. Preserved 23 registrations in admin portal."
+    },
+    {
+      "step": "COMPLETE_SHUTDOWN",
+      "timestamp": "2026-11-26T10:35:56.520Z",
+      "status": "SUCCESS",
+      "details": "Contest shutdown completed successfully and idempotently."
+    },
+    {
+      "step": "START_SHUTDOWN",
+      "timestamp": "2026-12-04T18:30:00.000Z",
+      "status": "SUCCESS",
+      "details": "Shutdown triggered at 2026-12-04T18:30:00.000Z (Configured closing: 4 December 2026, 11:59 PM IST)"
+    },
+    {
+      "step": "TERMINATE_PROMOTIONAL_CAMPAIGNS",
+      "timestamp": "2026-11-26T10:35:56.532Z",
+      "status": "SUCCESS",
+      "details": "Stopped 1 active promotional email campaigns."
+    },
+    {
+      "step": "UPDATE_EVENT_RECORD",
+      "timestamp": "2026-11-26T10:35:56.537Z",
+      "status": "SUCCESS",
+      "details": "Event event-aws-card-clash-contest marked Completed. Preserved 23 registrations in admin portal."
+    },
+    {
+      "step": "COMPLETE_SHUTDOWN",
+      "timestamp": "2026-11-26T10:35:56.538Z",
+      "status": "SUCCESS",
+      "details": "Contest shutdown completed successfully and idempotently."
+    },
+    {
+      "step": "START_SHUTDOWN",
+      "timestamp": "2026-12-04T18:30:00.000Z",
+      "status": "SUCCESS",
+      "details": "Shutdown triggered at 2026-12-04T18:30:00.000Z (Configured closing: 4 December 2026, 11:59 PM IST)"
+    },
+    {
+      "step": "TERMINATE_PROMOTIONAL_CAMPAIGNS",
+      "timestamp": "2026-11-26T10:35:56.547Z",
+      "status": "SUCCESS",
+      "details": "Stopped 0 active promotional email campaigns."
+    },
+    {
+      "step": "UPDATE_EVENT_RECORD",
+      "timestamp": "2026-11-26T10:35:56.548Z",
+      "status": "SUCCESS",
+      "details": "Event event-aws-card-clash-contest marked Completed. Preserved 24 registrations in admin portal."
+    },
+    {
+      "step": "COMPLETE_SHUTDOWN",
+      "timestamp": "2026-11-26T10:35:56.549Z",
+      "status": "SUCCESS",
+      "details": "Contest shutdown completed successfully and idempotently."
+    },
+    {
+      "step": "UPDATE_WINNERS",
+      "timestamp": "2026-11-26T10:35:56.553Z",
+      "status": "SUCCESS",
+      "details": "Updated 5 winners. Verification status: OFFICIALLY_CONFIRMED"
+    },
+    {
+      "step": "START_SHUTDOWN",
+      "timestamp": "2026-12-04T18:30:00.000Z",
+      "status": "SUCCESS",
+      "details": "Shutdown triggered at 2026-12-04T18:30:00.000Z (Configured closing: 4 December 2026, 11:59 PM IST)"
+    },
+    {
+      "step": "TERMINATE_PROMOTIONAL_CAMPAIGNS",
+      "timestamp": "2026-11-26T11:04:13.615Z",
+      "status": "SUCCESS",
+      "details": "Stopped 2 active promotional email campaigns."
+    },
+    {
+      "step": "UPDATE_EVENT_RECORD",
+      "timestamp": "2026-11-26T11:04:13.627Z",
+      "status": "SUCCESS",
+      "details": "Event event-aws-card-clash-contest marked Completed. Preserved 25 registrations in admin portal."
+    },
+    {
+      "step": "COMPLETE_SHUTDOWN",
+      "timestamp": "2026-11-26T11:04:13.628Z",
+      "status": "SUCCESS",
+      "details": "Contest shutdown completed successfully and idempotently."
+    },
+    {
+      "step": "START_SHUTDOWN",
+      "timestamp": "2026-12-04T18:30:00.000Z",
+      "status": "SUCCESS",
+      "details": "Shutdown triggered at 2026-12-04T18:30:00.000Z (Configured closing: 4 December 2026, 11:59 PM IST)"
+    },
+    {
+      "step": "TERMINATE_PROMOTIONAL_CAMPAIGNS",
+      "timestamp": "2026-11-26T11:04:13.642Z",
+      "status": "SUCCESS",
+      "details": "Stopped 1 active promotional email campaigns."
+    },
+    {
+      "step": "UPDATE_EVENT_RECORD",
+      "timestamp": "2026-11-26T11:04:13.648Z",
+      "status": "SUCCESS",
+      "details": "Event event-aws-card-clash-contest marked Completed. Preserved 25 registrations in admin portal."
+    },
+    {
+      "step": "COMPLETE_SHUTDOWN",
+      "timestamp": "2026-11-26T11:04:13.650Z",
+      "status": "SUCCESS",
+      "details": "Contest shutdown completed successfully and idempotently."
+    },
+    {
+      "step": "START_SHUTDOWN",
+      "timestamp": "2026-12-04T18:30:00.000Z",
+      "status": "SUCCESS",
+      "details": "Shutdown triggered at 2026-12-04T18:30:00.000Z (Configured closing: 4 December 2026, 11:59 PM IST)"
+    },
+    {
+      "step": "TERMINATE_PROMOTIONAL_CAMPAIGNS",
+      "timestamp": "2026-11-26T11:04:13.660Z",
+      "status": "SUCCESS",
+      "details": "Stopped 0 active promotional email campaigns."
+    },
+    {
+      "step": "UPDATE_EVENT_RECORD",
+      "timestamp": "2026-11-26T11:04:13.661Z",
+      "status": "SUCCESS",
+      "details": "Event event-aws-card-clash-contest marked Completed. Preserved 26 registrations in admin portal."
+    },
+    {
+      "step": "COMPLETE_SHUTDOWN",
+      "timestamp": "2026-11-26T11:04:13.662Z",
+      "status": "SUCCESS",
+      "details": "Contest shutdown completed successfully and idempotently."
+    },
+    {
+      "step": "UPDATE_WINNERS",
+      "timestamp": "2026-11-26T11:04:13.666Z",
+      "status": "SUCCESS",
+      "details": "Updated 5 winners. Verification status: OFFICIALLY_CONFIRMED"
+    },
+    {
+      "step": "START_SHUTDOWN",
+      "timestamp": "2026-12-04T18:30:00.000Z",
+      "status": "SUCCESS",
+      "details": "Shutdown triggered at 2026-12-04T18:30:00.000Z (Configured closing: 4 December 2026, 11:59 PM IST)"
+    },
+    {
+      "step": "TERMINATE_PROMOTIONAL_CAMPAIGNS",
+      "timestamp": "2026-11-26T17:57:02.712Z",
+      "status": "SUCCESS",
+      "details": "Stopped 0 active promotional email campaigns."
+    },
+    {
+      "step": "UPDATE_EVENT_RECORD",
+      "timestamp": "2026-11-26T17:57:02.725Z",
+      "status": "SUCCESS",
+      "details": "Event event-aws-card-clash-contest marked Completed. Preserved 27 registrations in admin portal."
+    },
+    {
+      "step": "COMPLETE_SHUTDOWN",
+      "timestamp": "2026-11-26T17:57:02.726Z",
+      "status": "SUCCESS",
+      "details": "Contest shutdown completed successfully and idempotently."
+    },
+    {
+      "step": "START_SHUTDOWN",
+      "timestamp": "2026-12-04T18:30:00.000Z",
+      "status": "SUCCESS",
+      "details": "Shutdown triggered at 2026-12-04T18:30:00.000Z (Configured closing: 4 December 2026, 11:59 PM IST)"
+    },
+    {
+      "step": "TERMINATE_PROMOTIONAL_CAMPAIGNS",
+      "timestamp": "2026-11-26T17:57:02.753Z",
+      "status": "SUCCESS",
+      "details": "Stopped 3 active promotional email campaigns."
+    },
+    {
+      "step": "UPDATE_EVENT_RECORD",
+      "timestamp": "2026-11-26T17:57:02.759Z",
+      "status": "SUCCESS",
+      "details": "Event event-aws-card-clash-contest marked Completed. Preserved 27 registrations in admin portal."
+    },
+    {
+      "step": "COMPLETE_SHUTDOWN",
+      "timestamp": "2026-11-26T17:57:02.761Z",
+      "status": "SUCCESS",
+      "details": "Contest shutdown completed successfully and idempotently."
+    },
+    {
+      "step": "START_SHUTDOWN",
+      "timestamp": "2026-12-04T18:30:00.000Z",
+      "status": "SUCCESS",
+      "details": "Shutdown triggered at 2026-12-04T18:30:00.000Z (Configured closing: 4 December 2026, 11:59 PM IST)"
+    },
+    {
+      "step": "TERMINATE_PROMOTIONAL_CAMPAIGNS",
+      "timestamp": "2026-11-26T17:57:02.774Z",
+      "status": "SUCCESS",
+      "details": "Stopped 0 active promotional email campaigns."
+    },
+    {
+      "step": "UPDATE_EVENT_RECORD",
+      "timestamp": "2026-11-26T17:57:02.776Z",
+      "status": "SUCCESS",
+      "details": "Event event-aws-card-clash-contest marked Completed. Preserved 28 registrations in admin portal."
+    },
+    {
+      "step": "COMPLETE_SHUTDOWN",
+      "timestamp": "2026-11-26T17:57:02.779Z",
+      "status": "SUCCESS",
+      "details": "Contest shutdown completed successfully and idempotently."
+    },
+    {
+      "step": "UPDATE_WINNERS",
+      "timestamp": "2026-11-26T17:57:02.789Z",
+      "status": "SUCCESS",
+      "details": "Updated 5 winners. Verification status: OFFICIALLY_CONFIRMED"
+    }
+  ]
+}

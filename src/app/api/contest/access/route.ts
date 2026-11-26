@@ -16,6 +16,20 @@ export async function GET(req: NextRequest) {
 
     const state = getContestState(overrideDate);
 
+    if (state.isEnded) {
+      return NextResponse.json(
+        {
+          success: false,
+          isLocked: true,
+          isLive: false,
+          isEnded: true,
+          status: 'ENDED',
+          error: 'The AWS Card Clash contest concluded on 4 December 2026. Gameplay and participation are closed.'
+        },
+        { status: 403 }
+      );
+    }
+
     if (state.isLocked) {
       return NextResponse.json(
         {

@@ -84,6 +84,10 @@ export default function ContestBanner() {
     }
   };
 
+  if (status === 'ENDED') {
+    return null;
+  }
+
   return (
     <section className="relative w-full z-30 bg-gradient-to-r from-[#1A0E08] via-[#381F0E] to-[#1A0E08] border-y border-[#F5C451]/20 py-6 sm:py-7 shadow-[0_10px_30px_rgba(0,0,0,0.6)]">
       {/* Subtle ambient lighting */}

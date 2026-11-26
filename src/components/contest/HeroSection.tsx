@@ -1,12 +1,24 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ParticleCanvas from './ParticleCanvas';
 
 export default function HeroSection() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0, translateZ: 0 });
   const [isHovering, setIsHovering] = useState(false);
+  const [contestStatus, setContestStatus] = useState<'LOCKED' | 'LIVE' | 'ENDED'>('LOCKED');
+
+  useEffect(() => {
+    fetch('/api/contest/status')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.status) {
+          setContestStatus(data.status);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // 3D Mouse Parallax & Tilt calculation
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -99,27 +111,39 @@ export default function HeroSection() {
             <div className="p-5 rounded-2xl bg-[#1D1410]/90 border border-[#3A271E] backdrop-blur-md shadow-xl flex flex-col space-y-4 max-w-lg">
               <div className="flex items-center space-x-3">
                 <div className="w-9 h-9 rounded-full bg-[#F5C451]/15 border border-[#F5C451]/40 flex items-center justify-center text-[#F5C451] font-bold text-base flex-shrink-0">
-                  🛡️
+                  {contestStatus === 'ENDED' ? '🏆' : '🛡️'}
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-[#F8F2EA]">
-                    Contest Registration Open
+                    {contestStatus === 'ENDED' ? 'Contest Concluded — Thank You!' : 'Contest Registration Open'}
                   </h2>
                   <p className="text-xs text-[#B9AAA0]">
-                    Register below to unlock your official Event Code and verified app links.
+                    {contestStatus === 'ENDED'
+                      ? 'Review committee is currently auditing final match logs and scores.'
+                      : 'Register below to unlock your official Event Code and verified app links.'}
                   </p>
                 </div>
               </div>
 
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
-                <a
-                  href="#how-to-join"
-                  onClick={(e) => handleSmoothScroll(e, '#how-to-join')}
-                  className="inline-flex items-center justify-center px-6 py-3 rounded-full text-sm font-bold text-[#0B0908] bg-[#F5C451] hover:bg-[#ffcf66] active:scale-95 transition-all duration-200 shadow-[0_0_18px_rgba(245,196,81,0.35)] hover:shadow-[0_0_28px_rgba(245,196,81,0.55)]"
-                >
-                  Join the Contest
-                </a>
+                {contestStatus === 'ENDED' ? (
+                  <a
+                    href="#winners"
+                    onClick={(e) => handleSmoothScroll(e, '#winners')}
+                    className="inline-flex items-center justify-center px-6 py-3 rounded-full text-sm font-bold text-[#0B0908] bg-[#F5C451] hover:bg-[#ffcf66] active:scale-95 transition-all duration-200 shadow-[0_0_18px_rgba(245,196,81,0.35)]"
+                  >
+                    View Top 5 Standings
+                  </a>
+                ) : (
+                  <a
+                    href="#how-to-join"
+                    onClick={(e) => handleSmoothScroll(e, '#how-to-join')}
+                    className="inline-flex items-center justify-center px-6 py-3 rounded-full text-sm font-bold text-[#0B0908] bg-[#F5C451] hover:bg-[#ffcf66] active:scale-95 transition-all duration-200 shadow-[0_0_18px_rgba(245,196,81,0.35)] hover:shadow-[0_0_28px_rgba(245,196,81,0.55)]"
+                  >
+                    Join the Contest
+                  </a>
+                )}
                 <a
                   href="#island"
                   onClick={(e) => handleSmoothScroll(e, '#island')}
@@ -130,10 +154,16 @@ export default function HeroSection() {
               </div>
             </div>
 
-            {/* Launch Notice Badge */}
+            {/* Launch / Status Notice Badge */}
             <div className="flex items-center space-x-2 text-xs text-[#B9AAA0]">
-              <span className="w-2 h-2 rounded-full bg-[#F5C451] animate-pulse" />
-              <span>Contest Launch: <strong className="text-[#F8F2EA]">24 November 2026, 9:00 AM IST</strong></span>
+              <span className={`w-2 h-2 rounded-full ${contestStatus === 'ENDED' ? 'bg-emerald-400' : 'bg-[#F5C451] animate-pulse'}`} />
+              <span>
+                {contestStatus === 'ENDED' ? (
+                  <>Contest Concluded: <strong className="text-[#F8F2EA]">4 December 2026, 11:59 PM IST</strong></>
+                ) : (
+                  <>Contest Launch: <strong className="text-[#F8F2EA]">24 November 2026, 9:00 AM IST</strong></>
+                )}
+              </span>
             </div>
 
           </div>
